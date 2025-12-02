@@ -50,9 +50,7 @@ async function main() {
 
     BASEAPP.initializeApplication();
     SERVER.start();
-
-    console.log("\n", _ENV.HELPERS);
-
+    
     // console.log("");
 
     console.log("\n\x1b[34m%s\x1b[0m", "AppServer Initialization Completed");
