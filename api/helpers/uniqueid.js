@@ -201,15 +201,19 @@ function nonSecureNanoid(size = 21, alphabet = URL_ALPHABET) {
 
 // -------- Exports --------
 
-// Default export-style (for `const nanoid = require('./nanoid-replacement')`)
-module.exports = {
-    nanoid,
-    nanoidAsync,
-    nonSecureNanoid,
-    customAlphabet,
-    URL_ALPHABET,
+global.nanoid = nanoid;
+global.nanoidAsync = nanoidAsync;
+global.customAlphabet = customAlphabet;
+global.nonSecureNanoid = nonSecureNanoid;
 
-    generate: nanoid,
-    generateAsync: nanoidAsync,
-    generateNonSecure: nonSecureNanoid
+// Default export-style (for `const nanoid = require('./nanoid-replacement')`)
+module.exports = function(server) {
+
+    initialize = function() {}
+
+    generate= nanoid
+    generateAsync= nanoidAsync
+    generateNonSecure= nonSecureNanoid
+
+    return this;
 }
