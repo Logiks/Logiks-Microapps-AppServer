@@ -20,12 +20,21 @@ global.createDBInsertFromRequest = function(req, input_fields, db_table, msgTitl
     _.each(input_fields, function(v,k) {
         if(v.split("|").indexOf("json")>=0) {
             try {
-                if(!req.body[k] || req.body[k].length<2) req.body[k] = "{}";
-                
-                req.body[k] = JSON.stringify(JSON.parse(req.body[k]));
+                if(v.split("|").indexOf("required")>=0) {
+                    if(!req.body[k] || req.body[k].length<2) req.body[k] = "{}";
+                }
+
+                if(req.body[k]!=null) {
+                    if(typeof req.body[k]=="object") {
+                        req.body[k] = JSON.stringify(req.body[k]);
+                    }
+                    req.body[k] = JSON.stringify(JSON.parse(req.body[k]));
+                }
             } catch(e) {
                 req.body[k] = "{}";
             }
+        } else if(v.split("|").indexOf("array")>=0) {
+            if(Array.isArray(req.body[k])) req.body[k] = req.body[k].join(",");
         }
     })
 
@@ -58,12 +67,21 @@ global.createDBUpdateFromRequest = function(req, input_fields, db_table, whereLo
     _.each(input_fields, function(v,k) {
         if(v.split("|").indexOf("json")>=0) {
             try {
-                if(!req.body[k] || req.body[k].length<2) req.body[k] = "{}";
-
-                req.body[k] = JSON.stringify(JSON.parse(req.body[k]));
+                if(v.split("|").indexOf("required")>=0) {
+                    if(!req.body[k] || req.body[k].length<2) req.body[k] = "{}";
+                }
+                
+                if(req.body[k]!=null) {
+                    if(typeof req.body[k]=="object") {
+                        req.body[k] = JSON.stringify(req.body[k]);
+                    }
+                    req.body[k] = JSON.stringify(JSON.parse(req.body[k]));
+                }
             } catch(e) {
                 req.body[k] = "{}";
             }
+        } else if(v.split("|").indexOf("array")>=0) {
+            if(Array.isArray(req.body[k])) req.body[k] = req.body[k].join(",");
         }
     })
 
