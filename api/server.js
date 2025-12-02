@@ -16,7 +16,7 @@ module.exports = {
 
 
 	    broker.createService({
-	        name: `${_CONFIG.SERVER_ID}_MAIN`,//"APIGateway-Main",
+	        name: `${CONFIG.SERVER_ID}_MAIN`,//"APIGateway-Main",
 	        actions: {
 	            
 	        },

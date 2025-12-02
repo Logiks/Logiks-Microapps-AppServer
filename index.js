@@ -8,7 +8,7 @@ const packageConfig = require('./package.json');
 require("dotenv").config();
 
 global._ENV = {SERVICES:[], HELPERS: [], CONTROLLERS: []};
-global._CONFIG = {};
+global.CONFIG = {};
 
 global._ = require("lodash");
 global.fs = require("fs");
@@ -43,13 +43,15 @@ async function main() {
             console.info("\n\nConfig Type Not Supported, Skipping the loading of Config");
     }
 
-    global._CONFIG = _.extend({}, tempConfig, packageConfig, {
+    global.CONFIG = _.extend({}, tempConfig, packageConfig, {
         "SERVER_ID": process.env.SERVER_ID,
         "ROOT_PATH": __dirname,
     });
 
     BASEAPP.initializeApplication();
     SERVER.start();
+
+    console.log("\n", _ENV.HELPERS);
 
     // console.log("");
 
@@ -59,6 +61,3 @@ async function main() {
 
 //starting the main service
 main();
-
-//For Debugging Purpose only
-// console.log("\n", _CONFIG);
