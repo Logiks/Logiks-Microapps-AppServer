@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --body: #f1f5f9; /* Slate-100 */
+  --text: #0f172a; /* Slate-900 */
+  --brand: #3b82f6; /* Indigo-500 */
+  --brand-dark: #1e40af; /* Indigo-800 */
+  --brand-light: #93c5fd; /* Indigo-300 */
+}
+
+/* Optional global tweaks */
+body {
+  @apply bg-slate-50 text-slate-900;
+  background-color: var(--body);
+}
+
+.app-shell {
+  @apply min-h-screen bg-slate-50 text-slate-900;
+}
+
+.shell-header {
+  @apply flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-white shadow-sm;
+}
+
+.shell-navigation {
+  @apply hidden md:flex md:flex-col md:w-64 border-r border-slate-200 bg-white;
+}
+
+.shell-main {
+  @apply flex-1 px-4 py-4 overflow-auto;
+}
+
+.shell-footer {
+  @apply px-4 py-2 border-t border-slate-200 bg-white text-xs text-slate-500;
+}
+
+.slot-brand {
+  @apply flex items-center gap-2;
+}
+
+.slot-primary-nav {
+  @apply flex-1 flex items-center justify-center;
+}
+
+.slot-admin-tools {
+  @apply flex items-center gap-2;
+}
+
+.slot-user-profile {
+  @apply flex items-center gap-2;
+}
+
+.slot-main-menu,
+.slot-admin-menu {
+  @apply p-3 border-b border-slate-100;
+}
+
+.slot-page-body {
+  @apply mb-4;
+}
+
+.slot-page-actions {
+  @apply flex justify-end gap-2;
+}

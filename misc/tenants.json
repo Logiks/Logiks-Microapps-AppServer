@@ -1,0 +1,17 @@
+[
+    {
+        "name": "Default App1",
+        "theme": "indigo",
+        "appid": "demo",
+        "access": "public",
+        "domain": [
+            "localhost:9999"
+        ],
+        "featureFlags": {
+            "ADMIN_TOOLS": true,
+            "ADMIN_MENU_V2": false,
+            "BILLING_DASHBOARD": true
+        },
+        "slotOverrides": {}
+    }
+]

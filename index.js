@@ -59,3 +59,6 @@ async function main() {
 
 //starting the main service
 main();
+
+//For Debugging Purpose only
+// console.log("\n", _CONFIG);
