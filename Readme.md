@@ -1,4 +1,4 @@
-# Logiks Microapps AppServer
+# Logiks AppServer for Microapps
 
 **Logiks Microapps AppServer** is a next-generation **Node.js framework** built for **microservice-first architectures**. Unlike traditional frameworks that depend on external orchestrators, it introduces **self-orchestration capabilities**, enabling services to **discover, scale, and heal themselves dynamically**.
 
@@ -8,7 +8,7 @@ At its core, Logiks Microapps AppServer leverages the **MoleculerJS framework** 
 
 ---
 
-## ✨ Key Differentiators
+## Key Differentiators
 
 * **Microservice-First by Design**
   Every app is a microapp — modular, isolated, and independently scalable.
@@ -27,7 +27,7 @@ At its core, Logiks Microapps AppServer leverages the **MoleculerJS framework** 
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Installation
 
@@ -39,6 +39,8 @@ npm install
 
 ### Starting the Microapp Server
 
+Copy env_sample to .env, and configure the .env file as per requirement.
+
 ```bash
 npm start
 ```
@@ -47,7 +49,7 @@ npm start
 
 ---
 
-## 🛠 Guidelines for Working
+## Guidelines for Working
 
 * Keep services modular and independent.
 * Use the **service catalog** for automatic discovery and versioning.
@@ -57,16 +59,12 @@ npm start
 
 ---
 
-## 📚 References
+## References
 
 * [MoleculerJS Documentation](https://moleculer.services/docs/)
 
 ---
 
-## 🔖 Tagline
+## Tagline
 
 **Microservices. Self-Orchestration. Automation.**
-
----
-
-👨‍💻 Crafted with passion by **Bismay M**

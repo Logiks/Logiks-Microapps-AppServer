@@ -1,4 +1,4 @@
-//For Starting the Server
+//For Starting the Server and Load required Services
 
 const { ServiceBroker } = require("moleculer");
 const ApiService = require("moleculer-web");
@@ -16,7 +16,7 @@ module.exports = {
 
 
 	    broker.createService({
-	        name: "APIGateway-Main",
+	        name: `${_CONFIG.SERVER_ID}_MAIN`,//"APIGateway-Main",
 	        actions: {
 	            
 	        },
@@ -24,7 +24,6 @@ module.exports = {
 	        mixins: [ApiService],
 
 	        settings: {
-
 	            routes: [{
 	                path: "/",
 
@@ -47,9 +46,9 @@ module.exports = {
 	        }
 	    });
 
-	    fs.readdirSync('./services/').forEach(function(file) {
+	    fs.readdirSync('./api/services/').forEach(function(file) {
 	        if ((file.indexOf(".js") > 0 && (file.indexOf(".js") + 3 == file.length))) {
-	            var filePath = path.resolve('./services/' + file);
+	            var filePath = path.resolve('./api/services/' + file);
 	            var clsName = file.replace('.js','').toUpperCase();
 
 	            broker.loadService(filePath);
@@ -66,7 +65,7 @@ module.exports = {
 	            broker.call("demo.find", { a: 5, b: 3 }).then(a=>console.log("DEMO", a))
 	            return 0;
 	        })
-	        // // Print the response
+	        // Print the response
 	        // .then(res => console.log("5 + 3 =", res))
 	        .catch(err => console.error(`Error occured! ${err.message}`));
 	}
