@@ -7,6 +7,17 @@ const packageConfig = require('./package.json');
 
 require("dotenv").config();
 
+// -------------------------
+// ENV & CONFIG
+// -------------------------
+const REQUIRED_ENV = ["SERVER_ID", "TRANSPORTER", "NODE_ENV"];
+REQUIRED_ENV.forEach((key) => {
+	if (!process.env[key]) {
+		console.error(`❌ Missing required env variable: ${key}`);
+		process.exit(1);
+	}
+});
+
 global._ENV = {SERVICES:[], HELPERS: [], CONTROLLERS: []};
 global.CONFIG = {};
 
@@ -16,11 +27,21 @@ global.path = require("path");
 global.axios = require("axios");
 global.moment = require("moment");
 
+global.ROOT_PATH = __dirname;
 global.START_TIME = moment().format();
 
 console.log("\x1b[34m%s\x1b[0m","\nAppServer Initialization Started\n");
 
 //Load Core Modules
+const LOGGER = require('./api/logger');
+global.LOGGER = LOGGER;
+
+LOGGER.preinitialze();
+
+// -------------------------
+// Application Initialization
+// -------------------------
+
 const BASEAPP = require('./api/baseapp');
 const SERVER = require('./api/server');
 
@@ -48,13 +69,14 @@ async function main() {
         "ROOT_PATH": __dirname,
     });
 
+    LOGGER.initializeLoggers();
+
     BASEAPP.initializeApplication();
     SERVER.start();
     
     // console.log("");
 
-    console.log("\n\x1b[34m%s\x1b[0m", "AppServer Initialization Completed");
-    console.log("\n\x1b[32m%s\x1b[0m", `Server Started @ `+moment().format()+` and can be accessed on ${process.env.HOST}:${process.env.PORT}/`);
+    console.log("\n\x1b[32m%s\x1b[0m", `AppServer Started @ `+moment().format()+` and can be accessed on ${process.env.HOST}:${process.env.PORT}/`);
 }
 
 //starting the main service

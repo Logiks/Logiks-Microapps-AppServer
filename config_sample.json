@@ -7,8 +7,7 @@
     "intercept_axios_request": false,
     "intercept_axios_response": false,
     "default_lang": "en-gb",
-    "noauth":
-    [
+    "noauth": [
         "/auth",
         "/auth/register",
         "/auth/forgotpwd",
@@ -17,61 +16,76 @@
         "/test",
         "/"
     ],
-    "IPWHITELISTING":
-    {
-        "/test":
-        [
+    "IPWHITELISTING": {
+        "/test": [
             "*"
         ]
     },
-    "AUTHJWT":
-    {
+    "AUTHJWT": {
         "secret": "Zv7QFrJWhSz6j2kA",
-        "expires": 3600
+        "expires": 3600,
+        "access_token_ttl": 3600,
+        "refresh_token_ttl": 604800
     },
-    "mail":
-    {
+    "API_KEYS": {
+        "key1": {},
+        "key2": {}
+    },
+    "mail": {
         "host": "email-smtp.us-east-1.amazonaws.com",
         "port": 587,
         "secure": false,
-        "auth":
-        {
+        "auth": {
             "user": "smtp-userid",
             "pass": "smtp-pwd"
         },
         "default_from": "noreply@smartinfologiks.com"
     },
-    "STORAGE":
-    {
-        "type": "S3",
-        "bucket": "test1"
+    "STORAGE": {
+        "type": "local",
+        "bucket": "uploads"
     },
-    "dbmongo":
-    {
+    "dbmysql": [
+        {
+            "enable": false,
+            "host": "127.0.0.1",
+            "port": 3306,
+            "user": "test",
+            "password": "test",
+            "database": "testdb",
+            "insecureAuth": true
+        }
+    ],
+    "dbmongo": {
         "enable": false,
         "uri": "mongodb://127.0.0.1:27017/silkapi"
     },
-    "dbmysql":
-    {
-        "enable": false,
-        "host": "127.0.0.1",
-        "port": 3306,
-        "user": "test",
-        "password": "test",
-        "database": "testdb",
-        "insecureAuth": true
-    },
-    "cache":
-    {
-        "enable": false,
+    "cache": {
         "host": "127.0.0.1",
         "port": 6379,
         "family": 4,
-        "db": 0
+        "db": 0,
+        "enableOfflineQueue": false
     },
-    "queue":
-    {
+    "queue": {
         "enable": false,
         "host": "amqp://rabbit01:rabbit01@127.0.0.1:5672"
+    },
+    "logger": {
+        "default": [
+            {
+                "level": "info",
+                "path": "./logs/info.log"
+            },
+            {
+                "level": "debug",
+                "stream": "studout"
+            },
+            {
+                "level": "error",
+                "path": "./logs/error.log",
+                "period": "1d"
+            }
+        ]
     }
 }
