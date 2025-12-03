@@ -12,13 +12,7 @@ const ACCESS_TOKEN_TTL = Number(CONFIG.AUTHJWT.access_token_ttl || 3600);       
 const REFRESH_TOKEN_TTL = Number(CONFIG.AUTHJWT.refresh_token_ttl || 7 * 24 * 3600);   // seconds
 
 // Redis DB for auth-related state (you can use a dedicated DB index)
-const authRedis = new Redis({
-	host: process.env.REDIS_HOST || "127.0.0.1",
-	port: Number(process.env.REDIS_PORT || 6379),
-	db: Number(process.env.REDIS_AUTH_DB || 1),
-	password: process.env.REDIS_PASSWORD || undefined,
-	enableOfflineQueue: false
-});
+const authRedis = new Redis(CONFIG.cache);
 
 authRedis.on("error", (err) => {
 	// eslint-disable-next-line no-console
