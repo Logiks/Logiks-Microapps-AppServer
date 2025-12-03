@@ -15,8 +15,6 @@ const DailyRotateFile = require("winston-daily-rotate-file");
 const { ServiceBroker, Errors } = require("moleculer");
 const ApiService = require("moleculer-web");
 const Redis = require("ioredis");
-const winston = require("winston");
-// const LokiTransport = require("winston-loki");
 
 const isProd = process.env.NODE_ENV === "production";
 
