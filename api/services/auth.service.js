@@ -7,9 +7,9 @@ const { Errors } = require("moleculer");
 
 const { MoleculerClientError } = Errors;
 
-const JWT_SECRET = CONFIG.AUTHJWT.secret;
-const ACCESS_TOKEN_TTL = Number(CONFIG.AUTHJWT.access_token_ttl || 3600);              // seconds
-const REFRESH_TOKEN_TTL = Number(CONFIG.AUTHJWT.refresh_token_ttl || 7 * 24 * 3600);   // seconds
+const JWT_SECRET = CONFIG.authjwt.secret;
+const ACCESS_TOKEN_TTL = Number(CONFIG.authjwt.access_token_ttl || 3600);              // seconds
+const REFRESH_TOKEN_TTL = Number(CONFIG.authjwt.refresh_token_ttl || 7 * 24 * 3600);   // seconds
 
 // Redis DB for auth-related state (you can use a dedicated DB index)
 const authRedis = new Redis(CONFIG.cache);
@@ -54,10 +54,19 @@ module.exports = {
 				path: "/authlink"
 			},
 			async handler(ctx) {
-				
+				if(!CONFIG.logiksauth.enable) {
+					throw new MoleculerClientError("LogiksAuth not configured", 401);
+				}
+				// ctx.params.body.return_url
+
+				const returnURL = `${CONFIG.base_url}auth/logiksauth-login`;
+				const authURL = `${CONFIG.logiksauth.url}authenticate?appid=${CONFIG.logiksauth.appid}&scope=${CONFIG.logiksauth.scope}&returnURL=${encodeURIComponent(returnURL)}`;
+				const logoutURL = `${CONFIG.logiksauth.url}logout?appid=${CONFIG.logiksauth.appid}&returnURL=${encodeURIComponent(returnURL)}`;
+
 				return {
 					"status": "success",
-					"authlink": "https://example.com/magic-link?token=abcdef123456"
+					"authlink": authURL,
+					"logout": logoutURL
 				}
 			}
 		},
@@ -68,7 +77,7 @@ module.exports = {
 				path: "/logiksauth-login"
 			},
 			async handler(ctx) {
-				
+				console.log("FEDERATED_LOGIN_logiksAuthLogin", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
 				return {
 					"status": "success",
 					"message": "LogiksAuth login is not yet implemented"
@@ -83,7 +92,7 @@ module.exports = {
 				path: "/fenderated-login"
 			},
 			async handler(ctx) {
-				
+				console.log("FEDERATED_LOGIN", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
 				return {
 					"status": "success",
 					"message": "Federated login is not yet implemented"
@@ -462,7 +471,7 @@ module.exports = {
 			const payloadBase = {
 				"appId": ctx.params.appid,
 				"ip": ctx.meta.remoteIP,
-				"deviceType": "service"
+				"deviceType": "s2s"
 			};
 
 			const accessToken = jwt.sign(
@@ -485,6 +494,7 @@ module.exports = {
 				expiresAt: Date.now() + (ACCESS_TOKEN_TTL * 1000),
 				scopes: ["/api/tenant:*"],
 				ip: ctx.meta.remoteIP,
+				deviceType: "s2s",
 				counter: 0
 			};
 

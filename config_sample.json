@@ -7,26 +7,29 @@
     "intercept_axios_request": false,
     "intercept_axios_response": false,
     "default_lang": "en-gb",
+    "base_url": "http://localhost:9999/",
     "noauth": [
         "auth.*",
         "public.*",
         "/test",
         "/"
     ],
-    "IPWHITELISTING": {
+    "ipwhitelisting": {
         "/test": [
             "*"
         ]
     },
-    "AUTHJWT": {
+    "logiksauth": {
+        "enable": false,
+        "url": "https://demo.demo.com/",
+        "appid": "demo",
+        "scope": "*"
+    },
+    "authjwt": {
         "secret": "Zv7QFrJWhSz6j2kA",
         "expires": 3600,
         "access_token_ttl": 3600,
         "refresh_token_ttl": 604800
-    },
-    "API_KEYS": {
-        "key1": {},
-        "key2": {}
     },
     "mail": {
         "host": "email-smtp.us-east-1.amazonaws.com",
@@ -38,7 +41,7 @@
         },
         "default_from": "noreply@smartinfologiks.com"
     },
-    "STORAGE": {
+    "storage": {
         "type": "local",
         "bucket": "uploads"
     },
