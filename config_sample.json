@@ -8,11 +8,8 @@
     "intercept_axios_response": false,
     "default_lang": "en-gb",
     "noauth": [
-        "/auth",
-        "/auth/register",
-        "/auth/forgotpwd",
-        "/auth/resetpwd",
-        "/ping",
+        "auth.*",
+        "public.*",
         "/test",
         "/"
     ],

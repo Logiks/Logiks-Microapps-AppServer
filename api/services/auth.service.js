@@ -14,6 +14,9 @@ const REFRESH_TOKEN_TTL = Number(CONFIG.AUTHJWT.refresh_token_ttl || 7 * 24 * 36
 // Redis DB for auth-related state (you can use a dedicated DB index)
 const authRedis = new Redis(CONFIG.cache);
 
+const S2STOKENS = {};
+const S2STOKENS_MAX = 10;
+
 authRedis.on("error", (err) => {
 	// eslint-disable-next-line no-console
 	console.error("❌ Auth Redis error:", err);
@@ -24,7 +27,7 @@ module.exports = {
 
 	actions: {
 		/**
-		 * Username/password login → access + refresh token.
+		 * Server 2 Server token issuance.
 		 * POST /api/public/auth/s2stoken
 		 */
 		s2stoken: {
@@ -40,6 +43,54 @@ module.exports = {
 				return this.issueS2SToken(ctx);
 			}
 		},
+
+		/**
+		 * Generate Auth Link (for magic link login).
+		 * POST /api/public/auth/authlink
+		 */
+		authlink: {
+			rest: {
+				method: "POST",
+				path: "/authlink"
+			},
+			async handler(ctx) {
+				
+				return {
+					"status": "success",
+					"authlink": "https://example.com/magic-link?token=abcdef123456"
+				}
+			}
+		},
+
+		logiksAuthLogin: {
+			rest: {
+				method: "GET",
+				path: "/logiksauth-login"
+			},
+			async handler(ctx) {
+				
+				return {
+					"status": "success",
+					"message": "LogiksAuth login is not yet implemented"
+				}
+			}
+		},
+
+		//To allow 3rd party federated login (Google, Facebook, Apple, etc)
+		federatedLogin: {
+			rest: {
+				method: "GET",
+				path: "/fenderated-login"
+			},
+			async handler(ctx) {
+				
+				return {
+					"status": "success",
+					"message": "Federated login is not yet implemented"
+				}
+			}
+		},
+
 		/**
 		 * Username/password login → access + refresh token.
 		 * POST /api/public/auth/login
@@ -365,6 +416,39 @@ module.exports = {
 					ip: payload.ip
 				};
 			}
+		},
+
+		//Verify Generated S2S Token for 1 time use
+		verifyS2SToken: {
+			params: {
+				token: "string"
+			},
+			async handler(ctx) {
+				// For S2S token, we might just check against a known list or database
+				// Here, we just accept any token for demonstration
+				const s2stoken = ctx.params.token;
+
+				if (!S2STOKENS[s2stoken]) {
+					throw new Errors.MoleculerClientError(
+						"Invalid S2S token",
+						401,
+						"INVALID_S2S_TOKEN"
+					);
+				}
+				
+				S2STOKENS[s2stoken].counter += 1;
+				if(S2STOKENS[s2stoken].counter >= S2STOKENS_MAX) {
+					delete S2STOKENS[s2stoken];
+
+					throw new Errors.MoleculerClientError(
+						"S2S Token can be used only for server-to-server communication for limited API access",
+						401,
+						"INVALID_S2S_TOKEN"
+					);
+				}
+				
+				return S2STOKENS[s2stoken]
+			}
 		}
 	},
 
@@ -393,9 +477,20 @@ module.exports = {
 				}
 			);
 
+			const s2stoken = UNIQUEID.generate(12);
+
+			S2STOKENS[s2stoken] = {
+				appId: ctx.params.appid,
+				accessToken: accessToken,
+				expiresAt: Date.now() + (ACCESS_TOKEN_TTL * 1000),
+				scopes: ["/api/tenant:*"],
+				ip: ctx.meta.remoteIP,
+				counter: 0
+			};
+
 			return {
 				"status": "success",
-				"s2stoken": UNIQUEID.generate(12),
+				"s2stoken": s2stoken,
 				"accessToken": accessToken,
 				"expiresIn": ACCESS_TOKEN_TTL,
 				"appid": ctx.params.appid

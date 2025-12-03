@@ -10,7 +10,11 @@
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
+const session = require("express-session");
+const { RedisStore } = require("connect-redis");
 const DailyRotateFile = require("winston-daily-rotate-file");
+const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
 
 const { ServiceBroker, Errors } = require("moleculer");
 const ApiService = require("moleculer-web");
@@ -143,12 +147,41 @@ module.exports = {
 				name: `${process.env.SERVER_ID}_MAIN`,
 				mixins: [ApiService],
 
+				// Global middlewares. Applied to all routes.
+				use: [
+					cookieParser(),
+					// helmet()
+					helmet.contentSecurityPolicy({
+						directives: {
+							defaultSrc: ["'self'"],
+							scriptSrc: ["'self'"],
+							styleSrc: ["'self'", "https:"],
+							imgSrc: ["'self'", "data:", "https:"],
+							connectSrc: ["'self'"],
+							fontSrc: ["'self'", "https:", "data:"],
+							objectSrc: ["'none'"],
+							frameAncestors: ["'none'"],
+							baseUri: ["'self'"],
+							formAction: ["'self'"]
+						},
+						crossOriginEmbedderPolicy: true,
+						crossOriginOpenerPolicy: true,
+						crossOriginResourcePolicy: { policy: "same-site" },
+						referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+						hsts: {
+							maxAge: 31536000,
+							includeSubDomains: true,
+							preload: true
+						}
+					})
+				],
+
 				settings: {
 					port: process.env.PORT || 3000,
-					ip: "0.0.0.0",
+					ip: process.env.HOST || "0.0.0.0",
 					httpServerTimeout: 30 * 1000,
 
-					// 🔥 SERVE STATIC FILES
+					// SERVE STATIC FILES
 					assets: {
 						folder: path.join(ROOT_PATH, "public"),
 
@@ -157,7 +190,7 @@ module.exports = {
 							maxAge: "1d",        // cache assets for 1 days
 							etag: true,          // enable etag validation
 							lastModified: true,  // enable Last-Modified
-							index: false
+							// index: true
 						},
 						// Enable GZIP/Brotli compression
 						compression: {
@@ -168,7 +201,7 @@ module.exports = {
 						},
 						// route: "/static"
 						// Fallback index.html for SPA routing
-        				// index: "index.html"
+        				index: "index.html"
 					},
 
 					routes: [
@@ -180,14 +213,34 @@ module.exports = {
 							opts: {
 								authRequired: false
 							},
-							whitelist: [
-								"auth.*",
-								"public.*"
-							],
+							whitelist: CONFIG.noauth,
 							bodyParsers: {
 								json: true,
 								urlencoded: { extended: true }
 							},
+							// Attach Express-compatible middlewares
+							use: [
+								session({
+									store: new RedisStore({ client: _CACHE.getRedisInstance(), prefix: "sess:" }),
+									name: "sid",
+									secret: process.env.SESSION_SECRET || "dev_super_secret_change_me",
+									resave: false,
+									saveUninitialized: false,
+									rolling: true, // refresh cookie on activity
+									cookie: {
+										httpOnly: true,
+										secure: true,           // set false only for local HTTP dev
+										sameSite: "lax",
+										maxAge: 1000 * 60 * 60, // 1 hour
+									}
+								}),
+								// Attach IP/UA on every request
+								(req, res, next) => {
+									req.clientIp = MISC.getClientIP(req);
+									req.clientUa = req.headers["user-agent"] || "unknown";
+									next();
+								}
+							],
 							// Enable GZIP/Brotli compression
 							compression: {
 								enabled: true,
@@ -233,6 +286,21 @@ module.exports = {
 									// throw new Error("INVALID_GET_BODY");
 									return;
 								}
+
+								// Security headers
+								res.setHeader("X-Content-Type-Options", "nosniff");
+								res.setHeader("X-Frame-Options", "DENY");
+								res.setHeader("X-XSS-Protection", "1; mode=block");
+								res.setHeader("X-Powered-By", "Logiks Microapps AppServer");
+								res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
+
+								// IP
+								const ip =req.headers["x-forwarded-for"] ||
+									req.connection.remoteAddress ||
+									req.socket.remoteAddress ||
+									"0.0.0.0";
+
+								ctx.meta.remoteIP = ip;
 							}
 						},
 
@@ -252,6 +320,29 @@ module.exports = {
 								json: true,
 								urlencoded: { extended: true }
 							},
+							// Attach Express-compatible middlewares
+							use: [
+								session({
+									store: new RedisStore({ client: _CACHE.getRedisInstance(), prefix: "sess:" }),
+									name: "sid",
+									secret: process.env.SESSION_SECRET || "dev_super_secret_change_me",
+									resave: false,
+									saveUninitialized: false,
+									rolling: true, // refresh cookie on activity
+									cookie: {
+										httpOnly: true,
+										secure: true,           // set false only for local HTTP dev
+										sameSite: "lax",
+										maxAge: 1000 * 60 * 60, // 1 hour
+									}
+								}),
+								// Attach IP/UA on every request
+								(req, res, next) => {
+									req.clientIp = MISC.getClientIP(req);
+									req.clientUa = req.headers["user-agent"] || "unknown";
+									next();
+								}
+							],
 							// Enable GZIP/Brotli compression
 							compression: {
 								enabled: true,
@@ -264,7 +355,22 @@ module.exports = {
 							// cors: {
 							// 	methods: ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
 							// 	origin: "*",
+							// 	credentials: true
 							// },
+							autoAliases: true,
+							// aliases: {
+							// 	"POST /auth/login": "auth.login",
+							// 	"POST /auth/request-otp": "auth.requestOtp",
+							// 	"POST /auth/verify-otp": "auth.verifyOtp",
+							// 	"POST /auth/refresh": "auth.refresh",
+								// "POST upload"(req, res) {
+								// 	this.parseUploadedFile(req, res);
+								// },
+								// "GET custom"(req, res) {
+								// 	res.end('hello from custom handler')
+								// }
+							// },
+							
 							onBeforeCall: async function (ctx, route, req, res) {
 								console.log("REQUEST_PRIVATE", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
 								
@@ -318,22 +424,52 @@ module.exports = {
 							req.headers["x-api-key"] ||
 							req.headers["x-api_key"] ||
 							req.query.api_key;
+						const s2skey = req.query.tkn;
+						const serverIp = req.socket.localAddress || req.connection.localAddress;
+						const serverHost = req.headers.host;
+						const clientIP = ctx.meta.remoteIP || "unknown";
+						const appInfo = await BASEAPP.getAppInfo(serverHost);
+
+						console.log("AUTH_HEADERS", { authHeader, apiKey, s2skey, serverIp, serverHost, appInfo });
 
 						let user = null;
 
-						// --- API KEY AUTH ---
-						if (apiKey) {
-							const allowed = Object.keys(CONFIG.API_KEYS)
-
-							if (!allowed.length) {
+						//If S2S token matches, auto-authenticate as app service user, 
+						//This is for limited access and only for server-to-server calls and limited by count
+						if(s2skey) {
+							// && appInfo && appInfo.s2stoken && s2skey === appInfo.s2stoken
+							const payload = await ctx.call("auth.verifyS2SToken", { token: s2skey });
+							if(!payload) {
 								throw new Errors.MoleculerClientError(
-									"API key auth not configured",
-									500,
-									"API_KEY_CONFIG_MISSING"
+									"S2S Token can be used only for server-to-server communication for limited API access",
+									401,
+									"INVALID_S2S_TOKEN"
+								);
+							}
+							
+							if(payload.ip!=clientIP) {
+								throw new Errors.MoleculerClientError(
+									"S2S Token can not be used from changing IP address",
+									401,
+									"INVALID_S2S_TOKEN"
 								);
 							}
 
-							if (!allowed.includes(apiKey)) {
+							user = {
+								id: appInfo.appid,
+								userId: "S2S_"+s2skey,
+								username: "S2S Service User",
+								tenantId: appInfo.appid,
+								roles: ["service"],
+								scopes: payload.scopes || ["/api/tenant:*"],
+							};
+						}
+
+						// --- API KEY AUTH ---
+						if (apiKey) {
+							const apiInfo = await AUTHKEY.fetchAuthInfo(apiKey);
+
+							if(!apiInfo) {
 								throw new Errors.MoleculerClientError(
 									"Invalid API key",
 									401,
@@ -344,9 +480,12 @@ module.exports = {
 							// API keys can have global (wildcard) scopes if you want
 							user = {
 								apiKey,
-								tenantId: "*",
+								id: apiInfo.guid,
+								userId: apiInfo.guid,
+								username: apiInfo.guid,
+								tenantId: apiInfo.guid,
 								roles: ["api_key"],
-								scopes: ["*:docs:read"]
+								scopes: apiInfo.scope ? apiInfo.scope.split(",") : ["*"],
 							};
 						}
 
@@ -375,6 +514,7 @@ module.exports = {
 								);
 							}
 						}
+						// console.log("AUTH_USER", user, route);
 
 						const isPublic = route?.opts?.authRequired === false;
 
@@ -389,17 +529,25 @@ module.exports = {
 						if (user) {
 							ctx.meta.user = user;
 						}
+						ctx.meta.appInfo = appInfo || {};
+						ctx.meta.serverHost = serverHost || "";
 
 						return user || null;
 					},
 
 					/**
 					 * Authorization with roles + tenant-aware scopes.
+					 * After authentication.
 					 */
 					async authorize(ctx, route, req, res) {
+						//Session Handling done here
+						const sess = req.session;
+						
 						const user = ctx.meta.user;
 						const actionName = ctx.action?.name;
 						const requiredScopes = ctx.action?.meta?.scopes || [];
+
+						// console.log("DUE_AUTHORIZATION", sess, ctx.meta, actionName, requiredScopes);
 
 						// Admin namespace requires admin role
 						if (actionName && actionName.startsWith("admin.")) {
@@ -493,7 +641,7 @@ module.exports = {
 			setInterval(() => {
 				//broker.metrics && broker.metrics.clean();
 				broker.ping().then(res => broker.logger.info(res));
-			}, 60 * 1000);
+			}, 5 * 60 * 1000);
 
 			// -------------------------
 			// AUTO-LOAD SERVICES

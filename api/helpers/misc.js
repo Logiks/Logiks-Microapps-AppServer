@@ -95,9 +95,17 @@ module.exports = function(server) {
   }
 
   getClientIP = function(req) {
-    if(req.headers['x-forwarded-for']) return req.headers['x-forwarded-for'];
-    else if(req.socket.remoteAddress!=null) return req.socket.remoteAddress;
-    else return "0.0.0.0";
+    const xfwd = req.headers["x-forwarded-for"];
+    if (xfwd) return xfwd.split(",")[0].trim();
+    return req.connection.remoteAddress || req.socket.remoteAddress || "0.0.0.0";
+  }
+
+  // coarse IP block for hijack detection (e.g., 192.168.1.*)
+  getIpBlock = function(ip) {
+    if (!ip) return "unknown";
+    const parts = ip.split(":").pop().split("."); // handle IPv6-mapped IPv4
+    if (parts.length < 2) return ip;
+    return parts.slice(0, 2).join("."); // /16 style
   }
 
 

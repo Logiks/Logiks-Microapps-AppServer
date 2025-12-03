@@ -50,6 +50,12 @@ module.exports = function(server) {
 				});
 			}
 		}
+
+		db_query("MYSQL0", "SHOW TABLES", {}, function (authInfo) {
+			if(!authInfo) {
+				console.error("❌ DB Connetion not found");
+			}
+		});
 	}
 	
 	//Standard MySQL

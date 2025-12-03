@@ -43,6 +43,24 @@ module.exports = {
         });
 
         console.log("\n\x1b[31m%s\x1b[0m","Bootstrapping Completed");
+    },
+
+    getAppInfo: async function(serverHost) {
+        console.log("serverHost", serverHost);
+
+        const tenantData = JSON.parse(fs.readFileSync("misc/tenants.json", "utf8"));
+
+        var selectedTenant = tenantData.filter(a=>a.domain.indexOf(serverHost)>=0);
+
+        if(selectedTenant.length<=0) {
+            throw new Errors.MoleculerClientError(
+                    "Invalid Tenant key",
+                    401,
+                    "INVALID_TENANT_KEY"
+                );
+        }
+
+        return selectedTenant[0];
     }
 }
 

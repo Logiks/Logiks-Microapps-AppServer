@@ -1,1 +1,226 @@
-Welcome to New Home
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micro AppServer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            border-radius: 20px;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: white;
+            font-weight: bold;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        p {
+            color: #718096;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.6);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .features {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            text-align: left;
+        }
+
+        .feature {
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        .feature:hover {
+            transform: translateX(5px);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .feature-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .feature-desc {
+            font-size: 12px;
+            color: #718096;
+            margin: 0;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 40px 30px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background with gradient -->
+                <defs>
+                    <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ff6b35;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#f7931e;stop-opacity:1" />
+                    </linearGradient>
+                    
+                    <linearGradient id="lightGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.3" />
+                    <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.1" />
+                    </linearGradient>
+                </defs>
+                
+                <!-- Rounded square background -->
+                <rect x="20" y="20" width="160" height="160" rx="40" fill="url(#orangeGradient)"/>
+                
+                <!-- Subtle light overlay -->
+                <rect x="20" y="20" width="160" height="80" rx="40" fill="url(#lightGradient)"/>
+                
+                <!-- Stylized "μ" (mu) symbol for "micro" -->
+                <text x="100" y="125" font-family="Arial, sans-serif" font-size="110" font-weight="bold" fill="white" text-anchor="middle" style="letter-spacing: -5px;">μ</text>
+                
+                <!-- Small server bars accent -->
+                <g opacity="0.8">
+                    <rect x="75" y="150" width="50" height="4" rx="2" fill="white"/>
+                    <rect x="75" y="158" width="50" height="4" rx="2" fill="white"/>
+                    <rect x="75" y="166" width="50" height="4" rx="2" fill="white"/>
+                </g>
+            </svg>
+        </div>
+        <h1>Micro AppServer</h1>
+        <p>A lightweight, modern single-page application server. Fast, simple, and elegant.</p>
+        <button class="button" onclick="handleGetStarted()">Get Started</button>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Lightning Fast</div>
+                <p class="feature-desc">Optimized for performance</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-title">Simple Setup</div>
+                <p class="feature-desc">No complex configuration</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔒</div>
+                <div class="feature-title">Secure</div>
+                <p class="feature-desc">Built with security in mind</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📦</div>
+                <div class="feature-title">Hot Plug</div>
+                <p class="feature-desc">Add Modules without Restart</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // function handleGetStarted() {
+        //     alert('Welcome to Micro AppServer! Ready to build something amazing?');
+        // }
+    </script>
+</body>
+</html>

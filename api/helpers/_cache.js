@@ -24,6 +24,11 @@ module.exports = function(server) {
         }
     }
 
+    getRedisInstance = function() {
+        if(!CONFIG.cache.enable) return false;
+        return redis;
+    }
+
     listCacheKeys = function(pattern, callback) {
         if(!CONFIG.cache.enable) return callback([]);
 

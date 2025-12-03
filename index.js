@@ -32,6 +32,10 @@ global.START_TIME = moment().format();
 
 console.log("\x1b[34m%s\x1b[0m","\nAppServer Initialization Started\n");
 
+//Loading Moleculer Errors for all
+const { Errors } = require("moleculer");
+global.Errors = Errors;
+
 //Load Core Modules
 const LOGGER = require('./api/logger');
 global.LOGGER = LOGGER;
@@ -42,7 +46,7 @@ LOGGER.preinitialze();
 // Application Initialization
 // -------------------------
 
-const BASEAPP = require('./api/baseapp');
+global.BASEAPP = require('./api/baseapp');
 const SERVER = require('./api/server');
 
 async function main() {
