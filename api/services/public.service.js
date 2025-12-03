@@ -7,11 +7,25 @@ module.exports = {
 		ping: {
 			rest: {
 				method: "GET",
-				path: "/ping"
+				// path: "/ping"
+				fullPath: "/api/ping"
 			},
 			handler() {
 				return {
 					status: "ok",
+					timestamp: Date.now()
+				};
+			}
+		},
+		health: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/health"
+			},
+			handler() {
+				return {
+					status: "ok",
+					health: "healthy",
 					timestamp: Date.now()
 				};
 			}

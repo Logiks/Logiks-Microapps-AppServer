@@ -148,28 +148,92 @@ module.exports = {
 					ip: "0.0.0.0",
 					httpServerTimeout: 30 * 1000,
 
+					// 🔥 SERVE STATIC FILES
+					assets: {
+						folder: path.join(ROOT_PATH, "public"),
+
+						// Optional: enable caching headers
+						options: {
+							maxAge: "1d",        // cache assets for 1 days
+							etag: true,          // enable etag validation
+							lastModified: true,  // enable Last-Modified
+							index: false
+						},
+						// Enable GZIP/Brotli compression
+						compression: {
+							enabled: true,
+							options: {
+								threshold: 1024 // only compress files > 1KB
+							}
+						},
+						// route: "/static"
+						// Fallback index.html for SPA routing
+        				// index: "index.html"
+					},
+
 					routes: [
 						// PUBLIC routes (no auth required)
 						{
 							path: "/api/public",
-							authentication: true,
+							authentication: false,
 							authorization: false,
 							opts: {
 								authRequired: false
 							},
 							whitelist: [
-								"auth.login",
-								"auth.requestOtp",
-								"auth.verifyOtp",
-								"auth.refresh",
+								"auth.*",
 								"public.*"
 							],
 							bodyParsers: {
 								json: true,
 								urlencoded: { extended: true }
 							},
+							// Enable GZIP/Brotli compression
+							compression: {
+								enabled: true,
+								options: {
+									threshold: 1024 // only compress files > 1KB
+								}
+							},
 							mappingPolicy: "all",
-							cors: true
+							cors: true,
+							// cors: {
+							// 	methods: ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
+							// 	origin: "*",
+							// },
+							autoAliases: true,
+							// aliases: {
+							// 	"POST /auth/login": "auth.login",
+							// 	"POST /auth/request-otp": "auth.requestOtp",
+							// 	"POST /auth/verify-otp": "auth.verifyOtp",
+							// 	"POST /auth/refresh": "auth.refresh",
+								// "POST upload"(req, res) {
+								// 	this.parseUploadedFile(req, res);
+								// },
+								// "GET custom"(req, res) {
+								// 	res.end('hello from custom handler')
+								// }
+							// },
+
+							onBeforeCall(ctx, route, req, res) {
+								console.log("REQUEST_PUBLIC", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
+								//res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
+
+								// if (req.url === "/index.html") {
+								// 	res.setHeader("Cache-Control", "no-cache");
+								// } else {
+								// 	res.setHeader("Cache-Control", "public, max-age=604800");
+								// }
+
+								if (req.method === "GET" && req.body && Object.keys(req.body).length > 0) {
+									res.writeHead(400, { "Content-Type": "application/json" });
+									res.end(JSON.stringify({
+										error: "GET requests cannot contain a request body"
+									}));
+									// throw new Error("INVALID_GET_BODY");
+									return;
+								}
+							}
 						},
 
 						// PRIVATE routes (auth + scopes required)
@@ -182,27 +246,50 @@ module.exports = {
 							},
 							whitelist: [
 								"**",
-								"swagger.openapi"
+								// "swagger.openapi"
 							],
 							bodyParsers: {
 								json: true,
 								urlencoded: { extended: true }
 							},
+							// Enable GZIP/Brotli compression
+							compression: {
+								enabled: true,
+								options: {
+									threshold: 1024 // only compress files > 1KB
+								}
+							},
 							mappingPolicy: "all",
 							cors: true,
+							// cors: {
+							// 	methods: ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
+							// 	origin: "*",
+							// },
 							onBeforeCall: async function (ctx, route, req, res) {
+								console.log("REQUEST_PRIVATE", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
+								
+								if (req.method === "GET" && req.body && Object.keys(req.body).length > 0) {
+									res.writeHead(400, { "Content-Type": "application/json" });
+									res.end(JSON.stringify({
+										error: "GET requests cannot contain a request body"
+									}));
+									// throw new Error("INVALID_GET_BODY");
+									return;
+								}
+								
+								
 								// Security headers
 								res.setHeader("X-Content-Type-Options", "nosniff");
 								res.setHeader("X-Frame-Options", "DENY");
 								res.setHeader("X-XSS-Protection", "1; mode=block");
-								res.setHeader("X-Powered-By", "");
+								res.setHeader("X-Powered-By", "Logiks Microapps AppServer");
+								res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
 
 								// IP
-								const ip =
-									req.headers["x-forwarded-for"] ||
+								const ip =req.headers["x-forwarded-for"] ||
 									req.connection.remoteAddress ||
 									req.socket.remoteAddress ||
-									"unknown";
+									"0.0.0.0";
 
 								ctx.meta.remoteIP = ip;
 
@@ -213,28 +300,15 @@ module.exports = {
 					]
 				},
 
+				actions: {
+					// list: {
+					// 	// Expose as "/api/v2/posts/"
+					// 	rest: "GET /",
+					// 	handler(ctx) {}
+					// },
+				},
+
 				methods: {
-					// Tenant-aware scope matcher
-					hasTenantScope(user, requiredScopes) {
-						if (!requiredScopes || requiredScopes.length === 0) return true;
-						if (!user) return false;
-
-						const userScopes = Array.isArray(user.scopes) ? user.scopes : [];
-						const tenantId = user.tenantId || "*";
-
-						return requiredScopes.every((required) => {
-							// required: "orders:read"
-							const tenantScoped = `${tenantId}:${required}`;
-							const wildcardScoped = `*:${required}`;
-
-							return (
-								userScopes.includes(tenantScoped) ||
-								userScopes.includes(wildcardScoped) ||
-								userScopes.includes(required)
-							);
-						});
-					},
-
 					/**
 					 * Authentication: API key OR JWT (delegated to auth service).
 					 */
@@ -349,6 +423,27 @@ module.exports = {
 						return ctx;
 					},
 
+					// Tenant-aware scope matcher
+					hasTenantScope(user, requiredScopes) {
+						if (!requiredScopes || requiredScopes.length === 0) return true;
+						if (!user) return false;
+
+						const userScopes = Array.isArray(user.scopes) ? user.scopes : [];
+						const tenantId = user.tenantId || "*";
+
+						return requiredScopes.every((required) => {
+							// required: "orders:read"
+							const tenantScoped = `${tenantId}:${required}`;
+							const wildcardScoped = `*:${required}`;
+
+							return (
+								userScopes.includes(tenantScoped) ||
+								userScopes.includes(wildcardScoped) ||
+								userScopes.includes(required)
+							);
+						});
+					},
+
 					/**
 					 * Redis-based distributed rate limit (per identifier).
 					 */
@@ -394,6 +489,11 @@ module.exports = {
 					}
 				}
 			});
+
+			setInterval(() => {
+				//broker.metrics && broker.metrics.clean();
+				broker.ping().then(res => broker.logger.info(res));
+			}, 60 * 1000);
 
 			// -------------------------
 			// AUTO-LOAD SERVICES

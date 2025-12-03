@@ -25,13 +25,27 @@ module.exports = {
 	actions: {
 		/**
 		 * Username/password login → access + refresh token.
+		 * POST /api/public/auth/s2stoken
+		 */
+		s2stoken: {
+			rest: {
+				method: "POST",
+				path: "/s2stoken"
+			},
+			params: {
+				appid: "string",
+			},
+			async handler(ctx) {
+				
+				return this.issueS2SToken(ctx);
+			}
+		},
+		/**
+		 * Username/password login → access + refresh token.
 		 * POST /api/public/auth/login
 		 */
 		login: {
-			rest: {
-				method: "POST",
-				path: "/login"
-			},
+			rest: "POST /login",
 			params: {
 				username: "string",
 				password: "string",
@@ -355,6 +369,38 @@ module.exports = {
 	},
 
 	methods: {
+		async issueS2SToken(ctx) {
+			const sessionId = `${ctx.params.appid}:${ctx.params.appid}:${Date.now()}`;
+
+			const accessJti = `acc:${sessionId}`;
+			const refreshJti = `ref:${sessionId}`;
+
+			const payloadBase = {
+				"appId": ctx.params.appid,
+				"ip": ctx.meta.remoteIP,
+				"deviceType": "service"
+			};
+
+			const accessToken = jwt.sign(
+				{
+					type: "access",
+					...payloadBase
+				},
+				JWT_SECRET,
+				{
+					expiresIn: ACCESS_TOKEN_TTL,
+					jwtid: accessJti
+				}
+			);
+
+			return {
+				"status": "success",
+				"s2stoken": UNIQUEID.generate(12),
+				"accessToken": accessToken,
+				"expiresIn": ACCESS_TOKEN_TTL,
+				"appid": ctx.params.appid
+			}
+		},
 		/**
 		 * Issue access + refresh token pair & manage Redis indices.
 		 */
