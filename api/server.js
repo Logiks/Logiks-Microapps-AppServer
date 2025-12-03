@@ -24,23 +24,21 @@ const isProd = process.env.NODE_ENV === "production";
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 300);
 
-// const LOKI_URL = process.env.LOKI_URL || null;
-
-// -------------------------
-// Redis for distributed rate limiting
-// -------------------------
-const rateRedis = new Redis(CONFIG.cache);
-
-rateRedis.on("error", (err) => {
-	console.error("❌ Rate-limit Redis error:", err);
-});
-
 // -------------------------
 // SERVER START
 // -------------------------
 module.exports = {
 	start: async function startServer() {
 		try {
+			// -------------------------
+			// Redis for distributed rate limiting
+			// -------------------------
+			const rateRedis = new Redis(CONFIG.cache);
+
+			rateRedis.on("error", (err) => {
+				console.error("❌ Rate-limit Redis error:", err);
+			});
+
 			const broker = new ServiceBroker({
 				nodeID: process.env.SERVER_ID || os.hostname(),
 				namespace: process.env.NAMESPACE || "default",
