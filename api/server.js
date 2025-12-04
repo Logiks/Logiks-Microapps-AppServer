@@ -269,9 +269,9 @@ module.exports = {
 							// },
 
 							onBeforeCall: async function (ctx, route, req, res) {
-								console.log("REQUEST_PUBLIC", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
+								//console.log("REQUEST_PUBLIC", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
+								
 								//res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
-
 								// if (req.url === "/index.html") {
 								// 	res.setHeader("Cache-Control", "no-cache");
 								// } else {
@@ -295,11 +295,7 @@ module.exports = {
 								res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
 
 								// IP
-								const ip =req.headers["x-forwarded-for"] ||
-									req.connection.remoteAddress ||
-									req.socket.remoteAddress ||
-									"0.0.0.0";
-
+								const ip = MISC.getClientIP(req);
 								ctx.meta.remoteIP = ip;
 
 								const serverHost = req.headers.host;
@@ -362,18 +358,6 @@ module.exports = {
 							// 	credentials: true
 							// },
 							autoAliases: true,
-							// aliases: {
-							// 	"POST /auth/login": "auth.login",
-							// 	"POST /auth/request-otp": "auth.requestOtp",
-							// 	"POST /auth/verify-otp": "auth.verifyOtp",
-							// 	"POST /auth/refresh": "auth.refresh",
-								// "POST upload"(req, res) {
-								// 	this.parseUploadedFile(req, res);
-								// },
-								// "GET custom"(req, res) {
-								// 	res.end('hello from custom handler')
-								// }
-							// },
 							
 							onBeforeCall: async function (ctx, route, req, res) {
 								console.log("REQUEST_PRIVATE", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
@@ -387,7 +371,6 @@ module.exports = {
 									return;
 								}
 								
-								
 								// Security headers
 								res.setHeader("X-Content-Type-Options", "nosniff");
 								res.setHeader("X-Frame-Options", "DENY");
@@ -396,11 +379,7 @@ module.exports = {
 								res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
 
 								// IP
-								const ip =req.headers["x-forwarded-for"] ||
-									req.connection.remoteAddress ||
-									req.socket.remoteAddress ||
-									"0.0.0.0";
-
+								const ip = MISC.getClientIP(req);
 								ctx.meta.remoteIP = ip;
 
 								const serverHost = req.headers.host;
@@ -438,11 +417,12 @@ module.exports = {
 						const serverIp = req.socket.localAddress || req.connection.localAddress;
 						const serverHost = req.headers.host;
 						const clientIP = ctx.meta.remoteIP || "unknown";
-						const appInfo = await BASEAPP.getAppInfo(serverHost);
 
-						console.log("AUTH_HEADERS", { authHeader, apiKey, s2skey, serverIp, serverHost, appInfo });
+						const appInfo = ctx.meta.appInfo;
+						
+						//console.log("AUTH_HEADERS", { authHeader, apiKey, s2skey, serverIp, serverHost, appInfo });
 
-						let user = null;
+						let user = {};
 
 						//If S2S token matches, auto-authenticate as app service user, 
 						//This is for limited access and only for server-to-server calls and limited by count
@@ -466,6 +446,7 @@ module.exports = {
 							}
 
 							user = {
+								...(user || {}),
 								id: appInfo.appid,
 								userId: "S2S_"+s2skey,
 								username: "S2S Service User",
@@ -495,6 +476,7 @@ module.exports = {
 							}
 
 							user = {
+								...(user || {}),
 								id: appInfo.appid,
 								userId: "TL_"+tlkey,
 								username: "TL Service User",
@@ -506,7 +488,7 @@ module.exports = {
 
 						// --- API KEY AUTH ---
 						if (apiKey) {
-							const apiInfo = await BASEAPP.getAppInfo(serverHost);
+							const apiInfo =AUTHKEY.getAPIKeyInfo(apiKey, serverHost);
 
 							if(!apiInfo) {
 								throw new Errors.MoleculerClientError(
@@ -518,12 +500,13 @@ module.exports = {
 
 							// API keys can have global (wildcard) scopes if you want
 							user = {
-								apiKey,
+								...(user || {}),
+								// apiKey,
 								id: apiInfo.guid,
 								userId: apiInfo.guid,
 								username: apiInfo.guid,
 								tenantId: apiInfo.guid,
-								roles: ["api_key"],
+								roles: ["*"],
 								scopes: apiInfo.scope ? apiInfo.scope.split(",") : ["*"],
 							};
 						}
@@ -541,7 +524,7 @@ module.exports = {
 									id: payload.userId,
 									userId: payload.userId,
 									username: payload.username,
-									tenantId: payload.tenantId,
+									tenantId: payload.tenantId ? payload.tenantId : payload.guid,
 									roles: payload.roles || [],
 									scopes: payload.scopes || []
 								};
@@ -553,7 +536,9 @@ module.exports = {
 								);
 							}
 						}
-						// console.log("AUTH_USER", user, route);
+						if(Object.keys(user).length<=0) {
+							user = null;
+						}
 
 						const isPublic = route?.opts?.authRequired === false;
 
@@ -569,6 +554,8 @@ module.exports = {
 							ctx.meta.user = user;
 						}
 
+						ctx.meta.tenantInfo = await TENANT.getTenantInfo(user.tenantId);
+
 						return user || null;
 					},
 
@@ -580,12 +567,14 @@ module.exports = {
 						//Session Handling done here
 						const sess = req.session;
 						
+						const ctxAction = ctx.params.req.$action;//OLD - ctx.action
+
 						const user = ctx.meta.user;
-						const actionName = ctx.action?.name;
-						const requiredScopes = ctx.action?.meta?.scopes || [];
+						const actionName = ctxAction?.name;
+						const requiredScopes = ctxAction?.meta?.scopes || [];
 
-						// console.log("DUE_AUTHORIZATION", sess, ctx.meta, actionName, requiredScopes);
-
+						//console.log("DUE_AUTHORIZATION", req.url, sess, ctx.meta, actionName, user.scope, requiredScopes);//route
+						
 						// Admin namespace requires admin role
 						if (actionName && actionName.startsWith("admin.")) {
 							if (!user || !user.roles || !user.roles.includes("admin")) {

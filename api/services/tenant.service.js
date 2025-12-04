@@ -17,37 +17,21 @@ module.exports = {
 			params: {
 				"guid": "string"
 			},
+			meta: {
+				scopes: ["/api/tenant"]
+			},
 			async handler(ctx) {
 				const guid = ctx.params.guid;
-				var whereCond = {
-					"blocked": "false",
-					"guid": guid
-				};
-				var data = await new Promise((resolve, reject) => {
-					db_selectQ("MYSQL0", "auth_tenants", "*", whereCond, {}, function (tenantInfo) {
-						if (tenantInfo) {
-							resolve(tenantInfo);
-						} else {
-							resolve(false);
-						}
-					});
-				})
+				const appid = ctx.meta.appInfo.appid;
 
-				if(!data) {
+				var tenantInfo = await TENANT.getTenantInfo(guid);
+
+				if(!tenantInfo) {
 					throw new Errors.MoleculerClientError(
 						"Invalid Tenant key",
 						401,
 						"INVALID_TENANT_KEY"
 					);
-				}
-				const appid = ctx.meta.appInfo.appid;
-				var tenantInfo = data[0]; 
-				tenantInfo.allowed_apps = tenantInfo.allowed_apps.split(",");
-
-				try {
-					tenantInfo.applicationOverrides = JSON.parse(tenantInfo.application_overrides);
-				} catch(err) {
-					tenantInfo.applicationOverrides = {};
 				}
 				
 				delete tenantInfo.id;

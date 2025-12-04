@@ -29,30 +29,8 @@ module.exports = {
 
 	actions: {
 		/**
-		 * Server 2 Server token issuance.
-		 * POST /api/public/auth/s2stoken
-		 */
-		s2stoken: {
-			rest: {
-				method: "POST",
-				path: "/s2stoken"
-			},
-			params: {
-				appid: "string",
-				appkey: "string" 
-			},
-			// meta: {
-			// 	scopes: ["/api/tenant:*"] // Limited access for S2S tokens
-			// },
-			async handler(ctx) {
-				
-				return this.issueS2SToken(ctx);
-			}
-		},
-
-		/**
-		 * Time Limited token issuance.
-		 * POST /api/public/auth/s2stoken
+		 * Short Lived Tokens that give temporary access to limited part of system
+		 * POST /api/public/auth/tltoken
 		 */
 		tltoken: {
 			rest: {
@@ -65,6 +43,25 @@ module.exports = {
 			async handler(ctx) {
 				
 				return this.issueTimeLimitedToken(ctx);
+			}
+		},
+
+		/**
+		 * Server 2 Server token issuance for device level access or server to server communication, they give absolute access to full system
+		 * POST /api/public/auth/s2stoken
+		 */
+		s2stoken: {
+			rest: {
+				method: "POST",
+				path: "/s2stoken"
+			},
+			params: {
+				appid: "string",
+				appkey: "string" 
+			},
+			async handler(ctx) {
+				
+				return this.issueS2SToken(ctx);
 			}
 		},
 
@@ -598,7 +595,7 @@ module.exports = {
 				appId: ctx.params.appid,
 				accessToken: accessToken,
 				expiresAt: Date.now() + (ACCESS_TOKEN_TTL * 1000),
-				scopes: ["/api/tenant:*"],
+				scopes: ["/api"],
 				ip: ctx.meta.remoteIP,
 				deviceType: "s2s",
 				counter: 0
@@ -644,7 +641,7 @@ module.exports = {
 				appId: ctx.params.appid,
 				accessToken: accessToken,
 				expiresAt: Date.now() + (ACCESS_TOKEN_TTL * 1000),
-				scopes: ["/api/tenant:*"],
+				scopes: ["/api"],
 				ip: ctx.meta.remoteIP,
 				deviceType: "s2s",
 				counter: 0
