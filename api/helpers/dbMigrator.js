@@ -230,5 +230,5 @@ function buildCreateTableSQL(table, def) {
         return `${name} ${d.type} ${d.nullable ? "" : "NOT NULL"}`;
     });
 
-    return `CREATE TABLE ${table} (${cols.join(",")});`;
+    return `CREATE TABLE IF NOT EXISTS ${table} (${cols.join(",")});`;
 }
