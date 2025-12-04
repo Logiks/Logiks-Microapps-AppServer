@@ -10,7 +10,7 @@ module.exports = function(server) {
     
     initalize= function() {}
 
-    getMigrationFile = async function(dbKey) {
+    getMigrationFile = async function(dbkey) {
         const files = await fs1.readdir(SCHEMA_DIR);
 
         const matched = files
@@ -31,7 +31,7 @@ module.exports = function(server) {
     startMigration = async function(dbkey) {
         printObj(`Migration Checking for ${dbkey}`, "yellow", 2);
 
-        const matched = DBMIGRATOR.getMigrationFile(dbkey);
+        const matched = await DBMIGRATOR.getMigrationFile(dbkey);
         if (matched===false) {
             printObj(`Migration Completed for ${dbkey} with status - No Schema File Found For`, "yellow", 2);
 
@@ -60,6 +60,7 @@ module.exports = function(server) {
                 return {"status": "success", "message": "No Changes Found"};
             }
         } else {
+            printObj(`Migration Completed for ${dbkey} with Error - ${schemaData.message}`, "yellow", 2);
             return {"status": "error", "message": schemaData.message};
         }
     }
@@ -135,7 +136,7 @@ module.exports = function(server) {
             const newSchema = await fs1.readJson(path.join(SCHEMA_DIR, newSchemaFile));
 
             const changes = diff(oldSchema, newSchema);
-            if (!changes) return { success: false, message: "No schema changes found." };
+            if (!changes) return { success: true, message: "No schema changes found.", statements: 0 };
 
             const sql = [];
 
