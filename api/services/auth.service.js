@@ -102,6 +102,7 @@ module.exports = {
 			},
 			async handler(ctx) {
 				console.log("FEDERATED_LOGIN_logiksAuthLogin", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
+				//http://192.168.0.27:6008/?client_id=demo&client_key=BO-uTCu4VF0-XhffsBjCefBSrWorVfcFH_8x7m0dWVU&client_method=logiksauth
 				return {
 					"status": "success",
 					"message": "LogiksAuth login is not yet implemented"
@@ -113,10 +114,10 @@ module.exports = {
 		 * LogiksAuth Redirect Login Key Verification.
 		 * POST /api/public/auth/s2stoken
 		 */
-		tltoken: {
+		authtoken: {
 			rest: {
 				method: "POST",
-				path: "/lauthtoken"
+				path: "/authtoken"
 			},
 			params: {
 				appid: "string",
