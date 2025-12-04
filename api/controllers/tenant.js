@@ -15,7 +15,7 @@ module.exports = function(server) {
             "guid": guid
         };
         var data = await new Promise((resolve, reject) => {
-            db_selectQ("MYSQL0", "lgks_tenants", "*", whereCond, {}, function (tenantInfo) {
+            db_selectQ("appdb", "lgks_tenants", "*", whereCond, {}, function (tenantInfo) {
                 if (tenantInfo) {
                     resolve(tenantInfo);
                 } else {

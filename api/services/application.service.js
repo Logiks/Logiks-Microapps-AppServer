@@ -137,7 +137,31 @@ module.exports = {
 				// Return readable stream (memory safe)
 				return fs.createReadStream(filePath);
 			}
-		}
+		},
+
+		//Get media for theme file
+		navigator: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/navigator/:navid?"
+			},
+			async handler(ctx) {
+
+
+				return {};
+			}
+		},
+
+		component: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/component/:compid"
+			},
+			async handler(ctx) {
+
+				return {};
+			}
+		},
     },
     methods: {
 

@@ -9,53 +9,30 @@ module.exports = function(server) {
 	initialize = function(callback) {
 		if(CONFIG.dbmysql==null) return;
 		
-		if(Array.isArray(CONFIG.dbmysql)) {
-			_.each(CONFIG.dbmysql, function(conf, k) {
-				if(conf.enable) {
-					if(conf.keyid==null) conf.keyid = "MYSQL"+k;
-				
-					// _MYSQL[conf.keyid] = mysql.createConnection(CONFIG.dbmysql);
-		        	// _MYSQL[conf.keyid].connect();
+		_.each(CONFIG.dbmysql, function(conf, keyid) {
+			if(conf.enable) {
+				delete conf.enable;
+				delete conf.keyid;
 
-					const KEYID = conf.keyid;
-
-					delete conf.enable;
-					delete conf.keyid;
-
-					_MYSQL[KEYID] = mysql.createPool(conf);
-					//.filter(a=>["host","port","user","password","database","insecureAuth","connectionLimit","debug"].indexOf(a)>=0)
-
-		        	console.log("\x1b[36m%s\x1b[0m","MYSQL Initialized - "+KEYID);
-				}
-			})
-		} else {
-			if(CONFIG.dbmysql.enable) {
-				// _MYSQL["MYSQL0"] = mysql.createConnection(CONFIG.dbmysql);
-		        // _MYSQL["MYSQL0"].connect();
-
-				var mysqlConfig = CONFIG.dbmysql;
-				delete mysqlConfig.enable;
-				delete mysqlConfig.keyid;
-
-				_MYSQL["MYSQL0"] = mysql.createPool(mysqlConfig);
 				//.filter(a=>["host","port","user","password","database","insecureAuth","connectionLimit","debug"].indexOf(a)>=0)
+				_MYSQL[keyid] = mysql.createPool(conf);
 
-				_MYSQL["MYSQL0"].getConnection(function(err,connection){
-					if (err || connection==null) {
-					  throw err;
-					  return;
-					}   
-					
-					console.log("\x1b[36m%s\x1b[0m","MYSQL Initialized - MYSQL0");
-				});
-			}
-		}
-
-		db_query("MYSQL0", "SHOW TABLES", {}, function (authInfo) {
-			if(!authInfo) {
-				console.error("❌ DB Connetion not found");
+				_MYSQL[keyid].getConnection(function(err,connection){
+						if (err || connection==null) {
+							throw err;
+							return;
+						}   
+						
+						console.log("\x1b[36m%s\x1b[0m","MYSQL Initialized - "+keyid);
+					});
 			}
 		});
+
+		// db_query("appdb", "SHOW TABLES", {}, function (authInfo) {
+		// 	if(!authInfo) {
+		// 		console.error("❌ DB Connetion not found");
+		// 	}
+		// });
 	}
 	
 	//Standard MySQL

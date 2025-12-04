@@ -611,13 +611,18 @@ module.exports = {
 						const tenantId = user.tenantId || "*";
 
 						return requiredScopes.every((required) => {
+							// console.log("SCOPE_ANALYSIS", required, userScopes);
 							// required: "orders:read"
 							const tenantScoped = `${tenantId}:${required}`;
+							const tenantScopedMore = `${tenantId}:${required}:*`;
 							const wildcardScoped = `*:${required}`;
+							const wildcardScopedMore = `*:${required}:*`;
 
 							return (
 								userScopes.includes(tenantScoped) ||
 								userScopes.includes(wildcardScoped) ||
+								userScopes.includes(tenantScopedMore) ||
+								userScopes.includes(wildcardScopedMore) ||
 								userScopes.includes(required)
 							);
 						});

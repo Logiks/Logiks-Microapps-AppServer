@@ -17,9 +17,9 @@ module.exports = {
 			params: {
 				"guid": "string"
 			},
-			meta: {
-				scopes: ["/api/tenant"]
-			},
+			// meta: {
+			// 	scopes: ["/api/tenant"]
+			// },
 			async handler(ctx) {
 				const guid = ctx.params.guid;
 				const appid = ctx.meta.appInfo.appid;

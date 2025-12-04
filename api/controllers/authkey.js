@@ -15,7 +15,7 @@ module.exports = function(server) {
             "auth_key": apiKey
         };
         var data = await new Promise((resolve, reject) => {
-            db_selectQ("MYSQL0", "lgks_apikeys", "*", whereCond, {}, function (apiKeyInfo) {
+            db_selectQ("appdb", "lgks_apikeys", "*", whereCond, {}, function (apiKeyInfo) {
                 if (apiKeyInfo) {
                     resolve(apiKeyInfo);
                 } else {

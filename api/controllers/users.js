@@ -11,7 +11,7 @@ module.exports = function(server) {
 
     listUsers = function(whereCond, callback) {
         if(whereCond==null) whereCond = {};
-        db_selectQ("MYSQL0", "lgks_users", "*", whereCond, {}, function (userInfo) {
+        db_selectQ("appdb", "lgks_users", "*", whereCond, {}, function (userInfo) {
                 if (userInfo) {
                     callback(userInfo)
                 } else {
@@ -21,7 +21,7 @@ module.exports = function(server) {
     }
 
     getUserInfo = function(userid, callback) {
-        db_selectQ("MYSQL0", "lgks_users", "*", {
+        db_selectQ("appdb", "lgks_users", "*", {
                 userid: userid,
             },{}, function (userInfo) {
                 if (userInfo) {
@@ -36,7 +36,7 @@ module.exports = function(server) {
         //var final_password = md5(CONFIG.ENC_SALT+""+password);
         // console.log("verifyUser", userid, password);
 
-        db_selectQ("MYSQL0", "lgks_users,lgks_privileges,lgks_access,lgks_users_group", 
+        db_selectQ("appdb", "lgks_users,lgks_privileges,lgks_access,lgks_users_group", 
             "lgks_users.*,lgks_privileges.name as privilege_name, lgks_access.sites as scope_sites,lgks_users_group.bank,lgks_users_group.branch,lgks_users_group.state,lgks_users_group.zone,lgks_users_group.area", {
                 "userid": userid,
                 "lgks_users.blocked": 'false',
@@ -76,7 +76,7 @@ module.exports = function(server) {
     }
 
     getUserInfoById = function(userid, callback) {
-        db_selectQ("MYSQL0", "lgks_users,lgks_privileges,lgks_access,lgks_users_group", 
+        db_selectQ("appdb", "lgks_users,lgks_privileges,lgks_access,lgks_users_group", 
             "lgks_users.*,lgks_privileges.name as privilege_name, lgks_access.sites as scope_sites,lgks_users_group.bank,lgks_users_group.branch,lgks_users_group.state,lgks_users_group.zone,lgks_users_group.area", {
                 "userid": userid,
                 "lgks_users.blocked": 'false',
