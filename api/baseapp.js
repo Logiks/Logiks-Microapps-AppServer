@@ -45,7 +45,7 @@ module.exports = {
 
         applicationData = JSON.parse(fs.readFileSync("misc/applications.json", "utf8"));
 
-        console.log("\n\x1b[31m%s\x1b[0m","Bootstrapping Completed with Applications - "+applicationData.length);
+        console.log("\x1b[36m%s\x1b[0m",`Bootstrapping Completed with ${applicationData.length} Loaded Applications`);
     },
 
     getAppInfo: async function(serverHost) {
