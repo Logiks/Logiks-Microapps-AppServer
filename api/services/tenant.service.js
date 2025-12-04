@@ -11,155 +11,62 @@ module.exports = {
 		//Get Tenant Information
 		fetch: {
 			rest: {
-				method: "GET",
+				method: "POST",
 				fullPath: "/api/tenant"
 			},
+			params: {
+				"guid": "string"
+			},
 			async handler(ctx) {
-				const serverHost = ctx.meta.serverHost;
-				const tenantInfo = await BASEAPP.getAppInfo(serverHost);
-				if(!tenantInfo) {
+				const guid = ctx.params.guid;
+				var whereCond = {
+					"blocked": "false",
+					"guid": guid
+				};
+				var data = await new Promise((resolve, reject) => {
+					db_selectQ("MYSQL0", "auth_tenants", "*", whereCond, {}, function (tenantInfo) {
+						if (tenantInfo) {
+							resolve(tenantInfo);
+						} else {
+							resolve(false);
+						}
+					});
+				})
+
+				if(!data) {
 					throw new Errors.MoleculerClientError(
 						"Invalid Tenant key",
 						401,
 						"INVALID_TENANT_KEY"
 					);
 				}
+				const appid = ctx.meta.appInfo.appid;
+				var tenantInfo = data[0]; 
+				tenantInfo.allowed_apps = tenantInfo.allowed_apps.split(",");
 
-				delete tenantInfo.domain;
-
-				return tenantInfo;
-			}
-		},
-
-		//Get Application Layout for the tenant
-		layout: {
-			rest: {
-				method: "GET",
-				fullPath: "/api/layout/:layoutid?"
-			},
-			async handler(ctx) {
-
-				if(!ctx.params.layoutid) ctx.params.layoutid = "default";
-
-				const appLayoutFile = `misc/apps/${ctx.meta.appInfo.appid}/layouts/${ctx.params.layoutid}.json`;
-				if(fs.existsSync(appLayoutFile)) {
-					const layoutData = JSON.parse(fs.readFileSync(appLayoutFile, "utf8"));
-					return layoutData;
-				} else {
-					throw new Errors.MoleculerClientError(
-						"Invalid Application Layout Identifier",
-						401,
-						"INVALID_LAYOUT_KEY",
-						ctx.params.layoutid
-					);
+				try {
+					tenantInfo.applicationOverrides = JSON.parse(tenantInfo.application_overrides);
+				} catch(err) {
+					tenantInfo.applicationOverrides = {};
 				}
-			}
-		},
+				
+				delete tenantInfo.id;
+				delete tenantInfo.application_overrides;
 
-		//Get theme styling
-		theme: {
-			rest: {
-				method: "GET",
-				fullPath: "/api/theme/:themeid?"
-			},
-			async handler(ctx) {
-				const themeId =
-						ctx.meta.user?.theme ||
-						ctx.params.themeid ||
-						ctx.meta.cookies?.theme ||
-						"default";
-
-				let themeData = themeCache.get(themeId);
-
-				if (!themeData) {
-					themeData = await loadTheme(themeId);
-					if (!themeData) {
+				if(tenantInfo.allowed_apps.indexOf("*")>=0) {
+					return tenantInfo;
+				} else if(tenantInfo.allowed_apps.indexOf(appid)>=0) {
+					return tenantInfo;
+				} else {
+					if(!data) {
 						throw new Errors.MoleculerClientError(
-							"Invalid Theme Identifier",
-							404,
-							"INVALID_THEME_KEY",
-							themeId
+							"Tenant does not have access to this application",
+							401,
+							"UNAUTHORISED_TENANT"
 						);
 					}
 				}
-				
-				const clientVersion = ctx.params.v || ctx.meta.query?.v;
-
-				if (clientVersion && clientVersion === themeData.version) {
-					ctx.meta.$statusCode = 304; // Not Modified
-					return;
-				}
-
-				ctx.meta.$responseHeaders = {
-					"Content-Type": "text/css",
-					"Cache-Control": "public, max-age=31536000", // 1 year
-					"ETag": themeData.version
-				};
-
-				return themeData.css;
-			}
-		},
-
-		//Get media for theme file
-		media: {
-			rest: {
-				method: "GET",
-				fullPath: "/api/theme/:themeid?/:filename"
-			},
-			async handler(ctx) {
-				const { themeid, filename } = ctx.params;
-
-				// Prevent directory traversal attack
-				const safePath = path.normalize(filename).replace(/^(\.\.(\/|\\|$))+/, "");
-
-				const filePath = path.resolve(`misc/themes/${themeid}/media/${safePath}`);
-				
-				if (!fs.existsSync(filePath)) {
-					throw new Errors.MoleculerClientError(
-						"File not found",
-						404,
-						"MEDIA_NOT_FOUND"
-					);
-				}
-
-				// Auto-detect content type
-				const contentType = mime.lookup(filePath) || "application/octet-stream";
-
-				// Required Moleculer settings for streaming
-				ctx.meta.$responseType = "stream";
-				ctx.meta.$responseHeaders = {
-					"Content-Type": contentType,
-					"Cache-Control": "public, max-age=86400" // 1 day
-				};
-				// ctx.meta.$responseHeaders["Content-Disposition"] = `attachment; filename="${filename}"`;
-
-				// Return readable stream (memory safe)
-				return fs.createReadStream(filePath);
 			}
 		}
 	}
 };
-
-
-async function loadTheme(themeId) {
-	const themeFile = path.resolve(`misc/themes/${themeId}/style.css`);
-
-	try {
-		const [css, stats] = await Promise.all([
-			fs.readFileSync(themeFile, "utf8"),
-			fs.statSync(themeFile)
-		]);
-		const version = stats.mtimeMs.toString();
-		
-		themeCache.set(themeId, {
-			css,
-			version,
-			updatedAt: Date.now()
-		});
-
-		return themeCache.get(themeId);
-	} catch (err) {
-		console.log(err);
-		return null;
-	}
-}
