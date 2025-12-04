@@ -424,7 +424,8 @@ module.exports = {
 							req.headers["x-api-key"] ||
 							req.headers["x-api_key"] ||
 							req.query.api_key;
-						const s2skey = req.query.tkn;
+						const tlkey = req.query.tkn;
+						const s2skey = req.query.s2stkn;
 						const serverIp = req.socket.localAddress || req.connection.localAddress;
 						const serverHost = req.headers.host;
 						const clientIP = ctx.meta.remoteIP || "unknown";
@@ -459,6 +460,35 @@ module.exports = {
 								id: appInfo.appid,
 								userId: "S2S_"+s2skey,
 								username: "S2S Service User",
+								tenantId: appInfo.appid,
+								roles: ["service"],
+								scopes: payload.scopes || ["/api/tenant:*"],
+							};
+						}
+
+						//If Time and Use Limted token matches, auto-authenticate as app service user, 
+						if(tlkey) {
+							const payload = await ctx.call("auth.verifyTLToken", { token: tlkey });
+							if(!payload) {
+								throw new Errors.MoleculerClientError(
+									"Timelimited Token can be used only for server-to-server communication for limited API access",
+									401,
+									"INVALID_TL_TOKEN"
+								);
+							}
+							
+							if(payload.ip!=clientIP) {
+								throw new Errors.MoleculerClientError(
+									"TimeLimited Token can not be used from changing IP address",
+									401,
+									"INVALID_TL_TOKEN"
+								);
+							}
+
+							user = {
+								id: appInfo.appid,
+								userId: "TL_"+tlkey,
+								username: "TL Service User",
 								tenantId: appInfo.appid,
 								roles: ["service"],
 								scopes: payload.scopes || ["/api/tenant:*"],

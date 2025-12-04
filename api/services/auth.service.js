@@ -15,7 +15,9 @@ const REFRESH_TOKEN_TTL = Number(CONFIG.authjwt.refresh_token_ttl || 7 * 24 * 36
 const authRedis = new Redis(CONFIG.cache);
 
 const S2STOKENS = {};
+const TLTOKENS = {};
 const S2STOKENS_MAX = 10;
+const TLTOKENS_MAX = 10;
 
 authRedis.on("error", (err) => {
 	// eslint-disable-next-line no-console
@@ -37,10 +39,32 @@ module.exports = {
 			},
 			params: {
 				appid: "string",
+				appkey: "string" 
 			},
+			// meta: {
+			// 	scopes: ["/api/tenant:*"] // Limited access for S2S tokens
+			// },
 			async handler(ctx) {
 				
 				return this.issueS2SToken(ctx);
+			}
+		},
+
+		/**
+		 * Time Limited token issuance.
+		 * POST /api/public/auth/s2stoken
+		 */
+		tltoken: {
+			rest: {
+				method: "POST",
+				path: "/tltoken"
+			},
+			params: {
+				appid: "string"
+			},
+			async handler(ctx) {
+				
+				return this.issueTimeLimitedToken(ctx);
 			}
 		},
 
@@ -458,9 +482,40 @@ module.exports = {
 				
 				return S2STOKENS[s2stoken]
 			}
+		},
+		//Verify Generated S2S Token for 1 time use
+		verifyTLToken: {
+			params: {
+				token: "string"
+			},
+			async handler(ctx) {
+				// For S2S token, we might just check against a known list or database
+				// Here, we just accept any token for demonstration
+				const tltoken = ctx.params.token;
+
+				if (!TLTOKENS[tltoken]) {
+					throw new Errors.MoleculerClientError(
+						"Invalid S2S token",
+						401,
+						"INVALID_S2S_TOKEN"
+					);
+				}
+				
+				TLTOKENS[tltoken].counter += 1;
+				if(TLTOKENS[tltoken].counter >= TLTOKENS_MAX) {
+					delete TLTOKENS[tltoken];
+
+					throw new Errors.MoleculerClientError(
+						"TL Token can be used only for server-to-server communication for limited API access",
+						401,
+						"INVALID_TL_TOKEN"
+					);
+				}
+				
+				return TLTOKENS[tltoken]
+			}
 		}
 	},
-
 	methods: {
 		async issueS2SToken(ctx) {
 			const sessionId = `${ctx.params.appid}:${ctx.params.appid}:${Date.now()}`;
@@ -500,7 +555,52 @@ module.exports = {
 
 			return {
 				"status": "success",
-				"s2stoken": s2stoken,
+				"token": s2stoken,
+				"accessToken": accessToken,
+				"expiresIn": ACCESS_TOKEN_TTL,
+				"appid": ctx.params.appid
+			}
+		},
+
+		async issueTimeLimitedToken(ctx) {
+			const sessionId = `${ctx.params.appid}:${ctx.params.appid}:${Date.now()}`;
+
+			const accessJti = `acc:${sessionId}`;
+			const refreshJti = `ref:${sessionId}`;
+
+			const payloadBase = {
+				"appId": ctx.params.appid,
+				"ip": ctx.meta.remoteIP,
+				"deviceType": "s2s"
+			};
+
+			const accessToken = jwt.sign(
+				{
+					type: "access",
+					...payloadBase
+				},
+				JWT_SECRET,
+				{
+					expiresIn: ACCESS_TOKEN_TTL,
+					jwtid: accessJti
+				}
+			);
+
+			const tltoken = UNIQUEID.generate(12);
+
+			TLTOKENS[tltoken] = {
+				appId: ctx.params.appid,
+				accessToken: accessToken,
+				expiresAt: Date.now() + (ACCESS_TOKEN_TTL * 1000),
+				scopes: ["/api/tenant:*"],
+				ip: ctx.meta.remoteIP,
+				deviceType: "s2s",
+				counter: 0
+			};
+
+			return {
+				"status": "success",
+				"token": tltoken,
 				"accessToken": accessToken,
 				"expiresIn": ACCESS_TOKEN_TTL,
 				"appid": ctx.params.appid

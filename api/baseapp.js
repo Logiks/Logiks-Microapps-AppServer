@@ -53,11 +53,7 @@ module.exports = {
         var selectedTenant = tenantData.filter(a=>a.domain.indexOf(serverHost)>=0);
 
         if(selectedTenant.length<=0) {
-            throw new Errors.MoleculerClientError(
-                    "Invalid Tenant key",
-                    401,
-                    "INVALID_TENANT_KEY"
-                );
+            return false;
         }
 
         return selectedTenant[0];
