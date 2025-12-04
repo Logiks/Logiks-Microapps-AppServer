@@ -10,10 +10,8 @@ module.exports = function(server) {
     
     initalize= function() {}
 
-    startMigration = async function(dbkey) {
+    getMigrationFile = async function(dbKey) {
         const files = await fs1.readdir(SCHEMA_DIR);
-
-        printObj(`Migration Checking for ${dbkey}`, "yellow", 2);
 
         const matched = files
                 .filter(f => f.startsWith(`schema_${dbkey}`)  && f.endsWith(".json"))
@@ -21,15 +19,26 @@ module.exports = function(server) {
                     name: f,
                     time: fs.statSync(path.join(SCHEMA_DIR, f)).mtimeMs
                 }));
-        if (!matched.length) {
+        if (matched.length>0) {
+            matched.sort((a, b) => b.time - a.time);
+
+            return matched[0];
+        } else {
+            return false;
+        }
+    }
+
+    startMigration = async function(dbkey) {
+        printObj(`Migration Checking for ${dbkey}`, "yellow", 2);
+
+        const matched = DBMIGRATOR.getMigrationFile(dbkey);
+        if (matched===false) {
             printObj(`Migration Completed for ${dbkey} with status - No Schema File Found For`, "yellow", 2);
 
             return {"status": "error", "message": `No Schema File Found For - ${dbkey}`};
         }
 
-        matched.sort((a, b) => b.time - a.time);
-
-        const fileName = matched[0].name;
+        const fileName = matched.name;
         printObj(`Migration Running for ${dbkey} from file - ${fileName}`, "yellow", 2);
 
         var schemaData = await DBMIGRATOR.generateMigration(dbkey, fileName, false);
@@ -100,7 +109,7 @@ module.exports = function(server) {
             }
 
             if(writeFile) {
-                const filename = `schema_${dbKey}_${Date.now()}.json`;
+                const filename = `schema_${dbKey}_${CONFIG.BUILD}.json`;//${Date.now()}
                 const filepath = path.join(SCHEMA_DIR, filename);
                 await fs1.writeJson(filepath, schema, { spaces: 2 });
 
@@ -117,7 +126,7 @@ module.exports = function(server) {
     /* ------------------------------------------
     2. GENERATE MIGRATION SCRIPT (DDL ONLY)
     ------------------------------------------ */
-    generateMigration = async function(dbKey, newSchemaFile, writeFile = true) {//, oldSchemaFile
+    generateMigration = async function(dbKey, newSchemaFile, writeFile = false) {//, oldSchemaFile
         try {
             const mysqlConnection = db_connection(dbKey).promise();
 
@@ -150,7 +159,7 @@ module.exports = function(server) {
                 }
             }
             if(writeFile) {
-                const filename = `migration_${Date.now()}.sql`;
+                const filename = `migration_${CONFIG.BUILD}.sql`;//${Date.now()}
                 const filepath = path.join(SCHEMA_DIR, filename);
                 await fs1.writeFile(filepath, sql.join("\n"));
 

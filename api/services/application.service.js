@@ -152,6 +152,19 @@ module.exports = {
 			}
 		},
 
+		//Get menu and navigation for application
+		navigator: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/navigator/:navid?"
+			},
+			async handler(ctx) {
+
+
+				return {};
+			}
+		},
+
 		component: {
 			rest: {
 				method: "GET",

@@ -75,6 +75,8 @@ async function main() {
     global.CONFIG = _.extend({}, tempConfig, packageConfig, {
         "SERVER_ID": process.env.SERVER_ID,
         "ROOT_PATH": __dirname,
+        "VERSION": packageConfig.version,
+        "BUILD": packageConfig.version.replaceAll(/\./g, "")
     });
 
     LOGGER.initializeLoggers();
