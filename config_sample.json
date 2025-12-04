@@ -53,7 +53,8 @@
             "user": "test",
             "password": "test",
             "database": "testdb",
-            "insecureAuth": true
+            "insecureAuth": true,
+            "multipleStatements": true
         },
         "logdb": {
             "enable": false,
@@ -62,7 +63,8 @@
             "user": "test",
             "password": "test",
             "database": "logdb",
-            "insecureAuth": true
+            "insecureAuth": true,
+            "multipleStatements": true
         }
     },
     "dbmongo": {

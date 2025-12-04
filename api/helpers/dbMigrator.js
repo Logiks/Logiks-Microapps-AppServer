@@ -166,7 +166,7 @@ module.exports = function(server) {
 
                 return { success: true, file: filename, statements: sql.length };
             } else {
-                return { success: true, schema: sql.join(""), statements: sql.length };
+                return { success: true, schema: sql.join("\n"), statements: sql.length };
             }
         } catch (err) {
             console.error(err);
@@ -212,7 +212,7 @@ module.exports = function(server) {
             await conn.query(sql);
             conn.release();
 
-            return { success: true, file: filename };
+            return { success: true, statements: sql.split(";\n").length };
         } catch (err) {
             console.error(err);
             return { success: false, message: err.message };
