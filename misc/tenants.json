@@ -4,6 +4,7 @@
         "theme": "indigo",
         "appid": "demo",
         "access": "public",
+        "login": "local",
         "domain": [
             "localhost:9999"
         ],

@@ -555,6 +555,7 @@ module.exports = {
 
 			return {
 				"status": "success",
+				"token_type": "S2S",
 				"token": s2stoken,
 				"accessToken": accessToken,
 				"expiresIn": ACCESS_TOKEN_TTL,
@@ -600,6 +601,7 @@ module.exports = {
 
 			return {
 				"status": "success",
+				"token_type": "TL",
 				"token": tltoken,
 				"accessToken": accessToken,
 				"expiresIn": ACCESS_TOKEN_TTL,
