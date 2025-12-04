@@ -46,7 +46,7 @@ module.exports = function(server) {
             if(schemaData.statements>0) {
                 printObj(`DB Difference Found with ${schemaData.statements} changes`, "yellow", 2);
 
-                var result = await DBMIGRATOR.applyMigration(dbkey, schemaData.schema);
+                var result = await DBMIGRATOR.applyMigrationSchema(dbkey, schemaData.schema);
 
                 printObj(`Migration Completed for ${dbkey} with status - ${result.success}`, "yellow", 2);
 
@@ -182,6 +182,26 @@ module.exports = function(server) {
             const mysqlConnection = db_connection(dbKey).promise();
 
             const sql = await fs1.readFile(path.join(SCHEMA_DIR, filename), "utf8");
+
+            // Safety checks
+            if (/DROP|TRUNCATE|DELETE/i.test(sql)) {
+                return res.status(400).json({ error: "Destructive SQL detected — aborted" });
+            }
+
+            const conn = await mysqlConnection.getConnection();
+            await conn.query(sql);
+            conn.release();
+
+            return { success: true, file: filename };
+        } catch (err) {
+            console.error(err);
+            return { success: false, message: err.message };
+        }
+    }
+
+    applyMigrationSchema = async function(dbKey, sql) {
+        try {
+            const mysqlConnection = db_connection(dbKey).promise();
 
             // Safety checks
             if (/DROP|TRUNCATE|DELETE/i.test(sql)) {
