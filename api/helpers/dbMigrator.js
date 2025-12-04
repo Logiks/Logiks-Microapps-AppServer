@@ -1,0 +1,204 @@
+//Controller for For database migration
+
+const fs1 = require("fs-extra");
+const diff = require("deep-diff").diff;
+
+const SCHEMA_DIR = "misc/dbschema/";//path.join(__dirname, "../schema_versions");
+fs1.ensureDirSync(SCHEMA_DIR);
+
+module.exports = function(server) {
+    
+    initalize= function() {}
+
+    startMigration = async function(dbkey) {
+        const files = await fs1.readdir(SCHEMA_DIR);
+
+        printObj(`Migration Checking for ${dbkey}`, "yellow", 2);
+
+        const matched = files
+                .filter(f => f.startsWith(`schema_${dbkey}`)  && f.endsWith(".json"))
+                .map(f => ({
+                    name: f,
+                    time: fs.statSync(path.join(SCHEMA_DIR, f)).mtimeMs
+                }));
+        if (!matched.length) {
+            printObj(`Migration Completed for ${dbkey} with status - No Schema File Found For`, "yellow", 2);
+
+            return {"status": "error", "message": `No Schema File Found For - ${dbkey}`};
+        }
+
+        matched.sort((a, b) => b.time - a.time);
+
+        const fileName = matched[0].name;
+        printObj(`Migration Running for ${dbkey} from file - ${fileName}`, "yellow", 2);
+
+        var schemaData = await DBMIGRATOR.generateMigration(dbkey, fileName, false);
+        if(schemaData.success) {
+            if(schemaData.statements.length>0) {
+                printObj(`DB Difference Found with ${schemaData.statements} changes`, "yellow", 2);
+
+                var result = await DBMIGRATOR.applyMigration(dbkey, schemaData.schema);
+
+                printObj(`Migration Completed for ${dbkey} with status - ${result.success}`, "yellow", 2);
+
+                if(result.success)
+                    return {"status": "success", "message": "Successfully Migrated", "statements": schemaData.statements};
+                else
+                    return {"status": "error", "message": result.message};
+            } else {
+                printObj(`Migration Completed for ${dbkey} with No Changes Found`, "yellow", 2);
+
+                return {"status": "success", "message": "No Changes Found"};
+            }
+        } else {
+            return {"status": "error", "message": schemaData.message};
+        }
+    }
+
+    saveMigrationScript = async function(dbkey) {
+        printObj(`Generating Migration Script for ${dbkey}`, "yellow", 2);
+
+        var result = await DBMIGRATOR.exportSchema(dbkey, true);
+
+        printObj(`Migration Completed for ${dbkey} with status - ${result.success} - ${result.file}`, "yellow", 2);
+
+        if(result.success)
+            return {"status": "success", "message": "Successfully Generated"};
+        else
+            return {"status": "error", "message": result.message};
+    }
+
+    /* ------------------------------------------
+    1. EXPORT SCHEMA → JSON
+    ------------------------------------------ */
+    exportSchema = async function(dbKey, writeFile = true) {
+        try {
+            const mysqlConnection = db_connection(dbKey).promise();
+
+            const schema = {};
+            const [tables] = await mysqlConnection.query(`SHOW TABLES`);
+
+            for (const t of tables) {
+                const table = Object.values(t)[0];
+
+                const [columns] = await mysqlConnection.query(`DESCRIBE ${table}`);
+                const [indexes] = await mysqlConnection.query(`SHOW INDEX FROM ${table}`);
+
+                schema[table] = {
+                    columns: {},
+                    indexes: [...new Set(indexes.map(i => i.Key_name))]
+                };
+
+                columns.forEach(col => {
+                schema[table].columns[col.Field] = {
+                    type: col.Type,
+                    nullable: col.Null === "YES",
+                    default: col.Default,
+                    primary: col.Key === "PRI"
+                };
+                });
+            }
+
+            if(writeFile) {
+                const filename = `schema_${dbKey}_${Date.now()}.json`;
+                const filepath = path.join(SCHEMA_DIR, filename);
+                await fs1.writeJson(filepath, schema, { spaces: 2 });
+
+                return { success: true, file: filename };
+            } else {
+                return schema;
+            }
+        } catch (err) {
+            console.error(err);
+            return { success: false, message: err.message };
+        }
+    }
+
+    /* ------------------------------------------
+    2. GENERATE MIGRATION SCRIPT (DDL ONLY)
+    ------------------------------------------ */
+    generateMigration = async function(dbKey, newSchemaFile, writeFile = true) {//, oldSchemaFile
+        try {
+            const mysqlConnection = db_connection(dbKey).promise();
+
+            //const oldSchema = await fs1.readJson(path.join(SCHEMA_DIR, oldSchemaFile));
+            const oldSchema = await DBMIGRATOR.exportSchema("appdb", false);
+            const newSchema = await fs1.readJson(path.join(SCHEMA_DIR, newSchemaFile));
+
+            const changes = diff(oldSchema, newSchema);
+            if (!changes) return { success: false, message: "No schema changes found." };
+
+            const sql = [];
+
+            for (const change of changes) {
+                const [table, , column] = change.path || [];
+
+                // New table added
+                if (change.kind === "N" && change.path.length === 1) {
+                    sql.push(buildCreateTableSQL(table, change.rhs));
+                }
+
+                // New column added
+                if (change.kind === "N" && change.path.includes("columns")) {
+                const col = change.rhs;
+                sql.push(`
+                    ALTER TABLE ${table} 
+                    ADD COLUMN ${column} ${col.type} 
+                    ${col.nullable ? "" : "NOT NULL"} 
+                    ${col.default !== null ? `DEFAULT ${col.default}` : ""};
+                `);
+                }
+            }
+            if(writeFile) {
+                const filename = `migration_${Date.now()}.sql`;
+                const filepath = path.join(SCHEMA_DIR, filename);
+                await fs1.writeFile(filepath, sql.join("\n"));
+
+                return { success: true, file: filename, statements: sql.length };
+            } else {
+                return { success: true, schema: sql.join("\n"), statements: sql.length };
+            }
+        } catch (err) {
+            console.error(err);
+            return { success: false, message: err.message };
+        }
+    }
+
+    /* ------------------------------------------
+    3. APPLY MIGRATION SCRIPT
+    ------------------------------------------ */
+    applyMigration = async function(dbKey, filename) {
+        try {
+            const mysqlConnection = db_connection(dbKey).promise();
+
+            const sql = await fs1.readFile(path.join(SCHEMA_DIR, filename), "utf8");
+
+            // Safety checks
+            if (/DROP|TRUNCATE|DELETE/i.test(sql)) {
+                return res.status(400).json({ error: "Destructive SQL detected — aborted" });
+            }
+
+            const conn = await mysqlConnection.getConnection();
+            await conn.query(sql);
+            conn.release();
+
+            return { success: true, file: filename };
+        } catch (err) {
+            console.error(err);
+            return { success: false, message: err.message };
+        }
+    }
+
+    return this;
+}
+
+/* ------------------------------------------
+HELPERS
+------------------------------------------ */
+function buildCreateTableSQL(table, def) {
+    const cols = Object.entries(def.columns).map(([name, d]) => {
+        return `${name} ${d.type} ${d.nullable ? "" : "NOT NULL"}`;
+    });
+
+    return `CREATE TABLE ${table} (${cols.join(",")});`;
+}

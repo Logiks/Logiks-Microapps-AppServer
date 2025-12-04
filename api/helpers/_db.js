@@ -34,6 +34,10 @@ module.exports = function(server) {
 		// 	}
 		// });
 	}
+
+	db_connection = function(dbkey) {
+		return _MYSQL[dbkey];
+	}
 	
 	//Standard MySQL
 	db_query = function(dbkey, sql, params, callback) {

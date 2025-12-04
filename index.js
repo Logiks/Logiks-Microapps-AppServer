@@ -80,11 +80,12 @@ async function main() {
     LOGGER.initializeLoggers();
 
     BASEAPP.initializeApplication();
-    SERVER.start();
-    
-    // console.log("");
 
-    setTimeout(function() {
+    SERVER.start();
+
+    setTimeout(async function() {
+        await BASEAPP.postInitalization();
+
         console.log("\n\x1b[32m%s\x1b[0m\n", `AppServer Started @ `+moment().format()+` and can be accessed on ${process.env.HOST}:${process.env.PORT}/`);
     }, 2000);
 }

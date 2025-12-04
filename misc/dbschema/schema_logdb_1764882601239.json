@@ -1,0 +1,613 @@
+{
+  "log_activities": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "appid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "ref_src": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "ref_id": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "subject": {
+        "type": "varchar(250)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "category": {
+        "type": "varchar(55)",
+        "nullable": true,
+        "default": "na",
+        "primary": false
+      },
+      "subcategory": {
+        "type": "varchar(55)",
+        "nullable": true,
+        "default": "na",
+        "primary": false
+      },
+      "message": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "unilink": {
+        "type": "tinytext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "tags": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "status": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": "new",
+        "primary": false
+      },
+      "pre_data": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "post_data": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY"
+    ]
+  },
+  "log_automator": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "appid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "cmd": {
+        "type": "varchar(50)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "req_body": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "response": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": "",
+        "primary": false
+      },
+      "created_on": {
+        "type": "timestamp",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "timestamp",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "cmd",
+      "req_body",
+      "created_by",
+      "created_on"
+    ]
+  },
+  "log_logins_api": {
+    "columns": {
+      "id": {
+        "type": "bigint",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "appid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "loginid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "geolocation": {
+        "type": "varchar(30)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "uri": {
+        "type": "varchar(30)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "host": {
+        "type": "varchar(30)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "client_ip": {
+        "type": "varchar(20)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "server_ip": {
+        "type": "varchar(20)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "medium": {
+        "type": "varchar(25)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "status": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "action": {
+        "type": "varchar(30)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "timestamp": {
+        "type": "timestamp",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "timestamp",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "timestamp",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "loginid",
+      "timestamp",
+      "status"
+    ]
+  },
+  "log_messages": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "appid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "vendor": {
+        "type": "varchar(50)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "req_body": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "response": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "xtras_1": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "xtras_2": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "xtras_3": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "status": {
+        "type": "varchar(25)",
+        "nullable": true,
+        "default": "new",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "timestamp",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "timestamp",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "vendor",
+      "req_body",
+      "xtras_1",
+      "xtras_2",
+      "status"
+    ]
+  },
+  "log_notifications": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "appid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "groupuid": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": "hq",
+        "primary": false
+      },
+      "ref_src": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "ref_id": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "date": {
+        "type": "date",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "title": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "category": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "msg": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "icon": {
+        "type": "varchar(200)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "rule": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "for_userid": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": "*",
+        "primary": false
+      },
+      "response_data": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "read_status": {
+        "type": "enum('false','true')",
+        "nullable": false,
+        "default": "false",
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY"
+    ]
+  },
+  "log_temp": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "appid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "uri": {
+        "type": "varchar(50)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "req_body": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "xtras_1": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "xtras_2": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "xtras_3": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "timestamp",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "timestamp",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "uri",
+      "req_body",
+      "xtras_1",
+      "xtras_2",
+      "xtras_3"
+    ]
+  }
+}

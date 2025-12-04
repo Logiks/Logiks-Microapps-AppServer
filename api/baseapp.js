@@ -48,6 +48,30 @@ module.exports = {
         console.log("\x1b[36m%s\x1b[0m",`Bootstrapping Completed with ${applicationData.length} Loaded Applications`);
     },
 
+    //This does migrations and other tasks
+    postInitalization: async function() {
+        //Migration Testing and Running if required
+        const DBKEYS = ["appdb", "logdb"];
+        switch(process.env.MIGRATION_MODE) {
+            case "IMPORT":
+                printObj("Running Migration - Importing", "yellow");
+                _.each(DBKEYS, async function(dbkey, k) {
+                    await DBMIGRATOR.startMigration(dbkey);
+                });
+                break;
+            case "EXPORT":
+                printObj("Running Migration - Exporting", "yellow");
+                _.each(DBKEYS, async function(dbkey, k) {
+                    await DBMIGRATOR.saveMigrationScript(dbkey);
+                });
+                break;
+            default:
+                printObj("Running Migration - Mode Not Supported", "grey");
+        }
+
+        console.log("\x1b[36m%s\x1b[0m",`Post Initalization Completed`);
+    },
+
     getAppInfo: async function(serverHost) {
         var selectedApplication = applicationData.filter(a=>a.domain.indexOf(serverHost)>=0);
 
