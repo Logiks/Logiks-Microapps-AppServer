@@ -10,11 +10,11 @@ module.exports = {
 				method: "GET",
 				path: "/openapi.json"
 			},
-			meta: {
-				scopes: ["docs:read"] // only those with docs:read (tenant-aware) see docs
-			},
+			// meta: {
+			// 	scopes: ["docs:read"] // only those with docs:read (tenant-aware) see docs
+			// },
 			async handler(ctx) {
-				const actions = await this.broker.getActionList({
+				const actions = this.broker.registry.getActionList({
 					withEndpoints: true,
 					onlyLocal: true
 				});

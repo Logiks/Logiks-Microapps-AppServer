@@ -319,7 +319,6 @@ module.exports = {
 							},
 							whitelist: [
 								"**",
-								// "swagger.openapi"
 							],
 							bodyParsers: {
 								json: true,
