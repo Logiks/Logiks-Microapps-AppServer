@@ -546,9 +546,9 @@ module.exports = {
 
 				if (!TLTOKENS[tltoken]) {
 					throw new Errors.MoleculerClientError(
-						"Invalid S2S token",
+						"Invalid TL token",
 						401,
-						"INVALID_S2S_TOKEN"
+						"INVALID_TL_TOKEN"
 					);
 				}
 				

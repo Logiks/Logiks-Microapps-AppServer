@@ -29,20 +29,22 @@ module.exports = {
 		layout: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/layout"
+				fullPath: "/api/layout/:layoutid?"
 			},
 			async handler(ctx) {
-				console.log("TENANT_LAYOUT", { meta: ctx.meta });
 
-				const appLayoutFile = "misc/apps/"+ctx.meta.appInfo.appid+"/layouts/default.json";
+				if(!ctx.params.layoutid) ctx.params.layoutid = "default";
+
+				const appLayoutFile = `misc/apps/${ctx.meta.appInfo.appid}/layouts/${ctx.params.layoutid}.json`;
 				if(fs.existsSync(appLayoutFile)) {
 					const layoutData = JSON.parse(fs.readFileSync(appLayoutFile, "utf8"));
 					return layoutData;
 				} else {
 					throw new Errors.MoleculerClientError(
-						"Invalid Application key",
+						"Invalid Application Layout Identifier",
 						401,
-						"INVALID_APP_KEY"
+						"INVALID_LAYOUT_KEY",
+						ctx.params.layoutid
 					);
 				}
 			}

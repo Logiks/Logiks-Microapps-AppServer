@@ -13,6 +13,30 @@
             "ADMIN_MENU_V2": false,
             "BILLING_DASHBOARD": true
         },
-        "slotOverrides": {}
+        "slotOverrides": {},
+        "cssOverrides": {},
+        "jsOverrides": {},
+        "logincss": {
+            "background-color": "#3f51b5",
+            "color": "#ffffff"
+        },
+        "logins": {
+            "local": {
+                "enabled": true
+            },
+            "google": {
+                "enabled": false,
+                "clientId": "",
+                "clientSecret": ""
+            },
+            "facebook": {
+                "enabled": false,
+                "appId": "",
+                "appSecret": ""
+            }
+        },
+        "metadata": {
+        },
+        "createdAt": "2023-10-01T10:00:00Z"
     }
 ]
