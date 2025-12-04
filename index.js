@@ -84,7 +84,9 @@ async function main() {
     
     // console.log("");
 
-    console.log("\n\x1b[32m%s\x1b[0m", `AppServer Started @ `+moment().format()+` and can be accessed on ${process.env.HOST}:${process.env.PORT}/`);
+    setTimeout(function() {
+        console.log("\n\x1b[32m%s\x1b[0m\n", `AppServer Started @ `+moment().format()+` and can be accessed on ${process.env.HOST}:${process.env.PORT}/`);
+    }, 2000);
 }
 
 //starting the main service
