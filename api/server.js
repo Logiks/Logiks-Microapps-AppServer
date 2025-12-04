@@ -176,6 +176,11 @@ module.exports = {
 					})
 				],
 
+				errorHandler(err, info) {
+					this.logger.warn("Log the error:", err);
+					throw err; // Throw further
+				},
+
 				settings: {
 					port: process.env.PORT || 3000,
 					ip: process.env.HOST || "0.0.0.0",

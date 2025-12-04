@@ -37,6 +37,9 @@ console.log("\x1b[34m%s\x1b[0m","\nAppServer Initialization Started\n");
 const { Errors } = require("moleculer");
 global.Errors = Errors;
 
+const { promisify } = require("util");
+global.promisify = promisify;
+
 //Load Core Modules
 const LOGGER = require('./api/logger');
 global.LOGGER = LOGGER;
