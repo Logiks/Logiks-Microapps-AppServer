@@ -476,6 +476,97 @@
       "PRIMARY"
     ]
   },
+  "log_data_changes": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "appid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "table_name": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "operation": {
+        "type": "varchar(15)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "source": {
+        "type": "varchar(15)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "record_pk": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "old_value": {
+        "type": "tinytext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "new_value": {
+        "type": "tinytext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY"
+    ]
+  },
   "log_errors": {
     "columns": {
       "id": {
