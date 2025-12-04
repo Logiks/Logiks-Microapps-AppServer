@@ -1,9 +1,14 @@
 "use strict";
 
+const mime = require("mime-types");
+
+const themeCache = new Map();
+
 module.exports = {
 	name: "tenant",
 
 	actions: {
+		//Get Tenant Information
 		fetch: {
 			rest: {
 				method: "GET",
@@ -26,6 +31,7 @@ module.exports = {
 			}
 		},
 
+		//Get Application Layout for the tenant
 		layout: {
 			rest: {
 				method: "GET",
@@ -50,31 +56,110 @@ module.exports = {
 			}
 		},
 
+		//Get theme styling
 		theme: {
 			rest: {
 				method: "GET",
 				fullPath: "/api/theme/:themeid?"
 			},
 			async handler(ctx) {
+				const themeId =
+						ctx.meta.user?.theme ||
+						ctx.params.themeid ||
+						ctx.meta.cookies?.theme ||
+						"default";
 
-				if(!ctx.params.themeid) ctx.params.themeid = "default";
+				let themeData = themeCache.get(themeId);
 
-				//const appLayoutFile = `misc/apps/${ctx.meta.appInfo.appid}/layouts/${ctx.params.layoutid}.json`;
-				const themeFile = `misc/themes/${ctx.params.themeid}/style.css`;
-				if(fs.existsSync(themeFile)) {
-					const themeData = fs.readFileSync(themeFile, "utf8");
-					
-					ctx.meta.$responseType = "text/css";
-					return themeData;
-				} else {
+				if (!themeData) {
+					themeData = await loadTheme(themeId);
+					if (!themeData) {
+						throw new Errors.MoleculerClientError(
+							"Invalid Theme Identifier",
+							404,
+							"INVALID_THEME_KEY",
+							themeId
+						);
+					}
+				}
+				
+				const clientVersion = ctx.params.v || ctx.meta.query?.v;
+
+				if (clientVersion && clientVersion === themeData.version) {
+					ctx.meta.$statusCode = 304; // Not Modified
+					return;
+				}
+
+				ctx.meta.$responseHeaders = {
+					"Content-Type": "text/css",
+					"Cache-Control": "public, max-age=31536000", // 1 year
+					"ETag": themeData.version
+				};
+
+				return themeData.css;
+			}
+		},
+
+		//Get media for theme file
+		media: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/theme/:themeid?/:filename"
+			},
+			async handler(ctx) {
+				const { themeid, filename } = ctx.params;
+
+				// Prevent directory traversal attack
+				const safePath = path.normalize(filename).replace(/^(\.\.(\/|\\|$))+/, "");
+
+				const filePath = path.resolve(`misc/themes/${themeid}/media/${safePath}`);
+				
+				if (!fs.existsSync(filePath)) {
 					throw new Errors.MoleculerClientError(
-						"Invalid Application Layout Identifier",
-						401,
-						"INVALID_LAYOUT_KEY",
-						ctx.params.themeid
+						"File not found",
+						404,
+						"MEDIA_NOT_FOUND"
 					);
 				}
+
+				// Auto-detect content type
+				const contentType = mime.lookup(filePath) || "application/octet-stream";
+
+				// Required Moleculer settings for streaming
+				ctx.meta.$responseType = "stream";
+				ctx.meta.$responseHeaders = {
+					"Content-Type": contentType,
+					"Cache-Control": "public, max-age=86400" // 1 day
+				};
+				// ctx.meta.$responseHeaders["Content-Disposition"] = `attachment; filename="${filename}"`;
+
+				// Return readable stream (memory safe)
+				return fs.createReadStream(filePath);
 			}
 		}
 	}
 };
+
+
+async function loadTheme(themeId) {
+	const themeFile = path.resolve(`misc/themes/${themeId}/style.css`);
+
+	try {
+		const [css, stats] = await Promise.all([
+			fs.readFileSync(themeFile, "utf8"),
+			fs.statSync(themeFile)
+		]);
+		const version = stats.mtimeMs.toString();
+		
+		themeCache.set(themeId, {
+			css,
+			version,
+			updatedAt: Date.now()
+		});
+
+		return themeCache.get(themeId);
+	} catch (err) {
+		console.log(err);
+		return null;
+	}
+}

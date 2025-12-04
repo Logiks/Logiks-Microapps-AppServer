@@ -26,6 +26,7 @@ global.fs = require("fs");
 global.path = require("path");
 global.axios = require("axios");
 global.moment = require("moment");
+global.crypto = require('crypto');
 
 global.ROOT_PATH = __dirname;
 global.START_TIME = moment().format();

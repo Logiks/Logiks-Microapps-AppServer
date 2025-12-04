@@ -1,5 +1,6 @@
 //For Bootstraping the application
 
+var tenantData = {};
 
 module.exports = {
 
@@ -42,21 +43,19 @@ module.exports = {
             }
         });
 
-        console.log("\n\x1b[31m%s\x1b[0m","Bootstrapping Completed");
+        tenantData = JSON.parse(fs.readFileSync("misc/tenants.json", "utf8"));
+
+        console.log("\n\x1b[31m%s\x1b[0m","Bootstrapping Completed with Tenants/Applications - "+tenantData.length);
     },
 
     getAppInfo: async function(serverHost) {
-        console.log("serverHost", serverHost);
-
-        const tenantData = JSON.parse(fs.readFileSync("misc/tenants.json", "utf8"));
-
         var selectedTenant = tenantData.filter(a=>a.domain.indexOf(serverHost)>=0);
 
         if(selectedTenant.length<=0) {
             return false;
         }
-
-        return selectedTenant[0];
+        
+        return _.cloneDeep(selectedTenant[0]);
     }
 }
 
