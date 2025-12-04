@@ -166,7 +166,7 @@ module.exports = function(server) {
 
                 return { success: true, file: filename, statements: sql.length };
             } else {
-                return { success: true, schema: sql.join("\n"), statements: sql.length };
+                return { success: true, schema: sql.join(""), statements: sql.length };
             }
         } catch (err) {
             console.error(err);
