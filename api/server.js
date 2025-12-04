@@ -268,7 +268,7 @@ module.exports = {
 								// }
 							// },
 
-							onBeforeCall(ctx, route, req, res) {
+							onBeforeCall: async function (ctx, route, req, res) {
 								console.log("REQUEST_PUBLIC", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
 								//res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
 
@@ -301,6 +301,11 @@ module.exports = {
 									"0.0.0.0";
 
 								ctx.meta.remoteIP = ip;
+
+								const serverHost = req.headers.host;
+								const appInfo = await BASEAPP.getAppInfo(serverHost);
+								ctx.meta.appInfo = appInfo || {};
+								ctx.meta.serverHost = serverHost || "";
 							}
 						},
 
@@ -398,6 +403,11 @@ module.exports = {
 									"0.0.0.0";
 
 								ctx.meta.remoteIP = ip;
+
+								const serverHost = req.headers.host;
+								const appInfo = await BASEAPP.getAppInfo(serverHost);
+								ctx.meta.appInfo = appInfo || {};
+								ctx.meta.serverHost = serverHost || "";
 
 								// Distributed rate limiting
 								await this.applyDistributedRateLimit(ctx, route, req, res);
@@ -559,8 +569,6 @@ module.exports = {
 						if (user) {
 							ctx.meta.user = user;
 						}
-						ctx.meta.appInfo = appInfo || {};
-						ctx.meta.serverHost = serverHost || "";
 
 						return user || null;
 					},

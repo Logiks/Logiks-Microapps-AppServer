@@ -109,6 +109,56 @@ module.exports = {
 			}
 		},
 
+		/**
+		 * LogiksAuth Redirect Login Key Verification.
+		 * POST /api/public/auth/s2stoken
+		 */
+		tltoken: {
+			rest: {
+				method: "POST",
+				path: "/lauthtoken"
+			},
+			params: {
+				appid: "string",
+				client_key: "string",
+				deviceType: { type: "string", optional: true, default: "web" }
+			},
+			async handler(ctx) {
+				
+				const { deviceType } = ctx.params;
+				const username = "";
+				const password = ""; 
+				const privilage= "admin";
+				const roles= ["admin"];
+				const scopes= [
+					"tenant-1:orders:read",
+					"tenant-1:orders:write",
+					"tenant-1:docs:read"
+				];
+
+				const userData = {
+					id: username,
+					username: username,
+					tenantId: username,
+					passwordHash: await bcrypt.hash("password", 10),
+					privilage: privilage,
+					roles: roles,
+					scopes: scopes
+				};
+
+				// if (username !== fakeUserFromDB.username) {
+				// 	throw new MoleculerClientError("Invalid credentials", 401);
+				// }
+
+				// const valid = await bcrypt.compare(password, fakeUserFromDB.passwordHash);
+				// if (!valid) {
+				// 	throw new MoleculerClientError("Invalid credentials", 401);
+				// }
+
+				return this.issueTokensForUser(userData, ctx.meta.remoteIP, deviceType);
+			}
+		},
+
 		//To allow 3rd party federated login (Google, Facebook, Apple, etc)
 		federatedLogin: {
 			rest: {
