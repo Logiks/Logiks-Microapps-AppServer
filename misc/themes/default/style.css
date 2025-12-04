@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+:root {
+  --body: #f1f5f9; /* Slate-100 */
+  --text: #0f172a; /* Slate-900 */
+  --brand: #3b82f6; /* Indigo-500 */
+  --brand-dark: #1e40af; /* Indigo-800 */
+  --brand-light: #93c5fd; /* Indigo-300 */
+}
