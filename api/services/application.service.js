@@ -192,8 +192,49 @@ module.exports = {
 				fullPath: "/api/component/:compid"
 			},
 			async handler(ctx) {
+				const appInfo = ctx.meta.appInfo;
+				const userInfo = ctx.meta.user;
 
-				return {};
+				const compFiles = [
+					`misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}.jsx`,
+					`misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}.html`,
+					`misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}.htmlx`,
+
+					`misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}`,
+					`misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}`,
+					`misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}`
+				];
+
+				var i = 0;
+				for(i=0; i<compFiles.length; i++) {
+					if(fs.existsSync(compFiles[i])) {
+						const filePath = compFiles[i];
+
+						// console.log("fileName", i, filePath);
+
+						const contentType = mime.lookup(filePath) || "application/octet-stream";
+
+						// Required Moleculer settings for streaming
+						ctx.meta.$responseType = "stream";
+						ctx.meta.$responseHeaders = {
+							"Content-Type": contentType,
+							"Cache-Control": "public, max-age=86400" // 1 day
+						};
+						// ctx.meta.$responseHeaders["Content-Disposition"] = `attachment; filename="${filename}"`;
+
+						// Return readable stream (memory safe)
+						return fs.createReadStream(filePath);
+						break;
+					}
+				}
+				
+
+				throw new Errors.MoleculerClientError(
+					"Invalid Component Identifier",
+					404,
+					"INVALID_COMPONENT_KEY",
+					ctx.params.compid
+				);
 			}
 		},
     },
