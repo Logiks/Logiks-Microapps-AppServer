@@ -467,7 +467,7 @@ module.exports = {
 
 						// --- API KEY AUTH ---
 						if (apiKey) {
-							const apiInfo = await BASEAPP.fetchAuthInfo(apiKey);
+							const apiInfo = await BASEAPP.getAppInfo(apiKey);
 
 							if(!apiInfo) {
 								throw new Errors.MoleculerClientError(
