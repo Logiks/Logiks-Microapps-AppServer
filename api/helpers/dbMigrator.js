@@ -43,7 +43,7 @@ module.exports = function(server) {
 
         var schemaData = await DBMIGRATOR.generateMigration(dbkey, fileName, false);
         if(schemaData.success) {
-            if(schemaData.statements.length>0) {
+            if(schemaData.statements>0) {
                 printObj(`DB Difference Found with ${schemaData.statements} changes`, "yellow", 2);
 
                 var result = await DBMIGRATOR.applyMigration(dbkey, schemaData.schema);
