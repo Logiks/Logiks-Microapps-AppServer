@@ -1,0 +1,294 @@
+{
+	"schema": "1.0",
+	"title": "All Employees",
+	"category": "Contact",
+	"privilege": "*",
+	"blocked": false,
+	"rowlink": false,
+	"rowsPerPage": 20,
+	"showExtraColumn": false,
+	"custombar": false,
+	"hooks": {
+		"fieldupdate": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"script":"profile",
+	"source": {
+		"type": "sql",
+		"table": "profiletbl,my_branches",
+		"cols": "profiletbl.id,profiletbl.full_name,profiletbl.type,profiletbl.profile_code,profiletbl.status,profiletbl.designation,profiletbl.email1,profiletbl.mobile,profiletbl.tags,profiletbl.loginid,profiletbl.email2,profiletbl.mobile_others,profiletbl.fax,profiletbl.remarks,profiletbl.gender,profiletbl.dob,profiletbl.blocked,profiletbl.designation,my_branches.name,profiletbl.blacklist,profiletbl.created_on,profiletbl.created_by,profiletbl.edited_on,profiletbl.edited_by",
+	   "where":{
+	        "(profiletbl.type = 'employee' OR profiletbl.type='intern')":"RAW",
+	        "(my_branches.id=profiletbl.branch)" : "RAW"
+	    },
+	    
+		"limit": 20
+	},
+	"actions": {
+		"forms@profile.staff/new": {
+			"label": "Add Staff",
+			"icon": "fa fa-plus",
+			"class": "btn btn-info profile-employees"
+		}
+	},
+	"buttons": {
+	    "module@staff/{hashid}": {
+			"label": "View Summary",
+			"icon": "fa fa-building",
+			"class": "job-job"
+		},
+		"viewProfileInfo": {
+		    "label": "View Staff",
+			"icon": "fa fa-eye",
+			"class": "profile-employees"
+		},
+		"forms@profile.staff/edit/{hashid}": {
+		    "label": "Edit Staff",
+			"icon": "fa fa-pencil",
+			"class": "profile-employees"
+		},
+		"editProfileInfo": {
+			"label": "Edit Additional Info",
+			"icon": "fa fa-users",
+			"class": "business"
+		}
+	},
+	"datagrid": {
+		"profiletbl.id": {
+			"label": "ID",
+			"hidden": false,
+			"searchable": true,
+			"sortable": true,
+			"groupable": false,
+			"classes": "",
+			"style": "width:50px;",
+			"formatter": "text"
+		},
+		"profiletbl.full_name": {
+			"label": "Employee Name",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl.type": {
+			"label": "Type",
+			"searchable": true,
+			"sortable": true,
+            "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "do_lists",
+                "columns": "title,value",
+                "where":{
+                    "groupid":"employee_type"
+                  }
+               }	
+        },
+		"profiletbl.profile_code": {
+			"label": "Employee Code",
+			"searchable": true,
+			"sortable": true
+		},
+		"my_branches.name": {
+			"label": "Branch",
+			"searchable": true,
+			"sortable": true,
+			"hidden": false,
+			"formatter":"pretty",
+			"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "my_branches",
+                "columns": "name,name"
+            }
+		},
+		"profiletbl.designation":{
+		    "label": "Designation",
+			"searchable": true,
+			"sortable": true,
+			"formatter":"pretty",
+			"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "do_lists",
+                "columns": "title,value",
+                "where":{
+                    "groupid":"profile_staff_designation"
+                  }
+               }
+		},
+		"profiletbl.loginid": {
+			"label": "Login ID",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true,
+			"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "profiletbl",
+                "columns": "loginid,loginid"
+            }
+		},
+		"profiletbl.email1": {
+			"label": "Email",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl.email2": {
+			"label": "Alternate Email",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.mobile": {
+			"label": "Mobile",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl.mobile_others": {
+			"label": "Phone",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.gender": {
+			"label": "Gender",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true,
+			"formatter":"pretty",
+			"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "do_lists",
+                "columns": "title,value",
+                "where":{
+                    "groupid":"user_gender"
+                  }
+               }
+		},
+		"profiletbl.dob": {
+			"label": "DOB",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true,
+			"formatter":"date",
+			"filter":{
+				"type":"date"
+			}
+		},
+		"profiletbl.status": {
+			"label": "Status",
+			"searchable": true,
+			"sortable": true,
+			"formatter":"pretty",
+			"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "do_lists",
+                "columns": "title,value",
+                "where":{
+                    "groupid":"profile_staff_status"
+                  }
+               }
+		},
+		"profiletbl.tags": {
+			"label": "Tags",
+			"searchable": true,
+			"sortable": true,
+			"formatter":"pretty",
+			"hidden": true
+		},
+		"profiletbl.blocked": {
+			"label": "Blocked",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true,
+			"formatter":"pretty",
+            "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "do_lists",
+                "columns": "title,value",
+                "where":{
+                    "groupid":"boolean"
+                  }
+               }
+		},
+		"profiletbl.blacklist":{
+		    "label":"Blacklist",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true,
+		    "formatter":"pretty",
+		    "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "do_lists",
+                "columns": "title,value",
+                "where":{
+                    "groupid":"boolean"
+                  }
+               }
+		},
+		"profiletbl.created_on":{
+		    "label":"Added On",
+            "formatter":"date",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true,
+            "filter":{
+              "type":"date"
+            }
+		},
+		"profiletbl.created_by":{
+		    "label":"Added By",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true
+        
+		},
+		"profiletbl.edited_on":{
+		    "label":"Edited On",
+            "formatter":"date",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true,
+            "filter":{
+              "type":"date"
+            }
+		},
+		"profiletbl.edited_by":{
+		    "label":"Edited By",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true
+        
+		}
+	},
+	"kanban":{
+		"colkeys":{
+			"name":{
+				"label": "Branch",
+				"table": "my_branches",
+				"columns": "name as title,name as value"
+			},
+			"designation":{
+				"label": "Designation",
+				"table": "profiletbl",
+				"columns": "designation as title,designation as value"
+			},
+			"status":{
+			    "label": "Status",
+				"table": "profiletbl",
+				"columns": "status as title,status as value"
+			}
+			
+		},
+		"colmap":{
+			"title":"full_name",
+			"descs":"organization"
+		},
+		"unilink":"profile.staff"
+	}
+}

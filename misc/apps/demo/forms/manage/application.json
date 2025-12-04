@@ -1,0 +1,67 @@
+{
+
+	"source": {
+		"type": "sql",
+		"table": "applications",
+		"where": ["md5(id)"]
+	},
+	"script":"skillsPersona",
+	"gotolink":"infoview/manage.application/{hashid}?",
+	"fields": {
+	    "appid": {
+    		"label": "App ID",
+    		"type":"text",
+    		"required":true,
+			"group":"info"
+    	},
+		"appname": {
+			"label": "App Name",
+			"type": "text",
+    		"required":true,
+			"group":"info"
+		},
+		"promptengine": {
+			"label": "Prompt Engine",
+			"type": "dataSelector",
+			"groupid": "promptengine",
+			"no-option":"Select Prompt Engine",
+			"required": true,
+			"group":"info"
+		},
+		"datastore_id": {
+    		"label": "Data Store ID",
+    		"type":"text",
+    		"required":false,
+			"group":"info"
+    	},
+		"datastore_strategy": {
+			"label": "Data Store Strategy",
+			"type": "dataSelector",
+			"groupid":"datastore_strategy",
+			"no-option":"Select Data Store Strategy",
+    		"required":true,
+			"group":"info"
+		},
+		"params": {
+			"label": "Params",
+			"type":"textarea",
+			"required":false,
+			"group":"info"
+		},
+		"appstatus": {
+			"label": "App Status",
+			"type": "dataSelector",
+			"groupid":"appstatus",
+			"no-option":"Select App Status",
+    		"required":true,
+			"group":"info"
+		},
+		"description": {
+			"label": "Description",
+			"type":"textarea",
+			"required":false,
+			"group":"info",
+			"width":12
+		}
+	}
+}

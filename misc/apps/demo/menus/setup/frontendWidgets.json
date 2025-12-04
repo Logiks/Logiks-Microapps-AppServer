@@ -1,0 +1,20 @@
+{
+    "guid": "global",
+    "menuid": "default",
+    "title": "Frontend Widgets",
+    "mode": "*",
+    "category": "",
+    "menugroup": "No Group",
+    "class": "",
+    "target": "",
+    "link": "setup/frontendWidgets",
+    "iconpath": "las la-grip-horizontal",
+    "tips": "",
+    "site": "*",
+    "device": "*",
+    "privilege": "admin,root",
+    "weight": 30,
+    "onmenu": true,
+    "blocked": false,
+    "rules": ""
+}

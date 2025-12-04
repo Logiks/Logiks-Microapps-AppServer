@@ -1,0 +1,101 @@
+{
+    "schema":"1.0",
+	"title":"Bank Accounts",
+	"category":"Master",
+	"privilege":"*",
+	"blocked":false,
+	"rowlink":false,
+	"rowsPerPage":20,
+	"showExtraColumn":false,
+	"custombar":false,
+	"hooks": {
+		"fieldupdate": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source":{
+	    "type":"sql",
+	    "table":"accounts_banks",
+	    "cols":"*",
+	    "sort":"id asc",
+	    "limit":20
+	},
+	"actions":{
+         "forms@masters.banks/new":{
+            "label":"Add Account",
+            "icon": "fa fa-plus",
+    		"class": "btn btn-info"
+        }
+   },
+	"buttons": {
+		 "infoview@masters.banks/{hashid}": {
+            "label":"View Account",
+			"icon": "fa fa-eye"
+		},
+		"forms@masters.banks/edit/{hashid}": {
+            "label":"Edit Account",
+			"icon": "fa fa-pencil"
+		}
+	},
+	"datagrid":{
+	    "id":{
+			"label":"ID",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true,
+			"groupable":false,
+			"classes":"",
+			"style":"width:50px;",
+			"formatter":"text"
+		},
+		"bank_name": {
+			"label": "Bank Name",
+			"sortable":true,
+		    "searchable": true
+		},
+		"bank_branch": {
+			"label": "Bank Branch",
+			"sortable":true,
+		    "searchable": true
+		},
+		"bank_acno_name": {
+			"label": "Bank Account Name",
+			"sortable":true,
+		    "searchable": true
+		},
+		"bank_acno": {
+			"label": "Bank Account Number",
+			"sortable":true,
+		    "searchable": true
+		},
+		"bank_ifsc_code": {
+			"label": "Bank IFSC Code",
+			"sortable":true,
+		    "searchable": true
+		},
+		"bank_swift_code": {
+			"label": "Bank SWIFT Code",
+			"sortable":true,
+		    "searchable": true,
+		    "hidden":true
+		},
+		"bank_state": {
+			"label": "Bank State",
+			"sortable":true,
+		    "searchable": true,
+		    "hidden":true
+		},
+		"bank_country": {
+			"label": "Bank Country",
+			"sortable":true,
+		    "searchable": true,
+		    "hidden":true
+		},
+		"blocked":{
+		    "label":"Blocked",
+		    "sortable":true,
+		    "searchable":true,
+		    "hidden":true
+		}
+	}
+}

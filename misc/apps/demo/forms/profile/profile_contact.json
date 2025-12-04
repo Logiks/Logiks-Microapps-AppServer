@@ -1,0 +1,180 @@
+{
+	"hooks": {
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source": {
+		"type": "sql",
+		"table": "profiletbl_contacts",
+		"where": ["md5(id)"]
+	},
+	"forcefill": {
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#"
+	},
+	"fields": {
+		"profile_id": {
+			"label": "Contacts",
+			"group": "Info",
+			"type": "dataSelectorFromTable",
+			"table": "profiletbl",
+			"columns": "full_name as title,id as value",
+			"where": {
+			    "type <> 'employee'":"RAW",
+				"blocked": "false"
+			},
+			"no-option":"Select Contacts",
+			"required": true
+		},
+		"name":{
+		    "label": "Name",
+			"group": "Info",
+			"type": "text",
+			"required": true
+		},
+		"designation": {
+			"label": "Designation",
+			"group": "Info",
+			"type": "text",
+			"required": true
+		},
+		"tags": {
+			"label": "Tags",
+			"group": "Info",
+			"type": "tags"
+		},
+		"email1": {
+			"label": "Email",
+			"group": "Info",
+			"type": "email",
+			"required": true
+		},
+		"email2": {
+			"label": "Alternate Email",
+			"group": "Info",
+			"type": "email"
+		},
+		"mobile": {
+			"label": "Mobile",
+			"group": "Info",
+			"type": "phone",
+			"required": true
+		},
+		"mobile_others": {
+			"label": "Telephone/Others",
+			"group": "Info",
+			"type": "phone"
+		},
+		"gender": {
+			"label": "Gender (If Applicable)",
+			"group": "Info",
+			"type": "dataSelector",
+		    "groupid":"user_gender"
+		},
+		"fax": {
+			"label": "Fax",
+			"group": "Info"
+		},
+		"dob": {
+			"label": "DOB",
+			"group": "Info",
+			"type": "date"
+		},
+		"remarks": {
+			"label": "Remarks",
+			"group": "Info",
+			"type": "textarea",
+			"width": 6
+		},
+		"address": {
+			"label": "Billing Address",
+			"group": "Address",
+			"width": 6,
+			"type":"textarea",
+			"required": true
+		},
+		"city": {
+			"label": "Billing City",
+			"group": "Address"
+			
+		},
+		"state": {
+			"label": "Billing State",
+			"group": "Address"
+			
+		},
+		"country": {
+			"label": "Billing Country",
+			"group": "Address",
+			"type": "dataMethod",
+			"method": {
+				"name": "getCountrySelector",
+				"valuefield": "default"
+			}
+			
+		},
+		"zipcode": {
+			"label": "Billing Zipcode",
+			"group": "Address",
+			"width": 6
+			
+		},
+		"perm_address": {
+			"label": "Permanent Address",
+			"group": "Address",
+			"type": "textarea",
+			"width": 6
+		},
+		"perm_city": {
+			"label": "Permanent City",
+			"group": "Address"
+		},
+		"perm_country": {
+			"label": "Permanent Country",
+			"type": "dataMethod",
+			"method": {
+				"name": "getCountrySelector",
+				"valuefield": "default"
+			},
+			"group": "Address"
+		},
+		"perm_zipcode": {
+			"label": "Permanent Zipcode",
+			"group": "Address"
+		},
+		"facebook": {
+			"label": "Facebook",
+			"type": "social@facebook",
+			"group": "social"
+		},
+		"twitter": {
+			"label": "Twitter",
+			"type": "social@twitter",
+			"group": "social"
+		},
+		"instagram": {
+			"label": "Instagram",
+			"type": "social@instagram",
+			"group": "social"
+		},
+		"linkedin": {
+			"label": "LinkedIn",
+			"type": "social@linkedin",
+			"group": "social"
+		},
+		"website": {
+			"label": "Website",
+			"type": "url",
+			"group": "social"
+		}
+	}
+}

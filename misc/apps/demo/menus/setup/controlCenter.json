@@ -1,0 +1,20 @@
+{
+    "guid": "global",
+    "menuid": "default",
+    "title": "Control Center",
+    "mode": "*",
+    "category": "",
+    "menugroup": "No Group",
+    "class": "",
+    "target": "",
+    "link": "setup/controlCenter",
+    "iconpath": "las la-toolbox",
+    "tips": "",
+    "site": "*",
+    "device": "*",
+    "privilege": "root,admin",
+    "weight": 20,
+    "onmenu": true,
+    "blocked": false,
+    "rules": ""
+}

@@ -159,9 +159,30 @@ module.exports = {
 				fullPath: "/api/navigator/:navid?"
 			},
 			async handler(ctx) {
+				const appInfo = ctx.meta.appInfo;
+				const userInfo = ctx.meta.user;
+				const appID = appInfo.appid;
 
-
-				return {};
+				const appMenuDir = `misc/apps/${appID}/menus/${ctx.params.navid}/`;
+				if(fs.existsSync(appMenuDir)) {
+					const menuObj = await loadAllJsonFromFolder(appMenuDir);
+					
+					return menuObj.filter(a=> {
+						if(a.privilege) {
+							a.privilege = a.privilege.split(",");
+							// console.log(a.title, a.privilege);
+							if(!(a.privilege.indexOf("*")>=0 || a.privilege.indexOf(userInfo.privilege)>=0 || a.privilege.indexOf(userInfo.userId)>=0)) {
+								return false;
+							}
+						}
+						if(!(a.guid && (a.guid=="*" || a.guid=="global" || a.guid==userInfo.guid))) {
+							return false;
+						}
+						return true;
+					});
+				} else {
+					return {};
+				}
 			}
 		},
 
@@ -202,4 +223,25 @@ async function loadTheme(themeId) {
 		console.log(err);
 		return null;
 	}
+}
+
+async function loadAllJsonFromFolder(folderPath) {
+  const files = await fs.readdirSync(folderPath);
+
+  const jsonFiles = files.filter(f => f.endsWith(".json"));
+
+  const jobs = jsonFiles.map(async file => {
+    const fullPath = path.join(folderPath, file);
+    try {
+      const data = await fs.readFileSync(fullPath, "utf8");
+      return JSON.parse(data);
+    } catch (e) {
+      console.error(`❌ ${file} ignored: ${e.message}`);
+      return null;
+    }
+  });
+
+  const results = await Promise.all(jobs);
+
+  return results.filter(Boolean); // remove failed reads
 }

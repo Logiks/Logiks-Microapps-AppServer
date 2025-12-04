@@ -1,0 +1,25 @@
+{
+    "forcefill": {
+        "guid": "#SESS_GUID#"
+    },
+    "source": {
+        "type": "sql",
+        "table": "auth_apikeys",
+        "where": ["md5(id)"]
+    },
+    "gotolink": "infoview/apikeys/{hashid}?",
+    "fields": {
+        "auth_secret": {
+            "label": "Auth Secret",
+            "vmode": "view",
+            "group":"info",
+            "width":12
+        },
+        "auth_key": {
+            "label": "Auth Key",
+            "vmode": "view",
+            "group":"info",
+            "width":12
+        }
+    }
+}

@@ -1,0 +1,259 @@
+{
+	"schema": "1.0",
+	"title": "All Customers",
+	"category": "Contact",
+	"privilege": "*",
+	"blocked": false,
+	"rowlink": false,
+	"rowsPerPage": 20,
+	"showExtraColumn": false,
+	"custombar": false,
+	"hooks": {
+		"fieldupdate": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source": {
+		"type": "sql",
+		"table": "profiletbl",
+		"cols": "profiletbl.id,profiletbl.full_name,profiletbl.category,profiletbl.designation,profiletbl.email1,profiletbl.mobile,profiletbl.tags,profiletbl.loginid,profiletbl.gender,profiletbl.email2,profiletbl.mobile_others,profiletbl_address.address,profiletbl_address.state,profiletbl_address.country,profiletbl_address.zipcode,profiletbl.dob,profiletbl.nationality,profiletbl.blood_group,profiletbl.fax,profiletbl.pan,profiletbl.gst,profiletbl.owner,profiletbl.blocked,profiletbl.blacklist,profiletbl_organisation.organization,profiletbl.created_by,profiletbl.created_on,profiletbl.website,profiletbl.demography",
+		"where": {
+			"profiletbl.type  like '%vendor%'":"RAW",
+			"profiletbl.status='no'":"RAW"
+		},
+		"join":[
+		    {"query":"profiletbl_address","condition":"profiletbl.id=profiletbl_address.profile_id AND profiletbl_address.address_type='primary'","type":"LEFT","limit":1},
+		    {"query":"profiletbl_organisation","condition":"profiletbl.organization=profiletbl_organisation.id","type":"LEFT"}
+	    ],
+		"limit": 20
+	},
+	"actions": {
+	    
+		
+	},
+	"buttons": {
+		
+	},
+	"datagrid": {
+		"profiletbl.id": {
+			"label": "ID",
+			"hidden": false,
+			"searchable": true,
+			"sortable": true,
+			"groupable": false,
+			"classes": "",
+			"style": "width:50px;",
+			"formatter": "text"
+		},
+		"profiletbl.full_name": {
+			"label": "Name",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl.category":{
+		    "label": "Category",
+			"searchable": true,
+			"sortable": true,
+			"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "do_lists",
+                "columns": "title,value",
+                "where":{
+                    "groupid":"profile_category"
+                  }
+               }
+		},
+		"profiletbl_organisation.organization":{
+		    "label": "Group",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl.tags": {
+			"label": "Tags",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.email1": {
+			"label": "Email",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl.email2": {
+			"label": "Alternate Email",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.mobile": {
+			"label": "Mobile",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl.mobile_others": {
+			"label": "Phone",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.demography": {
+			"label": "Demography",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl_address.address": {
+			"label": "Address",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl_address.state": {
+			"label": "State",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl_address.zipcode": {
+			"label": "Zipcode",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl_address.country":{
+		    "label": "Country",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.gender": {
+			"label": "Gender",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true,
+            "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "do_lists",
+                "columns": "title,value",
+                "where":{
+                    "groupid":"user_gender"
+                  }
+               }
+		},
+		"profiletbl.dob": {
+			"label": "DOB",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true,
+			"formatter": "date",
+			"filter":{
+				"type":"date"
+			}
+		},
+		"profiletbl.pan": {
+			"label": "PAN No",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.gst": {
+			"label":"GST No",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.owner": {
+			"label": "Owner",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.fax": {
+			"label": "Fax",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.nationality": {
+			"label": "Nationality",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.blood_group": {
+			"label": "Blood Group",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.website": {
+			"label": "Website",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl.blacklist":{
+		    "label":"Blacklist",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true,
+		    "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "profiletbl",
+                "columns": "blacklist,blacklist"
+            }
+		},
+		"profiletbl.blocked": {
+			"label": "Blocked",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true,
+            "filter": {
+                "type": "select",
+                "nofilter": "--",
+                "options":{
+                    "false":"Not Blocked",
+                    "true":"Blocked"
+                }
+            }
+		},
+		"profiletbl.created_by":{
+		    "label":"Added By",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true
+		},
+		"profiletbl.created_on":{
+		    "label":"Added On",
+		    "sortable": true,
+		    "searchable": true,
+		    "formatter": "date",
+			"filter":{
+				"type":"date"
+			},
+		    "hidden":true
+		}
+	},
+	"kanban":{
+		"colkeys":{
+			"organization":{
+				"label": "Group",
+				"table": "profiletbl_organisation",
+				"columns": "organization as title,organization as value"
+			},
+			"country":{
+				"label": "Country",
+				"table": "profiletbl",
+				"columns": "country as title,country as value"
+			}
+		},
+		"colmap":{
+			"title":"full_name",
+			"descs":"organization"
+		},
+		"unilink":"profile.main"
+	}
+}

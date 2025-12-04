@@ -1,0 +1,20 @@
+{
+	"guid":"global",
+	"menuid":"default",
+	"title":"Applications",
+	"mode":"*",
+	"category":"",
+	"menugroup":"No Group",
+	"class":"",
+	"target":"",
+	"link":"setup/applications",
+	"iconpath":"las la-mobile",
+	"tips":"",
+	"site":"*",
+	"device":"*",
+	"privilege":"*",
+	"weight":0,
+	"onmenu":true,
+	"blocked":false,
+	"rules":""
+}

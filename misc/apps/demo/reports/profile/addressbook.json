@@ -1,0 +1,217 @@
+{
+	"schema": "1.0",
+	"title": "All Customers",
+	"category": "Contact",
+	"privilege": "*",
+	"blocked": false,
+	"rowlink": false,
+	"rowsPerPage": 20,
+	"showExtraColumn": false,
+	"custombar": false,
+	"hooks": {
+		"fieldupdate": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source": {
+		"type": "sql",
+		"table": "profiletbl_contacts,profiletbl",
+		"cols": "profiletbl_contacts.id,profiletbl_contacts.name,profiletbl_contacts.designation,profiletbl_contacts.email1,profiletbl_contacts.email2 as alternate_email,profiletbl_contacts.phone1,profiletbl_contacts.mobile,profiletbl_contacts.mobile_others,profiletbl_contacts.gender,profiletbl_contacts.dob,profiletbl_contacts.address,profiletbl_contacts.street,profiletbl_contacts.state,profiletbl_contacts.country,profiletbl_contacts.zipcode,profiletbl.full_name,profiletbl_contacts.city,profiletbl_contacts.created_by,profiletbl_contacts.created_on",
+		"where": {
+			"profiletbl.type <>'employee'":"RAW",
+			"profiletbl.id=profiletbl_contacts.profile_id":"RAW"
+		},
+	
+		"limit": 20
+	},
+	"actions": {
+		"forms@profile.addressbook/new": {
+			"label": "Add Contact",
+			"icon": "fa fa-plus",
+			"class": "btn btn-info profile-company"
+		}
+	},
+	"buttons": {
+		"infoview@profile.addressbook/{hashid}": {
+			"label": "View Contact",
+			"icon": "fa fa-eye",
+			"class": "profile-customers"
+		},
+		"forms@profile.addressbook/edit/{hashid}": {
+			"label": "Edit Contact",
+			"icon": "fa fa-pencil",
+			"class": "profile-customers"
+		}
+	},
+	"datagrid": {
+		"profiletbl_contacts.id": {
+			"label": "ID",
+			"hidden": false,
+			"searchable": true,
+			"sortable": true,
+			"groupable": false,
+			"classes": "",
+			"style": "width:50px;",
+			"formatter": "text"
+		},
+		"profiletbl_contacts.name": {
+			"label": "Name",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl.full_name": {
+			"label": "Business",
+			"searchable": true,
+			"formatter":"pretty",
+			"sortable": true,
+			"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "profiletbl",
+                "columns": "full_name,full_name"
+            }
+		},
+		"profiletbl_contacts.designation": {
+			"label": "Designation",
+			"searchable": true,
+			"formatter":"pretty",
+			"sortable": true,
+				"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "profiletbl_contacts",
+                "columns": "designation,designation"
+            }
+		},
+		"profiletbl_contacts.gender": {
+			"label": "Gender",
+			"searchable": true,
+			"sortable": true,
+			"formatter":"pretty",
+			"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "do_lists",
+                "columns": "title,value",
+                "where":{
+                    "groupid":"user_gender"
+                  }
+               }
+		},
+		"profiletbl_contacts.email1": {
+			"label": "Email",
+			"searchable": true,
+			"sortable": true
+		},
+		"alternate_email": {
+			"label": "Alternate Email",
+			"searchable": true,
+			"sortable": true,
+			"alias":"profiletbl_contacts.email2"
+		},
+		"profiletbl_contacts.phone1": {
+			"label": "Phone",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl_contacts.mobile": {
+			"label": "Mobile",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl_contacts.mobile_others": {
+			"label": "Alternate Mobile",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl_contacts.dob": {
+			"label": "DOB",
+			"searchable": true,
+			"sortable": true,
+			"filter":{
+				"type":"date"
+			}
+		},
+		"profiletbl_contacts.address": {
+			"label": "Address",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl_contacts.street": {
+			"label": "Street",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl_contacts.city": {
+			"label": "City",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl_contacts.state": {
+			"label": "State",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl_contacts.country": {
+			"label": "Country",
+			"searchable": true,
+			"sortable": true,
+			"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "do_lists",
+                "columns": "title,value",
+                "where":{
+                    "groupid":"country"
+                  }
+               }
+		},
+		"profiletbl_contacts.zipcode": {
+			"label": "Zipcode",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl_contacts.created_by":{
+		    "label":"Added By",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true,
+		    "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "profiletbl_contacts",
+                "columns": "created_by,created_by"
+            }
+		},
+		"profiletbl_contacts.created_on":{
+		    "label":"Added On",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true,
+		     "formatter": "date",
+			"filter":{
+				"type":"date"
+			}
+		}
+		
+	},
+	"kanban":{
+		"colkeys":{
+			"name":{
+				"label": "Business Name",
+				"table": "profiletbl_contacts",
+				"columns": "name as title,name as value"
+			},
+			"country":{
+				"label": "Country",
+				"table": "profiletbl",
+				"columns": "country as title,country as value"
+			}
+		},
+		"colmap":{
+			"title":"full_name",
+			"descs":"organization"
+		},
+		"unilink":"profile.main"
+	}
+}

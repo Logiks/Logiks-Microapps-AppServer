@@ -1,0 +1,106 @@
+{
+    "schema":"1.0",
+	"title":"Document Category",
+	"category":"Master",
+	"privilege":"*",
+	"blocked":false,
+	"rowlink":false,
+	"rowsPerPage":20,
+	"showExtraColumn":false,
+	"custombar":false,
+	"hooks": {
+		"fieldupdate": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source":{
+	    "type":"sql",
+	    "table":"data_doc_cat",
+	    "cols":"id,category,name,blocked,created_by,created_on,edited_by,edited_on",
+	    "limit":20
+	},
+	"actions":{
+        "forms@masters.doccats/new":{
+            "label":"Add Doc Category",
+            "icon": "fa fa-plus",
+    		"class": "btn btn-info"
+        }
+   },
+   "buttons": {
+		 "infoview@masters.doccats/{hashid}": {
+		    "label":"View Doc Category",
+			"icon": "fa fa-eye"
+		},
+		"forms@masters.doccats/edit/{hashid}": {
+		    "label":"Edit Doc Category",
+			"icon": "fa fa-pencil"
+		}
+   },
+	"datagrid":{
+	    "id":{
+			"label":"ID",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true,
+			"groupable":false,
+			"classes":"",
+			"style":"width:50px;",
+			"formatter":"text"
+		},
+		"category":{
+		    "label":"Document Category",
+		    "searchable": true,
+		    "sortable":true,
+		     "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "data_doc_cat",
+                "columns": "category,category"
+            }
+		},
+		"name":{
+		    "label":"Document Name",
+		    "searchable": true,
+		    "sortable":true
+		},
+		"blocked":{
+		    "label":"Blocked",
+		    "sortable":true,
+		    "searchable": true,
+		     "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "data_doc_cat",
+                "columns": "blocked,blocked"
+            }
+		},
+		"created_by":{
+		    "label":"Created By",
+		    "sortable":true,
+		    "searchable": true
+		},
+		"created_on":{
+		    "label":"Created On",
+		    "sortable":true,
+		    "searchable": true,
+			"formatter":"date",
+			"filter":{
+				"type":"date"
+			}
+		},
+		"edited_by":{
+		    "label":"Updated By",
+		    "sortable":true,
+		    "searchable": true
+		},
+		"edited_on":{
+		    "label":"Updated On",
+		    "sortable":true,
+		    "searchable": true,
+			"formatter":"date",
+			"filter":{
+				"type":"date"
+			}
+		}
+	}
+}

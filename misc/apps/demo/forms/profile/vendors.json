@@ -1,0 +1,739 @@
+{
+	"hooks": {
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source": {
+		"type": "sql",
+		"table": "profiletbl",
+		"where": ["md5(id)"]
+	},
+	"forcefill": {
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#",
+        "type":"vendor"
+	},
+	"gotolink":"infoview/profile.main/{hashid}?",
+	"fields": {
+		"full_name": {
+			"label": "Name",
+			"group": "Info",
+			"required": true,
+			"width": 4
+		},
+		"organization": {
+			"label": "Group",
+			"group": "Info",
+			"type": "dataSelectorFromTable",
+			"table": "profiletbl_organisation",
+			"columns": "organization as title,id as value",
+			"where": {
+				"blocked": "false"
+			},
+			"no-option":"Select Group",
+			"required": true,
+			"width": 4
+		},
+		"demography": {
+			"label": "Demography",
+			"group": "Info",
+			"type": "dataSelector",
+            "groupid":"country",
+            "multiple":true,
+			"width": 4
+		},
+		"status":{
+		    "label": "Is Approved",
+			"group": "Info",
+			"type": "dataSelector",
+		    "groupid":"approve_type",
+		    "no-option":"Is Approved",
+			"vmode":"edit",
+			"required": true
+		},
+		"category":{
+		    "label": "Category",
+			"group": "Info",
+			"type": "dataSelector",
+		    "groupid":"profile_category",
+			"required": true
+		},
+		"sub_category":{
+		    "label": "Sub Category",
+			"group": "Info",
+			"type": "dataSelector",
+		    "groupid":"profile_vendor_subtype",
+			"required": true
+		},
+		"email1": {
+			"label": "Email",
+			"group": "Info",
+			"type": "email",
+            "required":true
+		},
+		"email2": {
+			"label": "Alternate Email",
+			"group": "Info",
+			"type": "email"
+		},
+		"mobile": {
+			"label": "Mobile",
+			"group": "Info",
+			"type": "phone",
+            "required":true
+		},
+		"mobile_others": {
+			"label": "Phone",
+			"group": "Info",
+			"type": "phone"
+		},
+		"tags": {
+			"label": "Tags",
+			"group": "Info",
+			"type": "tags"
+		},
+		"website": {
+			"label": "Website",
+			"group": "Info",
+			"type": "url"
+		},
+	
+		"gender": {
+			"label": "Gender (If Applicable)",
+			"group": "personal",
+			"type": "dataSelector",
+		    "groupid":"user_gender"
+		},
+		"dob": {
+			"label": "DOB",
+			"group": "personal",
+			"type": "date"
+		},
+		"pan": {
+			"label": "PAN No.",
+			"required":true,
+			"group": "business"
+		},
+		"gst": {
+			"label": "GST No.",
+			"required": true,
+		    "group": "business"
+		},
+		"owner": {
+			"label": "Owner",
+			"group": "business"
+		},
+		"fax": {
+			"label": "Fax",
+			"group": "business"
+		},
+		"nationality": {
+			"label": "Nationality",
+			"group": "personal",
+			"type":"dataSelector",
+            "groupid": "nationality"
+		},
+		"blood_group": {
+			"label": "Blood Group",
+			"group": "personal"
+		},
+		"remarks": {
+			"label": "Remarks",
+			"group": "Info",
+			"type": "textarea",
+			"width": 12
+		},
+		"blocked": {
+			"label": "Blocked",
+			"group": "Info",
+			"type": "dataSelector",
+		    "groupid":"boolean",
+			"vmode":"edit",
+			"required": true
+		},
+		"blacklist": {
+			"label": "Blacklisted",
+			"group": "Info",
+			"type": "dataSelector",
+		    "groupid":"boolean",
+			"vmode":"edit",
+			"required": true
+		}
+	},
+	"infoview": {
+		"groups": {
+		    	"new_address": {
+				"label": "Address",
+			    "type": "module",
+				"src": "infoviewTable",
+				"vmode": "edit",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+				    "table": "profiletbl_address",
+					"cols": "profiletbl_address.id,profiletbl_address.address_type,profiletbl_address.title as reference_name,profiletbl_address.address,profiletbl_address.street,profiletbl_address.city,profiletbl_address.state,profiletbl_address.country,profiletbl_address.zipcode",
+					"where": " md5(profiletbl_address.profile_id)='#refid#'" ,
+                    "form":{
+                        "source": {
+                            "type": "sql",
+                            "table": "profiletbl_address",
+                            "where": ["md5(id)"]
+                        },
+                        "forcefill": {
+                            "access_level":"#SESS_ACCESS_LEVEL#",
+                            "privilegeid":"#SESS_PRIVILEGE_ID#",
+                            "guid":"#SESS_GUID#",
+                    		"created_by": "#SESS_USER_ID#",
+                            "profile_id":"#id#"
+                        },
+                        "fields":{
+                            "address_type": {
+                    			"label": "Address Type",
+                    			"group": "Info",
+                    			"type": "dataSelector",
+                    			"groupid": "address_type",
+                    			"required": true
+                    		},
+                             "title": {
+                    			"label": "Reference Name",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                		    },
+                    		
+                    		"address": {
+                    			"label": "Address",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                		    },
+                    		"street": {
+                    			"label": "Street",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                    		"city": {
+                    			"label": "City",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                    		"state": {
+                    			"label": "State",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                    		"country": {
+                    			"label": "Country",
+                    			"group": "Info",
+                    			"type": "dataSelector",
+		                        "groupid":"country"
+                    		},
+                    		"zipcode": {
+                    			"label": "Zipcode",
+                    			"group": "Info",
+                    			"type": "text"
+                    		}
+                        }
+                    }
+				},
+				"width": 12
+			},
+			"new_social": {
+				"label": "Social",
+			    "type": "module",
+				"src": "infoviewTable",
+				"vmode": "edit",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+				    "table": "profiletbl_social",
+					"cols": "profiletbl_social.id,profiletbl_social.social_type,profiletbl_social.social_weblink,profiletbl_social.social_userid,profiletbl_social.token_key",
+					"where": " md5(profiletbl_social.profile_id)='#refid#'" ,
+                    "form":{
+                        "source": {
+                            "type": "sql",
+                            "table": "profiletbl_social",
+                            "where": ["md5(id)"]
+                        },
+                        "forcefill": {
+                            "access_level":"#SESS_ACCESS_LEVEL#",
+                            "privilegeid":"#SESS_PRIVILEGE_ID#",
+                            "guid":"#SESS_GUID#",
+                    		"created_by": "#SESS_USER_ID#",
+                            "profile_id":"#id#"
+                        },
+                        "fields":{
+                    		"social_type": {
+                    			"label": "Social Type",
+                    			"group": "Info",
+                    			"type": "dataSelector",
+                    			"groupid": "social_type",
+                    			"required": true
+                    		},
+                           "social_weblink": {
+                    			"label": "Social Weblink",
+                    			"group": "Info",
+                    			"type": "url",
+                    			"required": true
+                		    },
+                    		"social_userid": {
+                    			"label": "Social User Id",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                    		"token_key": {
+                    			"label": "Token Key",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		}
+                        }
+                    }
+				},
+				"width": 12
+			},
+			"business": {
+				"label": "Biz Info",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "single",
+					"table": "profiletbl,profiletbl_business",
+					"cols": "profiletbl_business.biz_entity,profiletbl_business.biz_type,profiletbl_business.biz_activities,profiletbl_business.biz_currency,profiletbl_business.biz_adhar_no as 'Biz_Adhaar_No',profiletbl_business.created_by",
+					"where": "md5(profiletbl_business.profile_id)='#refid#' AND profiletbl_business.profile_id=profiletbl.id"
+				},
+				"width": 12
+			},
+			"bank_details": {
+				"label": "Bank Details",
+			    "type": "module",
+				"src": "infoviewTable",
+				"vmode": "edit",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+				    "table": "profiletbl_banks",
+					"cols": "profiletbl_banks.id,profiletbl_banks.bank_name as bank,profiletbl_banks.bank_branch as branch,profiletbl_banks.bank_address as address,profiletbl_banks.bank_state as state,profiletbl_banks.bank_country as country,profiletbl_banks.bank_acno as account_no,profiletbl_banks.bank_ifsc_code as ifsc_code,profiletbl_banks.bank_swift_code as swift_code",
+					"where": " md5(profiletbl_banks.profile_id)='#refid#'" ,
+                    "form":{
+                        "source": {
+                            "type": "sql",
+                            "table": "profiletbl_banks",
+                            "where": ["md5(id)"]
+                        },
+                        "forcefill": {
+                            "access_level":"#SESS_ACCESS_LEVEL#",
+                            "privilegeid":"#SESS_PRIVILEGE_ID#",
+                            "guid":"#SESS_GUID#",
+                    		"created_by": "#SESS_USER_ID#",
+                            "profile_id":"#id#"
+                        },
+                        "fields":{
+                            "bank_name": {
+                    			"label": "Bank",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                             "bank_branch": {
+                    			"label": "Branch",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                		    },
+                    		
+                    		"bank_address": {
+                    			"label": "Address",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                		    },
+                    		"bank_state": {
+                    			"label": "State",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                    		"bank_country": {
+                    			"label": "Country",
+                    			"group": "Info",
+                    			"type": "dataSelector",
+		                        "groupid":"country"
+                    		},
+                    		"bank_acno": {
+                    			"label": "Zipcode",
+                    			"group": "Info",
+                    			"type": "text"
+                    		},
+                    		"bank_ifsc_code": {
+                    			"label": "IFSC Code",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                    		"bank_swift_code": {
+                    			"label": "SWIFT Code",
+                    			"group": "Info",
+                    			"type": "text"
+                    		}
+                        }
+                    }
+				},
+				"width": 12
+			},
+			"organization": {
+				"label": "Group",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "single",
+					"table": "profiletbl_organisation,profiletbl",
+					"cols": "profiletbl_organisation.organization as group_name,profiletbl_organisation.org_category as group_category,profiletbl_organisation.org_type as group_type,profiletbl_organisation.org_establishment as group_establishment,profiletbl_organisation.org_mail as group_mail,profiletbl_organisation.org_landline as group_landline,profiletbl_organisation.org_address1 as group_address1,profiletbl_organisation.org_country1 as group_country1,profiletbl_organisation.org_zipcode1 as group_zipcode1,profiletbl_organisation.org_website as group_website,profiletbl_organisation.contact_person1,profiletbl_organisation.contact_designation1 as person1_designation",
+					"where": "profiletbl_organisation.id=profiletbl.organization AND md5(profiletbl.id)='#refid#'"
+				},
+				"width": 12
+			},
+			"address_book": {
+			    "label": "Address Book",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "edit",
+				"config": {
+					"type": "sql",
+					"table": "profiletbl_contacts",
+					"cols": "id,name,designation,email1 as email,mobile,address,state,country",
+					"where": "md5(profiletbl_contacts.profile_id)='#refid#'",
+					"width": 12,
+					"colkey":"profile_id",
+                    "form":{
+                        "source": {
+                            "type": "sql",
+                            "table": "profiletbl_contacts",
+                            "where": ["md5(id)"]
+                        },
+                        "forcefill": {
+                            "access_level":"#SESS_ACCESS_LEVEL#",
+                            "privilegeid":"#SESS_PRIVILEGE_ID#",
+                            "profile_id":"#REFID#"
+                        },
+                        "fields":{
+                            "name":{
+                                "label":"Name",
+                                "type": "text",
+                                "required":true
+                            },
+                            "designation":{
+                                "label":"Designation",
+                                "type":"text",
+                                "required":true
+                            },
+                            "email1":{
+                                "label":"Email",
+                                "type":"email",
+                                "required":true
+                            },
+                            "mobile":{
+                                "label":"Mobile",
+                                "type":"text",
+                                "required":true
+                            },
+                            "address":{
+                                "label":"Address",
+                                "type":"text"
+                            },
+                            "state":{
+                                "label":"State",
+                                "type":"text"
+                            },
+                            "country":{
+                                "label":"Country",
+                                "type": "dataSelector",
+		                        "groupid":"country"
+                            }
+                        }
+                    }
+				},
+				"width": 12
+			},
+			"leads": {
+				"label": "Leads",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "lead_tbl,profiletbl",
+					"cols": "lead_tbl.id,lead_tbl.title,lead_tbl.lead_date,lead_tbl.net_amount,lead_tbl.lead_status,lead_tbl.lead_type,lead_tbl.lead_priority,lead_tbl.lead_source,lead_tbl.enquiry_type",
+					"where":"md5(profiletbl.id)='#refid#' AND lead_tbl.customer_id=profiletbl.id"
+				},
+				"width": 12
+			},
+			"jobs": {
+				"label": "Jobs",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "jobs_tbl,data_job_types",
+					"cols": "jobs_tbl.id,jobs_tbl.title as job_name,data_job_types.job_name as job_master,jobs_tbl.category,jobs_tbl.job_status,jobs_tbl.manager,jobs_tbl.job_year,jobs_tbl.edited_on,jobs_tbl.edited_by",
+					"where": "md5(jobs_tbl.profile_id)='#refid#' AND jobs_tbl.master_job_id=data_job_types.id"
+				},
+				"width": 12
+			},
+			"projects": {
+				"label": "Projects",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "projects_tbl,data_project_types",
+					"cols": "projects_tbl.id,projects_tbl.title as project_name,data_project_types.name as project_master,projects_tbl.category,projects_tbl.status,projects_tbl.manager,projects_tbl.edited_on,projects_tbl.edited_by",
+					"where": "md5(projects_tbl.profile_id)='#refid#' AND projects_tbl.project_typeid=data_project_types.id",
+					"orderby": "projects_tbl.edited_on DESC"
+				},
+				"width": 12
+			},
+			"invoices": {
+				"label": "Invoices",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "invoices_tbl,profiletbl",
+					"cols": "invoices_tbl.id,invoices_tbl.invoiceno as invoice_no,invoices_tbl.date,invoices_tbl.currency,invoices_tbl.total_amount,invoices_tbl.total_payment,(invoices_tbl.total_amount-invoices_tbl.total_payment) as total_due,invoices_tbl.due_date,invoices_tbl.created_by",
+					"where": "invoices_tbl.customer_id=profiletbl.id AND md5(profiletbl.id)='#refid#'"
+				},
+				"width": 12,
+				"hidden": true
+			},
+			"purchase": {
+				"label": "Purchase",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "profiletbl,purchase_tbl",
+					"cols": "purchase_tbl.id,purchase_tbl.purchaseno as purchase,profiletbl.full_name as vendor,purchase_tbl.due_date,purchase_tbl.total_amount,purchase_tbl.total_payment,(purchase_tbl.total_amount-purchase_tbl.total_payment) as total_due,purchase_tbl.status,purchase_tbl.created_by,purchase_tbl.created_on",
+					"where":"md5(profiletbl.id)='#refid#' AND purchase_tbl.customer_id=profiletbl.id AND purchase_tbl.blocked='false'"
+				},
+				"width": 12,
+				"hidden": true
+			},
+			"postbox": {
+				"label": "Postbox",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "reception_activities,profiletbl",
+					"cols": "reception_activities.id,reception_activities.subject,reception_activities.comms_type as Postbox_type,profiletbl.full_name as Person,reception_activities.dated as date,reception_activities.flags",
+					"where":"reception_activities.profile_id= profiletbl.id AND md5(profiletbl.id)='#refid#'",
+					"orderby": "reception_activities.edited_on DESC",
+					"colkey":"reception_activities.profile_id",
+                    "form":{
+                        "source": {
+                            "type": "sql",
+                            "table": "reception_activities",
+                            "where": ["md5(id)"]
+                        },
+                        "forcefill": {
+                            "groupuid":"#SESS_GROUP_NAME#",
+                            "access_level":"#SESS_ACCESS_LEVEL#",
+                            "privilegeid":"#SESS_PRIVILEGE_ID#",
+                            "guid":"#SESS_GUID#",
+                            "dated":"CURDATE()"
+                        },
+                        "fields":{
+                            "comms_type": {
+                    			"label": "Post Box Type",
+                    			"group": "Info",
+                    			"type": "dataSelector",
+                    			"groupid": "reception_postbox_type",
+                    			"no-option": "Select Post Box Type"
+                    		},
+                            "subject": {
+                    			"label": "Subject",
+                    			"group": "Info"
+                    		},
+                    		"profile_id": {
+                    			"label": "Sender",
+                    			"group": "Info",
+                    			"type": "dataSelectorFromTable",
+                    			"table": "profiletbl",
+                    			"columns": "full_name as title,id as value",
+                    			"where": {
+                    			    "profiletbl.type <> 'employee'" : "RAW"
+                    			},
+                    			"no-option": "Select Sender",
+                    			"ajaxchain":{
+                    				"target":"task_id",
+                    				"src":{
+                    					"table": "task_tbl",
+                    					"columns": "name as title,id as value",
+                    					"where": {
+                    					    "blocked" : "false",
+                    						"profile_id":"#refid#"
+                    					}
+                    				}
+                    			}
+                    		},
+                    		"staff_userid": {
+                    			"label": "Receiver",
+                    			"group": "Info",
+                    			"type": "dataSelectorFromTable",
+                    			"table": "profiletbl",
+                    			"columns": "full_name as title,id as value",
+                    			"where": {
+                    			    "profiletbl.type" : "employee"
+                    			},
+                    			"no-option": "Select Receiver"
+                    		},
+                    		"task_id": {
+                    			"label": "Select Task (ID)",
+                    			"group": "Info",
+                    			"type": "select",
+                    			"no-option": "Select Task"
+                    		},
+                    		"type": {
+                    			"label": "Type of Attachment",
+                    			"group": "Info",
+                    			"type": "dataSelector",
+                    			"groupid": "reception_attachment_type"
+                    		}
+                    	
+                        }
+                    },
+    				"buttons": {
+    					"forms@reception.inward/new": {
+    						"label": "Add Inward",
+    						"icon": "fa fa-plus"
+    					},
+    					"forms@reception.outward/new": {
+    						"label": "Add Outward",
+    						"icon": "fa fa-plus"
+    					}
+    				}
+				},
+				"width": 12,
+				"hidden": true
+			},
+			"email": {
+				"label": "Email",
+				"type": "module",
+				"src": "emails.inbox",
+				"rule": "profile,#refid#",
+				"vmode": "view",
+				"width": 12,
+				"hidden": true
+			},
+			"accounts":{
+			    "label": "Accounts",
+				"type": "module",
+				"src": "accounts.ledger",
+				"config": {
+				    "ref_id":"#refid#",
+				    "typeid":"party"
+				},
+				"width": 12
+			},
+			"files": {
+				"label": "Files",
+				"type": "module",
+				"src": "docman.docs",
+				"vmode": "edit",
+				"config": {
+				    "ref_rule":"md5(profile_id)='#refid#'",
+				    "ref_col":"md5(profile_id)",
+				    "ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"rule": "profile,#refid#",
+				"width": 12
+			},
+			"events": {
+				"label": "Events",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "user_events,profiletbl",
+					"cols": "user_events.id,user_events.event,user_events.schedule,user_events.flag_period,user_events.priority,user_events.created_by",
+					"where":"md5(profiletbl.id)='#refid#' AND user_events.ref_id=profiletbl.id AND user_events.ref_src='profile'"
+				},
+				"width": 12,
+				"hidden": true
+			},
+			"comments": {
+				"label": "Comments",
+				"type": "module",
+				"src": "userComments.comments",
+				"vmode": "edit",
+				"config": {
+				    "ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"width": 12
+			},
+			"notes": {
+				"label": "Notes",
+				"type": "module",
+				"src": "notesBoard.notes",
+				"rule": "profile,#refid#",
+				"vmode": "edit",
+				"width": 12,
+				"hidden": true
+			},
+			"logs": {
+				"label": "Logs",
+				"type": "module",
+				"src": "bizlogger.logs",
+				"rule": "profile,#refid#",
+				"vmode": "view",
+				"width": 12,
+				"config": {
+				    "ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"hidden":true
+			},
+			"extras": {
+				"label": "Extra",
+				"type": "widget",
+				"src": "biz_infoview_xtras",
+				"vmode": "view",
+				"width": 12,
+				"hidden":true
+			}
+		}
+	}
+}

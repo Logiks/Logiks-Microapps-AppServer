@@ -1,0 +1,323 @@
+{
+	"hooks": {
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"forcefill":{
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#"
+	},
+	"source": {
+		"type": "sql",
+		"table": "profiletbl_organisation",
+		"where": ["md5(id)"]
+	},
+	"gotolink":"infoview/profile.company/{hashid}?",
+	"fields": {
+		"organization": {
+			"label": "Group",
+			"group": "Info",
+			"required": true
+		},
+		"org_code": {
+			"label": "Group Code (E.g- de,cg)",
+			"group": "Info",
+			"maxlength":5
+		},
+		"org_establishment": {
+			"label": "Date of Establishment",
+			"group": "Info",
+			"type": "date"
+		},
+		"org_type": {
+			"label": "Type",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid": "org_type",
+			"no-option":"Select Type",
+			"required": true
+		},
+		"org_category": {
+			"label": "Category",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid": "org_category",
+			"no-option":"Select Category",
+			"required": true
+		},
+		"org_subcategory":{
+		    "label": "Sub Category",
+			"group": "Info"
+		},
+		"org_mail": {
+			"label": "E-mail",
+			"group": "Info",
+			"type": "email"
+		},
+		"org_landline": {
+			"label": "Landline",
+			"group": "Info"
+		},
+		"org_pan": {
+			"label": "PAN No.",
+			"group": "Info"
+		},
+		"org_gst": {
+			"label": "GST No.",
+			"group": "Info"
+		},
+		"org_owner": {
+			"label": "Owner",
+			"group": "Info"
+		},
+		"org_website": {
+			"label": "Website",
+			"type": "url",
+			"group": "Info"
+		},
+		"org_tags": {
+			"label": "Tags",
+			"group": "Info",
+			"type": "tags"
+		},
+		"org_address1": {
+			"label": "Address1",
+			"group": "Address",
+			"type": "textarea"
+		},
+		"org_country1": {
+			"label": "Country1",
+			"group": "Address",
+			"type": "dataMethod",
+			"method": {
+				"name": "getCountrySelector",
+				"valuefield": "default"
+			},
+		    "no-option":"Select Country1"
+		},
+		"org_zipcode1": {
+			"label": "Zipcode1",
+			"group": "Address"
+		},
+		"org_address2": {
+			"label": "Address2",
+			"group": "Address",
+			"type": "textarea"
+		},
+		"org_country2": {
+			"label": "Country2",
+			"type": "dataMethod",
+			"method": {
+				"name": "getCountrySelector",
+				"valuefield": "default"
+			},
+			"group": "Address",
+			 "no-option":"Select Country2"
+		},
+		"org_zipcode2": {
+			"label": "Zipcode2",
+			"group": "Address"
+		},
+		"org_address3": {
+			"label": "Address3",
+			"group": "Address",
+			"type": "textarea"
+		},
+		"org_country3": {
+			"label": "Country3",
+			"type": "dataMethod",
+			"method": {
+				"name": "getCountrySelector",
+				"valuefield": "default"
+			},
+			"group": "Address",
+			 "no-option":"Select Country3"
+		},
+		"org_zipcode3": {
+			"label": "Zipcode3",
+			"group": "Address"
+		},
+		"blocked": {
+			"label": "Blocked",
+			"group": "Info",
+			"type": "dataSelector",
+		    "groupid":"boolean",
+			"vmode":"edit",
+			"required": true
+		}
+	},
+	"infoview": {
+		"groups": {
+		    "biz_info": {
+				"label": "Biz Info",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "single",
+					"table": "profiletbl_organisation,profiletbl_organisation_business",
+					"cols": "profiletbl_organisation_business.biz_entity,profiletbl_organisation_business.biz_type,profiletbl_organisation_business.biz_activities,profiletbl_organisation_business.biz_currency,profiletbl_organisation_business.audit_type,profiletbl_organisation_business.monitoring,profiletbl_organisation_business.turn_over_vat,profiletbl_organisation_business.turn_over_st,profiletbl_organisation_business.turn_over_it,applicable_returns,profiletbl_organisation_business.capital_authorised,profiletbl_organisation_business.capital_paidup,profiletbl_organisation_business.created_by",
+					"where": "md5(profiletbl_organisation_business.org_id)='#refid#' AND profiletbl_organisation_business.org_id=profiletbl_organisation.id"
+				},
+				"width": 12
+			},
+			 "others": {
+				"label": "Others",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "single",
+					"table": "profiletbl_organisation,profiletbl_organisation_business",
+					"cols": "profiletbl_organisation_business.biz_adhar_no,profiletbl_organisation_business.past_auditor,profiletbl_organisation_business.biz_vat,profiletbl_organisation_business.biz_cst,profiletbl_organisation_business.biz_roc,profiletbl_organisation_business.biz_st,profiletbl_organisation_business.biz_excise,profiletbl_organisation_business.biz_rbi,profiletbl_organisation_business.biz_cess_lbt",
+					"where": "md5(profiletbl_organisation_business.org_id)='#refid#' AND profiletbl_organisation_business.org_id=profiletbl_organisation.id"
+				},
+				"width": 12
+			},
+			"business": {
+				"label": "Business",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "profiletbl,profiletbl_organisation",
+					"cols": "profiletbl.id,profiletbl.full_name as name,profiletbl.type,profiletbl.category,profiletbl.email1 as email,profiletbl.mobile",
+					"where": "md5(profiletbl_organisation.id)='#refid#' AND (type like '%customer%' OR type like '%vendor%' OR type like '%Other%') AND profiletbl_organisation.id = profiletbl.organization"
+				},
+				"width": 12
+			},
+			"project": {
+				"label": "Projects",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "profiletbl,profiletbl_organisation,projects_tbl,data_project_types",
+					"cols": "projects_tbl.project_group,projects_tbl.title as project_name,data_project_types.name as master,projects_tbl.category,projects_tbl.status,projects_tbl.due_date,profiletbl.full_name as business, projects_tbl.manager",
+					"where": {
+					    "md5(profiletbl_organisation.id)='#refid#' AND type like '%customer%' AND profiletbl_organisation.id=profiletbl.organization AND profiletbl.id=projects_tbl.profile_id AND projects_tbl.project_typeid=data_project_types.id":"RAW"
+					}
+				},
+				"width": 12
+			},
+			"job": {
+				"label": "Jobs",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "profiletbl_organisation,profiletbl,jobs_tbl,data_job_types",
+					"cols": "profiletbl_organisation.organization as group,jobs_tbl.title as job,data_job_types.job_name as master,jobs_tbl.category,jobs_tbl.job_status as status,jobs_tbl.end_date,profiletbl.full_name as business,jobs_tbl.manager",
+					"where": {
+					    "md5(profiletbl_organisation.id)='#refid#' AND (type like '%customer%' OR type like '%vendor%' OR type like '%Other%') AND profiletbl_organisation.id=profiletbl.organization AND profiletbl.id=jobs_tbl.profile_id AND jobs_tbl.master_job_id=data_job_types.id":"RAW"
+					}
+				},
+				"width": 12
+			},
+			"invoices": {
+				"label": "Invoices",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "profiletbl,profiletbl_organisation,invoices_tbl",
+					"cols": "invoices_tbl.id,invoices_tbl.invoiceno as invoice_no,invoices_tbl.date,invoices_tbl.currency,invoices_tbl.total_amount,invoices_tbl.total_payment,(invoices_tbl.total_amount-invoices_tbl.total_payment) as total_due,invoices_tbl.due_date,invoices_tbl.status as status,invoices_tbl.created_by",
+					"where": "md5(profiletbl_organisation.id)='#refid#' AND invoices_tbl.customer_id = profiletbl.id AND profiletbl_organisation.id = profiletbl.organization"
+				},
+				"width": 12
+			},
+			"purchase": {
+				"label": "Purchase",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "profiletbl,profiletbl_organisation,purchase_tbl",
+					"cols": "purchase_tbl.id,purchase_tbl.purchaseno as purchase_inv_no,purchase_tbl.date as purchase_date,profiletbl.full_name as vendor,purchase_tbl.due_date,purchase_tbl.total_amount,purchase_tbl.total_payment,(purchase_tbl.total_amount-purchase_tbl.total_payment) as total_due,purchase_tbl.status,purchase_tbl.created_by",
+					"where":"profiletbl_organisation.id = profiletbl.organization AND purchase_tbl.customer_id=profiletbl.id AND purchase_tbl.blocked='false' AND md5(profiletbl_organisation.id)='#refid#'"
+				},
+				"width": 12
+			},
+			"files": {
+				"label": "Files",
+				"type": "module",
+				"src": "docman.docs",
+				"vmode": "view",
+				"config": {
+				    "ref_rule":"docs_tbl.profile_id IN #SUBQUERY0#",
+				    "ref_subquery":"(SELECT id FROM profiletbl WHERE md5(profiletbl.organization)='#refid#')"
+				},
+				"width": 12
+			},
+			"comments": {
+				"label": "Comments",
+				"type": "module",
+				"src": "userComments.comments",
+				"config": {
+				    "ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"vmode": "edit",
+				"width": 12
+			},
+			"emails": {
+				"label": "Emails",
+				"type": "widget",
+				"src": "emails.inbox",
+				"vmode": "view",
+				"hidden": true,
+				"width": 12
+			},
+			"notes": {
+				"label": "Notes",
+				"type": "module",
+				"src": "notesBoard.notes",
+				"vmode": "view",
+				"hidden": true,
+				"width": 12
+			},
+			"log": {
+				"label": "Logs",
+				"type": "widget",
+				"src": "bizlogger.logs",
+				"config": {
+				    "ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"vmode": "view",
+				"hidden": true,
+				"width": 12
+			},
+			"extras": {
+				"label": "Extra",
+				"type": "widget",
+				"src": "biz_infoview_xtras",
+				"vmode": "view",
+				"hidden": true,
+				"width": 12
+			}
+		}
+	}
+}
+

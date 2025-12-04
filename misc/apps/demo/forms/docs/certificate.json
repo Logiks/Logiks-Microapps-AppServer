@@ -1,0 +1,63 @@
+{
+	"hooks": {
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"forcefill":{
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#",
+	    "profile_id": "#SESS_USER_ID#"
+	},
+	"source": {
+		"type": "sql",
+		"table": "docs_tbl",
+		"where": ["md5(id)"]
+	},
+	"fields": {
+		"docname": {
+			"label": "Document Class",
+			"group": "Certificate"
+		},
+		"title": {
+			"label": "Title",
+			"group": "Certificate"
+		},
+		"certNo": {
+			"label": "Certificate No.",
+			"width": "12",
+			"group": "Certificate",
+			"required": true
+		},
+		"expires": {
+			"label": "Expires On",
+			"group": "Certificate",
+			"type": "date"
+		},
+		"placeofissue": {
+			"label": "Place Of Issue",
+			"group": "Certificate"
+		},
+		"category": {
+			"label": "Document Category",
+			"group": "Certificate"
+		},
+		"issuedOn": {
+			"label": "Issued On",
+			"group": "Certificate",
+			"type": "date"
+		},
+		"issuing_auth": {
+			"label": "Authority Of Issue",
+			"group": "Certificate"
+		}
+	}
+}

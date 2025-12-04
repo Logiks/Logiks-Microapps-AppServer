@@ -1,0 +1,634 @@
+{
+    "hooks": {
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source": {
+		"type": "sql",
+		"table": "profiletbl",
+		"where": ["md5(id)"]
+	},
+	"forcefill": {
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#"
+	},
+	"gotolink":"infoview/profile.staff/{hashid}?",
+	"fields": {
+		"full_name": {
+			"label": "Employee Name",
+			"group": "Info",
+			"required": true,
+			"width": 6
+		},
+		"type": {
+			"label": "Type",
+			"group": "Info",
+			"type": "dataSelector",
+		    "groupid":"employee_type",
+		    "required": true,
+	    	"width": 6,
+	    	"ajaxchain":{
+				"target":"designation",
+				"src":{
+					"table": "do_lists",
+					"columns": "title as title,value as value",
+					"where": {
+					    "blocked" : "false",
+					    "groupid":"profile_staff_designation",
+						"class": "#refid#"
+					}
+				}
+			}
+		},
+		"profile_code": {
+			"label": "Employee Code",
+			"group": "Info",
+			"width": 6
+		},
+		"branch": {
+			"label": "Branch",
+			"group": "Info",
+			"type": "dataSelectorFromTable",
+			"table": "my_branches",
+			"columns": "name as title,id as value",
+			"required": true,
+			"width": 6
+		},
+		"designation": {
+			"label": "Designation",
+			"group": "Info",
+			"type": "dataSelector",
+		    "groupid":"profile_staff_designation",
+		    "required": true
+		},
+		"loginid": {
+			"label": "Login ID",
+			"group": "Info",
+			"required": true
+		},
+		"email1": {
+			"label": "Email",
+			"group": "Info",
+			"type": "email",
+			"required": true
+		},
+		"email2": {
+			"label": "Alternate Email",
+			"group": "Info",
+			"type": "email"
+		},
+		"mobile": {
+			"label": "Mobile",
+			"group": "Info",
+			"type": "phone",
+			"required": true
+		},
+		"mobile_others": {
+			"label": "Phone",
+			"group": "Info",
+			"type": "phone"
+		},
+		"gender": {
+			"label": "Gender",
+			"group": "personal",
+			"type": "dataSelector",
+			"groupid":"user_gender",
+			"required": true
+		},
+		"dob": {
+			"label": "DOB",
+			"group": "personal",
+			"type": "date"
+		},
+		"status": {
+		    "label": "Status",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid":"profile_staff_status",
+			"no-option":"Select Status",
+			"required":true
+		},
+		"tags": {
+			"label": "Tags",
+			"group": "Info",
+			"type": "tag"
+		},
+		"remarks": {
+			"label": "Remarks",
+			"group": "Info",
+			"type": "textarea",
+			"width":"12"
+		},
+		"blocked": {
+			"label": "Blocked",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid":"boolean",
+			"vmode":"edit",
+			"required": true
+		},
+		"blacklist":{
+			"label": "Blacklisted",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid":"boolean",
+			"vmode":"edit",
+			"required": true
+		}
+	},
+	"infoview": {
+		"groups": {
+		    "address": {
+				"label": "Address",
+			    "type": "module",
+				"src": "infoviewTable",
+				"vmode": "edit",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+				    "table": "profiletbl_address",
+					"cols": "profiletbl_address.id,profiletbl_address.address_type,profiletbl_address.address,profiletbl_address.street,profiletbl_address.city,profiletbl_address.state,profiletbl_address.country,profiletbl_address.zipcode",
+					"where": " md5(profiletbl_address.profile_id)='#refid#'" ,
+                    "form":{
+                        "source": {
+                            "type": "sql",
+                            "table": "profiletbl_address",
+                            "where": ["md5(id)"]
+                        },
+                        "forcefill": {
+                            "access_level":"#SESS_ACCESS_LEVEL#",
+                            "privilegeid":"#SESS_PRIVILEGE_ID#",
+                            "guid":"#SESS_GUID#",
+                    		"created_by": "#SESS_USER_ID#",
+                            "profile_id":"#id#"
+                        },
+                        "fields":{
+                    		"address_type": {
+                    			"label": "Address Type",
+                    			"group": "Info",
+                    			"type": "dataSelector",
+                    			"groupid": "address_type",
+                    			"required": true
+                    		},
+                           "address": {
+                    			"label": "Address",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                		    },
+                    		"street": {
+                    			"label": "Street",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                    		"city": {
+                    			"label": "City",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                    		"state": {
+                    			"label": "State",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                    		"country": {
+                    			"label": "Country",
+                    			"group": "Info",
+                    			"type": "dataSelector",
+		                        "groupid":"country"
+                    		},
+                    		"zipcode": {
+                    			"label": "Zipcode",
+                    			"group": "Info",
+                    			"type": "text"
+                    		}
+                        }
+                    }
+				},
+				"width": 12
+			},			
+			"social": {
+				"label": "Social",
+			    "type": "module",
+				"src": "infoviewTable",
+				"vmode": "edit",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+				    "table": "profiletbl_social",
+					"cols": "profiletbl_social.id,profiletbl_social.social_type,profiletbl_social.social_weblink,profiletbl_social.social_userid,profiletbl_social.token_key",
+					"where": " md5(profiletbl_social.profile_id)='#refid#'" ,
+                    "form":{
+                        "source": {
+                            "type": "sql",
+                            "table": "profiletbl_social",
+                            "where": ["md5(id)"]
+                        },
+                        "forcefill": {
+                            "access_level":"#SESS_ACCESS_LEVEL#",
+                            "privilegeid":"#SESS_PRIVILEGE_ID#",
+                            "guid":"#SESS_GUID#",
+                    		"created_by": "#SESS_USER_ID#",
+                            "profile_id":"#id#"
+                        },
+                        "fields":{
+                    		"social_type": {
+                    			"label": "Social Type",
+                    			"group": "Info",
+                    			"type": "dataSelector",
+                    			"groupid": "social_type",
+                    			"required": true
+                    		},
+                           "social_weblink": {
+                    			"label": "Social Weblink",
+                    			"group": "Info",
+                    			"type": "url",
+                    			"required": true
+                		    },
+                    		"social_userid": {
+                    			"label": "Social User ID",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                    		"token_key": {
+                    			"label": "Token Key",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		}
+                        }
+                    }
+				},
+				"width": 12
+			},
+			"Contact ": {
+        	    "label": "Additional Info",
+        	    "type":"module",
+				"src":"infoviewTable",
+                "vmode":"view",
+                "config": {
+			    "type": "sql",
+				"uimode": "single",
+				"table": "profiletbl_staff,profiletbl",
+				"cols": "profiletbl_staff.panno, profiletbl_staff.aadhar,profiletbl_staff.joining_date,profiletbl_staff.resignation_date,profiletbl_staff.notice_period",
+				"where": "profiletbl.id = profiletbl_staff.profile_id AND md5(profiletbl.id)='#refid#'",
+				"orderby": "profiletbl.id DESC"
+				},
+				"width": 12
+        	},
+        	"tasks": {
+        	    "label": "Tasks",
+        	    "type":"module",
+				"src":"infoviewTable",
+				
+                "vmode":"view",
+                "config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "task_tbl",
+					"cols": "id,name,category,priority,status,flags,assigned_by,due_date",
+					"where": "task_tbl.assigned_to = (SELECT loginid FROM profiletbl WHERE md5(id)='#refid#')",
+					"orderby": "task_tbl.edited_on DESC"
+				},
+				"width": 12
+        	},
+        	"payroll": {
+				"label": "Payroll",
+				"type": "module",
+				"src": "payroll.history",
+				"config": {
+				    "ref_id":"#refid#",
+				    "ref_src":"payroll"
+				},
+				"vmode": "edit",
+				"width": 12
+			},
+			"applications": {
+				"label": "Applications",
+				"type":"module",
+				"src":"infoviewTable",
+                "vmode":"view",
+                "config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "hr_applications,profiletbl",
+					"cols": "hr_applications.id,hr_applications.title,hr_applications.type,hr_applications.date_start as start_date,hr_applications.date_end as end_date,hr_applications.descs as description,hr_applications.application_to,hr_applications.status,hr_applications.created_by",
+					"where": "profiletbl.id = hr_applications.profile_id AND md5(profiletbl.id)='#refid#'",
+					"orderby": "hr_applications.edited_on DESC"
+				},
+				"width": 12
+			},
+			"reviews": {
+				"label": "Reviews",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "edit",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "hr_reviews,profiletbl",
+					"cols": "hr_reviews.id,hr_reviews.title,hr_reviews.rating,date(hr_reviews.reviews_date) as review_date,hr_reviews.msg as objective,hr_reviews.remarks,hr_reviews.created_by",
+					"where": "profiletbl.type='employee' AND md5(profiletbl.id)='#refid#' AND profiletbl.id=hr_reviews.profile_id",
+					"colkey":"hr_reviews.profile_id",
+                    "form":{
+                        "source": {
+                            "type": "sql",
+                            "table": "hr_reviews",
+                            "where": ["md5(id)"]
+                        },
+                        "forcefill": {
+                            "groupuid":"#SESS_GROUP_NAME#",
+                            "access_level":"#SESS_ACCESS_LEVEL#",
+                            "privilegeid":"#SESS_PRIVILEGE_ID#",
+                            "guid":"#SESS_GUID#",
+                            "profile_id":"#REFID#"
+                        },
+                        "fields":{
+                    		"title": {
+                    			"label": "Title",
+                    			"type": "dataSelector",
+                    		    "groupid":"staff_review_type",
+                    			"group": "Info",
+                    			"required": true
+                    		},
+                    		"rating": {
+                    			"label": "Rating",
+                    			"group": "Info",
+                    			"type": "dataSelector",
+                    			"groupid":"rating",
+                    			"required": true
+                    		},
+                    		"reviews_date":{
+                    		    "label": "Review Date",
+                    			"group": "Info",
+                    			"type": "date",
+                    			"required": true
+                    		},
+                    		"msg":{
+                    		    "label": "Objective",
+                    			"group": "Info",
+                    			"type": "textarea",
+                    			"required": true
+                    		},
+                    		"remarks":{
+                    		    "label": "Remark",
+                    			"group": "Info",
+                    			"type": "textarea",
+                    			"required": true
+                    		}
+                        }
+                    }
+
+				},
+				"width": 12
+			},
+		    "jd": {
+				"label": "JD",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "single",
+					"table": "hr_resume,profiletbl,hr_jd",
+					"cols": "hr_jd.id,hr_jd.department,hr_jd.title,hr_jd.designation,hr_jd.job_type,hr_jd.skills,hr_jd.experience,hr_jd.salary,hr_jd.working_days,hr_jd.timing,hr_jd.no_of_opening,hr_jd.responsibilities,hr_jd.descs as description",
+                    "where": "profiletbl.email1 = hr_resume.email_id AND hr_resume.jd_id=hr_jd.id AND profiletbl.type='employee' AND md5(profiletbl.id)='#refid#'",
+					"orderby": "hr_resume.edited_on DESC"
+				},
+				"width": 12
+			},
+        	"resume":{
+    		    "label":"Resume",
+                "type":"module",
+                "src":"infoviewTable",
+                "vmode":"view",
+                "config": {
+					"type": "sql",
+					"uimode": "single",
+					"table": "hr_resume,profiletbl",
+					"cols": "hr_resume.title,hr_resume.name,hr_resume.designation,hr_resume.email_id,hr_resume.phone1 as phone,hr_resume.address,hr_resume.key_skills,hr_resume.total_exp as total_experience,hr_resume.exp_ctc as expected_ctc,hr_resume.notice_period",
+					"where": "profiletbl.email1 = hr_resume.email_id AND profiletbl.type='employee' AND md5(profiletbl.id)='#refid#'",
+					"orderby": "hr_resume.edited_on DESC"
+				},
+                "width":12
+        	},
+        	"interview":{
+    		    "label":"Interviews",
+                "type":"module",
+                "src":"infoviewTable",
+                "vmode":"view",
+                "config": {
+				"type": "sql",
+				"uimode": "single",
+				"table": "hr_resume,profiletbl,hr_interview",
+				"cols": "hr_interview.id, hr_interview.scheduled_on,hr_interview.scheduled_fullday as scheduled_full_day,hr_interview.scheduled_time_start as reporting_time,hr_interview.scheduled_time_end as arrival_time,hr_interview.status,hr_interview.created_by",
+				"where": "profiletbl.email1 = hr_resume.email_id AND profiletbl.type='employee' AND md5(profiletbl.id)='#refid#' AND hr_resume.id=hr_interview.resume_id",
+				"orderby": "hr_resume.edited_on DESC"
+				},
+                "width":12
+        	},
+            "bank_details": {
+				"label": "Bank Details",
+			    "type": "module",
+				"src": "infoviewTable",
+				"vmode": "edit",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+				    "table": "profiletbl_banks",
+					"cols": "profiletbl_banks.id,profiletbl_banks.bank_name as bank,profiletbl_banks.bank_branch as branch,profiletbl_banks.bank_address as address,profiletbl_banks.bank_state as state,profiletbl_banks.bank_country as country,profiletbl_banks.bank_acno as account_no,profiletbl_banks.bank_ifsc_code as ifsc_code,profiletbl_banks.bank_swift_code as swift_code",
+					"where": " md5(profiletbl_banks.profile_id)='#refid#'" ,
+                    "form":{
+                        "source": {
+                            "type": "sql",
+                            "table": "profiletbl_banks",
+                            "where": ["md5(id)"]
+                        },
+                        "forcefill": {
+                            "access_level":"#SESS_ACCESS_LEVEL#",
+                            "privilegeid":"#SESS_PRIVILEGE_ID#",
+                            "guid":"#SESS_GUID#",
+                    		"created_by": "#SESS_USER_ID#",
+                            "profile_id":"#id#"
+                        },
+                        "fields":{
+                            "bank_name": {
+                    			"label": "Bank",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                             "bank_branch": {
+                    			"label": "Branch",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                		    },
+                    		
+                    		"bank_address": {
+                    			"label": "Address",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                		    },
+                    		"bank_state": {
+                    			"label": "State",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                    		"bank_country": {
+                    			"label": "Country",
+                    			"group": "Info",
+                    			"type": "dataSelector",
+		                        "groupid":"country"
+                    		},
+                    		"bank_acno": {
+                    			"label": "Zipcode",
+                    			"group": "Info",
+                    			"type": "text"
+                    		},
+                    		"bank_ifsc_code": {
+                    			"label": "IFSC Code",
+                    			"group": "Info",
+                    			"type": "text",
+                    			"required": true
+                    		},
+                    		"bank_swift_code": {
+                    			"label": "SWIFT Code",
+                    			"group": "Info",
+                    			"type": "text"
+                    		}
+                        }
+                    }
+				},
+				"width": 12
+			},
+
+		
+			"attendance":{
+    		    "label":"Attendance",
+                "type":"widget",
+                "src":"attendance",
+                "vmode":"view",
+                "width":12
+            },
+        	"emails":{
+    		    "label":"Emails",
+                "type":"module",
+                "src":"emails.inbox",
+                "vmode":"view",
+                "width":12,
+                "hidden":true
+        	},
+        	"accounts":{
+			    "label": "Accounts",
+				"type": "module",
+				"src": "accounts.ledger",
+				"config": {
+				    "ref_id":"#refid#",
+				    "typeid":"party"
+				},
+				"width": 12,
+				"hidden":true
+			},
+        	"files": {
+				"label": "Files",
+				"type": "module",
+				"src": "docman.docs",
+				"vmode": "edit",
+				"config": {
+				    "ref_col":"md5(profile_id)",
+				    "ref_id":"#refid#",
+				    "ref_src":"profile",
+				    "ref_rule":"md5(profile_id)='#refid#'"
+				},
+				"rule": "profile,#refid#",
+				"width": 12
+			},
+			"events": {
+				"label": "Events",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "user_events,profiletbl",
+					"cols": "user_events.id,user_events.event,user_events.schedule,user_events.flag_period,user_events.priority,user_events.created_by",
+					"where":"md5(profiletbl.id)='#refid#' AND user_events.ref_id=profiletbl.id AND user_events.ref_src='profile'",
+					"ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"width": 12,
+				"hidden": true
+			},
+        	"comments": {
+				"label": "Comments",
+				"type": "module",
+				"src": "userComments.comments",
+				"config": {
+				    "ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"vmode": "edit",
+				"width": 12,
+				"hidden":true
+			},
+			"notes": {
+				"label": "Notes",
+				"type": "module",
+				"src": "notesBoard.notes",
+				"vmode": "view",
+				"width": 12,
+				"hidden":true
+			},
+			"log": {
+				"label": "Logs",
+				"type": "module",
+				"src": "bizlogger.logs",
+				"vmode": "view",
+				"width": 12,
+				"config": {
+    				"ref_id":"#refid#",
+    				"ref_src":"profile"
+    		},
+				"hidden":true
+			},
+			"extras": {
+				"label": "Extra",
+				"type": "widget",
+				"src": "biz_infoview_xtras",
+				"vmode": "view",
+				"width": 12,
+				"hidden":true
+			},
+			"printables": {
+				"label": "Printables",
+				"type": "module",
+				"src": "templates.printable",
+				"config": {
+    				"ref_id":"#refid#",
+    				"ref_src":"staff"
+				    
+				},
+				"vmode": "view",
+				"width": 12,
+				"hidden":false
+			}
+		}
+	}
+}

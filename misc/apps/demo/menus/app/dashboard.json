@@ -1,0 +1,20 @@
+{
+	"guid":"global",
+	"menuid":"default",
+	"title":"Dashboard",
+	"mode":"*",
+	"category":"",
+	"menugroup":"No Group",
+	"class":"",
+	"target":"",
+	"link":"modules/test",
+	"iconpath":"fa fa-star",
+	"tips":"",
+	"site":"*",
+	"device":"*",
+	"privilege":"*",
+	"weight":0,
+	"onmenu":true,
+	"blocked":false,
+	"rules":""
+}

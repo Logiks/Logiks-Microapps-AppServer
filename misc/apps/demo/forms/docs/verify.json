@@ -1,0 +1,53 @@
+{
+    "hooks": {
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"forcefill":{
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#",
+	    "Verified": "true"
+	},
+	"source": {
+		"type": "sql",
+		"table": "docs_tbl",
+		"where": ["md5(id)"]
+	},
+	"fields": {
+		"verfied_by": {
+			"label": "Verified By",
+			"group": "Info",
+			"type": "dataSelectorFromTable",
+			"table": "profiletbl",
+			"columns": "full_name as title,loginid as value",
+			"no-option":"Select Verified By",
+			"where": {
+				"blocked": "false",
+				"type": "employee"
+			},
+			"required": true
+		},
+		"verfied_on": {
+			"label": "Verified On",
+			"group": "Info",
+			"type": "date",
+			"required": true
+		},
+		"remarks": {
+			"label": "Remarks",
+			"group": "Info",
+			"type": "textarea",
+			"width":12,
+			"required": true
+		}
+	}
+}

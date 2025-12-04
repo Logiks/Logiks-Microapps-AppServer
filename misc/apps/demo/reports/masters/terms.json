@@ -1,0 +1,77 @@
+{
+    "schema":"1.0",
+	"title":"Terms And Conditions",
+	"category":"Master",
+	"privilege":"*",
+	"blocked":false,
+	"rowlink":false,
+	"rowsPerPage":20,
+	"showExtraColumn":false,
+	"custombar":false,
+	"hooks": {
+		"fieldupdate": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source":{
+	    "type":"sql",
+	    "table":"data_terms",
+	    "cols":"id,title,category,terms,blocked",
+	    "sort":"id asc",
+	    "limit":20
+	},
+	"actions":{
+         "forms@masters.terms/new":{
+            "label":"Add Terms",
+            "icon": "fa fa-plus",
+    		"class": "btn btn-info masters-terms"
+        }
+   },
+	"buttons": {
+		 "infoview@masters.terms/{hashid}": {
+            "label":"View Terms",
+			"icon": "fa fa-eye",
+			"class": "masters-terms"
+		},
+		"forms@masters.terms/edit/{hashid}": {
+            "label":"Edit Terms",
+			"icon": "fa fa-pencil",
+			"class": "masters-terms"
+		}
+	},
+	"datagrid":{
+	    "id":{
+			"label":"ID",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true,
+			"groupable":false,
+			"classes":"",
+			"style":"width:50px;",
+			"formatter":"text"
+		},
+		"title":{
+		    "label":"Title",
+		    "sortable":true,
+		    "searchable": true
+		},
+		"category":{
+		    "label":"Category",
+		    "sortable":true,
+		    "searchable": true,
+		    "formatter":"pretty",
+		    "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "data_terms",
+                "columns": "category,category"
+            }
+		},
+		"blocked":{
+		    "label":"Blocked",
+		    "sortable":true,
+		    "searchable":true,
+		    "hidden":true
+		}
+	}
+}

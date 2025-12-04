@@ -1,0 +1,187 @@
+{
+	"hooks": {
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"forcefill":{
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#"
+	},
+	"source": {
+		"type": "sql",
+		"table": "my_branches",
+		"where": ["md5(id)"]
+	},
+	"gotolink":"infoview/profile.branches/{hashid}?",
+	"fields": {
+		"name": {
+			"label": "Branch Name",
+			"group": "Info",
+			"required": true
+		},
+		"branch_code": {
+			"label": "Branch Code (E.g- de,cg)",
+			"group": "Info",
+			"required": true
+		},
+		"company_id": {
+			"label": "Company Name",
+			"group": "Info",
+			"type": "dataSelectorFromTable",
+			"table": "my_company",
+			"columns": "name as title ,id as value",
+			"required": true,
+			"no-option": "Select Company"
+		},
+		"type": {
+			"label": "Type",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid": "branch_type",
+			"required": true
+		},
+		"tags": {
+			"label": "Branch Tags",
+			"type":"tag",
+			"group": "Info"
+		},
+		"establishment": {
+			"label": "Date of Establishment",
+			"group": "Info",
+			"type": "date",
+			"required": true
+		},
+		"mail": {
+			"label": "Branch E-mail",
+			"group": "Info",
+			"type": "email",
+			"required": true
+		},
+		"landline": {
+			"label": "Branch Landline",
+			"group": "Info",
+			"required": true
+		},
+		"address": {
+			"label": "Address",
+			"group": "Address",
+			"type": "textarea",
+			"required": true
+		},
+		"region": {
+			"label": "Region",
+			"group": "Address",
+			"required": true
+		},
+		"country": {
+			"label": "Country",
+			"group": "Address",
+			"type": "dataMethod",
+			"method": {
+				"name": "getCountrySelector",
+				"valuefield": "default"
+			},
+			"required": true
+		},
+		"zipcode": {
+			"label": "Zipcode",
+			"group": "Address",
+			"required": true
+		},
+		"contact_person1": {
+			"label": "Contact Person1",
+			"group": "Contact",
+			"required": true
+		},
+		"contact_designation1": {
+			"label": "Contact Person1 Designation",
+			"group": "Contact",
+			"required": true
+		},
+		"contact_person2": {
+			"label": "Contact Person2",
+			"group": "Contact"
+		},
+		"contact_designation2": {
+			"label": "Contact Person2 Designation",
+			"group": "Contact"
+		},
+		"blocked": {
+			"label": "Blocked",
+			"group": "Info",
+			"type": "dataSelector",
+		    "groupid":"boolean",
+			"vmode":"edit",
+			"required": true
+		}
+	},
+	"infoview": {
+		"groups": {
+			"company": {
+				"label": "Company",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "single",
+					"table": "my_company,my_branches",
+					"cols": "my_company.id,my_company.name,my_company.category,my_company.biz_type,my_company.branch_type,my_company.email,my_company.landline,my_company.address,my_company.state_code,my_company.country,my_company.zipcode,my_company.website,my_company.about",
+					"where": "my_branches.company_id=my_company.id AND md5(my_branches.id)='#refid#'"
+				},
+				"width": 12
+			},
+			"files": {
+				"label": "Files",
+				"type": "module",
+				"src": "docman.docs",
+				"vmode": "edit",
+				"config": {
+				    "ref_rule":"md5(profile_id)='#refid#'",
+				    "ref_col":"md5(profile_id)",
+				    "ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"rule": "profile,#refid#",
+				"width": 12
+			},
+			"comments": {
+				"label": "Comments",
+				"type": "module",
+				"src": "userComments.comments",
+				"vmode": "edit",
+				"config": {
+				    "ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"width": 12
+			},
+			"notes": {
+				"label": "Notes",
+				"type": "module",
+				"src": "notesBoard.notes",
+				"rule": "profile,#refid#",
+				"vmode": "edit",
+				"width": 12,
+				"hidden":false
+			},
+			"extras": {
+				"label": "Extra",
+				"type": "widget",
+				"src": "biz_infoview_xtras",
+				"vmode": "view",
+				"width": 12
+			}
+		}
+	}
+
+}

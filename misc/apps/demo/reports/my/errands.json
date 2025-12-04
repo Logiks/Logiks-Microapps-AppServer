@@ -1,0 +1,118 @@
+{
+	"schema": "1.0",
+	"title": "My Leave Applications",
+	"category": "personal",
+	"privilege": "*",
+	"blocked": false,
+	"rowlink": false,
+	"rowsPerPage": 20,
+	"showExtraColumn": false,
+	"custombar": false,
+	"hooks": {
+		"fieldupdate": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source": {
+		"type": "sql",
+		"table": "user_errands",
+		"cols": "user_errands.id,user_errands.msg,user_errands.category,user_errands.status,user_errands.flags,user_errands.assigned_to,user_errands.blocked,user_errands.created_by,user_errands.created_on",
+		"where": {
+			"(user_errands.assigned_to='' OR user_errands.assigned_to='*' OR user_errands.assigned_to like '%#SESS_USER_ID#%' OR '#SESS_PRIVILEGE_ID#' <= '#ADMIN_PRIVILEGE_RANGE#')":"RAW"
+		},
+		"limit": 20
+	},
+	"actions": {
+		"forms@errands/new": {
+			"label": "New Errand",
+			"icon": "fa fa-plus",
+			"class": "btn btn-info"
+		}
+	},
+  "buttons":{
+       "infoview@errands/{hashid}": {
+			"label": "View Errands",
+			"icon": "fa fa-eye",
+			"class": "leads-lead"
+		},
+       "forms@errands/edit/{hashid}": {
+			"label": "Edit Errand",
+			"icon": "fa fa-pencil"
+		}
+  },
+	"datagrid": {
+		"user_errands.id": {
+			"label": "ID",
+			"hidden": false,
+			"searchable": true,
+			"sortable": true,
+			"groupable": false,
+			"classes": "",
+			"style": "width:50px;",
+			"formatter": "text"
+		},
+		"user_errands.msg": {
+			"label": "Task",
+			"sortable": true,
+			"searchable": true,
+			"hidden": false
+		},
+		"user_errands.category": {
+			"label": "Category",
+			"sortable": true,
+			"searchable": true,
+			"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "user_errands",
+                "columns": "category,category"
+            }
+		},
+		"user_errands.status": {
+			"label": "Status",
+			"sortable": true,
+			"searchable": true,
+			"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "user_errands",
+                "columns": "status,status"
+            }
+		},
+		"user_errands.flags": {
+			"label": "Flagged",
+			"sortable": true,
+			"searchable": true
+		},
+		"user_errands.assigned_to": {
+			"label": "Assigned To",
+			"sortable": true,
+			"searchable": true
+		},
+		"user_errands.blocked": {
+			"label": "Blocked",
+			"sortable": true,
+			"searchable": true,
+			"filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "user_errands",
+                "columns": "blocked,blocked"
+            }
+		},
+		"user_errands.created_by": {
+			"label": "Created By",
+			"sortable": true,
+			"searchable": true
+		},
+		"user_errands.created_on": {
+			"label": "Created On",
+			"sortable": true,
+			"formatter": "date",
+			"searchable": true,
+			"filter": {
+				"type": "date"
+			}
+		}
+	}
+}

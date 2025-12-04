@@ -1,0 +1,88 @@
+{
+    "schema":"1.0",
+	"title":"Region",
+	"category":"Master",
+	"privilege":"*",
+	"blocked":false,
+	"rowlink":false,
+	"rowsPerPage":20,
+	"showExtraColumn":false,
+	"custombar":false,
+	"hooks": {
+		"fieldupdate": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source":{
+	    "type":"sql",
+	    "table":"data_regions",
+	    "cols":"id,name,code,country,blocked",
+	    "sort":"id asc",
+	    "limit":20
+	},
+	"actions":{
+         "forms@masters.region/new":{
+            "label":"Add Region",
+            "icon": "fa fa-plus",
+    		"class": "btn btn-info masters-terms"
+        }
+   },
+	"buttons": {
+		 "infoview@masters.region/{hashid}": {
+            "label":"View Region",
+			"icon": "fa fa-eye",
+			"class": "masters-terms"
+		},
+		"forms@masters.region/edit/{hashid}": {
+            "label":"Edit Region",
+			"icon": "fa fa-pencil",
+			"class": "masters-terms"
+		}
+	},
+	"datagrid":{
+	    "id":{
+			"label":"ID",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true,
+			"groupable":false,
+			"classes":"",
+			"style":"width:50px;",
+			"formatter":"text"
+		},
+		"name":{
+		    "label":"Name",
+		    "sortable":true,
+		    "searchable": true
+		},
+		"code":{
+		    "label":"Code",
+		    "sortable":true,
+		    "searchable": true
+		},
+		"country":{
+		    "label":"Country",
+		    "sortable":true,
+		    "searchable":true,
+		    "hidden":true,
+		     "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "data_regions",
+                "columns": "country,country"
+            }
+		},
+		"blocked":{
+		    "label":"Blocked",
+		    "sortable":true,
+		    "searchable":true,
+		    "hidden":true,
+		     "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "data_regions",
+                "columns": "blocked,blocked"
+            }
+		}
+	}
+}

@@ -32,14 +32,11 @@
       "role": "navigation",
       "visibleOn": ["web", "tablet"],
       "slots": [
-        { 
-          "name": "main-menu", 
-          "permissions": ["user", "admin"], 
-          "src": "navigator/app",
-          "featureFlags": ["ADMIN_MENU_V2", "EXPERIMENT_ADMIN_NAV"],
-          "params": {
-            "ui_template": "list"
-          }
+        { "name": "main-menu", "permissions": ["user", "admin"] },
+        {
+          "name": "admin-menu",
+          "permissions": ["admin"],
+          "featureFlags": ["ADMIN_MENU_V2", "EXPERIMENT_ADMIN_NAV"]
         }
       ]
     },

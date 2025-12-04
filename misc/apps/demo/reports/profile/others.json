@@ -1,0 +1,159 @@
+{
+    "schema":"1.0",
+	"title":"Other",
+	"category":"Contact",
+	"privilege":"*",
+	"blocked":false,
+	"rowlink":false,
+	"rowsPerPage":20,
+	"showExtraColumn":false,
+	"custombar":false,
+	"hooks": {
+		"fieldupdate": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source":{
+	    "type":"sql",
+	    "table":"profiletbl,profiletbl_organisation",
+	    "cols":"profiletbl.id,profiletbl.full_name,profiletbl.designation,profiletbl.type,profiletbl.email1,profiletbl.mobile,profiletbl_organisation.organization,profiletbl.state,profiletbl.country,profiletbl.tags,profiletbl.loginid,profiletbl.gender,profiletbl.dob,profiletbl.email2,profiletbl.mobile,profiletbl.mobile_others,profiletbl.fax,profiletbl.remarks,profiletbl.street,profiletbl.city,profiletbl.zipcode,profiletbl.website,profiletbl.perm_phone,profiletbl.perm_address,profiletbl.perm_city,profiletbl.perm_country,profiletbl.blocked,profiletbl.perm_zipcode,profiletbl.type,profiletbl.blacklist,profiletbl.contact_person1,profiletbl.contact_designation1,profiletbl.contact_person2,profiletbl.contact_designation2",
+	   "where":{
+	        "profiletbl.organization = profiletbl_organisation.id":"RAW",
+	        "profiletbl.type='Other'":"RAW"
+	    },
+	    "limit":20
+	},
+	"actions":{
+        "forms@profile.others/new":{
+            "label":"Add People",
+            "icon": "fa fa-plus",
+    		"class": "btn btn-info profile-vendors"
+        },
+        "forms@profile.company/new": {
+			"label": "Add Company",
+			"icon": "fa fa-plus",
+			"class": "btn btn-info profile-company"
+		}
+   },
+	"buttons": {
+		 "infoview@profile.others/{hashid}": {
+		    "label":"View People Info",
+			"icon": "fa fa-eye",
+			"class": "profile-Others"
+		},
+		"forms@profile.others/edit/{hashid}": {
+		    "label":"Edit People Info",
+			"icon": "fa fa-pencil",
+			"class": "profile-Others"
+		}
+	},
+	"datagrid":{
+	    "profiletbl.id":{
+			"label":"ID",
+			"hidden":false,
+			"searchable": true,
+			"sortable":true,
+			"groupable":false,
+			"classes":"",
+			"style":"width:50px;",
+			"formatter":"text"
+		},
+		"profiletbl.full_name":{
+		    "label":"Full Name",
+		    "sortable": true,
+		    "searchable": true
+		},
+	    "profiletbl_organisation.organization":{
+		    "label":"Company",
+		    "sortable": true,
+		    "searchable": true
+		},
+		"profiletbl.designation":{
+		    "label":"Designation",
+		    "sortable": true,
+		    "searchable": true
+		},
+		"profiletbl.gender":{
+		    "label":"Gender",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true
+		},
+		"profiletbl.dob":{
+		    "label":"DOB",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true
+		},
+		"profiletbl.email1":{
+		    "label":"Email",
+		    "sortable": true,
+		    "searchable": true
+		},
+		"profiletbl.mobile":{
+		    "label":"Mobile",
+		    "sortable": true,
+		    "searchable": true
+		},
+		"profiletbl.mobile_others":{
+		    "label":"Telephone Others",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true
+		},
+		"profiletbl.fax":{
+		    "label":"Fax",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true
+		},
+		"profiletbl.website":{
+		    "label":"Website",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true
+		},
+		"profiletbl.tags":{
+		    "label":"Tags",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true
+		},
+		"profiletbl.blacklist":{
+		    "label":"Blacklist",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true
+		},
+		"profiletbl.blocked":{
+		    "label":"Blocked",
+		    "sortable": true,
+		    "searchable": true,
+		    "hidden":true
+		}
+	},
+		"kanban":{
+		"colkeys":{
+			"organization":{
+				"label": "Company",
+				"table": "profiletbl_organisation",
+				"columns": "organization as title,organization as value"
+			},
+			"designation":{
+				"label": "Designation",
+				"table": "profiletbl",
+				"columns": "designation as title,designation as value"
+			},
+			"country":{
+				"label": "Country",
+				"table": "profiletbl",
+				"columns": "country as title,country as value"
+			}
+		},
+		"colmap":{
+			"title":"full_name",
+			"descs":"organization"
+		},
+		"unilink":"profile.others"
+	}
+}

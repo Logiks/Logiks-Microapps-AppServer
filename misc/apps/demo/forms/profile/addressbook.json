@@ -1,0 +1,211 @@
+{
+	"hooks": {
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"forcefill":{
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#"
+	},
+	
+	"source": {
+		"type": "sql",
+		"table": "profiletbl_contacts",
+		"where": ["md5(id)"]
+	},
+		"buttons": {
+	},
+	"script":"profile",
+	"gotolink":"infoview/profile.addressbook/{hashid}?",
+    "fields":{
+          "id":{
+                "label":"ID",
+                "type": "text",
+                "hidden":true
+            },
+            "profile_id": {
+    			"label": "Business",
+    			"type": "dataSelectorFromTable",
+    			"table": "profiletbl",
+    			"columns": "full_name as title,id as value",
+    			"where": {
+    				"blocked": "false"
+    			},
+    			"no-option":"Select Business",
+			    "search":true,
+    			"required": true
+    		},
+            "name":{
+                "label":"Name",
+                "type": "text",
+                "required":true
+            },
+             "designation": {
+    			"label": "Designation",
+    			"type": "dataSelector",
+    		    "groupid":"profile_staff_designation",
+    		    "required": true
+		},
+            "gender": {
+    			"label": "Gender",
+    			"type": "dataSelector",
+    		    "groupid":"user_gender"
+		    },
+            "email1":{
+                "label":"Email",
+                "type":"email",
+                "required":true
+            },
+            "email2":{
+                "label":"Alternate Email",
+                "type":"email"
+            },
+            "mobile":{
+                "label":"Mobile",
+                "type":"text",
+                "required":true
+            },
+            "mobile_others":{
+                "label":"Alternate Mobile",
+                "type":"text"
+            },
+            "phone1":{
+                "label":"Phone",
+                "type":"text"
+            },
+		    "dob":{
+                "label":"DOB",
+                "type":"date"
+            },
+            "address":{
+                "label":"Address",
+                "type":"textarea",
+                "group":"Address"
+            },
+            "street":{
+                "label":"Street",
+                "type":"text",
+                "group":"Address"
+            },
+            "city":{
+                "label":"City",
+                "type":"text",
+                "group":"Address"
+            },
+            "state":{
+                "label":"State",
+                "type":"text",
+                "group":"Address"
+            },
+            "zipcode":{
+                "label":"Zipcode",
+                "type":"text",
+                "group":"Address"
+            },
+            "remarks":{
+                "label":"Remarks",
+                "type":"textarea"
+            },
+            "country":{
+                "label":"Country",
+                "type": "dataSelector",
+                "groupid":"country",
+                "group":"Address"
+            }
+        },
+        "infoview": {
+         "script":"profile",  
+		"groups": {
+			"business": {
+				"label": "Business",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "single",
+					"table": "profiletbl,profiletbl_contacts,profiletbl_address",
+					"cols": "profiletbl.id,profiletbl.full_name as name,profiletbl.mobile,profiletbl.email1 as email,profiletbl_address.address,profiletbl_address.city,profiletbl_address.state,profiletbl_address.country,profiletbl_address.zipcode",
+					"where": "profiletbl_contacts.profile_id=profiletbl.id AND profiletbl_address.profile_id=profiletbl.id AND profiletbl_address.address_type='primary' AND profiletbl.id='#profile_id#'"
+				},
+				"width": 12
+			},
+			"group": {
+				"label": "Group",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "single",
+					"table": "profiletbl,profiletbl_organisation,profiletbl_contacts",
+					"cols": "profiletbl_organisation.id,profiletbl_organisation.organization as name,profiletbl_organisation.org_category as category,profiletbl_organisation.org_type as type,profiletbl_organisation.org_establishment as date_of_establishment,profiletbl_organisation.org_pan as pan_no,profiletbl_organisation.org_gst as gst_no,profiletbl_organisation.org_mail as email,profiletbl_organisation.org_landline as landline,profiletbl_organisation.org_owner as owner,profiletbl_organisation.org_address1 as address,profiletbl_organisation.org_country1 as country,profiletbl_organisation.org_zipcode1 as zipcode,profiletbl_organisation.org_website as website",
+					"where": "profiletbl_contacts.profile_id=profiletbl.id AND profiletbl.id='#profile_id#' AND profiletbl.organization=profiletbl_organisation.id"
+				},
+				"width": 12
+			},
+			"files": {
+				"label": "Files",
+				"type": "module",
+				"src": "docman.docs",
+				"vmode": "edit",
+				"config": {
+				    "ref_id":"#refid#",
+				    "ref_src":"bussiness"
+				},
+				"rule": "business,#refid#",
+				"width": 12
+			},
+			"comments": {
+				"label": "Comments",
+				"type": "module",
+				"src": "userComments.comments",
+				"vmode": "edit",
+				"config": {
+				    "ref_id":"#refid#",
+				    "ref_src":"business"
+				},
+				"width": 12
+			},
+			"notes": {
+				"label": "Notes",
+				"type": "module",
+				"src": "notesBoard.notes",
+				"rule": "business,#refid#",
+				"vmode": "edit",
+				"width": 12
+			},
+			"logs": {
+				"label": "Logs",
+				"type": "module",
+				"src": "bizlogger.logs",
+				"rule": "business,#refid#",
+				"vmode": "view",
+				"width": 12,
+				"config": {
+				    "ref_id":"#refid#",
+				    "ref_src":"business"
+				}
+			},
+			"extras": {
+				"label": "Extra",
+				"type": "widget",
+				"src": "biz_infoview_xtras",
+				"vmode": "view",
+				"width": 12
+			}
+		}
+	}
+
+
+    
+}
+

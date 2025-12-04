@@ -1,0 +1,20 @@
+{
+    "guid": "global",
+    "menuid": "default",
+    "title": "Activity Log",
+    "mode": "*",
+    "category": "",
+    "menugroup": "Logs",
+    "class": "",
+    "target": "",
+    "link": "setup/reports/logs.activity",
+    "iconpath": "las la-file-alt",
+    "tips": "",
+    "site": "*",
+    "device": "*",
+    "privilege": "admin,root",
+    "weight": 100,
+    "onmenu": true,
+    "blocked": false,
+    "rules": ""
+}

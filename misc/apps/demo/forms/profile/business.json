@@ -1,0 +1,98 @@
+{
+    "hooks": {
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"forcefill":{
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#"
+	},
+	"source": {
+		"type": "sql",
+		"table": "profiletbl_business",
+		"where": ["profile_id"],
+		"refcol": "profile_id",
+		"refmaster": "profiletbl",
+		"precreate":true
+	},
+	"fields": {
+		"biz_entity": {
+			"label": "Biz Entity",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid": "biz_entity",
+			"required": true
+		},
+		"biz_type": {
+			"label": "Biz Type",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid": "biz_type",
+			"no-option": "Select Biz Type",
+			"required": true
+		},
+		"biz_activities": {
+			"label": "Biz Activities",
+			"group": "Info"
+		},
+		"biz_currency": {
+			"label": "Biz Currency",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid": "biz_currency",
+			"no-option": "Select Biz Currency",
+			"required": true
+		},
+		"biz_adhar_no": {
+			"label": "Adhaar No",
+			"group": "Info"
+		},
+		"audit_type": {
+			"label": "Audit Type",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid": "profile_audit_type",
+			"hidden": true
+		},
+		"monitoring": {
+			"label": "Monitoring",
+			"group": "Info",
+			"hidden": true
+		},
+		"turn_over_vat": {
+			"label": "Turn Over Vat",
+			"group": "Info",
+			"hidden": true
+		},
+		"turn_over_st": {
+			"label": "Turn Over ST",
+			"group": "Info",
+			"hidden": true
+		},
+		"turn_over_it": {
+			"label": "Turn Over IT",
+			"group": "Info",
+			"hidden": true
+		},
+		"applicable_returns": {
+			"label": "Applicable Returns",
+			"group": "Info",
+			"type": "date",
+			"hidden": true
+		},
+		"past_auditor": {
+			"label": "Past Auditor",
+			"group": "Info",
+			"hidden": true
+		}
+	}
+}

@@ -1,0 +1,20 @@
+{
+	"guid":"global",
+	"menuid":"default",
+	"title":"APIkeys",
+	"mode":"*",
+	"category":"",
+	"menugroup":"No Group",
+	"class":"",
+	"target":"",
+	"link":"setup/apikeys",
+	"iconpath":"las la-key",
+	"tips":"",
+	"site":"*",
+	"device":"*",
+	"privilege":"*",
+	"weight":2,
+	"onmenu":true,
+	"blocked":false,
+	"rules":""
+}

@@ -1,0 +1,105 @@
+{
+	"hooks": {
+	    "postsubmit": {
+			"modules":["bizflow","bizlogger"]
+		},
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		}
+	},
+	"forcefill":{
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#"
+	},
+	"source": {
+		"type": "sql",
+		"table": "data_taxes",
+		"cols": "title,type,amnt,category,blocked",
+		"where": ["md5(id)"]
+	},
+	"gotolink":"infoview/masters.taxes/{hashid}?",
+	"fields": {
+		"title": {
+			"label": "Title",
+			"group": "Info",
+			"required": true
+		},
+		"type": {
+			"label": "Type",
+			"group": "Info",
+			"type":"dataSelector",
+			"groupid":"masters_tax_type",
+			"no-option":"Select Type",
+			"required": true
+		},
+		"amnt": {
+			"label": "Tax Amount",
+			"group": "Info",
+			"required": true
+		},
+		"category": {
+			"label": "Category",
+			"group": "Info",
+			"type": "dataSelector",
+        	"groupid": "tax_category",
+        	"required": true
+		},
+		"blocked": {
+			"label": "Blocked",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid":"boolean",
+			"vmode":"edit",
+			"required": true
+		},
+		"rule": {
+			"label": "Rule Script",
+			"group": "Rule",
+			"type": "textarea",
+			"width":12
+		}
+	},
+	"infoview": {
+		"groups": {
+		    "files": {
+				"label": "Files",
+				"type": "module",
+				"src": "docman.docs",
+				"vmode": "edit",
+				"config": {
+				    "ref_rule":"md5(profile_id)='#refid#'",
+				    "ref_col":"md5(profile_id)",
+				    "ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"rule": "profile,#refid#",
+				"width": 12
+			},
+			"comments": {
+				"label": "Comments",
+				"type": "module",
+				"src": "userComments.comments",
+				"vmode": "edit",
+				"config": {
+				    "ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"width": 12
+			},
+			"notes": {
+				"label": "Notes",
+				"type": "module",
+				"src": "notesBoard.notes",
+				"rule": "profile,#refid#",
+				"vmode": "edit",
+				"width": 12,
+				"hidden":false
+			}
+		}
+	}
+}

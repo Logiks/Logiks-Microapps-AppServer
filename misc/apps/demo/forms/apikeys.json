@@ -1,0 +1,94 @@
+{
+    "forcefill": {
+        "guid": "#SESS_GUID#"
+    },
+    "source": {
+        "type": "sql",
+        "table": "auth_apikeys",
+        "where": ["md5(id)"]
+    },
+    "gotolink": "infoview/apikeys/{hashid}?",
+    "fields": {
+        "title": {
+            "label": "Title",
+            "type": "text",
+            "required": true,
+            "group":"info"
+        },
+        "environment": {
+            "label": "Environment",
+            "group":"info",
+            "type":"dataSelector",
+            "groupid":"appstatus",
+            "required": true
+        },
+        "jwt_token_required": {
+            "label": "JWT Token",
+            "type": "dataSelector",
+            "groupid": "boolean",
+            "group":"info",
+            "required": true
+        },
+        "checksum_check": {
+            "label": "Checksum Check",
+            "type": "dataSelector",
+            "groupid": "boolean",
+            "group":"info",
+            "required": true
+        },
+        "ipwhitelists": {
+            "label": "IP Whitelists",
+            "type": "text",
+            "group":"info",
+            "required": true
+        },
+        "active_time_start": {
+            "label": "Active Time Start",
+            "type": "number",
+            "group":"info",
+            "required": true
+        },
+        "active_time_end": {
+            "label": "Active Time End",
+            "type": "number",
+            "group":"info",
+            "required": true
+        },
+        "expiry": {
+            "label": "Expiry",
+            "type": "number",
+            "group":"info",
+            "required": true
+        },
+        "threshold": {
+            "label": "Threshold",
+            "type": "number",
+            "group":"info",
+            "required": true
+        },
+        "policy": {
+            "label": "Policy",
+            "group":"info",
+            "required": true
+        },
+        "scope": {
+            "label": "Scope",
+            "group":"info",
+            "required": true
+        },
+        "blocked": {
+            "label": "Blocked",
+            "type": "dataSelector",
+            "groupid": "boolean",
+            "vmode": "edit",
+            "required": true,
+            "group":"info"
+        },
+        "remarks": {
+            "label": "Remarks",
+            "group":"info",
+            "width":12,
+            "required": true
+        }
+    }
+}

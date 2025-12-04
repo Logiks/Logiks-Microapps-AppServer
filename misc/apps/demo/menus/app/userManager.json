@@ -1,0 +1,20 @@
+{
+    "guid": "global",
+    "menuid": "default",
+    "title": "User Manager",
+    "mode": "*",
+    "category": "",
+    "menugroup": "Security",
+    "class": "",
+    "target": "",
+    "link": "setup/userManager",
+    "iconpath": "las la-users-cog",
+    "tips": "",
+    "site": "*",
+    "device": "*",
+    "privilege": "admin,root",
+    "weight": 30,
+    "onmenu": true,
+    "blocked": false,
+    "rules": ""
+}

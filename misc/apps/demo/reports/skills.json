@@ -1,0 +1,117 @@
+{
+    "schema":"1.0",
+	"title":"Skills Report",
+	"category":"Master",
+	"privilege":"*",
+	"blocked":false,
+	"rowlink":false,
+	"rowsPerPage":20,
+	"showExtraColumn":false,
+	"custombar":false,
+	"hooks": {
+		"fieldupdate": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source":{
+	    "type":"sql",
+	    "table":"skills",
+	    "cols":"*",
+	    "limit":20
+	},
+	"actions":{
+         "forms@skills/new":{
+            "label":"Add Skill",
+            "icon": "fa fa-plus",
+    		"class": "btn btn-info"
+        }
+   },
+	"buttons": {
+		 "infoview@skills/{hashid}": {
+            "label":"View Skill",
+			"icon": "fa fa-eye"
+		},
+		"forms@skills/edit/{hashid}": {
+            "label":"Edit Skill",
+			"icon": "fa fa-pencil"
+		}
+	},
+	"datagrid":{
+	    "id":{
+			"label":"ID",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true,
+			"groupable":false,
+			"classes":"",
+			"style":"width:50px;",
+			"formatter":"text"
+		},
+			"skill_key": {
+			"label": "Skill Key",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true
+		},
+		"skill_name": {
+			"label": "Skill Name",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true
+		},
+		"skill_category": {
+			"label": "Category",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true
+		},
+		"skill_subcategory": {
+			"label": "Sub Category",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true
+		},
+		"skill_engine": {
+			"label": "Skill Engine",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true
+		},
+		"skill_prompt": {
+			"label": "Skill Prompt",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true
+		},
+		"bank_xtras": {
+			"label": "Skill Designer",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true
+		},
+		"lang": {
+			"label": "Language",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true
+		},
+		"author": {
+			"label": "Author",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true
+		},
+		"sys_params": {
+			"label": "Sys Params",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true
+		},
+		"blocked": {
+			"label": "Blocked",
+            "hidden":false,
+			"searchable":true,
+			"sortable":true
+		}
+	}
+}

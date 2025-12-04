@@ -1,0 +1,21 @@
+{
+    "guid": "global",
+    "menuid": "default",
+    "title": "System Settings",
+    "mode": "*",
+    "category": "",
+    "menugroup": "Setup",
+    "class": "",
+    "target": "",
+    "link": "setup/companyConfig",
+    "iconpath": "las la-cog",
+    "tips": "",
+    "site": "*",
+    "device": "*",
+    "privilege": "admin,root",
+    "weight": 30,
+    "onmenu": true,
+    "blocked": false,
+    "rules": ""
+    
+}

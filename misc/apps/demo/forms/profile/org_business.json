@@ -1,0 +1,124 @@
+{
+    "hooks": {
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"forcefill":{
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#"
+	},
+	"source": {
+		"type": "sql",
+		"table": "profiletbl_organisation_business",
+		"where": ["org_id"],
+		"refcol": "org_id",
+		"refmaster": "profiletbl_organisation",
+		"precreate":true
+	},
+	"fields": {
+		"biz_entity": {
+			"label": "Biz Entity",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid": "biz_entity",
+			"required": true
+		},
+		"biz_type": {
+			"label": "Biz Type",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid": "biz_type",
+			"no-option": "Select Biz Type",
+			"required": true
+		},
+		"biz_activities": {
+			"label": "Biz Activities",
+			"group": "Info"
+		},
+		"biz_currency": {
+			"label": "Biz Currency",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid": "biz_currency",
+			"no-option": "Select Biz Currency",
+			"required": true
+		},
+		"biz_adhar_no": {
+			"label": "Adhaar No",
+			"group": "Others"
+		},
+		"audit_type": {
+			"label": "Audit Type",
+			"group": "Turn Over",
+			"type":"dataSelector",
+			"groupid": "org_audit_type"
+		},
+		"monitoring": {
+			"label": "Monitoring",
+			"group": "Turn Over"
+		},
+		"turn_over_vat": {
+			"label": "Turn Over Vat",
+			"group": "Turn Over"
+		},
+		"turn_over_st": {
+			"label": "Turn Over ST",
+			"group": "Turn Over"
+		},
+		"turn_over_it": {
+			"label": "Turn Over IT",
+			"group": "Turn Over"
+		},
+		"applicable_returns": {
+			"label": "Applicable Returns",
+			"group": "Turn Over",
+			"type": "date"
+		},
+		"past_auditor": {
+			"label": "Past Auditor",
+			"group": "Others"
+		},
+		"capital_authorised":{
+		    "label": "Capital Athorised",
+			"group": "Turn Over"
+		},
+		"capital_paidup":{
+		    "label": "Capital Paidup",
+			"group": "Turn Over"
+		},
+		"biz_vat":{
+		    "label": "Vat No",
+			"group": "Others"
+		},
+		"biz_cst":{
+		    "label": "CST",
+			"group": "Others"
+		},
+		"biz_roc":{
+		    "label": "ROC",
+			"group": "Others"
+		},
+		"biz_st":{
+		    "label": "ST",
+			"group": "Others"
+		},
+		"biz_excise":{
+		    "label": "Excise",
+			"group": "Others"
+		},
+		"biz_rbi":{
+		    "label": "RBI",
+			"group": "Others"
+		},
+		"biz_cess_lbt":{
+		    "label": "CESS LBT",
+			"group": "Others"
+		}
+	}
+}

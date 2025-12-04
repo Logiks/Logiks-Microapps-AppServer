@@ -1,0 +1,20 @@
+{
+    "guid": "global",
+    "menuid": "default",
+    "title": "Dropdown List",
+    "mode": "*",
+    "category": "",
+    "menugroup": "Setup",
+    "class": "",
+    "target": "",
+    "link": "setup/datalists",
+    "iconpath": "las la-list-ul",
+    "tips": "",
+    "site": "*",
+    "device": "*",
+    "privilege": "admin,root",
+    "weight": 30,
+    "onmenu": true,
+    "blocked": false,
+    "rules": ""
+}

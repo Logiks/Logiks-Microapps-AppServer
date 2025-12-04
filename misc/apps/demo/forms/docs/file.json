@@ -1,0 +1,43 @@
+{
+	"hooks": {
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source": {
+		"type": "sql",
+		"table": "docs_tbl",
+		"where": ["md5(id)"]
+	},
+	"forcefill": {
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#",
+		"profile_id": "#SESS_USER_ID#"
+	},
+	"fields": {
+		"title": {
+			"label": "Title",
+			"group": "File"
+		},
+		"docname": {
+			"label": "Docname",
+			"group": "File"
+		},
+		"category": {
+			"label": "Category",
+			"group": "File"
+		},
+		"docyear": {
+			"label": "Docyear",
+			"group": "File"
+		}
+	}
+}

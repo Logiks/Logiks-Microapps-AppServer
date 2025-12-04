@@ -1,0 +1,53 @@
+{
+	"hooks": {
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"forcefill": {
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#"
+	},
+	"source": {
+		"type": "sql",
+		"table": "profiletbl_staff",
+		"where": ["profile_id"],
+		"refcol": "profile_id",
+		"refmaster": "profiletbl",
+		"precreate":true
+	},
+	"fields": {
+		"panno": {
+			"label": "Pan Number",
+			"group": "Info"
+		},
+		"aadhar": {
+			"label": "Aadhar Card Number",
+			"group": "Info"
+		},
+		"joining_date":{
+		    "label":"Joining Date",
+		    "group":"Info",
+		    "type":"date"
+		},
+		"resignation_date":{
+		    "label":"Resignation Date",
+		    "group":"Info",
+		    "type":"date"
+		},
+		"notice_period":{
+		    "label":"Notice Period",
+		    "group":"Info",
+		    "type":"number"
+		 }
+		
+	}
+}

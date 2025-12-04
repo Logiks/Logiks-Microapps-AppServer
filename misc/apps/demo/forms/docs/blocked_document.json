@@ -1,0 +1,38 @@
+{
+	"hooks": {
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"forcefill":{
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#"
+	},
+	"source": {
+		"type": "sql",
+		"table": "docs_tbl",
+		"where": ["md5(id)"]
+	},
+	"fields": {
+		"blocked": {
+			"label": "Blocked",
+			"group": "Info",
+		    "type":"dataSelector",
+		    "groupid":"boolean",
+		    "default":"true",
+			"required": true
+		},
+		"comment": {
+			"label": "Comments",
+			"group": "Info",
+			"type": "textarea",
+			"width":12,
+			"required": true
+		}
+	}
+}

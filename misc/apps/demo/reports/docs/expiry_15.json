@@ -1,0 +1,140 @@
+{
+	"schema": "1.0",
+	"title": "Documents",
+	"category": "DOCMAN",
+	"privilege": "*",
+	"blocked": false,
+	"rowlink": false,
+	"rowsPerPage": 20,
+	"showExtraColumn": false,
+	"custombar": false,
+	"source": {
+		"type": "sql",
+		"table": "docs_tbl,profiletbl",
+		"cols": "docs_tbl.id,docs_tbl.doctype,docs_tbl.doclink,docs_tbl.title,docs_tbl.docname,docs_tbl.category,(concat(docs_tbl.docyear,'-',docs_tbl.docyear+1)) as docyear,docs_tbl.issuedOn,docs_tbl.expires,docs_tbl.verfied_on,docs_tbl.flags,profiletbl.full_name,docs_tbl.verfied_by,docs_tbl.verfied_on,docs_tbl.blocked,docs_tbl.created_by,docs_tbl.created_on",
+		"where": {
+			"docs_tbl.profile_id=profiletbl.id":"RAW",
+			"(DATEDIFF(docs_tbl.expires,NOW()) <= 15 AND DATEDIFF(docs_tbl.expires,NOW()) > 0)":"RAW"
+		},
+		"limit": 10
+	},
+	"buttons": {
+		"infoview@docs.document/{hashid}": {
+			"icon": "fa fa-eye",
+			"class": "branch",
+			"label": "View Documents"
+		}
+	},
+	"datagrid": {
+		"docs_tbl.id": {
+			"label": "ID",
+			"hidden": false,
+			"searchable": true,
+			"sortable": true,
+			"groupable": false,
+			"classes": "",
+			"style": "width:50px;",
+			"formatter": "text"
+		},
+		"docs_tbl.doctype": {
+		    "label": "Doc Type",
+			"sortable": true,
+			"searchable": true,
+			"hidden": true,
+			"formatter":"pretty",
+			 "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "docs_tbl",
+                "columns": "doctype,doctype"
+            }
+		},
+		"docs_tbl.title": {
+			"label": "Title",
+			"sortable": true,
+			"searchable": true
+		},
+		"profiletbl.full_name": {
+			"label": "Contact",
+			"sortable": true,
+			"searchable": true
+		},
+		"docs_tbl.docname": {
+			"label": "Document Class",
+			"sortable": true,
+			"searchable": true
+		},
+		"docs_tbl.category": {
+			"label": "Category",
+			"sortable": true,
+			"searchable": true,
+			"formatter":"pretty",
+			 "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "docs_tbl",
+                "columns": "category,category"
+            }
+		},
+		"docs_tbl.flags": {
+			"label": "Flags",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"docs_tbl.doclink": {
+			"label": "Doc Link",
+			"type": "method",
+			"method": "getDocLink"
+		},
+		"docs_tbl.docyear": {
+			"label": "Doc Year",
+			"formatter": "year",
+			"sortable": true,
+			"searchable": true,
+			"hidden": true
+		},
+		"docs_tbl.expires":{
+		    "label": "Expiry Date",
+			"sortable": true,
+			"searchable": true,
+			"hidden": true,
+			"formatter": "date",
+			"filter":{
+				"type":"date"
+			}
+		},
+		"docs_tbl.verfied_on": {
+			"label": "Verified On",
+			"hidden": true,
+			"sortable": true,
+			"searchable": true,
+			"formatter": "date",
+			"filter":{
+				"type":"date"
+			}
+		},
+		"docs_tbl.blocked": {
+			"label": "Blocked",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"docs_tbl.created_by": {
+			"label": "Uploaded By",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"docs_tbl.created_on": {
+			"label": "Uploaded On",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true,
+			"formatter": "date",
+			"filter":{
+				"type":"date"
+			}
+		}
+	}
+}

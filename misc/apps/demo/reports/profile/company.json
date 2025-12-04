@@ -1,0 +1,192 @@
+{
+	"schema": "1.0",
+	"title": "Groups",
+	"category": "Contact",
+	"privilege": "*",
+	"blocked": false,
+	"rowlink": false,
+	"rowsPerPage": 20,
+	"showExtraColumn": false,
+	"custombar": false,
+	"hooks": {
+		"fieldupdate": {
+			"modules": ["bizflow", "bizlogger"]
+		}
+	},
+	"script": "profile.company",
+	"source": {
+		"type": "sql",
+		"table": "profiletbl_organisation",
+		"cols": "profiletbl_organisation.id,profiletbl_organisation.organization,profiletbl_organisation.org_group,profiletbl_organisation.org_subcategory,profiletbl_organisation.org_type,profiletbl_organisation.org_tags,profiletbl_organisation.org_pan,profiletbl_organisation.org_gst,profiletbl_organisation.org_owner,profiletbl_organisation.org_establishment,profiletbl_organisation.org_mail,profiletbl_organisation.org_landline,profiletbl_organisation.org_address1,profiletbl_organisation.org_country1,profiletbl_organisation.org_zipcode1,profiletbl_organisation.org_address2,profiletbl_organisation.org_country2,profiletbl_organisation.org_zipcode2,profiletbl_organisation.org_address3,profiletbl_organisation.org_country3,profiletbl_organisation.org_zipcode3,profiletbl_organisation.org_website,profiletbl_organisation.contact_person1,profiletbl_organisation.contact_designation1,profiletbl_organisation.contact_person2,profiletbl_organisation.contact_designation2,profiletbl_organisation.blocked,profiletbl_organisation.org_code,profiletbl_organisation.created_by,profiletbl_organisation.created_on",
+		"limit": 20
+	},
+	"actions": {
+		"forms@profile.company/new": {
+			"label": "Add New Group",
+			"icon": "fa fa-plus",
+			"class": "btn btn-info company"
+		}
+	},
+	"buttons": {
+		"infoview@profile.company/{hashid}": {
+			"icon": "fa fa-eye",
+			"class": "company",
+			"label": "View Group"
+		},
+		"forms@profile.company/edit/{hashid}": {
+			"icon": "fa fa-pencil",
+			"class": "company",
+			"label": "Edit Group"
+		},
+		"forms@profile.org_business/edit/{hashid}": {
+			"icon": "fa fa-industry",
+			"class": "Company Business",
+			"label": "Edit Business"
+		}
+	},
+	"datagrid": {
+		"profiletbl_organisation.id": {
+			"label": "ID",
+			"hidden": false,
+			"searchable": true,
+			"sortable": true,
+			"groupable": false,
+			"classes": "",
+			"style": "width:50px;",
+			"formatter": "text"
+		},
+		"profiletbl_organisation.organization": {
+			"label": "Group",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl_organisation.org_code": {
+			"label": "Group Code",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl_organisation.org_type": {
+			"label": "Type",
+			"searchable": true,
+            "formatter":"uppercase",
+			"sortable": true,
+            "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "do_lists",
+                "columns": "title,value",
+                "where":{
+                    "groupid":"org_type"
+                  }
+               }
+		},
+		"profiletbl_organisation.org_subcategory": {
+			"label": "Sub Category",
+			"searchable": true,
+			"sortable": true,
+			"formatter":"pretty",
+			"hidden": true
+		},
+		"profiletbl_organisation.org_mail": {
+			"label": "E-mail",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl_organisation.org_landline": {
+			"label": "Landline",
+			"searchable": true,
+			"sortable": true
+		},
+		"profiletbl_organisation.org_pan": {
+			"label": "Pan No.",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl_organisation.org_gst": {
+			"label": "GST No.",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl_organisation.org_owner": {
+			"label": "Owner",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl_organisation.org_establishment": {
+			"label": "Date Of Establishment",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true,
+			"formatter": "date",
+			"filter":{
+				"type":"date"
+			}
+		},
+		"profiletbl_organisation.org_website": {
+			"label": "Website",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl_organisation.org_tags": {
+			"label": "Tags",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl_organisation.blocked": {
+			"label": "Blocked",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true,
+			"formatter":"pretty",
+            "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "do_lists",
+                "columns": "title,value",
+                "where":{
+                    "groupid":"boolean"
+                  }
+               }
+		},
+		"profiletbl_organisation.created_by": {
+			"label": "Added By",
+			"searchable": true,
+			"sortable": true,
+			"hidden": true
+		},
+		"profiletbl_organisation.created_on": {
+			"label": "Added On",
+			"searchable": true,
+			"sortable": true,
+			"formatter": "date",
+			"filter":{
+				"type":"date"
+			},
+			"hidden": true
+		}
+	},
+	"kanban": {
+		"colkeys": {
+			"org_category": {
+				"label": "Category",
+				"table": "profiletbl_organisation",
+				"columns": "org_category as title,org_category as value"
+			},
+			"org_type": {
+				"label": "Type",
+				"table": "profiletbl_organisation",
+				"columns": "org_type as title,org_type as value"
+			}
+		},
+		"colmap": {
+			"title": "organization",
+			"descs": "org_type"
+		},
+		"unilink": "profile.company"
+	}
+}

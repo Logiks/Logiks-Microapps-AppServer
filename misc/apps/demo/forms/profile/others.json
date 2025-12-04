@@ -1,0 +1,352 @@
+{
+   "hooks": {
+		"preload": {
+			"helpers": ["countries"]
+		},
+		"presubmit": {
+		    "modules":["bizrules"]
+		},
+		"postsubmit": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"forcefill": {
+	    "groupuid":"#SESS_GROUP_NAME#",
+        "access_level":"#SESS_ACCESS_LEVEL#",
+        "privilegeid":"#SESS_PRIVILEGE_ID#",
+        "guid":"#SESS_GUID#",
+		"type": "other"
+	},
+	"source": {
+		"type": "sql",
+		"table": "profiletbl",
+		"where": ["md5(id)"]
+	},
+	"gotolink":"infoview/profile.others/{hashid}?",
+	"fields": {
+	  "full_name": {
+			"label": "Name",
+			"group": "Info",
+			"required": true
+		},
+		"organization": {
+			"label": "Company",
+			"group": "Info",
+			"type": "dataSelectorFromTable",
+			"table": "profiletbl_organisation",
+			"columns": "organization as title,id as value",
+			"where":{
+			    "blocked":"false",
+			    "org_group":"Organisation"
+			},
+			"no-option":"Select Company",
+			"required": true
+		},
+		"designation": {
+			"label": "Designation",
+			"group": "Info",
+			"required": true
+		},
+		"fax": {
+			"label": "Fax",
+			"group": "Info"
+		},
+		"email1": {
+			"label": "Email",
+			"group": "Info",
+			"type":"email",
+			"required": true
+		},
+		"email2": {
+			"label": "Alternate Email",
+			"group": "Info",
+			"type":"email"
+		},
+		"mobile": {
+			"label": "Mobile",
+			"group": "Info",
+			"type":"phone",
+			"required": true
+		},
+		"mobile_others": {
+			"label": "Telephone Others",
+			"group": "Info",
+			"type":"phone"
+		},
+		"tags": {
+			"label": "Tags",
+			"group": "Info",
+			"type": "tags"
+		},
+		"gender": {
+			"label": "Gender",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid":"user_gender",
+			"required": true
+		},
+		"dob": {
+			"label": "DOB",
+			"group": "Info",
+			"type": "date"
+		},
+		"address": {
+			"label": "Billing Address",
+			"group": "Address",
+			"type":"textarea",
+			"width":6,
+			"required": true
+		},
+		"street": {
+			"label": "Billing Street",
+			"group": "Address",
+			"required": true
+		},
+		"city": {
+			"label": "Billing City",
+			"group": "Address",
+			"required": true
+		},
+		"state": {
+			"label": "Billing State",
+			"group": "Address",
+			"required": true
+		},
+		"country": {
+			"label": "Billing Country",
+			"group": "Address",
+		    "type": "dataMethod",
+			"method":{
+				"name":"getCountrySelector",
+				"valuefield":"default"
+			},
+			"required": true
+		},
+		"zipcode": {
+			"label": "Billing Zipcode",
+			"group": "Address",
+			"required": true
+		},
+		"perm_address": {
+			"label": "Permanent Address",
+			"group": "Address",
+			"type":"textarea",
+			"width":6
+		},
+		"perm_city": {
+			"label": "Permanent City",
+			"group": "Address"
+		},
+		"perm_country": {
+			"label": "Permanent Country",
+			"group": "Address",
+			"type": "dataMethod",
+			"method":{
+				"name":"getCountrySelector",
+				"valuefield":"default"
+			}
+		},
+		"perm_zipcode": {
+			"label": "Permanent Zipcode",
+			"group": "Address"
+		},
+		"perm_phone": {
+			"label": "Permanent Phone",
+			"group": "Address"
+		},
+		"facebook":{
+			"label":"Facebook",
+			"type":"social@facebook",
+			"group":"social"
+		},
+		"twitter":{
+			"label":"Twitter",
+			"type":"social@twitter",
+			"group":"social"
+		},
+		"instagram":{
+			"label":"Instagram",
+			"type":"social@instagram",
+			"group":"social"
+		},
+		"linkedin":{
+			"label":"LinkedIn",
+			"type":"social@linkedin",
+			"group":"social"
+		},
+		"website":{
+			"label":"Website",
+			"type":"url",
+			"group":"social"
+		},
+		"blocked": {
+			"label": "Blocked",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid":"boolean",
+			"vmode":"edit",
+			"required": true
+		},
+		"blacklist":{
+			"label": "Blacklisted",
+			"group": "Info",
+			"type": "dataSelector",
+			"groupid":"boolean",
+			"vmode":"edit",
+			"required": true
+		},
+		"remarks": {
+			"label": "Remarks",
+			"group": "Info",
+			"type": "textarea"
+		}
+	},
+	"infoview":{
+	    "groups":{
+        	"organization": {
+				"label": "Company",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "single",
+					"table": "profiletbl_organisation,profiletbl",
+					"cols": "profiletbl_organisation.organization,profiletbl_organisation.org_category,profiletbl_organisation.org_type,profiletbl_organisation.org_establishment,profiletbl_organisation.org_pan,profiletbl_organisation.org_mail,profiletbl_organisation.org_landline,profiletbl_organisation.org_address1,profiletbl_organisation.org_country1,profiletbl_organisation.org_zipcode1,profiletbl_organisation.org_website,profiletbl_organisation.org_establishment,profiletbl_organisation.contact_person1,profiletbl_organisation.contact_designation1 as contact_person1_designation",
+					"where": "profiletbl_organisation.id=profiletbl.organization AND md5(profiletbl.id)='#refid#'"
+				},
+				"width": 12
+			},
+			"jobs": {
+				"label": "Jobs",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "jobs_tbl,data_job_types",
+					"cols": "jobs_tbl.id,jobs_tbl.title as job_name,data_job_types.job_engine as category,jobs_tbl.manager,jobs_tbl.job_cost,jobs_tbl.job_year,jobs_tbl.job_status,jobs_tbl.edited_by,jobs_tbl.edited_on",
+					"where": "md5(jobs_tbl.profile_id)='#refid#' AND jobs_tbl.master_job_id=data_job_types.id"
+				},
+				"width": 12
+			},
+			"postbox": {
+				"label": "Postbox",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "edit",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "reception_activities,profiletbl",
+					"cols": "reception_activities.id,reception_activities.subject,reception_activities.comms_type as Postbox_type,profiletbl.full_name as Person,reception_activities.dated as date,reception_activities.attachment",
+					"where": "reception_activities.profile_id=profiletbl.id  AND (md5(reception_activities.profile_id)='#refid#' OR  md5(reception_activities.staff_userid)='#refid#')",
+					"orderby": "reception_activities.edited_on DESC",
+					"buttons": {
+    					"forms@reception.inward/new": {
+    						"label": "Add Inward",
+    						"icon": "fa fa-plus"
+    					},
+    					"forms@reception.outward/new": {
+    						"label": "Add Outward",
+    						"icon": "fa fa-plus"
+    					}
+    				}
+				},
+				"width": 12
+			},
+			"leads":{
+    		    "label":"Leads",
+                "type": "module",
+				"src": "infoviewTable",
+				"vmode": "view",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "lead_tbl,profiletbl",
+					"cols": "lead_tbl.id,lead_tbl.title,lead_tbl.lead_category,lead_tbl.lead_date,lead_tbl.lead_status,lead_tbl.lead_type,lead_tbl.lead_priority",
+					"where": "profiletbl.type='Other' AND lead_tbl.customer_id = profiletbl.id AND md5(lead_tbl.customer_id)='#refid#'"
+				},
+                "width":12
+        	},
+        	"email": {
+				"label": "Email",
+				"type": "module",
+				"src": "emails.inbox",
+				"rule": "profile,#refid#",
+				"vmode": "view",
+				"hidden":true,
+				"width": 12
+			},
+        	"files": {
+				"label": "Files",
+				"type": "module",
+				"src": "docman.docs",
+				"vmode": "edit",
+				"config": {
+				    "ref_col":"md5(profile_id)",
+				    "ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"rule": "profile,#refid#",
+				"width": 12,
+				"hidden": true
+			},
+			"events": {
+				"label": "Events",
+				"type": "module",
+				"src": "infoviewTable",
+				"vmode": "edit",
+				"config": {
+					"type": "sql",
+					"uimode": "grid",
+					"table": "user_events,profiletbl",
+					"cols": "user_events.id,user_events.event,user_events.schedule,user_events.flag_period,user_events.priority,user_events.created_by",
+					"where":"md5(profiletbl.id)='#refid#' AND user_events.ref_id=profiletbl.id AND user_events.ref_src='profile'",
+					"ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+				"width": 12,
+				"hidden": true
+			},
+        	"comments": {
+				"label": "Comments",
+				"type": "module",
+				"src": "userComments.comments",
+				"rule": "profile,#refid#",
+				"vmode": "view",
+				"width": 12,
+				"hidden":true
+			},
+            "notes": {
+				"label": "Notes",
+				"type": "module",
+				"src": "notesBoard.notes",
+				"vmode": "view",
+				"hidden": true,
+				"width": 12
+			},
+        	"log":{
+    		    "label":"Log",
+                "type":"widget",
+                "src":"bizlogger.logs",
+                "vmode":"view",
+                "hidden":true,
+                "config": {
+                    "ref_id":"#refid#",
+				    "ref_src":"profile"
+				},
+                "width":12
+        	},
+        	"extras": {
+				"label": "Extra",
+				"type": "widget",
+				"src": "biz_infoview_xtras",
+				"vmode": "view",
+				"width": 12
+			}
+        	
+	    }
+	}
+}

@@ -1,0 +1,96 @@
+{
+    "schema":"1.0",
+	"title":"Tax Master",
+	"category":"Master",
+	"privilege":"*",
+	"blocked":false,
+	"rowlink":false,
+	"rowsPerPage":20,
+	"showExtraColumn":false,
+	"custombar":false,
+	"hooks": {
+		"fieldupdate": {
+		    "modules":["bizflow","bizlogger"]
+		}
+	},
+	"source":{
+	    "type":"sql",
+	    "table":"data_taxes",
+	    "cols":"id,title,type,amnt,category,blocked",
+	    "limit":20
+	},
+	"actions":{
+         "forms@masters.taxes/new":{
+            "label":"Add Taxes",
+            "icon": "fa fa-plus",
+    		"class": "btn btn-info masters-taxes"
+        }
+   },
+	"buttons": {
+		"infoview@masters.taxes/{hashid}": {
+		     "label":"View Taxes",
+			"icon": "fa fa-eye",
+			"class": "masters-taxes"
+		},
+		"forms@masters.taxes/edit/{hashid}": {
+		     "label":"Edit Taxes",
+			"icon": "fa fa-pencil",
+			"class": "masters-taxes"
+		}
+	},
+	"datagrid":{
+	    "id":{
+			"label":"ID",
+			"hidden":false,
+			"searchable":true,
+			"sortable":true,
+			"groupable":false,
+			"classes":"",
+			"style":"width:50px;",
+			"formatter":"text"
+		},
+		"title":{
+		    "label":"Title",
+		    "sortable":true,
+		    "searchable": true
+		},
+		"type":{
+		    "label":"Type",
+		    "sortable":true,
+		    "searchable": true,
+		    "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "data_taxes",
+                "columns": "type,type"
+            }
+		},
+		"amnt":{
+		    "label":"Tax Amount",
+		    "sortable":true,
+		    "searchable": true
+		},
+		"category":{
+		    "label":"Category",
+		    "sortable":true,
+		    "searchable": true,
+		    "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "data_taxes",
+                "columns": "category,category"
+            }
+		},
+		"blocked":{
+		    "label":"Blocked",
+		    "sortable":true,
+		    "searchable": true,
+		    "filter": {
+                "type": "dataSelectorFromUniques",
+                "nofilter": "--",
+                "table": "data_taxes",
+                "columns": "blocked,blocked"
+            }
+		}
+	}
+}
