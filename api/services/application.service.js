@@ -61,7 +61,7 @@ module.exports = {
 		theme: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/theme/:themeid?"
+				fullPath: "/api/theme/:themeid"
 			},
 			async handler(ctx) {
 				const themeId =
@@ -105,7 +105,7 @@ module.exports = {
 		media: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/theme/:themeid?/:filename"
+				fullPath: "/api/theme/:themeid/media/:filename"
 			},
 			async handler(ctx) {
 				const { themeid, filename } = ctx.params;
