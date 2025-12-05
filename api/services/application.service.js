@@ -15,8 +15,8 @@ module.exports = {
 				fullPath: "/api"
 			},
 			async handler(ctx) {
-				const serverHost = ctx.meta.serverHost;
-				const applicationInfo = await BASEAPP.getAppInfo(serverHost);
+				// const serverHost = ctx.meta.serverHost;
+				const applicationInfo = await BASEAPP.getAppInfo(ctx.meta.appInfo.appid);
 				if(!applicationInfo) {
 					throw new Errors.MoleculerClientError(
 						"Invalid Application key",
