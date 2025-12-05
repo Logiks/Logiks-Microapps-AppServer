@@ -176,10 +176,10 @@ module.exports = {
 					})
 				],
 
-				errorHandler(err, info) {
-					this.logger.warn("Log the error:", err);
-					throw err; // Throw further
-				},
+				// errorHandler(err, info) {
+				// 	this.logger.warn("Log the error:", err);
+				// 	throw err; // Throw further
+				// },
 
 				settings: {
 					port: process.env.PORT || 3000,
@@ -304,7 +304,24 @@ module.exports = {
 								ctx.meta.remoteIP = ip;
 
 								const serverHost = req.headers.host;
-								const appInfo = await BASEAPP.getAppInfo(serverHost);
+								const domainApp = await BASEAPP.getAppForDomain(serverHost);
+								if(!domainApp) {
+									throw new Errors.MoleculerClientError(
+										"The active application found for current domain/url",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+								
+								const appInfo = await BASEAPP.getAppInfo(domainApp.appid);
+								if(!appInfo) {
+									throw new Errors.MoleculerClientError(
+										"Application not define or not found on server",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+								
 								ctx.meta.appInfo = appInfo || {};
 								ctx.meta.serverHost = serverHost || "";
 							}
@@ -388,7 +405,24 @@ module.exports = {
 								ctx.meta.remoteIP = ip;
 
 								const serverHost = req.headers.host;
-								const appInfo = await BASEAPP.getAppInfo(serverHost);
+								const domainApp = await BASEAPP.getAppForDomain(serverHost);
+								if(!domainApp) {
+									throw new Errors.MoleculerClientError(
+										"The active application found for current domain/url",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+								
+								const appInfo = await BASEAPP.getAppInfo(domainApp.appid);
+								if(!appInfo) {
+									throw new Errors.MoleculerClientError(
+										"Application not define or not found on server",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+
 								ctx.meta.appInfo = appInfo || {};
 								ctx.meta.serverHost = serverHost || "";
 

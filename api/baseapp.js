@@ -73,14 +73,33 @@ module.exports = {
         console.log("\x1b[36m%s\x1b[0m",`Post Initalization Completed`);
     },
 
-    getAppInfo: async function(serverHost) {
-        var selectedApplication = applicationData.filter(a=>a.domain.indexOf(serverHost)>=0);
+    getAppInfo: async function(appID) {
+        //var selectedApplication = applicationData.filter(a=>a.domain.indexOf(serverHost)>=0);
+        var selectedApplication = applicationData.filter(a=>a.appid==appID);
 
         if(selectedApplication.length<=0) {
             return false;
         }
         
         return _.cloneDeep(selectedApplication[0]);
+    },
+
+    getAppForDomain: async function(serverHost) {
+        var domainInfo = await new Promise((resolve, reject) => {
+            db_selectQ("appdb", "lgks_domains", "*", {
+                domain_host: serverHost,
+                blocked: "false"
+            },{}, function (domainInfo) {
+                if (domainInfo) {
+                    resolve(domainInfo[0])
+                } else {
+                    console.info("DOMAIN_NOT_FOUND", serverHost);
+                    resolve(false)
+                }
+            });
+        })
+        
+        return domainInfo;
     }
 }
 
