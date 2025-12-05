@@ -29,6 +29,49 @@ module.exports = {
 					{ id: 2, username: "user1", tenantId: "tenant-1" }
 				];
 			}
+		},
+
+		files: {
+			rest: {
+				method: "POST",
+				path: "/files"
+			},
+			params: {
+				path: "string"
+			},
+			// could add scopes too if you want additional control
+			async handler(ctx) {
+				return [];
+			}
+		},
+
+		files: {
+			rest: {
+				method: "POST",
+				path: "/files/fetch"
+			},
+			params: {
+				file: "string"
+			},
+			// could add scopes too if you want additional control
+			async handler(ctx) {
+				return [];
+			}
+		},
+
+		files: {
+			rest: {
+				method: "POST",
+				path: "/files/upload"
+			},
+			params: {
+				file: "string",
+				content: "string"
+			},
+			// could add scopes too if you want additional control
+			async handler(ctx) {
+				return [];
+			}
 		}
 	}
 };

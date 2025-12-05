@@ -16,6 +16,8 @@ const DailyRotateFile = require("winston-daily-rotate-file");
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 
+const FastestValidator = require("fastest-validator");
+
 const { ServiceBroker, Errors } = require("moleculer");
 const ApiService = require("moleculer-web");
 const Redis = require("ioredis");
@@ -25,6 +27,23 @@ const isProd = process.env.NODE_ENV === "production";
 // Distributed rate limit settings
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 300);
+
+// const v = new FastestValidator();
+
+// v.add("json", value => {
+//   try {
+//     if (typeof value === "string") {
+//       JSON.parse(value);
+//       return true;
+//     }
+//     if (typeof value === "object") {
+//       return true;
+//     }
+//     return false;
+//   } catch (err) {
+//     return false;
+//   }
+// });
 
 // -------------------------
 // SERVER START
@@ -45,6 +64,7 @@ module.exports = {
 				nodeID: process.env.SERVER_ID || os.hostname(),
 				namespace: process.env.NAMESPACE || "default",
 				transporter: process.env.TRANSPORTER,
+				// validator: v,
 
 				// Redis Cacher (distributed)
 				cacher: process.env.CLUSTER_CACHE === "true" ? {

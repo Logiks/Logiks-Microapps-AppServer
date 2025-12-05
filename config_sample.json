@@ -27,7 +27,6 @@
     },
     "authjwt": {
         "secret": "Zv7QFrJWhSz6j2kA",
-        "expires": 3600,
         "access_token_ttl": 3600,
         "refresh_token_ttl": 604800
     },

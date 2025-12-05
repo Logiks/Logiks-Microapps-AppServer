@@ -32,6 +32,16 @@ module.exports = {
 			}
 		},
 
+		settings: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/settings"
+			},
+			async handler(ctx) {
+				return {};
+			}
+		},
+
         //Get Application Layout for the tenant
 		layout: {
 			rest: {

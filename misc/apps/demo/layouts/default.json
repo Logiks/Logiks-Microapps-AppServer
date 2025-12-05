@@ -35,11 +35,7 @@
         { 
           "name": "main-menu", 
           "permissions": ["user", "admin"], 
-          "src": "navigator/app",
-          "featureFlags": ["ADMIN_MENU_V2", "EXPERIMENT_ADMIN_NAV"],
-          "params": {
-            "ui_template": "list"
-          }
+          "featureFlags": ["ADMIN_MENU_V2", "EXPERIMENT_ADMIN_NAV"]
         }
       ]
     },
@@ -65,5 +61,42 @@
         { "name": "support-links", "permissions": ["user", "admin"] }
       ]
     }
-  ]
+  ],
+  "slotBindings": {
+    "app-header.brand": "BrandLogo",
+    "app-header.primary-nav": {
+      "component": "UserMenu",
+      "params": {
+
+      }
+    },
+    "app-sidebar.main-menu": {
+      "component": "navigator",
+      "params": {
+        "ui_template": "list"
+      },
+      "source": {
+        "type": "api",
+        "method": "get",
+        "endpoint": "navigator/app"
+      },
+      "source1": {
+          "type": "sql",
+          "table": "docs_tbl,profiletbl",
+          "cols": "docs_tbl.id,docs_tbl.doctype,docs_tbl.doclink,docs_tbl.title,docs_tbl.docname,docs_tbl.category,(concat(docs_tbl.docyear,'-',docs_tbl.docyear+1)) as docyear,docs_tbl.issuedOn,docs_tbl.placeOfIssue,docs_tbl.expires,docs_tbl.verfied_on,docs_tbl.flags,profiletbl.full_name,docs_tbl.verfied_by,docs_tbl.verfied_on,docs_tbl.blocked,docs_tbl.created_by,docs_tbl.created_on",
+          "where": {
+            "docs_tbl.profile_id=profiletbl.id":"RAW",
+            "(DATE(docs_tbl.expires)< CURDATE())":"RAW"
+            
+          },
+          "limit": 10
+        }
+    },
+    "app-content.page-body": {
+      "remote_component": "component/test1.jsx",
+      "params": {
+        
+      }
+    }
+  }
 }
