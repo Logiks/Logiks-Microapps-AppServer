@@ -1749,6 +1749,12 @@
         "default": null,
         "primary": false
       },
+      "setting_params": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
       "blocked": {
         "type": "enum('false','true')",
         "nullable": true,
@@ -1812,6 +1818,12 @@
       },
       "setting_value": {
         "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "setting_params": {
+        "type": "text",
         "nullable": true,
         "default": null,
         "primary": false

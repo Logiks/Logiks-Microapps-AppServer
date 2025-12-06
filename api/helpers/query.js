@@ -3,10 +3,45 @@
  * 
  * */
 
+var DB_DRIVERS = {};
+const BASE_DRIVER_DIR = __dirname+'/drivers/';
+
+const QUERYMAP = {};
+
 module.exports = function(server) {
 
     initialize = function() {
         
+        //Load all drivers
+        // fs.readdirSync(BASE_DRIVER_DIR).forEach(function(file) {
+        //     if ((file.indexOf(".js") > 0 && (file.indexOf(".js") + 3 == file.length))) {
+        //         var filePath = path.resolve(BASE_DRIVER_DIR + file);
+        //         var clsName = file.replace('.js','').toUpperCase();
+
+        //         DB_DRIVERS[clsName] = require(filePath);
+
+        //         // if(typeof global[clsName].initialize === "function") {
+        //         // 	try {
+        //         // 		global[clsName].initialize();
+        //         // 	} catch(e) {
+        //         // 		console.error("Error Initializing Controller "+clsName, e.message);
+        //         // 	}
+        //         // }
+        //     }
+        // });
+    }
+
+    storeQuery = async function(queryObj, queryID = false) {
+        if(!queryID) queryID = UNIQUEID.generate(12);
+
+        QUERYMAP[queryID] = queryObj;
+
+        return queryID;
+    }
+
+    getQueryByID= async function(queryID) {
+        if(!QUERYMAP[queryID]) return false;
+        return QUERYMAP[queryID];
     }
 
     parseQuery = function(sqlObj, filter = {}) {

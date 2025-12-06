@@ -12,15 +12,17 @@ module.exports = {
                 var clsName = file.replace('.js','').toUpperCase();
 
                 _ENV.HELPERS.push(clsName);
-                global[clsName] = require(filePath)();
-
-                if(typeof global[clsName].initialize === "function") {
+                const temp = require(filePath)();
+                
+                if(typeof temp.initialize === "function") {
                     try {
-                        global[clsName].initialize();
+                        temp.initialize();
                     } catch(e) {
                         console.error("Error Initializing Controller "+clsName, e.message);
                     }
                 }
+
+                global[clsName] = temp;
             }
         });
 

@@ -608,6 +608,8 @@ module.exports = {
 								"NO_AUTH"
 							);
 						}
+						
+						if(!user.guid) user.guid = user.tenantId;
 
 						if (user) {
 							ctx.meta.user = user;

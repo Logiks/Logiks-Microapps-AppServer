@@ -10,7 +10,29 @@ module.exports = {
 				path: "/"
 			},
 			async handler(ctx) {
-				return [];
+				var data = await db_selectQ("appdb", "do_lists", "groupid, count(*) as count", {//title, value, class, sortorder
+					"blocked": "false"
+				}, {}, "GROUP BY groupid ORDER BY sortorder");
+				
+				if(!data) data = [];
+
+				return data;
+			}
+		},
+		fetch: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/data/:groupid"
+			},
+			async handler(ctx) {
+				var data = await db_selectQ("appdb", "do_lists", "groupid, title, value, class, sortorder", {
+					"blocked": "false",
+					"groupid": ctx.params.groupid
+				}, {}, "ORDER BY sortorder");
+				
+				if(!data) data = [];
+
+				return data;
 			}
 		},
 		fetchFiltered: {
@@ -23,17 +45,45 @@ module.exports = {
                 filter: "object"
             },
 			async handler(ctx) {
-				return [];
+				if(!ctx.params.filter) ctx.params.filter = {};
+
+				var data = await db_selectQ("appdb", "do_lists", "groupid, title, value, class, sortorder", _.extend({},ctx.params.filter, {
+					"blocked": "false",
+					"groupid": ctx.params.groupid
+				}), {}, "ORDER BY sortorder");
+				
+				if(!data) data = [];
+
+				return data;
 			}
 		},
-		fetch: {
+		fetchBulk: {
 			rest: {
-				method: "GET",
-				fullPath: "/api/data/:groupid"
+				method: "POST",
+				fullPath: "/api/data/bulk"
 			},
+            params: {
+                groupids: "array"
+            },
 			async handler(ctx) {
-				return [];
+				if(!ctx.params.filter) ctx.params.filter = {};
+
+				var data = await db_selectQ("appdb", "do_lists", "groupid, title, value, class, sortorder", _.extend({},ctx.params.filter, {
+					"blocked": "false",
+					"groupid": [ctx.params.groupids, "IN"]
+				}), {}, "ORDER BY groupid, sortorder");
+				
+				if(!data) data = [];
+
+				const grouped = data.reduce((acc, item) => {
+						const key = item.groupid;
+						if (!acc[key]) acc[key] = [];
+						acc[key].push(item);
+						return acc;
+					}, {});
+
+				return grouped;
 			}
-		}
+		},
 	}
 };

@@ -34,11 +34,24 @@ module.exports = {
 
 		settings: {
 			rest: {
-				method: "GET",
+				method: "POST",
 				fullPath: "/api/settings"
 			},
+			params: {
+				module: "string"
+			},
 			async handler(ctx) {
-				return {};
+				var whereCond = {
+					"blocked": "false",
+					"guid": ctx.meta.user.guid
+				};
+				if(ctx.params.module && ctx.params.module!="*") {
+					whereCond["module_name"] = ctx.params.module;
+				}
+				var data1 = await db_selectQ("appdb", "sys_settings", "module_name, setting_name, setting_value, setting_params", whereCond, {});
+				var data2 = await db_selectQ("appdb", "user_settings", "module_name, setting_name, setting_value, setting_params", whereCond, {});
+
+				return _.extend({}, data1, data2);
 			}
 		},
 
@@ -146,19 +159,6 @@ module.exports = {
 
 				// Return readable stream (memory safe)
 				return fs.createReadStream(filePath);
-			}
-		},
-
-		//Get media for theme file
-		navigator: {
-			rest: {
-				method: "GET",
-				fullPath: "/api/navigator/:navid?"
-			},
-			async handler(ctx) {
-
-
-				return {};
 			}
 		},
 

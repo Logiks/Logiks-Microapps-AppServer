@@ -48,12 +48,11 @@ module.exports = function(server) {
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql, params);
 		}
-		
 		const results = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, params, function(err, results, fields) {
-					// console.log(err,results,fields);
 					if(err) {
-						reject(false);
+						console.log(err);
+						reject(false, err.code, err.sqlMessage);
 					} else if(results.length<=0) {
 						return resolve([]);
 					} else {
@@ -63,10 +62,12 @@ module.exports = function(server) {
 				});
 		});
 
+		// results = JSON.parse(JSON.stringify(results));
+
 		return results;
 	}
 
-	db_selectQ = async function(dbkey, table, columns, where, whereParams, callback, additionalQueryParams) {
+	db_selectQ = async function(dbkey, table, columns, where, whereParams, additionalQueryParams) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
@@ -84,7 +85,11 @@ module.exports = function(server) {
 					if(a == "RAW") {
 						sqlWhere.push(b);
 					} else if(Array.isArray(a) && a.length==2) {
-						sqlWhere.push(b+a[1]+"'"+a[0]+"'");
+						if(Array.isArray(a[0])) {
+							sqlWhere.push(`${b} ${a[1]} (${a[0].map(a=>`'${a}'`).join(",")})`);
+						} else {
+							sqlWhere.push(`${b} ${a[1]} '${a[0]}'`);
+						}
 					} else {
 						sqlWhere.push(b+"='"+a+"'");
 					}
@@ -102,7 +107,6 @@ module.exports = function(server) {
 			sql += " "+ additionalQueryParams;
 		}
 
-		// console.log("_selectQ", sql);
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql, whereParams);
 		}
@@ -110,15 +114,16 @@ module.exports = function(server) {
 		const results = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, whereParams, function(err, results, fields) {
 					if(err) {
-						if(err) console.log(err);
-						reject(err);
-						return;
+						console.log(err);
+						reject(false, err.code, err.sqlMessage);
 					} else {
 						results = JSON.parse(JSON.stringify(results));
 						resolve(results);
 					}
 				});
 		});
+
+		// results = JSON.parse(JSON.stringify(results));
 
 		return results;
 	}
@@ -224,6 +229,7 @@ module.exports = function(server) {
 		const results = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, function(err, results, fields) {
 					if(err) {
+						console.log(err);
 						reject(false, err.code, err.sqlMessage);
 					} else {
 						resolve(results);		
@@ -273,6 +279,7 @@ module.exports = function(server) {
 		const results = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, vals, function(err, results, fields) {
 					if(err) {
+						console.log(err);
 						reject(false,err.code,err.sqlMessage);
 					} else {
 						resolve(true);
