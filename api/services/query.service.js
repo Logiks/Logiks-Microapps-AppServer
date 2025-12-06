@@ -7,24 +7,28 @@ module.exports = {
 		query: {
 			rest: {
 				method: "POST",
-				fullPath: "/api/query"
+				fullPath: "/"
 			},
             params: {
                 query: "object"
             },
 			async handler(ctx) {
+				console.log(ctx.params);
+
 				return [];
 			}
 		},
 		queryid: {
 			rest: {
 				method: "POST",
-				fullPath: "/api/query/:queryid"
+				fullPath: "/:queryid"
 			},
             params: {
                 filter: "object"
             },
 			async handler(ctx) {
+				console.log(ctx.params);
+				
 				return [];
 			}
 		}

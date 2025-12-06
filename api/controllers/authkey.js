@@ -14,15 +14,8 @@ module.exports = function(server) {
             "blocked": "false",
             "auth_key": apiKey
         };
-        var data = await new Promise((resolve, reject) => {
-            db_selectQ("appdb", "lgks_apikeys", "*", whereCond, {}, function (apiKeyInfo) {
-                if (apiKeyInfo) {
-                    resolve(apiKeyInfo);
-                } else {
-                    resolve(false);
-                }
-            });
-        })
+        var data = await db_selectQ("appdb", "lgks_apikeys", "*", whereCond, {});
+        
         if(!data || data.length<=0) return false;
 
         // var apiKeyInfo = data[0];

@@ -45,21 +45,21 @@ module.exports = {
 			}
 		},
 
-		files: {
+		filesPreview: {
 			rest: {
 				method: "POST",
-				path: "/files/fetch"
+				path: "/files/content"
 			},
 			params: {
 				file: "string"
 			},
 			// could add scopes too if you want additional control
 			async handler(ctx) {
-				return [];
+				return "";
 			}
 		},
 
-		files: {
+		filesUpload: {
 			rest: {
 				method: "POST",
 				path: "/files/upload"
@@ -70,7 +70,7 @@ module.exports = {
 			},
 			// could add scopes too if you want additional control
 			async handler(ctx) {
-				return [];
+				return {};
 			}
 		}
 	}

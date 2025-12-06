@@ -40,33 +40,36 @@ module.exports = function(server) {
 	}
 	
 	//Standard MySQL
-	db_query = function(dbkey, sql, params, callback) {
+	db_query = async function(dbkey, sql, params) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
-			return callback(false);
+			return false;
 		}
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql, params);
 		}
-		//server.mysql.query(sql, params, function(err, results, fields) {
-		_MYSQL[dbkey].query(sql, params, function(err, results, fields) {
+		
+		const results = await new Promise((resolve, reject) => {
+			_MYSQL[dbkey].query(sql, params, function(err, results, fields) {
 					// console.log(err,results,fields);
-			      	if(err) {
-			      		callback(false);
-			      		return;
-			      	}
-			      	if(results.length<=0) {
-			      		return callback([]);
-			      	}
-			      	results = JSON.parse(JSON.stringify(results));
-			      	callback(results);
-			    });
+					if(err) {
+						reject(false);
+					} else if(results.length<=0) {
+						return resolve([]);
+					} else {
+						results = JSON.parse(JSON.stringify(results));
+						resolve(results);
+					}
+				});
+		});
+
+		return results;
 	}
 
-	db_selectQ = function(dbkey, table, columns, where, whereParams, callback, additionalQueryParams) {
+	db_selectQ = async function(dbkey, table, columns, where, whereParams, callback, additionalQueryParams) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
-			return callback(false);
+			return false;
 		}
 
 		if(Array.isArray(columns)) columnsStr = columns.join(",");
@@ -103,23 +106,27 @@ module.exports = function(server) {
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql, whereParams);
 		}
-		//server.mysql.query(sql, whereParams, function(err, results, fields) {
-		_MYSQL[dbkey].query(sql, whereParams, function(err, results, fields) {
-			      	if(err || results.length<=0) {
-			      		if(err) console.log(err);
-			      		callback(false);
-			      		return;
-			      	}
+		
+		const results = await new Promise((resolve, reject) => {
+			_MYSQL[dbkey].query(sql, whereParams, function(err, results, fields) {
+					if(err) {
+						if(err) console.log(err);
+						reject(err);
+						return;
+					} else {
+						results = JSON.parse(JSON.stringify(results));
+						resolve(results);
+					}
+				});
+		});
 
-			      	results = JSON.parse(JSON.stringify(results));
-			      	callback(results);
-			    });
+		return results;
 	}
 
-	db_insertQ1 = function(dbkey, table, data, callback) {
+	db_insertQ1 = async function(dbkey, table, data) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
-			return callback(false);
+			return false;
 		}
 
 		cols = [];quest = [];
@@ -136,25 +143,29 @@ module.exports = function(server) {
 			console.log("SQL", sql, vals);
 		}
 
-		//server.mysql.query(sql, vals, function(err, results, fields) {
-		_MYSQL[dbkey].query(sql, vals, function(err, results, fields) {
-	          if(err) {
-	          	console.log(err);
-	            return callback(false, err.code, err.sqlMessage);
-	          }
+		const results = await new Promise((resolve, reject) => {
+			_MYSQL[dbkey].query(sql, vals, function(err, results, fields) {
+					if(err) {
+						console.log(err);
+						reject(false, err.code, err.sqlMessage);
+					} else {
+						resolve(results.insertId, err);
+					}
+				});
+		});
 
-	          callback(results.insertId, err);
-	        });
+		return results;
+		
 	}
 
-	db_insert_batchQ = function(dbkey, table, data, callback) {
+	db_insert_batchQ = async function(dbkey, table, data) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
-			return callback(false);
+			return false;
 		}
 
 		if(data[0]==null) {
-			return callback(false, "Data Not Defined");
+			return false;
 		}
 
 		let cols = Object.keys(data[0]);
@@ -167,20 +178,26 @@ module.exports = function(server) {
 			console.log("SQL", sql, data);
 		}
 
-		//server.mysql.query(sql, [values], function(err, results, fields) {
-		_MYSQL[dbkey].query(sql, [values], function(err, results, fields) {
-	          if(err) {
-	          	if(err) console.log(err);
-	            return callback(false);
-	          }
-	          callback(true);
-	        });
+		const results = await new Promise((resolve, reject) => {
+			_MYSQL[dbkey].query(sql, [values], function(err, results, fields) {
+					if(err) {
+						console.log(err);
+						reject(false, err.code, err.sqlMessage);
+					} else {
+						resolve(true);
+					}
+				});
+		});
+
+		return results;
+
+		
 	}
 
-	db_deleteQ = function(dbkey, table, where, callback) {
+	db_deleteQ = async function(dbkey, table, where) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
-			return callback(false);
+			return false;
 		}
 
 		sqlWhere = [];
@@ -204,19 +221,25 @@ module.exports = function(server) {
 			console.log("SQL", sql, vals);
 		}
 
-		//server.mysql.query(sql, vals, function(err, results, fields) {
-		_MYSQL[dbkey].query(sql, function(err, results, fields) {
-	          if(err) {
-	            return callback(false);
-	          }
-	          callback(true);
-	        });
+		const results = await new Promise((resolve, reject) => {
+			_MYSQL[dbkey].query(sql, function(err, results, fields) {
+					if(err) {
+						reject(false, err.code, err.sqlMessage);
+					} else {
+						resolve(results);		
+					}
+				
+				});
+		});
+
+		return results;
+		
 	}
 
-	db_updateQ = function(dbkey, table, data, where, callback) {
+	db_updateQ = async function(dbkey, table, data, where) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
-			return callback(false);
+			return false;
 		}
 		var fData = [];
 		var vals = [];
@@ -247,14 +270,17 @@ module.exports = function(server) {
 			console.log("SQL", sql, vals);
 		}
 
-		//server.mysql.query(sql, vals, function(err, results, fields) {
-		_MYSQL[dbkey].query(sql, vals, function(err, results, fields) {
-	          if(err) {
-	          	if(err) console.log(err);
-	            return callback(false,err.code,err.sqlMessage);
-	          }
-	          callback(true);
-	        });
+		const results = await new Promise((resolve, reject) => {
+			_MYSQL[dbkey].query(sql, vals, function(err, results, fields) {
+					if(err) {
+						reject(false,err.code,err.sqlMessage);
+					} else {
+						resolve(true);
+					}
+				});
+		});
+
+		return results;
 	}
 
 	return this;

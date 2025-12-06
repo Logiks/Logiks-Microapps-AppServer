@@ -336,7 +336,7 @@ module.exports = {
 								const appInfo = await BASEAPP.getAppInfo(domainApp.appid);
 								if(!appInfo) {
 									throw new Errors.MoleculerClientError(
-										"Application not define or not found on server",
+										"Application not defined or not found on server",
 										401,
 										"INVALID_REQUEST"
 									);
@@ -437,7 +437,7 @@ module.exports = {
 								const appInfo = await BASEAPP.getAppInfo(domainApp.appid);
 								if(!appInfo) {
 									throw new Errors.MoleculerClientError(
-										"Application not define or not found on server",
+										"Application not defined or not found on server",
 										401,
 										"INVALID_REQUEST"
 									);

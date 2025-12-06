@@ -4,10 +4,7 @@
         "theme": "indigo",
         "appid": "demo",
         "access": "public",
-        "login": "local",
-        "domain": [
-            "localhost:9999"
-        ],
+        "login": "local,authlink",
         "featureFlags": {
             "ADMIN_TOOLS": true,
             "ADMIN_MENU_V2": false,

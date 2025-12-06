@@ -14,15 +14,8 @@ module.exports = function(server) {
             "blocked": "false",
             "guid": guid
         };
-        var data = await new Promise((resolve, reject) => {
-            db_selectQ("appdb", "lgks_tenants", "*", whereCond, {}, function (tenantInfo) {
-                if (tenantInfo) {
-                    resolve(tenantInfo);
-                } else {
-                    resolve(false);
-                }
-            });
-        })
+        var data = await db_selectQ("appdb", "lgks_tenants", "*", whereCond, {});
+
         if(!data || data.length<=0) return false;
 
         var tenantInfo = data[0];

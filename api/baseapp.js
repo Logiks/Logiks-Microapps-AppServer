@@ -85,21 +85,13 @@ module.exports = {
     },
 
     getAppForDomain: async function(serverHost) {
-        var domainInfo = await new Promise((resolve, reject) => {
-            db_selectQ("appdb", "lgks_domains", "*", {
+        var domainInfo = await db_selectQ("appdb", "lgks_domains", "*", {
                 domain_host: serverHost,
                 blocked: "false"
-            },{}, function (domainInfo) {
-                if (domainInfo) {
-                    resolve(domainInfo[0])
-                } else {
-                    console.info("DOMAIN_NOT_FOUND", serverHost);
-                    resolve(false)
-                }
-            });
-        })
+            },{});
+        if(!domainInfo) return false;
         
-        return domainInfo;
+        return domainInfo[0];
     }
 }
 
