@@ -1,0 +1,15 @@
+{
+    "pageId": "page1",
+    "type": "page",
+    "slotBindings": {
+        "app-header.brand": "BrandLogo",
+        "app-header.user-profile": "UserMenu",
+        "app-header.admin-tools": "AdminToolsInline",
+        "app-sidebar.main-menu": "MainMenu",
+        "app-sidebar.admin-menu": "RemoteAdminMenu",
+        "app-content.page-body": "BillingDashboardV2",
+        "app-content.page-actions": "BillingActions",
+        "app-footer.legal": "LegalNotice",
+        "app-footer.support-links": "SupportLinks"
+    }
+}

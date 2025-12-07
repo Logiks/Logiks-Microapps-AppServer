@@ -196,6 +196,40 @@ module.exports = {
 			}
 		},
 
+		page: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/page/:pageid"
+			},
+			async handler(ctx) {
+				const appInfo = ctx.meta.appInfo;
+				const userInfo = ctx.meta.user;
+				const pageID = ctx.params.pageid;
+
+				if(!ctx.params.pageid || ctx.params.pageid.length<=0) {
+					throw new LogiksError(
+						"Invalid Page Identifier",
+						404,
+						"INVALID_PAGE_KEY",
+						ctx.params.pageid
+					);
+				}
+
+				const pageFile = `misc/apps/${ctx.meta.appInfo.appid}/pages/${ctx.params.pageid}.json`;
+				if(fs.existsSync(pageFile)) {
+					const pageFileData = JSON.parse(fs.readFileSync(pageFile, "utf8"));
+					return pageFileData;
+				} else {
+					throw new LogiksError(
+						"Page Not Found",
+						404,
+						"INVALID_PAGE_KEY",
+						ctx.params.pageid
+					);
+				}
+			}
+		},
+
 		component: {
 			rest: {
 				method: "GET",
