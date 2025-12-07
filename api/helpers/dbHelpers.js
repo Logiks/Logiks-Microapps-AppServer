@@ -9,8 +9,8 @@ module.exports = function(server) {
     return this;
 }
 
-global.createDBInsertFromRequest = function(req, input_fields, db_table, msgTitle, callback) {
-    var vStatus = validateRule(req.body, Object.fromEntries(Object.entries(input_fields).filter(([_, value]) => value !== '')));
+global.createDBInsertFromRequest = function(ctx, input_fields, db_table, msgTitle, callback) {
+    var vStatus = validateRule(ctx.params, Object.fromEntries(Object.entries(input_fields).filter(([_, value]) => value !== '')));
 
     if (!vStatus.status) {
         callback(false, { error: "Input Validation Failed", details: vStatus.errors });
@@ -21,43 +21,40 @@ global.createDBInsertFromRequest = function(req, input_fields, db_table, msgTitl
         if(v.split("|").indexOf("json")>=0) {
             try {
                 if(v.split("|").indexOf("required")>=0) {
-                    if(!req.body[k] || req.body[k].length<2) req.body[k] = "{}";
+                    if(!ctx.params[k] || ctx.params[k].length<2) ctx.params[k] = "{}";
                 }
 
-                if(req.body[k]!=null) {
-                    if(typeof req.body[k]=="object") {
-                        req.body[k] = JSON.stringify(req.body[k]);
+                if(ctx.params[k]!=null) {
+                    if(typeof ctx.params[k]=="object") {
+                        ctx.params[k] = JSON.stringify(ctx.params[k]);
                     }
-                    req.body[k] = JSON.stringify(JSON.parse(req.body[k]));
+                    ctx.params[k] = JSON.stringify(JSON.parse(ctx.params[k]));
                 }
             } catch(e) {
-                req.body[k] = "{}";
+                ctx.params[k] = "{}";
             }
         } else if(v.split("|").indexOf("array")>=0) {
-            if(Array.isArray(req.body[k])) req.body[k] = req.body[k].join(",");
+            if(Array.isArray(ctx.params[k])) ctx.params[k] = ctx.params[k].join(",");
         }
     })
 
     try {
         //Filter only required fields from body and remove others
-        var insertData = Object.fromEntries(Object.entries(req.body).filter((a,b)=>input_fields[a[0]]!=null));
+        var insertData = Object.fromEntries(Object.entries(ctx.params).filter((a,b)=>input_fields[a[0]]!=null));
         //Prepare default fields like GUID, created_at, updated_at etc
-        insertData = _.extend(insertData, MISC.generateDefaultDBRecord(req, false));
+        insertData = _.extend(insertData, MISC.generateDefaultDBRecord(ctx, false));
         // console.log("Insert Data", msgTitle, insertData);
-        db_insertQ1("appdb", db_table, insertData, (insertId, errCode, errMessage)=>{
-                if(insertId)
-                    callback({ id: insertId, message: `${msgTitle} created` });
-                else
-                    callback(false, errMessage);
-            });
+        const insertId = db_insertQ1("appdb", db_table, insertData);
+        if(insertId) callback({ id: insertId, message: `${msgTitle} created` });
+        else callback(false, "Error creating record");
     } catch (err) {
         console.error(err);
         callback(false, { error: `Failed to create ${msgTitle}` });
     }
 }
 
-global.createDBUpdateFromRequest = function(req, input_fields, db_table, whereLogic, msgTitle, callback) {
-    var vStatus = validateRule(req.body, Object.fromEntries(Object.entries(input_fields).filter(([_, value]) => value !== '')));
+global.createDBUpdateFromRequest = function(ctx, input_fields, db_table, whereLogic, msgTitle, callback) {
+    var vStatus = validateRule(ctx.params, Object.fromEntries(Object.entries(input_fields).filter(([_, value]) => value !== '')));
 
     if (!vStatus.status) {
         callback(false, { error: "Input Validation Failed", details: vStatus.errors });
@@ -68,28 +65,28 @@ global.createDBUpdateFromRequest = function(req, input_fields, db_table, whereLo
         if(v.split("|").indexOf("json")>=0) {
             try {
                 if(v.split("|").indexOf("required")>=0) {
-                    if(!req.body[k] || req.body[k].length<2) req.body[k] = "{}";
+                    if(!ctx.params[k] || ctx.params[k].length<2) ctx.params[k] = "{}";
                 }
                 
-                if(req.body[k]!=null) {
-                    if(typeof req.body[k]=="object") {
-                        req.body[k] = JSON.stringify(req.body[k]);
+                if(ctx.params[k]!=null) {
+                    if(typeof ctx.params[k]=="object") {
+                        ctx.params[k] = JSON.stringify(ctx.params[k]);
                     }
-                    req.body[k] = JSON.stringify(JSON.parse(req.body[k]));
+                    ctx.params[k] = JSON.stringify(JSON.parse(ctx.params[k]));
                 }
             } catch(e) {
-                req.body[k] = "{}";
+                ctx.params[k] = "{}";
             }
         } else if(v.split("|").indexOf("array")>=0) {
-            if(Array.isArray(req.body[k])) req.body[k] = req.body[k].join(",");
+            if(Array.isArray(ctx.params[k])) ctx.params[k] = ctx.params[k].join(",");
         }
     })
 
     try {
         //Filter only required fields from body and remove others
-        var updateData = Object.fromEntries(Object.entries(req.body).filter((a,b)=>input_fields[a[0]]!=null));
+        var updateData = Object.fromEntries(Object.entries(ctx.params).filter((a,b)=>input_fields[a[0]]!=null));
         //Prepare default fields like updated_at etc
-        updateData = _.extend(updateData, MISC.generateDefaultDBRecord(req, true));
+        updateData = _.extend(updateData, MISC.generateDefaultDBRecord(ctx, true));
         // console.log("Update Data", msgTitle, updateData);
         db_updateQ("appdb", db_table, updateData, whereLogic, (ans, errCode, errMessage)=>{
                 if(ans)
@@ -103,10 +100,10 @@ global.createDBUpdateFromRequest = function(req, input_fields, db_table, whereLo
     }
 }
 
-global.createDBDeleteFromRequest = function(req, db_table, whereLogic, msgTitle, callback) {
+global.createDBDeleteFromRequest = function(ctx, db_table, whereLogic, msgTitle, callback) {
     try {
         //Prepare default fields like updated_at etc
-        var updateData = _.extend({blocked:'true'}, MISC.generateDefaultDBRecord(req, true));
+        var updateData = _.extend({blocked:'true'}, MISC.generateDefaultDBRecord(ctx, true));
         // console.log("Delete Data", msgTitle, updateData);
         db_updateQ("appdb", db_table, updateData, whereLogic, (ans, response)=>{
                 callback({ status: ans, message: `${msgTitle} deleted`, id: whereLogic.id });

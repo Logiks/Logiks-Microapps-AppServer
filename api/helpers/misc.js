@@ -1,8 +1,7 @@
 //Misc Helper Functions
 
-const Validator = require('validatorjs');
 const crypto = require('crypto');
-// const sha1 = require('sha1');
+const sha1 = require('sha1');
 
 module.exports = function(server) {
 
@@ -28,28 +27,7 @@ module.exports = function(server) {
     return urlParameters;
   }
     
-  processUpdateQueryFromBody = function(req, tableName, whereCond, extraFields = "edited_on=?") {
-    var dated = moment().format("Y-M-D HH:mm:ss");
-    
-    var strUpdate = [];
-    _.each(req.body, function(a,b) {
-      strUpdate.push(b+'=?');
-    });
-    var strSQL = "UPDATE "+tableName+" SET "+strUpdate.join(", ")+","+extraFields+" WHERE "+whereCond;
-    
-    var dataValues = Object.values(req.body);
-    
-    if(extraFields == "edited_on=?") {
-      dataValues.push(dated);
-    }
-    
-    return {
-      "sql" : strSQL,
-      "data" : dataValues
-    };
-  }
-
-  getDebugInfo = function(req, res) {
+  getDebugInfo = function(ctx, req, res) {
     return {
         "RUNNING_SINCE":moment(server.config.START_TIME).fromNow(),
         "DEBUG": CONFIG.debug,
@@ -66,6 +44,11 @@ module.exports = function(server) {
 
         // "CONNECT": CONNECTPARAMS
       };
+  }
+
+  generateHash = function(content) {
+    if(typeof content == "object") return sha1(JSON.stringify(content));
+    return sha1(content);
   }
 
   generateUUID = function(prefix,n) {
@@ -121,34 +104,47 @@ module.exports = function(server) {
                     }, {});
   }
 
-  generateDefaultDBRecord = function(req, forUpdate = false) {
+  generateDefaultDBRecord = function(ctx, forUpdate = false) {
     var dated = moment().format("Y-M-D HH:mm:ss");
+    // console.log("generateDefaultDBRecord", ctx.meta.user);
     if(forUpdate) {
       return {
         "edited_on": dated,
-        "edited_by": req?.get("USERID")?req?.get("USERID"):"admin",
+        "edited_by": ctx.meta.user.userId,
       };
     } else {
       return {
-        "guid": req.get("GUID"),
+        "guid": ctx.meta.user.guid,
         "created_on": dated,
-        "created_by": req?.get("USERID")?req?.get("USERID"):"admin",
+        "created_by": ctx.meta.user.userId,
         "edited_on": dated,
-        "edited_by": req?.get("USERID")?req?.get("USERID"):"admin",
+        "edited_by": ctx.meta.user.userId,
       };
     }
   }
 
+  processUpdateQueryFromBody = function(ctx, tableName, whereCond, extraFields = "edited_on=?") {
+    var dated = moment().format("Y-M-D HH:mm:ss");
+    
+    var strUpdate = [];
+    _.each(ctx.params.fields, function(a,b) {
+      strUpdate.push(b+'=?');
+    });
+    var strSQL = "UPDATE "+tableName+" SET "+strUpdate.join(", ")+","+extraFields+" WHERE "+whereCond;
+    
+    var dataValues = Object.values(ctx.params.fields);
+    
+    if(extraFields == "edited_on=?") {
+      dataValues.push(dated);
+    }
+    
+    return {
+      "sql" : strSQL,
+      "data" : dataValues
+    };
+  }
+
   return this;
-}
-
-global.validateRule = function(formData, ruleObj) {
-  let validation = new Validator(formData, ruleObj);
-
-  return {
-    "status": validation.passes(),
-    "errors": validation.errors.all()
-  };
 }
 
 global._replace = function(text, data, strict = false) {
@@ -174,4 +170,63 @@ global._replace = function(text, data, strict = false) {
         if(strict) return data[key] || data.data[key] || "";
         else return data[key] || data.data[key] || match;
     });
+}
+
+global.convertToValidatorRules = function(schema) {
+  const rules = {};
+
+  for (const field in schema) {
+    const config = schema[field];
+    const ruleParts = [];
+
+    // Required rule
+    if (config.required === true) {
+      ruleParts.push("required");
+    } else {
+      ruleParts.push("nullable");
+    }
+
+    // Type-based rules
+    // if (config.type === "dataSelector") {
+    //   if (config.groupid === "boolean") {
+    //     ruleParts.push("boolean");
+    //   } 
+    //   else if (config.groupid === "country") {
+    //     // Typically country could be a string or numeric ID
+    //     ruleParts.push("string");
+    //     ruleParts.push("min:2");
+    //   } 
+    //   else {
+    //     ruleParts.push("string");
+    //   }
+    // } 
+    // else {
+    //   ruleParts.push("string");
+    // }
+
+    // Custom validations
+    if (config.validation) {
+      switch (config.validation) {
+        case "mobile":
+          // Change this as per your country rules
+          ruleParts.push("regex:/^[6-9]\\d{9}$/");
+          break;
+
+        case "email":
+          ruleParts.push("email");
+          break;
+
+        case "numeric":
+          ruleParts.push("numeric");
+          break;
+
+        default:
+          ruleParts.push(config.validation);
+      }
+    }
+
+    rules[field] = ruleParts.join("|");
+  }
+
+  return rules;
 }

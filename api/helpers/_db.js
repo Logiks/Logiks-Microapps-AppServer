@@ -189,7 +189,7 @@ module.exports = function(server) {
 						console.log(err);
 						reject(false, err.code, err.sqlMessage);
 					} else {
-						resolve(true);
+						resolve(results);
 					}
 				});
 		});
@@ -271,7 +271,7 @@ module.exports = function(server) {
 
 		var sql = "UPDATE "+table+" SET "+fData.join(",")+" WHERE "+sqlWhere.join(" AND ");
 
-		//console.log(sql);
+		// console.log(sql);
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql, vals);
 		}
@@ -282,7 +282,7 @@ module.exports = function(server) {
 						console.log(err);
 						reject(false,err.code,err.sqlMessage);
 					} else {
-						resolve(true);
+						resolve(results);
 					}
 				});
 		});

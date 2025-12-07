@@ -90,6 +90,8 @@ module.exports = function(server) {
 
             for (const t of tables) {
                 const table = Object.values(t)[0];
+                
+                if(["z", "y", "x", "backup", "temp"].indexOf(table.toLowerCase().split("_")[0])>=0) continue;
 
                 const [columns] = await mysqlConnection.query(`DESCRIBE ${table}`);
                 const [indexes] = await mysqlConnection.query(`SHOW INDEX FROM ${table}`);
@@ -100,12 +102,12 @@ module.exports = function(server) {
                 };
 
                 columns.forEach(col => {
-                schema[table].columns[col.Field] = {
-                    type: col.Type,
-                    nullable: col.Null === "YES",
-                    default: col.Default,
-                    primary: col.Key === "PRI"
-                };
+                    schema[table].columns[col.Field] = {
+                        type: col.Type,
+                        nullable: col.Null === "YES",
+                        default: col.Default,
+                        primary: col.Key === "PRI"
+                    };
                 });
             }
 

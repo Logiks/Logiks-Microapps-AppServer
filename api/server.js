@@ -19,6 +19,7 @@ const helmet = require("helmet");
 const FastestValidator = require("fastest-validator");
 
 const { ServiceBroker, Errors } = require("moleculer");
+const { MoleculerError } = require("moleculer").Errors;
 const ApiService = require("moleculer-web");
 const Redis = require("ioredis");
 
@@ -44,6 +45,15 @@ const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 300);
 //     return false;
 //   }
 // });
+
+//Error Controller
+class LogiksError extends MoleculerError {
+  constructor(message = "Internal only action") {
+    super(message, 403, "INTERNAL_ONLY");
+    this.name = "LogiksError";
+  }
+}
+global.LogiksError = LogiksError;
 
 // -------------------------
 // SERVER START
@@ -273,13 +283,14 @@ module.exports = {
 									threshold: 1024 // only compress files > 1KB
 								}
 							},
-							mappingPolicy: "all",
+							mappingPolicy: "restrict",
+							autoAliases: true,
 							cors: true,
 							// cors: {
 							// 	methods: ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
 							// 	origin: "*",
 							// },
-							autoAliases: true,
+							
 							// aliases: {
 							// 	"POST /auth/login": "auth.login",
 							// 	"POST /auth/request-otp": "auth.requestOtp",
@@ -392,14 +403,15 @@ module.exports = {
 									threshold: 1024 // only compress files > 1KB
 								}
 							},
-							mappingPolicy: "all",
+							// mappingPolicy: "all",
+							mappingPolicy: "restrict",
+							autoAliases: true,
 							cors: true,
 							// cors: {
 							// 	methods: ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
 							// 	origin: "*",
 							// 	credentials: true
 							// },
-							autoAliases: true,
 							
 							onBeforeCall: async function (ctx, route, req, res) {
 								console.log("REQUEST_PRIVATE", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
@@ -585,7 +597,8 @@ module.exports = {
 									username: payload.username,
 									tenantId: payload.tenantId ? payload.tenantId : payload.guid,
 									roles: payload.roles || [],
-									scopes: payload.scopes || []
+									scopes: payload.scopes || [],
+									secure_hash: generateHash(token)
 								};
 							} catch (err) {
 								throw new Errors.MoleculerClientError(

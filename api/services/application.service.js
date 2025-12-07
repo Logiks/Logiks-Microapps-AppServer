@@ -43,7 +43,7 @@ module.exports = {
 			async handler(ctx) {
 				var whereCond = {
 					"blocked": "false",
-					"guid": ctx.meta.user.guid
+					"guid": [["global", ctx.meta.user.guid], "IN"],
 				};
 				if(ctx.params.module && ctx.params.module!="*") {
 					whereCond["module_name"] = ctx.params.module;
