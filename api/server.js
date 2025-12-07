@@ -788,6 +788,7 @@ module.exports = {
 			process.on("SIGINT", shutdown);
 			process.on("SIGTERM", shutdown);
 			process.on("uncaughtException", (err) => {
+				console.error("UNCAUGHT_EXCEPTION", err);
 				LOGGER.get("server").error("Uncaught Exception", { error: err });
 				shutdown();
 			});
