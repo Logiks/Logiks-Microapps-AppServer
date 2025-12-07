@@ -1,9 +1,5 @@
 "use strict";
 
-const mime = require("mime-types");
-
-const themeCache = new Map();
-
 module.exports = {
 	name: "tenant",
 

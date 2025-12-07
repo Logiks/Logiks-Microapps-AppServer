@@ -3,6 +3,10 @@
 const mime = require("mime-types");
 
 const themeCache = new Map();
+const pageCache = new Map();
+const settingsCache = new Map();
+const navigatorCache = new Map();
+const componentCache = new Map();
 
 module.exports = {
     name: "application",

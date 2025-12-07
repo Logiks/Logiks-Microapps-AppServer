@@ -3,9 +3,6 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const Redis = require("ioredis");
-const { Errors } = require("moleculer");
-
-const { MoleculerClientError } = Errors;
 
 const JWT_SECRET = CONFIG.authjwt.secret;
 const ACCESS_TOKEN_TTL = Number(CONFIG.authjwt.access_token_ttl || 3600);              // seconds
@@ -76,7 +73,7 @@ module.exports = {
 			},
 			async handler(ctx) {
 				if(!CONFIG.logiksauth.enable) {
-					throw new MoleculerClientError("LogiksAuth not configured", 401);
+					throw new LogiksError("LogiksAuth not configured", 401);
 				}
 				// ctx.params.body.return_url
 
@@ -145,12 +142,12 @@ module.exports = {
 				};
 
 				// if (username !== fakeUserFromDB.username) {
-				// 	throw new MoleculerClientError("Invalid credentials", 401);
+				// 	throw new LogiksError("Invalid credentials", 401);
 				// }
 
 				// const valid = await bcrypt.compare(password, fakeUserFromDB.passwordHash);
 				// if (!valid) {
-				// 	throw new MoleculerClientError("Invalid credentials", 401);
+				// 	throw new LogiksError("Invalid credentials", 401);
 				// }
 
 				return this.issueTokensForUser(userData, ctx.meta.remoteIP, deviceType);
@@ -201,12 +198,12 @@ module.exports = {
 				};
 
 				if (username !== fakeUserFromDB.username) {
-					throw new MoleculerClientError("Invalid credentials", 401);
+					throw new LogiksError("Invalid credentials", 401);
 				}
 
 				const valid = await bcrypt.compare(password, fakeUserFromDB.passwordHash);
 				if (!valid) {
-					throw new MoleculerClientError("Invalid credentials", 401);
+					throw new LogiksError("Invalid credentials", 401);
 				}
 
 				return this.issueTokensForUser(fakeUserFromDB, ctx.meta.remoteIP, deviceType);
@@ -267,12 +264,12 @@ module.exports = {
 				const stored = await authRedis.get(key);
 
 				if (!stored) {
-					throw new MoleculerClientError("Invalid or expired OTP", 401);
+					throw new LogiksError("Invalid or expired OTP", 401);
 				}
 
 				const parsed = JSON.parse(stored);
 				if (parsed.otp !== otp) {
-					throw new MoleculerClientError("Invalid or expired OTP", 401);
+					throw new LogiksError("Invalid or expired OTP", 401);
 				}
 
 				await authRedis.del(key);
@@ -312,11 +309,11 @@ module.exports = {
 				try {
 					payload = jwt.verify(refreshToken, JWT_SECRET);
 				} catch (err) {
-					throw new MoleculerClientError("Invalid refresh token", 401);
+					throw new LogiksError("Invalid refresh token", 401);
 				}
 
 				if (payload.type !== "refresh") {
-					throw new MoleculerClientError("Invalid refresh token type", 401);
+					throw new LogiksError("Invalid refresh token type", 401);
 				}
 
 				const jti = payload.jti;
@@ -324,7 +321,7 @@ module.exports = {
 				const stored = await authRedis.get(key);
 
 				if (!stored) {
-					throw new MoleculerClientError("Refresh token revoked", 401);
+					throw new LogiksError("Refresh token revoked", 401);
 				}
 
 				// Rotate: delete old
@@ -414,7 +411,7 @@ module.exports = {
 				const user = ctx.meta.user;
 
 				if (!user || !user.userId || !user.tenantId) {
-					throw new MoleculerClientError("Unauthorized", 401);
+					throw new LogiksError("Unauthorized", 401);
 				}
 
 				const tenantId = user.tenantId;
@@ -473,17 +470,17 @@ module.exports = {
 				try {
 					payload = jwt.verify(token, JWT_SECRET);
 				} catch (err) {
-					throw new MoleculerClientError("Invalid token", 401);
+					throw new LogiksError("Invalid token", 401);
 				}
 
 				if (payload.type !== "access") {
-					throw new MoleculerClientError("Invalid token type", 401);
+					throw new LogiksError("Invalid token type", 401);
 				}
 
 				if (payload.jti) {
 					const blacklisted = await authRedis.get(`blacklist:${payload.jti}`);
 					if (blacklisted) {
-						throw new MoleculerClientError("Token revoked", 401);
+						throw new LogiksError("Token revoked", 401);
 					}
 				}
 

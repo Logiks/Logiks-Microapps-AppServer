@@ -1,11 +1,12 @@
 "use strict";
 
+// In-memory worker registry (use Redis/DB in prod if needed)
+const SERVICE_WORKERS = new Map();
+
 module.exports = {
 	name: "system",
 
     created() {
-		// In-memory worker registry (use Redis/DB in prod if needed)
-		this.workers = new Map();
 		this.activeColor = process.env.ACTIVE_WORKER_COLOR || "blue"; // blue/green switch
 	},
 
@@ -25,18 +26,21 @@ module.exports = {
 				host: "string",
 				pid: "number",
 				color: "string",
-				services: { type: "array", items: "string" }
+				services: { type: "array", items: "string" },
+				menus: "object"
 			},
 			async handler(ctx) {
 				const w = ctx.params;
 
-                this.workers.set(w.nodeID, {
+				console.log("NEW_SERVICE_WORKER", w.nodeID, w);
+
+                SERVICE_WORKERS.set(w.nodeID, {
 					...w,
 					status: "active",
 					lastSeen: Date.now()
 				});
 
-				this.logger.info("📌 Worker registered", w);
+				LOGGER.get("server").info("📌 Worker registered", w);
 
 				// ✅ Example tasks you may perform here:
 				// ----------------------------------------
@@ -78,10 +82,11 @@ module.exports = {
 			},
 			handler: (ctx) => {
 				const w = ctx.params;
-				const existing = this.workers.get(w.nodeID);
+				if(!SERVICE_WORKERS) return { ok: true };
+				const existing = SERVICE_WORKERS.get(w.nodeID);
 				if (existing) {
 					existing.lastSeen = w.ts;
-					this.workers.set(w.nodeID, existing);
+					SERVICE_WORKERS.set(w.nodeID, existing);
 				}
 				return { ok: true };
 			}
@@ -96,13 +101,13 @@ module.exports = {
 			},
 			handler: (ctx) => {
 				const { nodeID } = ctx.params;
-
-				const worker = this.workers.get(nodeID);
+				if(!SERVICE_WORKERS) return { ok: true };
+				const worker = SERVICE_WORKERS.get(nodeID);
 				if (worker) {
 					worker.status = "draining";
-					this.workers.set(nodeID, worker);
+					SERVICE_WORKERS.set(nodeID, worker);
 
-					this.logger.warn("🚫 Worker draining", worker);
+					LOGGER.get("server").warn("🚫 Worker draining", worker);
 				}
 
 				return { ok: true };
@@ -122,7 +127,7 @@ module.exports = {
 			},
 			handler: (ctx) => {
 				this.activeColor = ctx.params.color;
-				this.logger.warn("🔁 Active worker color switched to", this.activeColor);
+				LOGGER.get("server").warn("🔁 Active worker color switched to", this.activeColor);
 				return { activeColor: this.activeColor };
 			}
 		}

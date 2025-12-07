@@ -1,8 +1,5 @@
 "use strict";
 
-const { Errors } = require("moleculer");
-const { MoleculerClientError } = Errors;
-
 module.exports = {
 	name: "admin",
 
@@ -20,7 +17,7 @@ module.exports = {
 			async handler(ctx) {
 				const user = ctx.meta.user || {};
 				if (!user.roles || !user.roles.includes("admin")) {
-					throw new MoleculerClientError("Forbidden", 403, "FORBIDDEN_ADMIN_ONLY");
+					throw new LogiksError("Forbidden", 403, "FORBIDDEN_ADMIN_ONLY");
 				}
 
 				// TODO: read user list from DB
