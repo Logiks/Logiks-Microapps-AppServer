@@ -14,7 +14,23 @@ module.exports = {
             },
 			async handler(ctx) {
                 const a1 = await ctx.call(ctx.params.cmd);//"DOCS.createAction"
-                return {"status": "okay", "results": a1};cm
+                return {"status": "okay", "results": a1};
+            }
+        },
+        test2: {
+            rest: {
+				method: "POST",
+				path: "/t2"
+			},
+            params: {
+                pluginid: "string",
+                module: "string",
+                file: "string"
+            },
+			async handler(ctx) {
+                ctx.params.cmd = `${ctx.params.pluginid}.source`;
+                const fileContent = await ctx.call(ctx.params.cmd, {folder: ctx.params.module, file: ctx.params.file});
+                return fileContent;
             }
         }
     }
