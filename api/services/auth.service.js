@@ -510,7 +510,7 @@ module.exports = {
 				const s2stoken = ctx.params.token;
 
 				if (!S2STOKENS[s2stoken]) {
-					throw new Errors.MoleculerClientError(
+					throw new LogiksError(
 						"Invalid S2S token",
 						401,
 						"INVALID_S2S_TOKEN"
@@ -521,7 +521,7 @@ module.exports = {
 				if(S2STOKENS[s2stoken].counter >= S2STOKENS_MAX) {
 					delete S2STOKENS[s2stoken];
 
-					throw new Errors.MoleculerClientError(
+					throw new LogiksError(
 						"S2S Token can be used only for server-to-server communication for limited API access",
 						401,
 						"INVALID_S2S_TOKEN"
@@ -542,7 +542,7 @@ module.exports = {
 				const tltoken = ctx.params.token;
 
 				if (!TLTOKENS[tltoken]) {
-					throw new Errors.MoleculerClientError(
+					throw new LogiksError(
 						"Invalid TL token",
 						401,
 						"INVALID_TL_TOKEN"
@@ -553,7 +553,7 @@ module.exports = {
 				if(TLTOKENS[tltoken].counter >= TLTOKENS_MAX) {
 					delete TLTOKENS[tltoken];
 
-					throw new Errors.MoleculerClientError(
+					throw new LogiksError(
 						"TL Token can be used only for server-to-server communication for limited API access",
 						401,
 						"INVALID_TL_TOKEN"

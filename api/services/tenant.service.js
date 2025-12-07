@@ -27,7 +27,7 @@ module.exports = {
 				var tenantInfo = await TENANT.getTenantInfo(guid);
 
 				if(!tenantInfo) {
-					throw new Errors.MoleculerClientError(
+					throw new LogiksError(
 						"Invalid Tenant key",
 						401,
 						"INVALID_TENANT_KEY"
@@ -43,7 +43,7 @@ module.exports = {
 					return tenantInfo;
 				} else {
 					if(!data) {
-						throw new Errors.MoleculerClientError(
+						throw new LogiksError(
 							"Tenant does not have access to this application",
 							401,
 							"UNAUTHORISED_TENANT"

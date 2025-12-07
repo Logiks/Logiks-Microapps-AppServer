@@ -51,7 +51,7 @@ module.exports = {
 				const queryObj = await QUERY.getQueryByID(ctx.params.queryid);
 
 				if(!queryObj) {
-					throw new Errors.MoleculerClientError(
+					throw new LogiksError(
 						"QueryID Not Found",
 						404,
 						"INVALID_QUERYID",

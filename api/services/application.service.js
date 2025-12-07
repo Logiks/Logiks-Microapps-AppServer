@@ -18,7 +18,7 @@ module.exports = {
 				// const serverHost = ctx.meta.serverHost;
 				const applicationInfo = await BASEAPP.getAppInfo(ctx.meta.appInfo.appid);
 				if(!applicationInfo) {
-					throw new Errors.MoleculerClientError(
+					throw new LogiksError(
 						"Invalid Application key",
 						401,
 						"INVALID_APPLICATION"
@@ -70,7 +70,7 @@ module.exports = {
 					const layoutData = JSON.parse(fs.readFileSync(appLayoutFile, "utf8"));
 					return layoutData;
 				} else {
-					throw new Errors.MoleculerClientError(
+					throw new LogiksError(
 						"Invalid Application Layout Identifier",
 						401,
 						"INVALID_LAYOUT_KEY",
@@ -98,7 +98,7 @@ module.exports = {
 				if (!themeData) {
 					themeData = await loadTheme(themeId);
 					if (!themeData) {
-						throw new Errors.MoleculerClientError(
+						throw new LogiksError(
 							"Invalid Theme Identifier",
 							404,
 							"INVALID_THEME_KEY",
@@ -139,7 +139,7 @@ module.exports = {
 				const filePath = path.resolve(`misc/themes/${themeid}/media/${safePath}`);
 				
 				if (!fs.existsSync(filePath)) {
-					throw new Errors.MoleculerClientError(
+					throw new LogiksError(
 						"File not found",
 						404,
 						"MEDIA_NOT_FOUND"
@@ -239,7 +239,7 @@ module.exports = {
 				}
 				
 
-				throw new Errors.MoleculerClientError(
+				throw new LogiksError(
 					"Invalid Component Identifier",
 					404,
 					"INVALID_COMPONENT_KEY",

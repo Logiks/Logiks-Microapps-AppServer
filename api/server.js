@@ -337,7 +337,7 @@ module.exports = {
 								const serverHost = req.headers.host;
 								const domainApp = await BASEAPP.getAppForDomain(serverHost);
 								if(!domainApp) {
-									throw new Errors.MoleculerClientError(
+									throw new LogiksError(
 										"The active application found for current domain/url",
 										401,
 										"INVALID_REQUEST"
@@ -346,7 +346,7 @@ module.exports = {
 								
 								const appInfo = await BASEAPP.getAppInfo(domainApp.appid);
 								if(!appInfo) {
-									throw new Errors.MoleculerClientError(
+									throw new LogiksError(
 										"Application not defined or not found on server",
 										401,
 										"INVALID_REQUEST"
@@ -439,7 +439,7 @@ module.exports = {
 								const serverHost = req.headers.host;
 								const domainApp = await BASEAPP.getAppForDomain(serverHost);
 								if(!domainApp) {
-									throw new Errors.MoleculerClientError(
+									throw new LogiksError(
 										"The active application found for current domain/url",
 										401,
 										"INVALID_REQUEST"
@@ -448,7 +448,7 @@ module.exports = {
 								
 								const appInfo = await BASEAPP.getAppInfo(domainApp.appid);
 								if(!appInfo) {
-									throw new Errors.MoleculerClientError(
+									throw new LogiksError(
 										"Application not defined or not found on server",
 										401,
 										"INVALID_REQUEST"
@@ -501,7 +501,7 @@ module.exports = {
 							// && appInfo && appInfo.s2stoken && s2skey === appInfo.s2stoken
 							const payload = await ctx.call("auth.verifyS2SToken", { token: s2skey });
 							if(!payload) {
-								throw new Errors.MoleculerClientError(
+								throw new LogiksError(
 									"S2S Token can be used only for server-to-server communication for limited API access",
 									401,
 									"INVALID_S2S_TOKEN"
@@ -509,7 +509,7 @@ module.exports = {
 							}
 							
 							if(payload.ip!=clientIP) {
-								throw new Errors.MoleculerClientError(
+								throw new LogiksError(
 									"S2S Token can not be used from changing IP address",
 									401,
 									"INVALID_S2S_TOKEN"
@@ -531,7 +531,7 @@ module.exports = {
 						if(tlkey) {
 							const payload = await ctx.call("auth.verifyTLToken", { token: tlkey });
 							if(!payload) {
-								throw new Errors.MoleculerClientError(
+								throw new LogiksError(
 									"Timelimited Token can be used only for server-to-server communication for limited API access",
 									401,
 									"INVALID_TL_TOKEN"
@@ -539,7 +539,7 @@ module.exports = {
 							}
 							
 							if(payload.ip!=clientIP) {
-								throw new Errors.MoleculerClientError(
+								throw new LogiksError(
 									"TimeLimited Token can not be used from changing IP address",
 									401,
 									"INVALID_TL_TOKEN"
@@ -562,7 +562,7 @@ module.exports = {
 							const apiInfo =AUTHKEY.getAPIKeyInfo(apiKey, serverHost);
 
 							if(!apiInfo) {
-								throw new Errors.MoleculerClientError(
+								throw new LogiksError(
 									"Invalid API key",
 									401,
 									"INVALID_API_KEY"
@@ -601,7 +601,7 @@ module.exports = {
 									secure_hash: generateHash(token)
 								};
 							} catch (err) {
-								throw new Errors.MoleculerClientError(
+								throw new LogiksError(
 									"Invalid or expired token",
 									401,
 									"INVALID_TOKEN"
@@ -615,7 +615,7 @@ module.exports = {
 						const isPublic = route?.opts?.authRequired === false;
 
 						if (!user && !isPublic) {
-							throw new Errors.MoleculerClientError(
+							throw new LogiksError(
 								"Authentication required",
 								401,
 								"NO_AUTH"
@@ -652,7 +652,7 @@ module.exports = {
 						// Admin namespace requires admin role
 						if (actionName && actionName.startsWith("admin.")) {
 							if (!user || !user.roles || !user.roles.includes("admin")) {
-								throw new Errors.MoleculerClientError(
+								throw new LogiksError(
 									"Forbidden",
 									403,
 									"FORBIDDEN_ADMIN_ONLY"
@@ -661,7 +661,7 @@ module.exports = {
 						}
 
 						if (!this.hasTenantScope(user, requiredScopes)) {
-							throw new Errors.MoleculerClientError(
+							throw new LogiksError(
 								"Missing required scopes",
 								403,
 								"INSUFFICIENT_SCOPE"
@@ -733,7 +733,7 @@ module.exports = {
 							const retryAfterSec = Math.ceil(ttl / 1000);
 							res.setHeader("Retry-After", retryAfterSec.toString());
 
-							throw new Errors.MoleculerClientError(
+							throw new LogiksError(
 								"Too many requests",
 								429,
 								"TOO_MANY_REQUESTS"

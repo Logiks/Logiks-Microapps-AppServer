@@ -61,7 +61,7 @@ module.exports = {
                     );
                 }
                 if(jsonQuery.operation!="create") {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Error in selected operation for the RefID",
                         401,
                         "INVALID_REQUEST",
@@ -76,7 +76,7 @@ module.exports = {
                 var vStatus = VALIDATIONS.validateRule(dataFields, validationRules);
                 
                 if (!vStatus.status) {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Input Validation Failed",
                         401,
                         "VALIDATION_ERROR",
@@ -89,7 +89,7 @@ module.exports = {
 
                 const insertId = await db_insertQ1("appdb", sqlTable, dataFields);
                 if(!insertId) {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Error creating db record",
                         401,
                         "DB_ERROR"
@@ -119,14 +119,14 @@ module.exports = {
                 const jsonQuery = await DBOPS.getQuery(dbOpsID, ctx.meta.user);
 
                 if(!jsonQuery) {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Provided RefID is invalid",
                         401,
                         "INVALID_REQUEST"
                     );
                 }
                 if(jsonQuery.operation!="create") {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Error in selected operation for the RefID",
                         401,
                         "INVALID_REQUEST",
@@ -149,7 +149,7 @@ module.exports = {
                     });
 
                     if(Object.keys(errors).length>0) {
-                        throw new Errors.MoleculerClientError(
+                        throw new LogiksError(
                             "Input Validation Failed some of the data",
                             401,
                             "VALIDATION_ERROR",
@@ -169,7 +169,7 @@ module.exports = {
                         "results": results
                     };
                 } else {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Fields should be an array of valid data",
                         401,
                         "INVALID_REQUEST"
@@ -194,14 +194,14 @@ module.exports = {
                 const jsonQuery = await DBOPS.getQuery(dbOpsID, ctx.meta.user);
 
                 if(!jsonQuery) {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Provided RefID is invalid",
                         401,
                         "INVALID_REQUEST"
                     );
                 }
                 if(jsonQuery.operation!="update") {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Error in selected operation for the RefID",
                         401,
                         "INVALID_REQUEST",
@@ -222,7 +222,7 @@ module.exports = {
                 var vStatus = VALIDATIONS.validateRule(dataFields, validationRules);
                 
                 if (!vStatus.status) {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Input Validation Failed",
                         401,
                         "VALIDATION_ERROR",
@@ -238,7 +238,7 @@ module.exports = {
                         "id": sqlRefid
                     });
                 } else {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Which record to update is not defined",
                         401,
                         "VALIDATION_ERROR",
@@ -248,7 +248,7 @@ module.exports = {
                 
                 const results = await db_updateQ("appdb", sqlTable, dataFields, sqlWhere);
                 if(!results) {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Error creating db record",
                         401,
                         "DB_ERROR"
@@ -279,14 +279,14 @@ module.exports = {
                 const jsonQuery = await DBOPS.getQuery(dbOpsID, ctx.meta.user);
 
                 if(!jsonQuery) {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Provided RefID is invalid",
                         401,
                         "INVALID_REQUEST"
                     );
                 }
                 if(jsonQuery.operation!="update" && jsonQuery.operation!="delete") {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Error in selected operation for the RefID",
                         401,
                         "INVALID_REQUEST",
@@ -305,7 +305,7 @@ module.exports = {
                         "id": sqlRefid
                     });
                 } else {
-                    throw new Errors.MoleculerClientError(
+                    throw new LogiksError(
                         "Which record to delete is not defined",
                         401,
                         "VALIDATION_ERROR",
