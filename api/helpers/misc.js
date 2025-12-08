@@ -68,11 +68,6 @@ module.exports = function(server) {
     return md5(prefix+("" + number).substring(add)+uuid()+moment().format("Y-M-DTHH:mm:ss"));
   }
 
-  generateID = function(length) {
-    if(length==null) length = 12;
-    return UNIQUEID.customAlphabet("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", 12)();
-  }
-
   timeStamp = function() {
     return moment().format("Y-M-D HH:mm:ss");
   }

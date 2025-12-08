@@ -11,6 +11,10 @@
 // Components
 // /api/modules/components/docs.main
 
+const mimeMap = {
+	// "reports", "forms", "infoview", "dashboard", "search", "charts"
+};
+
 module.exports = {
 	name: "modules",
 
@@ -28,9 +32,14 @@ module.exports = {
 
 				if(item.length>1) {
 					var pluginID = item[0];
-					var submoduleFile = item[1];
+					var submoduleFile = item[1];//ctx.params.item.substring(item[0].length);
 					var modname = moduleName.substring(moduleName.length-1,moduleName.length)=="s"?moduleName.substring(0,moduleName.length-1):moduleName;
 
+					if(["reports", "forms", "infoview", "dashboard", "search", "charts", "pages"].indexOf(moduleName)>=0) {
+						submoduleFile = `${submoduleFile}.json`;
+					}
+
+					console.log("XXXX", `${pluginID}.source`, {folder: moduleName, file: submoduleFile});
 					const fileContent = await ctx.call(`${pluginID}.source`, {folder: moduleName, file: submoduleFile});
 					return {
 						"component": modname,
@@ -45,24 +54,24 @@ module.exports = {
 				}
 			}
 		},
-		fetchModule: {
+		fetchComponent: {
 			rest: {
 				method: "GET",
 				fullPath: "/api/modules/:module/component/:item?"
 			},
 			async handler(ctx) {
 				const moduleName = ctx.params.module;
-				var item = ctx.params.item.split(".");
+				var fileName = ctx.params.item;
 				
-				console.log("MODULE_COMPONENT_HANDLER", ctx.params, item.length);
+				console.log("MODULE_COMPONENT_HANDLER", ctx.params);
 
-				const fileContent = await ctx.call(`${pluginID}.source`, {folder: "components", file: submoduleFile});
+				const fileContent = await ctx.call(`${moduleName}.source`, {folder: "components", file: fileName});
 				return fileContent;
 			}
 		},
-		service: {
+		fetchService: {
 			rest: {
-				method: "GET",
+				method: "POST",
 				fullPath: "/api/services/:module/:action?"
 			},
 			async handler(ctx) {
