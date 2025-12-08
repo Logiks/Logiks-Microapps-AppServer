@@ -860,6 +860,12 @@
         "default": null,
         "primary": false
       },
+      "bucket": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
       "filename_type": {
         "type": "varchar(20)",
         "nullable": false,
