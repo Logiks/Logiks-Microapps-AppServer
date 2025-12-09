@@ -31,15 +31,17 @@ module.exports = function(server) {
         // });
     }
 
-    storeQuery = async function(queryObj, queryID = false) {
+    storeQuery = async function(queryObj, userObj, queryID = false) {
+        console.log("X3", queryObj)
         if(!queryID) queryID = UNIQUEID.generate(12);
 
         QUERYMAP[queryID] = queryObj;
-
+console.log("X2", QUERYMAP)
         return queryID;
     }
 
-    getQueryByID= async function(queryID) {
+    getQueryByID= async function(queryID, userObj) {
+        console.log(QUERYMAP)
         if(!QUERYMAP[queryID]) return false;
         return QUERYMAP[queryID];
     }

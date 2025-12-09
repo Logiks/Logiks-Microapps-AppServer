@@ -47,12 +47,6 @@ module.exports = {
 					};
 				} else {
 					const fileContent = await ctx.call(`${pluginID}.source`, {folder: "pages", file: submoduleFile});
-					if(["reports", "forms", "infoview", "dashboard", "search", "charts", "pages"].indexOf(moduleName)>=0) {
-						try {
-							const tempContent = JSON.parse(fileContent);
-							if(tempContent) fileContent = tempContent;
-						} catch(err) {}
-					}
 					return {
 						"component": "page",
 						"content": fileContent

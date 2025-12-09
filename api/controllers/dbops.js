@@ -11,7 +11,7 @@ module.exports = function(server) {
 
     }
 
-    storeQuery = async function(jsonQuery, fields, operation, userInfo) {
+    storeDBOpsQuery = async function(jsonQuery, fields, operation, userInfo) {
         //jsonQuery = table, where, fields
         const dbOpsID = UNIQUEID.generate(12);
 
@@ -20,7 +20,7 @@ module.exports = function(server) {
         return dbOpsID;
     }
 
-    getQuery = async function(dbOpsID, userInfo) {
+    getDBOpsQuery = async function(dbOpsID, userInfo) {
         if(dbOpsMap[dbOpsID]) return _.cloneDeep(dbOpsMap[dbOpsID]);
         return false;
     }

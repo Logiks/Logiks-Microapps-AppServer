@@ -29,7 +29,7 @@ module.exports = {
                 "fields": "object"
             },
             async handler(ctx) {
-                const dbOpsID = await DBOPS.storeQuery(ctx.params.source, ctx.params.fields, ctx.params.operation, ctx.meta.user);
+                const dbOpsID = await DBOPS.storeDBOpsQuery(ctx.params.source, ctx.params.fields, ctx.params.operation, ctx.meta.user);
 
                 return {
                     "status": "success",
@@ -51,7 +51,7 @@ module.exports = {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
                 var dataFields = ctx.params.fields;
-                const jsonQuery = await DBOPS.getQuery(dbOpsID, ctx.meta.user);
+                const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user);
 
                 if(!jsonQuery) {
                     throw new LogiksError(
@@ -116,7 +116,7 @@ module.exports = {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
                 var dataFields = ctx.params.fields;
-                const jsonQuery = await DBOPS.getQuery(dbOpsID, ctx.meta.user);
+                const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user);
 
                 if(!jsonQuery) {
                     throw new LogiksError(
@@ -191,7 +191,7 @@ module.exports = {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
                 var dataFields = ctx.params.fields;
-                const jsonQuery = await DBOPS.getQuery(dbOpsID, ctx.meta.user);
+                const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user);
 
                 if(!jsonQuery) {
                     throw new LogiksError(
@@ -276,7 +276,7 @@ module.exports = {
                 const dbOpsHash = ctx.params.datahash;
                 var dataFields = ctx.params.fields;
                 var filter = ctx.params.filter?ctx.params.filter:{};
-                const jsonQuery = await DBOPS.getQuery(dbOpsID, ctx.meta.user);
+                const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user);
 
                 if(!jsonQuery) {
                     throw new LogiksError(
