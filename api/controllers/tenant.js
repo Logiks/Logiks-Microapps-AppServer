@@ -3,13 +3,13 @@
  * 
  * */
 
-module.exports = function(server) {
+module.exports = {
 
-    initialize = function() {
+    initialize: function() {
 
-    }
+    },
 
-    getTenantInfo = async function(guid, callback) {
+    getTenantInfo : async function(guid, callback) {
         var whereCond = {
             "blocked": "false",
             "guid": guid
@@ -30,6 +30,4 @@ module.exports = function(server) {
 
         return tenantInfo;
     }
-
-    return this;
 }

@@ -3,13 +3,13 @@
  * 
  * */
 
-module.exports = function(server) {
+module.exports = {
 
-    initialize = function() {
+    initialize : function() {
 
-    }
+    },
 
-    getAPIKeyInfo = async function(apiKey, callback) {
+    getAPIKeyInfo : async function(apiKey, callback) {
         var whereCond = {
             "blocked": "false",
             "auth_key": apiKey
@@ -24,6 +24,4 @@ module.exports = function(server) {
 
         return apiKeyInfo;
     }
-
-    return this;
 }

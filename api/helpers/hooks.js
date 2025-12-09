@@ -5,9 +5,9 @@
 
 const HOOKS_REGISTER = {};
 
-module.exports = function(server) {
+module.exports = {
 
-    initialize = function() {
+    initialize : function() {
         if(fs.existsSync('./app/hooks.json')) {
             try {
                 var hookContent = fs.readFileSync('./app/hooks.json');
@@ -25,16 +25,16 @@ module.exports = function(server) {
         }
         
         console.log("\x1b[36m%s\x1b[0m", "HOOKS Initialized With-"+Object.keys(HOOKS_REGISTER).length+" Active Hook");
-    }
+    },
 
-    registerHook = function(hookid, func, params) {
+    registerHook : function(hookid, func, params) {
         hookid = hookid.toUpperCase();
 
         if(HOOKS_REGISTER[hookid]==null) HOOKS_REGISTER[hookid] = [];
         HOOKS_REGISTER[hookid].push({"method": func, "params": params});
-    }
+    },
     
-    runHook = function(hookid, paramsMore) {
+    runHook : function(hookid, paramsMore) {
         hookid = hookid.toUpperCase();
         if(HOOKS_REGISTER[hookid]!=null) {
             HOOKS_REGISTER[hookid].forEach(function(hookConfig) {
@@ -49,6 +49,4 @@ module.exports = function(server) {
             });
         }
     }
-
-    return this;
 }

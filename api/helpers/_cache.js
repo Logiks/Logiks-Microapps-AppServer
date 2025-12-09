@@ -14,22 +14,22 @@ if(CONFIG.cache.enable) {
  * using indexes. This is important as REDIS Cache forms the core to our speed
  * 
  * */
-module.exports = function(server) {
+module.exports = {
 
-    initialize = function() {
+    initialize : function() {
         if(CONFIG.cache.enable) {
             console.log("\x1b[36m%s\x1b[0m","CACHE Initialized");
         } else {
             return false;
         }
-    }
+    },
 
-    getRedisInstance = function() {
+    getRedisInstance : function() {
         if(!CONFIG.cache.enable) return false;
         return redis;
-    }
+    },
 
-    listCacheKeys = function(pattern, callback) {
+    listCacheKeys : function(pattern, callback) {
         if(!CONFIG.cache.enable) return callback([]);
 
         if(pattern==null) pattern = "*";
@@ -42,15 +42,15 @@ module.exports = function(server) {
 
             callback(keysArr);
           });
-    }
+    },
 
-    cacheStatus = function() {
+    cacheStatus : function() {
         if(!CONFIG.cache.enable) return false;
 
         return redis.status;
-    }
+    },
 
-    clearCache = function(pattern) {
+    clearCache : function(pattern) {
         if(!CONFIG.cache.enable) return false;
         if(pattern==null) pattern = "*";
         //'sample_pattern:*'
@@ -62,23 +62,23 @@ module.exports = function(server) {
             });
             return pipeline.exec();
           });
-    }
+    },
 
-    deleteData = function(cacheKey) {
+    deleteData : function(cacheKey) {
         if(!CONFIG.cache.enable) return false;
         clearCache(cacheKey);
-    }
+    },
 
-    storeData = function(cacheKey, data) {
+    storeData : function(cacheKey, data) {
         if(!CONFIG.cache.enable) return false;
         if (redis.status != "ready") return data;
         
         if (typeof data == "object") data = JSON.stringify(data);
         redis.set(cacheKey, data);
         return data;
-    }
+    },
 
-    storeDataEx = function(cacheKey, data, expires) {
+    storeDataEx : function(cacheKey, data, expires) {
         if(!CONFIG.cache.enable) return false;
         if (redis.status != "ready") return data;
 
@@ -86,9 +86,9 @@ module.exports = function(server) {
         
         redis.set(cacheKey, data, "EX", expires);//In Seconds
         return data;
-    }
+    },
 
-    fetchData = function(cacheKey, callback, defaultData = false) {
+    fetchData : function(cacheKey, callback, defaultData = false) {
         if(!CONFIG.cache.enable) return callback([], "error");
 
         if (redis.status != "ready") {
@@ -116,9 +116,9 @@ module.exports = function(server) {
 
             callback(result);
         });
-    }
+    },
 
-    fetchDataSync = async function(cacheKey, defaultData = false) {
+    fetchDataSync : async function(cacheKey, defaultData = false) {
         if(!CONFIG.cache.enable) return defaultData;
 
         if (redis.status != "ready") {
@@ -148,5 +148,5 @@ module.exports = function(server) {
         return result
     }
 
-    return this;
+    // return this;
 }

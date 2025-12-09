@@ -4,15 +4,13 @@
 
 const DBLOGGER_KEY = "logdb";
 
-module.exports = function(server) {
+module.exports = {
 
-	initialize = function() {}
+	initialize : function() {},
 
-    _log = async function(dbTable, payload, appID) {
+    _log : async function(dbTable, payload, appID) {
         return await db_insertQ1(DBLOGGER_KEY, `log_${dbTable}`, _.extend({
                 "appid": appID
             }, MISC.generateDefaultDBRecord(payload, false)));
     }
-
-    return this;
 }

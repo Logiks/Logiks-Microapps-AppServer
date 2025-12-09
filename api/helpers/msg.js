@@ -4,15 +4,15 @@ const nodemailer = require('nodemailer');
 const apiHTTPS = require('https');
 const apiHTTP = require('http');
 
-module.exports = function(server) {
+module.exports = {
     
-    initialize = function() {},
+    initialize : function() {},
 
-    sendSMS = function(smsTO, msgBody, msgType, params) {
+    sendSMS : function(smsTO, msgBody, msgType, params) {
 
     },
 
-    sendEmail = function(toEmail, subject, msgBody) {
+    sendEmail : function(toEmail, subject, msgBody) {
         var transporter = nodemailer.createTransport(CONFIG.mail);
         var mailOptions = {
             from: '"Test NoReply" <noreply@test.com>', // sender address
@@ -30,6 +30,4 @@ module.exports = function(server) {
             console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
         });
     }
-
-    return this;
 }

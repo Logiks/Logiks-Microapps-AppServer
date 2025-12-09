@@ -6,11 +6,11 @@ const diff = require("deep-diff").diff;
 const SCHEMA_DIR = "misc/dbschema/";//path.join(__dirname, "../schema_versions");
 fs1.ensureDirSync(SCHEMA_DIR);
 
-module.exports = function(server) {
+module.exports = {
     
-    initalize= function() {}
+    initalize : function() {},
 
-    getMigrationFile = async function(dbkey) {
+    getMigrationFile : async function(dbkey) {
         const files = await fs1.readdir(SCHEMA_DIR);
 
         const matched = files
@@ -26,9 +26,9 @@ module.exports = function(server) {
         } else {
             return false;
         }
-    }
+    },
 
-    startMigration = async function(dbkey) {
+    startMigration : async function(dbkey) {
         printObj(`Migration Checking for ${dbkey}`, "yellow", 2);
 
         const matched = await DBMIGRATOR.getMigrationFile(dbkey);
@@ -63,9 +63,9 @@ module.exports = function(server) {
             printObj(`Migration Completed for ${dbkey} with Error - ${schemaData.message}`, "yellow", 2);
             return {"status": "error", "message": schemaData.message};
         }
-    }
+    },
 
-    saveMigrationScript = async function(dbkey) {
+    saveMigrationScript : async function(dbkey) {
         printObj(`Generating Migration Script for ${dbkey}`, "yellow", 2);
 
         var result = await DBMIGRATOR.exportSchema(dbkey, true);
@@ -76,12 +76,12 @@ module.exports = function(server) {
             return {"status": "success", "message": "Successfully Generated"};
         else
             return {"status": "error", "message": result.message};
-    }
+    },
 
     /* ------------------------------------------
     1. EXPORT SCHEMA → JSON
     ------------------------------------------ */
-    exportSchema = async function(dbKey, writeFile = true) {
+    exportSchema : async function(dbKey, writeFile = true) {
         try {
             const mysqlConnection = db_connection(dbKey).promise();
 
@@ -124,12 +124,12 @@ module.exports = function(server) {
             console.error(err);
             return { success: false, message: err.message };
         }
-    }
+    },
 
     /* ------------------------------------------
     2. GENERATE MIGRATION SCRIPT (DDL ONLY)
     ------------------------------------------ */
-    generateMigration = async function(dbKey, newSchemaFile, writeFile = false) {//, oldSchemaFile
+    generateMigration : async function(dbKey, newSchemaFile, writeFile = false) {//, oldSchemaFile
         try {
             const mysqlConnection = db_connection(dbKey).promise();
 
@@ -174,12 +174,12 @@ module.exports = function(server) {
             console.error(err);
             return { success: false, message: err.message };
         }
-    }
+    },
 
     /* ------------------------------------------
     3. APPLY MIGRATION SCRIPT
     ------------------------------------------ */
-    applyMigration = async function(dbKey, filename) {
+    applyMigration : async function(dbKey, filename) {
         try {
             const mysqlConnection = db_connection(dbKey).promise();
 
@@ -199,9 +199,9 @@ module.exports = function(server) {
             console.error(err);
             return { success: false, message: err.message };
         }
-    }
+    },
 
-    applyMigrationSchema = async function(dbKey, sql) {
+    applyMigrationSchema : async function(dbKey, sql) {
         try {
             const mysqlConnection = db_connection(dbKey).promise();
 
@@ -220,8 +220,6 @@ module.exports = function(server) {
             return { success: false, message: err.message };
         }
     }
-
-    return this;
 }
 
 /* ------------------------------------------

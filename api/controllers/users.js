@@ -3,26 +3,26 @@
  * 
  * */
 
-module.exports = function(server) {
+module.exports = {
 
-    initialize = function() {
+    initialize: function() {
         // console.log("\x1b[36m%s\x1b[0m","Users System Initialized");
-    }
+    },
 
-    listUsers = async function(whereCond, callback) {
+    listUsers: async function(whereCond, callback) {
         if(whereCond==null) whereCond = {};
         const userInfo = await  db_selectQ("appdb", "lgks_users", "*", whereCond, {});
         return userInfo;
-    }
+    },
 
-    getUserInfo = async function(userid, callback) {
+    getUserInfo: async function(userid, callback) {
         const userInfo = await db_selectQ("appdb", "lgks_users", "*", {
                 userid: userid,
             },{});
         return userInfo;
-    }
+    },
 
-    verifyUser = async function(userid, password, callback) {
+    verifyUser: async function(userid, password, callback) {
         //var final_password = md5(CONFIG.ENC_SALT+""+password);
         // console.log("verifyUser", userid, password);
 
@@ -67,9 +67,9 @@ module.exports = function(server) {
             "area": userInfo['area']
         };
         return userInfo;
-    }
+    },
 
-    getUserInfoById = async function(userid, callback) {
+    getUserInfoById: async function(userid, callback) {
         var userInfo = await db_selectQ("appdb", "lgks_users,lgks_privileges,lgks_access,lgks_users_group", 
             "lgks_users.*,lgks_privileges.name as privilege_name, lgks_access.sites as scope_sites,lgks_users_group.bank,lgks_users_group.branch,lgks_users_group.state,lgks_users_group.zone,lgks_users_group.area", {
                 "userid": userid,
@@ -102,7 +102,4 @@ module.exports = function(server) {
 
         return userInfo;
     }
-
-
-    return this;
 }

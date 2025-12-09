@@ -1,12 +1,10 @@
 //Common Required Helper Functions for database
 
-module.exports = function(server) {
+module.exports = {
 
-    initialize = function() {
+    initialize : function() {
         // Initialization code here
     }
-
-    return this;
 }
 
 global.createDBInsertFromRequest = function(ctx, input_fields, db_table, msgTitle, callback) {

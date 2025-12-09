@@ -1,13 +1,13 @@
 //URL Shortener Functions
 
-module.exports = function(server) {
+module.exports = {
 
-	initialize = function() {
+	initialize : function() {
         
-    }
+    },
 
-    urlShorten = function(srcURL, category, callback) {
-    	var cuttlyAPI = "https://cutt.ly/api/api.php?key=b851f5efa08c313cd6575d00f405f0a59c0d7&short="+encodeURI(srcURL);
+    urlShorten: function(srcURL, category, callback) {
+    	var cuttlyAPI = `https://cutt.ly/api/api.php?key=${CONFIG.vendors.CUTTLY_KEY}&short=`+encodeURI(srcURL);
 
 	 	axios({
 			  method: 'get',
@@ -21,6 +21,4 @@ module.exports = function(server) {
 			  	return callback(false, "Error generating ShortURL (2)");
 			  });
     }
-
-    return this;
 }

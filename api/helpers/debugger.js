@@ -5,17 +5,17 @@ var _error = null;
 var _warning = null;
 var isRunning = false;
 
-module.exports = function(server) {
+module.exports = {
 
-	initialize = function() {
+	initialize : function() {
 		console.log("\x1b[36m%s\x1b[0m","DEBUGGER Initialized");
-	}
+	},
 
-	isRemoteDebugger = function() {
+	isRemoteDebugger : function() {
 		return isRunning;
-	}
+	},
 
-	startRemoteDebugger = function() {
+	startRemoteDebugger : function() {
 		if(CONFIG.SILK_REMOTE_DEBUGGER==null) {
 			return;
 		}
@@ -91,9 +91,9 @@ module.exports = function(server) {
 	    };
 
 	    console.log("Remote Debug Server Connected to : "+ CONFIG.name);
-	}
+	},
 
-	stopRemoteDebugger = function() {
+	stopRemoteDebugger : function() {
 		if(CONFIG.SILK_REMOTE_DEBUGGER==null) {
 			return;
 		}
@@ -102,6 +102,4 @@ module.exports = function(server) {
 		console.warning = _warning;
 		isRunning = false;
 	}
-
-	return this;
 }

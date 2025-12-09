@@ -8,9 +8,9 @@ const cron = require('node-cron');
 const LOADED_PLUGINS = {};
 const ACTIVE_JOBS = {};
 
-module.exports = function(server) {
+module.exports = {
 
-    initialize = function() {
+    initialize : function() {
         if(CONFIG.AUTOMATOR_JOBS==null) CONFIG.AUTOMATOR_JOBS = {};
 
         if(fs.existsSync(CONFIG.ROOT_PATH+'/api/automators')) {
@@ -73,6 +73,4 @@ module.exports = function(server) {
 
         console.log("\x1b[36m%s\x1b[0m", "Automator Initialized With-"+Object.keys(ACTIVE_JOBS).length+" Active Jobs");
     }
-
-    return this;
 }

@@ -8,9 +8,9 @@ const BASE_DRIVER_DIR = __dirname+'/drivers/';
 
 const QUERYMAP = {};
 
-module.exports = function(server) {
+module.exports = {
 
-    initialize = function() {
+    initialize : function() {
         
         //Load all drivers
         // fs.readdirSync(BASE_DRIVER_DIR).forEach(function(file) {
@@ -29,24 +29,23 @@ module.exports = function(server) {
         //         // }
         //     }
         // });
-    }
+    },
 
-    storeQuery = async function(queryObj, userObj, queryID = false) {
-        console.log("X3", queryObj)
+    storeQuery : async function(queryObj, userObj, queryID = false) {
         if(!queryID) queryID = UNIQUEID.generate(12);
 
         QUERYMAP[queryID] = queryObj;
-console.log("X2", QUERYMAP)
-        return queryID;
-    }
 
-    getQueryByID= async function(queryID, userObj) {
+        return queryID;
+    },
+
+    getQueryByID: async function(queryID, userObj) {
         console.log(QUERYMAP)
         if(!QUERYMAP[queryID]) return false;
         return QUERYMAP[queryID];
-    }
+    },
 
-    parseQuery = function(sqlObj, filter = {}) {
+    parseQuery : function(sqlObj, filter = {}) {
         if(sqlObj==null) {
             console.error("No JSON Query Found");
             return false;
@@ -199,8 +198,6 @@ console.log("X2", QUERYMAP)
 
         return sql;
     }
-
-    return this;
 }
 
 

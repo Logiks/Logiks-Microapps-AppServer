@@ -207,13 +207,11 @@ global.customAlphabet = customAlphabet;
 global.nonSecureNanoid = nonSecureNanoid;
 
 // Default export-style (for `const nanoid = require('./nanoid-replacement')`)
-module.exports = function(server) {
+module.exports = {
 
-    initialize = function() {}
+    initialize: function() {},
 
-    generate= nanoid
-    generateAsync= nanoidAsync
-    generateNonSecure= nonSecureNanoid
-
-    return this;
+    generate: nanoid,
+    generateAsync: nanoidAsync,
+    generateNonSecure: nonSecureNanoid,
 }

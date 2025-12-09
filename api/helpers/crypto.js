@@ -4,11 +4,11 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16; // recommended 96-bit nonce
 
 
-module.exports = function(server) {
+module.exports = {
 
-    initialize = function() {},
+    initialize : function() {},
 
-    encrypt = function(text, encryptionKey) {
+    encrypt : function(text, encryptionKey) {
         if (!text) return null;
         if(!encryptionKey) encryptionKey = CONFIG.SALT_KEY;
 
@@ -21,9 +21,9 @@ module.exports = function(server) {
         const tag = cipher.getAuthTag();
 
         return Buffer.concat([iv, tag, encrypted]).toString('base64');
-    }
+    },
 
-    decrypt = function(encryptedText, encryptionKey) {
+    decrypt : function(encryptedText, encryptionKey) {
         if (!encryptedText) return null;
         if(!encryptionKey) encryptionKey = CONFIG.SALT_KEY;
 
@@ -41,7 +41,5 @@ module.exports = function(server) {
         const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
         return decrypted.toString('utf8');
     }
-
-    return this;
 }
 

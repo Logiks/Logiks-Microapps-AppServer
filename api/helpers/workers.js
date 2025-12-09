@@ -22,56 +22,23 @@ const WORKER_MODE = process.env.WORKER_MODE || "threads";  // "threads" | "proce
 const MAX_CONCURRENCY_PER_WORKER = parseInt(process.env.MAX_CONCURRENCY || "5");
 const AUTO_RESPAWN = process.env.AUTO_RESPAWN !== "false";
 
-module.exports = function(server) {
+const WORKER_DIR = path.join(CONFIG.ROOT_PATH+'/app/workers');
+const workers = new Map(); // name → worker instance
+const workerMeta = new Map(); // name → status, file, pid, uptime
+const jobQueues = new Map();     // name → job queue (FIFO)
 
-    const WORKER_DIR = path.join(CONFIG.ROOT_PATH+'/app/workers');
-    const workers = new Map(); // name → worker instance
-    const workerMeta = new Map(); // name → status, file, pid, uptime
-    const jobQueues = new Map();     // name → job queue (FIFO)
+module.exports = {
 
-    initialize = function() {
+    initialize : function() {
         setupGracefulShutdown();
 
         console.log("\x1b[36m%s\x1b[0m", `Worker Manager Initialized  [Mode: ${WORKER_MODE}], MaxConcurrency=${MAX_CONCURRENCY_PER_WORKER}, AutoRespawn=${AUTO_RESPAWN}`);// With-"+Object.keys(ACTIVE_JOBS).length+" Active Jobs
-    };
-
-    // ------------------------
-    // INTERNAL SPAWN
-    // ------------------------
-    function spawnWorker(name, filePath) {
-        return WORKER_MODE === "threads"
-            ? new ThreadWorker(filePath)
-            : ProcessWorker(filePath);
-    }
-
-    // ------------------------
-    // PROCESS JOB QUEUE
-    // ------------------------
-    function processQueue(workerName) {
-        const meta = workerMeta.get(workerName);
-        const queue = jobQueues.get(workerName);
-        const worker = workers.get(workerName);
-
-        if (!worker || meta.runningJobs >= MAX_CONCURRENCY_PER_WORKER) return;
-        if (!queue || queue.length === 0) return;
-
-        const job = queue.shift();
-        meta.runningJobs++;
-
-        sendRaw(worker, job.payload);
-    }
-
-    // ------------------------
-    // RAW SEND (MODE SAFE)
-    // ------------------------
-    function sendRaw(worker, payload) {
-        worker.send ? worker.send(payload) : worker.postMessage(payload);
-    }
+    },
 
     // ------------------------
     // LOAD WORKER
     // ------------------------
-    loadWorker = function (workerName) {
+    loadWorker : function (workerName) {
         if (workers.has(workerName)) return { status: "already_loaded" };
 
         const filePath = path.join(WORKER_DIR, `${workerName}.worker.js`);
@@ -125,12 +92,12 @@ module.exports = function(server) {
         });
 
         return { status: "loaded", worker: workerName };
-    };
+    },
 
     // ------------------------
     // UNLOAD WORKER
     // ------------------------
-    unloadWorker = function (workerName) {
+    unloadWorker : function (workerName) {
         const worker = workers.get(workerName);
         if (!worker) return { status: "not_running" };
 
@@ -142,20 +109,20 @@ module.exports = function(server) {
         workerMeta.get(workerName).status = "terminated";
 
         return { status: "unloaded", worker: workerName };
-    };
+    },
 
     // ------------------------
     // RESTART WORKER
     // ------------------------
-    restartWorker = function (workerName) {
+    restartWorker : function (workerName) {
         unloadWorker(workerName);
         return loadWorker(workerName);
-    };
+    },
 
     // ------------------------
     // QUEUE JOB (CONCURRENCY SAFE)
     // ------------------------
-    enqueueJob = function (workerName, payload) {
+    enqueueJob : function (workerName, payload) {
         const meta = workerMeta.get(workerName);
         if (!meta) throw new Error("Worker not loaded");
 
@@ -168,42 +135,76 @@ module.exports = function(server) {
             queueLength: jobQueues.get(workerName).length,
             running: meta.runningJobs
         };
-    };
+    },
 
     // ------------------------
     // BROADCAST
     // ------------------------
-    broadcast = function (payload) {
+    broadcast : function (payload) {
         for (const [name] of workers.entries()) {
             enqueueJob(name, payload);
         }
 
         return { status: "broadcast_queued", count: workers.size };
-    };
+    },
 
     // ------------------------
     // LIST WORKERS
     // ------------------------
-    listWorkers = function () {
+    listWorkers : function () {
         return Array.from(workerMeta.values()).map(meta => ({
             ...meta,
             uptime: Date.now() - meta.startedAt,
             queueLength: jobQueues.get(meta.name)?.length || 0
         }));
-    };
+    },
 
     // ------------------------
     // AUTOLOAD
     // ------------------------
-    autoload = function () {
+    autoload : function () {
         fs.readdirSync(WORKER_DIR).forEach(file => {
             if (file.endsWith(".worker.js")) {
                 loadWorker(file.replace(".worker.js", ""));
             }
         });
-    };
+    }
+}
 
-    // ------------------------
+// ------------------------
+// INTERNAL SPAWN
+// ------------------------
+function spawnWorker(name, filePath) {
+    return WORKER_MODE === "threads"
+        ? new ThreadWorker(filePath)
+        : ProcessWorker(filePath);
+}
+
+// ------------------------
+// PROCESS JOB QUEUE
+// ------------------------
+function processQueue(workerName) {
+    const meta = workerMeta.get(workerName);
+    const queue = jobQueues.get(workerName);
+    const worker = workers.get(workerName);
+
+    if (!worker || meta.runningJobs >= MAX_CONCURRENCY_PER_WORKER) return;
+    if (!queue || queue.length === 0) return;
+
+    const job = queue.shift();
+    meta.runningJobs++;
+
+    sendRaw(worker, job.payload);
+}
+
+// ------------------------
+// RAW SEND (MODE SAFE)
+// ------------------------
+function sendRaw(worker, payload) {
+    worker.send ? worker.send(payload) : worker.postMessage(payload);
+}
+
+// ------------------------
     // GRACEFUL SHUTDOWN
     // ------------------------
     function setupGracefulShutdown() {
@@ -224,6 +225,3 @@ module.exports = function(server) {
         process.on("SIGINT", shutdown);
         process.on("SIGTERM", shutdown);
     }
-
-    return this;
-}

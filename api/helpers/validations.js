@@ -2,9 +2,9 @@
 
 var Validator = require('validatorjs');
 
-module.exports = function(server) {
+module.exports = {
 
-	initialize = function() {
+	initialize : function() {
 		// Validator.register('telephone', function(value, requirement, attribute) { // requirement parameter defaults to null
 		// 	  return value.match(/^\d{3}-\d{3}-\d{4}$/);
 		// 	}, 'The :attribute phone number is not in the format XXX-XXX-XXXX.');
@@ -53,9 +53,9 @@ module.exports = function(server) {
 		//     });
 
 		console.log("\x1b[36m%s\x1b[0m","Validation Engine Initialized");
-	}
+	},
 
-	validateRule = function(formData, ruleObj) {
+	validateRule : function(formData, ruleObj) {
 		let validation = new Validator(formData, ruleObj);
 
 		return {
@@ -63,6 +63,4 @@ module.exports = function(server) {
 			"errors": validation.errors.all()
 		};
 	}
-
-	return this;
 }

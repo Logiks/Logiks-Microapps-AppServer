@@ -12,17 +12,15 @@ module.exports = {
                 var clsName = file.replace('.js','').toUpperCase();
 
                 _ENV.HELPERS.push(clsName);
-                const temp = require(filePath)();
+                global[clsName] = require(filePath);
                 
-                if(typeof temp.initialize === "function") {
+                if(typeof global[clsName].initialize === "function") {
                     try {
-                        temp.initialize();
+                        global[clsName].initialize();
                     } catch(e) {
                         console.error("Error Initializing Controller "+clsName, e.message);
                     }
                 }
-
-                global[clsName] = temp;
             }
         });
 
@@ -33,7 +31,7 @@ module.exports = {
                 var clsName = file.replace('.js','').toUpperCase();
 
                 _ENV.CONTROLLERS.push(clsName);
-                global[clsName] = require(filePath)();
+                global[clsName] = require(filePath);
 
                 if(typeof global[clsName].initialize === "function") {
                     try {

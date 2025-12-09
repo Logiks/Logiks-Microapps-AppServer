@@ -4,9 +4,9 @@ const mysql = require('mysql2');
 
 var _MYSQL = {};
 
-module.exports = function(server) {
+module.exports = {
 
-	initialize = function(callback) {
+	initialize : function(callback) {
 		if(CONFIG.dbmysql==null) return;
 		
 		_.each(CONFIG.dbmysql, function(conf, keyid) {
@@ -33,14 +33,14 @@ module.exports = function(server) {
 		// 		console.error("❌ DB Connetion not found");
 		// 	}
 		// });
-	}
+	},
 
-	db_connection = function(dbkey) {
+	db_connection : function(dbkey) {
 		return _MYSQL[dbkey];
-	}
+	},
 	
 	//Standard MySQL
-	db_query = async function(dbkey, sql, params) {
+	db_query : async function(dbkey, sql, params) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
@@ -65,9 +65,9 @@ module.exports = function(server) {
 		// results = JSON.parse(JSON.stringify(results));
 
 		return results;
-	}
+	},
 
-	db_selectQ = async function(dbkey, table, columns, where, whereParams, additionalQueryParams) {
+	db_selectQ : async function(dbkey, table, columns, where, whereParams, additionalQueryParams) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
@@ -126,9 +126,9 @@ module.exports = function(server) {
 		// results = JSON.parse(JSON.stringify(results));
 
 		return results;
-	}
+	},
 
-	db_insertQ1 = async function(dbkey, table, data) {
+	db_insertQ1 : async function(dbkey, table, data) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
@@ -161,9 +161,9 @@ module.exports = function(server) {
 
 		return results;
 		
-	}
+	},
 
-	db_insert_batchQ = async function(dbkey, table, data) {
+	db_insert_batchQ : async function(dbkey, table, data) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
@@ -197,9 +197,9 @@ module.exports = function(server) {
 		return results;
 
 		
-	}
+	},
 
-	db_deleteQ = async function(dbkey, table, where) {
+	db_deleteQ : async function(dbkey, table, where) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
@@ -240,9 +240,9 @@ module.exports = function(server) {
 
 		return results;
 		
-	}
+	},
 
-	db_updateQ = async function(dbkey, table, data, where) {
+	db_updateQ : async function(dbkey, table, data, where) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
@@ -289,6 +289,4 @@ module.exports = function(server) {
 
 		return results;
 	}
-
-	return this;
 }

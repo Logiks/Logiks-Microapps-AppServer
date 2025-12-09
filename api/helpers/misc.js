@@ -1,33 +1,32 @@
 //Misc Helper Functions
 
-const crypto = require('crypto');
 const sha1 = require('sha1');
 
-module.exports = function(server) {
+module.exports = {
 
-  initialize = function() {},
+  initialize: function() {},
 
-  slugify = function(text) {
+  slugify : function(text) {
     return text.toString().toLowerCase()
       .replace(/\s+/g, '-')           // Replace spaces with -
       .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
       .replace(/\-\-+/g, '-')         // Replace multiple - with single -
       .replace(/^-+/, '')             // Trim - from start of text
       .replace(/-+$/, '');            // Trim - from end of text
-  }
+  },
 
-  toTitle = function(str) {
+  toTitle : function(str) {
     return str.toLowerCase().replace(/\b[a-z]/g, function(letter) {
         return letter.toUpperCase();
       });
-  }
+  },
 
-  urlify = function(jsonObject) {
+  urlify : function(jsonObject) {
     let urlParameters = Object.entries(jsonObject).map(e => e.join('=')).join('&');
     return urlParameters;
-  }
+  },
     
-  getDebugInfo = function(ctx, req, res) {
+  getDebugInfo : function(ctx, req, res) {
     return {
         "RUNNING_SINCE":moment(server.config.START_TIME).fromNow(),
         "DEBUG": CONFIG.debug,
@@ -44,14 +43,14 @@ module.exports = function(server) {
 
         // "CONNECT": CONNECTPARAMS
       };
-  }
+  },
 
-  generateHash = function(content) {
+  generateHash : function(content) {
     if(typeof content == "object") return sha1(JSON.stringify(content));
     return sha1(content);
-  }
+  },
 
-  generateUUID = function(prefix,n) {
+  generateUUID : function(prefix,n) {
     //Math.ceil(Math.random()*10000000)+"-"+uuid();
     //return Math.random(1000000);
     if(n==null) n = 8;
@@ -66,28 +65,28 @@ module.exports = function(server) {
     var number = Math.floor(Math.random() * (max - min + 1)) + min;
 
     return md5(prefix+("" + number).substring(add)+uuid()+moment().format("Y-M-DTHH:mm:ss"));
-  }
+  },
 
-  timeStamp = function() {
+  timeStamp : function() {
     return moment().format("Y-M-D HH:mm:ss");
-  }
+  },
 
-  getClientIP = function(req) {
+  getClientIP : function(req) {
     const xfwd = req.headers["x-forwarded-for"];
     if (xfwd) return xfwd.split(",")[0].trim();
     return req.connection.remoteAddress || req.socket.remoteAddress || "0.0.0.0";
-  }
+  },
 
   // coarse IP block for hijack detection (e.g., 192.168.1.*)
-  getIpBlock = function(ip) {
+  getIpBlock : function(ip) {
     if (!ip) return "unknown";
     const parts = ip.split(":").pop().split("."); // handle IPv6-mapped IPv4
     if (parts.length < 2) return ip;
     return parts.slice(0, 2).join("."); // /16 style
-  }
+  },
 
 
-  getAdditionalParams = function(dataObj) {
+  getAdditionalParams : function(dataObj) {
       if(dataObj.userid!=null) {
         dataObj.created_by = dataObj.userid;
       }
@@ -97,9 +96,9 @@ module.exports = function(server) {
       return _.pickBy(dataObj, function(value, key) {
                       return (["geolocation","clientip","medium","site","host","created_by"].indexOf(key)>=0);
                     }, {});
-  }
+  },
 
-  generateDefaultDBRecord = function(ctx, forUpdate = false) {
+  generateDefaultDBRecord : function(ctx, forUpdate = false) {
     var dated = moment().format("Y-M-D HH:mm:ss");
     // console.log("generateDefaultDBRecord", ctx.meta.user);
     if(forUpdate) {
@@ -116,9 +115,9 @@ module.exports = function(server) {
         "edited_by": ctx.meta.user.userId,
       };
     }
-  }
+  },
 
-  processUpdateQueryFromBody = function(ctx, tableName, whereCond, extraFields = "edited_on=?") {
+  processUpdateQueryFromBody : function(ctx, tableName, whereCond, extraFields = "edited_on=?") {
     var dated = moment().format("Y-M-D HH:mm:ss");
     
     var strUpdate = [];
@@ -138,8 +137,6 @@ module.exports = function(server) {
       "data" : dataValues
     };
   }
-
-  return this;
 }
 
 global._replace = function(text, data, strict = false) {
