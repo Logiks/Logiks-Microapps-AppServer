@@ -8,7 +8,9 @@ fs1.ensureDirSync(SCHEMA_DIR);
 
 module.exports = {
     
-    initalize : function() {},
+    initalize : function() {
+        console.log("\x1b[36m%s\x1b[0m","DataMigrator Initialized");
+    },
 
     getMigrationFile : async function(dbkey) {
         const files = await fs1.readdir(SCHEMA_DIR);

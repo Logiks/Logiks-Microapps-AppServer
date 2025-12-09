@@ -1,12 +1,16 @@
+//For Encryption and decryption tasks
+
 const crypto = require('crypto');
 
-const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 16; // recommended 96-bit nonce
+let ALGORITHM = 'aes-256-gcm';
+let IV_LENGTH = 16; // recommended 96-bit nonce
 
 
 module.exports = {
 
-    initialize : function() {},
+    initialize : function() {
+        console.log("\x1b[36m%s\x1b[0m","Encryption Engien Initialized");
+    },
 
     encrypt : function(text, encryptionKey) {
         if (!text) return null;

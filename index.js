@@ -34,15 +34,18 @@ global.START_TIME = moment().format();
 console.log("\x1b[34m%s\x1b[0m","\nAppServer Initialization Started\n");
 
 //Loading Moleculer Errors for all
-const { Errors } = require("moleculer");
-global.Errors = Errors;
+// const { Errors } = require("moleculer");
+// global.Errors = Errors;
 
-const { promisify } = require("util");
-global.promisify = promisify;
+// const { promisify } = require("util");
+// global.promisify = promisify;
 
 //Load Core Modules
 const LOGGER = require('./api/logger');
 global.LOGGER = LOGGER;
+
+const CACHE = require('./api/cache');
+global._CACHE = CACHE;
 
 LOGGER.preinitialze();
 
@@ -54,6 +57,8 @@ global.BASEAPP = require('./api/baseapp');
 const SERVER = require('./api/server');
 
 async function main() {
+    await _CACHE.initialize();
+    
     var tempConfig = {};
     switch(process.env.CONFIG_TYPE) {
         case "LOCAL":

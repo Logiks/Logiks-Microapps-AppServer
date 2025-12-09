@@ -10,7 +10,7 @@
 
 const crypto = require('crypto');
 
-// URL-safe alphabet similar to nanoid: [a-zA-Z0-9_-]
+// URL-safe alphabet similar to uniqueid: [a-zA-Z0-9_-]
 const URL_ALPHABET = '_-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 // -------- Internal Helpers --------
@@ -113,11 +113,10 @@ function generateIdNonSecure(alphabet, size) {
  * @returns {string}
  *
  * Usage:
- *   const { nanoid } = require('./nanoid-replacement');
- *   const id = nanoid();          // default 21 chars
- *   const shortId = nanoid(10);   // 10 chars
+ *   const id = uniqueid();          // default 21 chars
+ *   const shortId = uniqueid(10);   // 10 chars
  */
-function nanoid(size = 21) {
+function uniqueid(size = 21) {
   return generateIdSecure(URL_ALPHABET, size);
 }
 
@@ -128,9 +127,9 @@ function nanoid(size = 21) {
  * @returns {Promise<string>}
  *
  * Usage:
- *   const id = await nanoidAsync();
+ *   const id = await uniqueidAsync();
  */
-async function nanoidAsync(size = 21) {
+async function uniqueidAsync(size = 21) {
   if (!Number.isInteger(size) || size <= 0) {
     throw new RangeError('Size must be a positive integer.');
   }
@@ -191,27 +190,30 @@ function customAlphabet(alphabet, defaultSize = 21) {
  * @returns {string}
  *
  * Usage:
- *   const id = nonSecureNanoid();          // URL-safe, 21 chars
- *   const id10 = nonSecureNanoid(10);      // 10 chars
- *   const hexId = nonSecureNanoid(16, '0123456789abcdef');
+ *   const id = nonSecureUniqueID();          // URL-safe, 21 chars
+ *   const id10 = nonSecureUniqueID(10);      // 10 chars
+ *   const hexId = nonSecureUniqueID(16, '0123456789abcdef');
  */
-function nonSecureNanoid(size = 21, alphabet = URL_ALPHABET) {
+function nonSecureUniqueID(size = 21, alphabet = URL_ALPHABET) {
   return generateIdNonSecure(alphabet, size);
 }
 
 // -------- Exports --------
 
-global.nanoid = nanoid;
-global.nanoidAsync = nanoidAsync;
+global.uniqueid = uniqueid;
+global.uniqueidAsync = uniqueidAsync;
 global.customAlphabet = customAlphabet;
-global.nonSecureNanoid = nonSecureNanoid;
+global.nonSecureUniqueID = nonSecureUniqueID;
 
-// Default export-style (for `const nanoid = require('./nanoid-replacement')`)
+// Default export-style (for `const uniqueid = require('./helpers/uniqueid')`)
 module.exports = {
 
-    initialize: function() {},
+    initialize: function() {
+      console.log("\x1b[36m%s\x1b[0m","UniqueID Generation Initialized");
+    },
 
-    generate: nanoid,
-    generateAsync: nanoidAsync,
-    generateNonSecure: nonSecureNanoid,
+    generate: uniqueid,
+    generateAsync: uniqueidAsync,
+    customAlphabet: customAlphabet,
+    generateNonSecure: nonSecureUniqueID,
 }

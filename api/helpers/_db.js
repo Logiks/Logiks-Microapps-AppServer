@@ -6,7 +6,7 @@ var _MYSQL = {};
 
 module.exports = {
 
-	initialize : function(callback) {
+	initialize : function() {
 		if(CONFIG.dbmysql==null) return;
 		
 		_.each(CONFIG.dbmysql, function(conf, keyid) {

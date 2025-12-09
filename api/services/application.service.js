@@ -2,11 +2,10 @@
 
 const mime = require("mime-types");
 
-const themeCache = new Map();
-const pageCache = new Map();
-const settingsCache = new Map();
-const navigatorCache = new Map();
-const componentCache = new Map();
+const themeCache = _CACHE.getCacheMap("THEMECACHE");
+const settingsCache = _CACHE.getCacheMap("SETTINGSCACHE");
+const pageCache = _CACHE.getCacheMap("APPLICATION_PAGECACHE");
+const componentCache = _CACHE.getCacheMap("APPLICATION_COMPONENTCACHE");
 
 module.exports = {
     name: "application",
@@ -42,20 +41,32 @@ module.exports = {
 				fullPath: "/api/settings"
 			},
 			params: {
-				module: "string"
+				module: "string",
+				// recache: "boolean"
 			},
 			async handler(ctx) {
+				if(ctx.params.recache===true) {
+					if(settingsCache[ctx.meta.user.userId]) delete settingsCache[ctx.meta.user.userId];
+				}
+
+				if(settingsCache[ctx.meta.user.userId]) return settingsCache[ctx.meta.user.userId];
+
 				var whereCond = {
 					"blocked": "false",
-					"guid": [["global", ctx.meta.user.guid], "IN"],
+					"guid": [["global", ctx.meta.user.tenantId], "IN"],
 				};
 				if(ctx.params.module && ctx.params.module!="*") {
 					whereCond["module_name"] = ctx.params.module;
 				}
 				var data1 = await _DB.db_selectQ("appdb", "sys_settings", "module_name, setting_name, setting_value, setting_params", whereCond, {});
-				var data2 = await _DB.db_selectQ("appdb", "user_settings", "module_name, setting_name, setting_value, setting_params", whereCond, {});
+				var data2 = await _DB.db_selectQ("appdb", "user_settings", "module_name, setting_name, setting_value, setting_params", _.extend({
+					"created_by": ctx.meta.user.userId
+				}, whereCond), {});
 
-				return _.extend({}, data1, data2);
+				settingsCache[ctx.meta.user.userId] = _.extend({}, data1, data2);
+				_CACHE.saveCacheMap("SETTINGSCACHE", settingsCache);
+
+				return settingsCache[ctx.meta.user.userId]
 			}
 		},
 
@@ -97,7 +108,7 @@ module.exports = {
 						ctx.meta.cookies?.theme ||
 						"default";
 
-				let themeData = themeCache.get(themeId);
+				let themeData = themeCache[themeId];
 
 				if (!themeData) {
 					themeData = await loadTheme(themeId);
@@ -177,26 +188,11 @@ module.exports = {
 				const userInfo = ctx.meta.user;
 				const appID = appInfo.appid;
 
-				const appMenuDir = `misc/apps/${appID}/menus/${ctx.params.navid}/`;
-				if(fs.existsSync(appMenuDir)) {
-					const menuObj = await loadAllJsonFromFolder(appMenuDir);
-					
-					return menuObj.filter(a=> {
-						if(a.privilege) {
-							a.privilege = a.privilege.split(",");
-							// console.log(a.title, a.privilege);
-							if(!(a.privilege.indexOf("*")>=0 || a.privilege.indexOf(userInfo.privilege)>=0 || a.privilege.indexOf(userInfo.userId)>=0)) {
-								return false;
-							}
-						}
-						if(!(a.guid && (a.guid=="*" || a.guid=="global" || a.guid==userInfo.guid))) {
-							return false;
-						}
-						return true;
-					});
-				} else {
-					return {};
-				}
+				const menuObj = await NAVIGATOR.getNavigation(appID, ctx.params.navid, userInfo);
+
+				if(!menuObj) menuObj = {};
+
+				return menuObj;
 			}
 		},
 
@@ -220,8 +216,19 @@ module.exports = {
 				}
 
 				const pageFile = `misc/apps/${ctx.meta.appInfo.appid}/pages/${ctx.params.pageid}.json`;
+
+				if(pageCache[pageFile]) return pageCache[pageFile].data;
+
 				if(fs.existsSync(pageFile)) {
 					const pageFileData = JSON.parse(fs.readFileSync(pageFile, "utf8"));
+
+					pageCache[pageFile] = {
+							data: pageFileData,
+							version: Date.now(),
+							updatedAt: Date.now()
+						};
+					_CACHE.saveCacheMap("PAGECACHE", pageCache);
+
 					return pageFileData;
 				} else {
 					throw new LogiksError(
@@ -243,46 +250,29 @@ module.exports = {
 				const appInfo = ctx.meta.appInfo;
 				const userInfo = ctx.meta.user;
 
-				const compFiles = [
-					`misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}.jsx`,
-					`misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}.html`,
-					`misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}.htmlx`,
+				const filePath = `misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}`;
 
-					`misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}`,
-					`misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}`,
-					`misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}`
-				];
+				if(fs.existsSync(filePath)) {
+					const contentType = mime.lookup(filePath) || "application/octet-stream";
 
-				var i = 0;
-				for(i=0; i<compFiles.length; i++) {
-					if(fs.existsSync(compFiles[i])) {
-						const filePath = compFiles[i];
+					// Required Moleculer settings for streaming
+					ctx.meta.$responseType = "stream";
+					ctx.meta.$responseHeaders = {
+						"Content-Type": contentType,
+						"Cache-Control": "public, max-age=86400" // 1 day
+					};
+					// ctx.meta.$responseHeaders["Content-Disposition"] = `attachment; filename="${filename}"`;
 
-						// console.log("fileName", i, filePath);
-
-						const contentType = mime.lookup(filePath) || "application/octet-stream";
-
-						// Required Moleculer settings for streaming
-						ctx.meta.$responseType = "stream";
-						ctx.meta.$responseHeaders = {
-							"Content-Type": contentType,
-							"Cache-Control": "public, max-age=86400" // 1 day
-						};
-						// ctx.meta.$responseHeaders["Content-Disposition"] = `attachment; filename="${filename}"`;
-
-						// Return readable stream (memory safe)
-						return fs.createReadStream(filePath);
-						break;
-					}
+					// Return readable stream (memory safe)
+					return fs.createReadStream(filePath);
+				} else {
+					throw new LogiksError(
+						"Invalid Component Identifier",
+						404,
+						"INVALID_COMPONENT_KEY",
+						ctx.params.compid
+					);
 				}
-				
-
-				throw new LogiksError(
-					"Invalid Component Identifier",
-					404,
-					"INVALID_COMPONENT_KEY",
-					ctx.params.compid
-				);
 			}
 		},
     },
@@ -301,36 +291,17 @@ async function loadTheme(themeId) {
 		]);
 		const version = stats.mtimeMs.toString();
 		
-		themeCache.set(themeId, {
+		themeCache[themeId] = {
 			css,
 			version,
 			updatedAt: Date.now()
-		});
+		};
+
+		_CACHE.saveCacheMap("THEMECACHE", themeCache);
 
 		return themeCache.get(themeId);
 	} catch (err) {
 		console.log(err);
 		return null;
 	}
-}
-
-async function loadAllJsonFromFolder(folderPath) {
-  const files = await fs.readdirSync(folderPath);
-
-  const jsonFiles = files.filter(f => f.endsWith(".json"));
-
-  const jobs = jsonFiles.map(async file => {
-    const fullPath = path.join(folderPath, file);
-    try {
-      const data = await fs.readFileSync(fullPath, "utf8");
-      return JSON.parse(data);
-    } catch (e) {
-      console.error(`❌ ${file} ignored: ${e.message}`);
-      return null;
-    }
-  });
-
-  const results = await Promise.all(jobs);
-
-  return results.filter(Boolean); // remove failed reads
 }

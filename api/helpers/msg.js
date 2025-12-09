@@ -6,9 +6,15 @@ const apiHTTP = require('http');
 
 module.exports = {
     
-    initialize : function() {},
+    initialize : function() {
+        console.log("\x1b[36m%s\x1b[0m","Message and Notification Engine Initialized");
+    },
 
     sendSMS : function(smsTO, msgBody, msgType, params) {
+
+    },
+
+    sendWhatsapp : function(smsTO, msgBody, msgType, params) {
 
     },
 

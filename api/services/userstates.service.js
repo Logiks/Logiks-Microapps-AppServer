@@ -1,6 +1,6 @@
 "use strict";
 
-const USER_STATE_MAP = {};
+const USER_STATE_MAP = _CACHE.getCacheMap("USER_STATE_MAP");
 
 module.exports = {
 	name: "userstates",
@@ -49,6 +49,8 @@ module.exports = {
 
                 USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY] = ctx.params.state;
                 
+                _CACHE.saveCacheMap("USER_STATE_MAP", USER_STATE_MAP);
+
                 return {
                     "status": "okay",
                     "state": USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY],
@@ -72,6 +74,8 @@ module.exports = {
                 
                 if(USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY]) delete USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY];
                 
+                _CACHE.saveCacheMap("USER_STATE_MAP", USER_STATE_MAP);
+
                 return {
                     "status": "okay",
                     "state": USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY],
@@ -91,6 +95,8 @@ module.exports = {
                 if(USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId]) {
                     delete USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId];
                 }
+
+                _CACHE.saveCacheMap("USER_STATE_MAP", USER_STATE_MAP);
                 
                 return {
                     "status": "okay",

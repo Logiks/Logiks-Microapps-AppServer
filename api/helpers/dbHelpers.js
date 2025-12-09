@@ -3,7 +3,7 @@
 module.exports = {
 
     initialize : function() {
-        // Initialization code here
+        console.log("\x1b[36m%s\x1b[0m","DBHelpers providing additional db related support methods Initialized");
     }
 }
 

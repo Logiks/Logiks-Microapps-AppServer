@@ -1,5 +1,7 @@
 "use strict";
 
+// const mime = require("mime-types");
+
 // /api/modules/reports/doc.main
 // /api/modules/forms/doc.main
 // /api/modules/dashboards/doc.main
@@ -11,8 +13,10 @@
 // Components
 // /api/modules/components/docs.main
 
+const COMPONENT_CACHE = _CACHE.getCacheMap("MODULES_COMPONENT_CACHE");
+
 const mimeMap = {
-	// "reports", "forms", "infoview", "dashboard", "search", "charts"
+	// "reports", "forms", "infoviews", "dashboards", "search", "charts"
 };
 
 module.exports = {
@@ -32,21 +36,62 @@ module.exports = {
 
 				if(item.length>1) {
 					var pluginID = item[0];
-					var submoduleFile = item[1];//ctx.params.item.substring(item[0].length);
+					var submoduleFile = item[1];
 					var modname = moduleName.substring(moduleName.length-1,moduleName.length)=="s"?moduleName.substring(0,moduleName.length-1):moduleName;
 
 					if(["reports", "forms", "infoview", "dashboard", "search", "charts", "pages"].indexOf(moduleName)>=0) {
 						submoduleFile = `${submoduleFile}.json`;
 					}
 
-					console.log("XXXX", `${pluginID}.source`, {folder: moduleName, file: submoduleFile});
+					if(ctx.params.recache===true) {
+						if(COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`]) delete COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`];
+					}
+
+					if(COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`]) {
+						return {
+							"component": modname,
+							"content": COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`].data
+						};
+					}
+
 					const fileContent = await ctx.call(`${pluginID}.source`, {folder: moduleName, file: submoduleFile});
+
+					COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`] = {
+							component: modname,
+							data: fileContent,
+							version: Date.now(),
+							updatedAt: Date.now()
+						};
+					_CACHE.saveCacheMap("MODULES_COMPONENT_CACHE", COMPONENT_CACHE);
+
 					return {
 						"component": modname,
 						"content": fileContent
 					};
 				} else {
+					var submoduleFile = ctx.params.item;
+
+					if(ctx.params.recache===true) {
+						if(COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`]) delete COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`];
+					}
+
+					if(COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`]) {
+						return {
+							"component": "page",
+							"content": COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`].data
+						};
+					}
+
 					const fileContent = await ctx.call(`${pluginID}.source`, {folder: "pages", file: submoduleFile});
+
+					COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`] = {
+							component: "page",
+							data: fileContent,
+							version: Date.now(),
+							updatedAt: Date.now()
+						};
+					_CACHE.saveCacheMap("MODULES_COMPONENT_CACHE", COMPONENT_CACHE);
+
 					return {
 						"component": "page",
 						"content": fileContent
@@ -65,7 +110,23 @@ module.exports = {
 				
 				console.log("MODULE_COMPONENT_HANDLER", ctx.params);
 
+				if(ctx.params.recache===true) {
+					if(COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`]) delete COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`];
+				}
+
+				if(COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`]) {
+					return COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`].data;
+				}
+
 				const fileContent = await ctx.call(`${moduleName}.source`, {folder: "components", file: fileName});
+
+				COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`] = {
+						data: fileContent,
+						version: Date.now(),
+						updatedAt: Date.now()
+					};
+				_CACHE.saveCacheMap("MODULES_COMPONENT_CACHE", COMPONENT_CACHE);
+
 				return fileContent;
 			}
 		},

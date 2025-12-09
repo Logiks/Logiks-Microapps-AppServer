@@ -5,7 +5,9 @@ const { v4: uuidv4 } = require('uuid');
 
 module.exports = {
 
-  initialize: function() {},
+  initialize: function() {
+    console.log("\x1b[36m%s\x1b[0m","Misc Attributes and Supporting Methods Initialized");
+  },
 
   slugify : function(text) {
     return text.toString().toLowerCase()

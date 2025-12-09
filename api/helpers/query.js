@@ -6,7 +6,7 @@
 var DB_DRIVERS = {};
 const BASE_DRIVER_DIR = __dirname+'/drivers/';
 
-const QUERYMAP = {};
+const QUERYMAP = _CACHE.getCacheMap("QUERYMAP");
 
 module.exports = {
 
@@ -29,12 +29,15 @@ module.exports = {
         //         // }
         //     }
         // });
+
+        console.log("\x1b[36m%s\x1b[0m","Query Engine Initialized");
     },
 
     storeQuery : async function(queryObj, userObj, queryID = false) {
         if(!queryID) queryID = UNIQUEID.generate(12);
 
         QUERYMAP[queryID] = queryObj;
+        _CACHE.saveCacheMap("QUERYMAP", QUERYMAP);
 
         return queryID;
     },
