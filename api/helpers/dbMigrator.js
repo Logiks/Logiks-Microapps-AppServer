@@ -131,7 +131,7 @@ module.exports = {
     ------------------------------------------ */
     generateMigration : async function(dbKey, newSchemaFile, writeFile = false) {//, oldSchemaFile
         try {
-            const mysqlConnection = db_connection(dbKey).promise();
+            const mysqlConnection = _DB.db_connection(dbKey).promise();
 
             //const oldSchema = await fs1.readJson(path.join(SCHEMA_DIR, oldSchemaFile));
             const oldSchema = await DBMIGRATOR.exportSchema("appdb", false);
@@ -181,7 +181,7 @@ module.exports = {
     ------------------------------------------ */
     applyMigration : async function(dbKey, filename) {
         try {
-            const mysqlConnection = db_connection(dbKey).promise();
+            const mysqlConnection = _DB.db_connection(dbKey).promise();
 
             const sql = await fs1.readFile(path.join(SCHEMA_DIR, filename), "utf8");
 
@@ -203,7 +203,7 @@ module.exports = {
 
     applyMigrationSchema : async function(dbKey, sql) {
         try {
-            const mysqlConnection = db_connection(dbKey).promise();
+            const mysqlConnection = _DB.db_connection(dbKey).promise();
 
             // Safety checks
             if (/DROP|TRUNCATE|DELETE/i.test(sql)) {
