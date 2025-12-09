@@ -57,8 +57,6 @@ global.BASEAPP = require('./api/baseapp');
 const SERVER = require('./api/server');
 
 async function main() {
-    await _CACHE.initialize();
-    
     var tempConfig = {};
     switch(process.env.CONFIG_TYPE) {
         case "LOCAL":
@@ -83,6 +81,8 @@ async function main() {
         "VERSION": packageConfig.version,
         "BUILD": packageConfig.version.replaceAll(/\./g, "")
     });
+
+    await _CACHE.initialize();
 
     LOGGER.initializeLoggers();
 
