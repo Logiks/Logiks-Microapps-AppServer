@@ -2,14 +2,13 @@
 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const Redis = require("ioredis");
 
 const JWT_SECRET = CONFIG.authjwt.secret;
 const ACCESS_TOKEN_TTL = Number(CONFIG.authjwt.access_token_ttl || 3600);              // seconds
 const REFRESH_TOKEN_TTL = Number(CONFIG.authjwt.refresh_token_ttl || 7 * 24 * 3600);   // seconds
 
 // Redis DB for auth-related state (you can use a dedicated DB index)
-const authRedis = new Redis(CONFIG.cache);
+const authRedis = _CACHE.getRedisInstance();
 
 const S2STOKENS = {};
 const TLTOKENS = {};

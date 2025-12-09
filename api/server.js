@@ -3,8 +3,6 @@
 /**
  * Main Moleculer server bootstrap
  *
- * Required npm deps:
- *   npm i moleculer moleculer-web ioredis winston winston-loki jsonwebtoken bcrypt
  */
 
 const path = require("path");
@@ -19,9 +17,10 @@ const helmet = require("helmet");
 const FastestValidator = require("fastest-validator");
 
 const { ServiceBroker, Errors } = require("moleculer");
-const { MoleculerError } = require("moleculer").Errors;
 const ApiService = require("moleculer-web");
-const Redis = require("ioredis");
+const { MoleculerError } = require("moleculer").Errors;
+// const { Errors } = require("moleculer");
+// const { MoleculerClientError } = Errors;
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -64,7 +63,7 @@ module.exports = {
 			// -------------------------
 			// Redis for distributed rate limiting
 			// -------------------------
-			const rateRedis = new Redis(CONFIG.cache);
+			const rateRedis = _CACHE.getRedisInstance();
 
 			rateRedis.on("error", (err) => {
 				console.error("❌ Rate-limit Redis error:", err);
@@ -598,9 +597,10 @@ module.exports = {
 									tenantId: payload.tenantId ? payload.tenantId : payload.guid,
 									roles: payload.roles || [],
 									scopes: payload.scopes || [],
-									secure_hash: generateHash(token)
+									secure_hash: MISC.generateHash(token)
 								};
 							} catch (err) {
+								console.error(err);
 								throw new LogiksError(
 									"Invalid or expired token",
 									401,
