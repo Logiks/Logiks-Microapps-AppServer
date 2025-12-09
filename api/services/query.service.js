@@ -58,12 +58,12 @@ module.exports = {
 						ctx.params.queryid
 					);
 				}
+
+				if(!queryObj.page) queryObj.page = 0;
+				if(!queryObj.limit) queryObj.limit = 0;
 				
 				const sqlQuery = QUERY.parseQuery(queryObj, ctx.params.filter)
-				var dbkey = sqlQuery.dbkey;
-
-				if(!sqlQuery.page) sqlQuery.page = 0;
-				if(!sqlQuery.limit) sqlQuery.limit = 0;
+				var dbkey = queryObj.dbkey;
 
 				if(ctx.params.dbkey && ctx.params.dbkey.length>0) {
 					dbkey = ctx.params.dbkey;
@@ -76,8 +76,8 @@ module.exports = {
 
 				return {
 					"data": dbData,
-					"page": sqlQuery.page,
-					"limit": sqlQuery.limit,
+					"page": queryObj.page,
+					"limit": queryObj.limit,
 				};
 			}
 		},
