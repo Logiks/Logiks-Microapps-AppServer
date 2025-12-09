@@ -85,7 +85,7 @@ module.exports = {
     },
 
     getAppForDomain: async function(serverHost) {
-        var domainInfo = await db_selectQ("appdb", "lgks_domains", "*", {
+        var domainInfo = await _DB.db_selectQ("appdb", "lgks_domains", "*", {
                 domain_host: serverHost,
                 blocked: "false"
             },{});

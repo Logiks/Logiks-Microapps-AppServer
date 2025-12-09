@@ -87,7 +87,7 @@ module.exports = {
                 console.log(dataFields, MISC.generateDefaultDBRecord(ctx, false));
                 //Single Insert
 
-                const insertId = await db_insertQ1("appdb", sqlTable, dataFields);
+                const insertId = await _DB.db_insertQ1("appdb", sqlTable, dataFields);
                 if(!insertId) {
                     throw new LogiksError(
                         "Error creating db record",
@@ -246,7 +246,7 @@ module.exports = {
                     );
                 }
                 
-                const results = await db_updateQ("appdb", sqlTable, dataFields, sqlWhere);
+                const results = await _DB.db_updateQ("appdb", sqlTable, dataFields, sqlWhere);
                 if(!results) {
                     throw new LogiksError(
                         "Error creating db record",
@@ -313,7 +313,7 @@ module.exports = {
                     );
                 }
 
-                const results = await db_updateQ("appdb", sqlTable, _.extend( {"blocked": "true"}, MISC.generateDefaultDBRecord(ctx, true)), sqlWhere);
+                const results = await _DB.db_updateQ("appdb", sqlTable, _.extend( {"blocked": "true"}, MISC.generateDefaultDBRecord(ctx, true)), sqlWhere);
 
                 return {
                     "status": "success",

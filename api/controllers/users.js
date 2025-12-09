@@ -11,12 +11,12 @@ module.exports = {
 
     listUsers: async function(whereCond, callback) {
         if(whereCond==null) whereCond = {};
-        const userInfo = await  db_selectQ("appdb", "lgks_users", "*", whereCond, {});
+        const userInfo = await  _DB.db_selectQ("appdb", "lgks_users", "*", whereCond, {});
         return userInfo;
     },
 
     getUserInfo: async function(userid, callback) {
-        const userInfo = await db_selectQ("appdb", "lgks_users", "*", {
+        const userInfo = await _DB.db_selectQ("appdb", "lgks_users", "*", {
                 userid: userid,
             },{});
         return userInfo;
@@ -26,7 +26,7 @@ module.exports = {
         //var final_password = md5(CONFIG.ENC_SALT+""+password);
         // console.log("verifyUser", userid, password);
 
-        var userInfo = await db_selectQ("appdb", "lgks_users,lgks_privileges,lgks_access,lgks_users_group", 
+        var userInfo = await _DB.db_selectQ("appdb", "lgks_users,lgks_privileges,lgks_access,lgks_users_group", 
             "lgks_users.*,lgks_privileges.name as privilege_name, lgks_access.sites as scope_sites,lgks_users_group.bank,lgks_users_group.branch,lgks_users_group.state,lgks_users_group.zone,lgks_users_group.area", {
                 "userid": userid,
                 "lgks_users.blocked": 'false',
@@ -70,7 +70,7 @@ module.exports = {
     },
 
     getUserInfoById: async function(userid, callback) {
-        var userInfo = await db_selectQ("appdb", "lgks_users,lgks_privileges,lgks_access,lgks_users_group", 
+        var userInfo = await _DB.db_selectQ("appdb", "lgks_users,lgks_privileges,lgks_access,lgks_users_group", 
             "lgks_users.*,lgks_privileges.name as privilege_name, lgks_access.sites as scope_sites,lgks_users_group.bank,lgks_users_group.branch,lgks_users_group.state,lgks_users_group.zone,lgks_users_group.area", {
                 "userid": userid,
                 "lgks_users.blocked": 'false',

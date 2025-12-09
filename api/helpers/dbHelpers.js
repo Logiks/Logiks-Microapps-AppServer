@@ -42,7 +42,7 @@ global.createDBInsertFromRequest = function(ctx, input_fields, db_table, msgTitl
         //Prepare default fields like GUID, created_at, updated_at etc
         insertData = _.extend(insertData, MISC.generateDefaultDBRecord(ctx, false));
         // console.log("Insert Data", msgTitle, insertData);
-        const insertId = db_insertQ1("appdb", db_table, insertData);
+        const insertId = _DB.db_insertQ1("appdb", db_table, insertData);
         if(insertId) callback({ id: insertId, message: `${msgTitle} created` });
         else callback(false, "Error creating record");
     } catch (err) {
@@ -86,7 +86,7 @@ global.createDBUpdateFromRequest = function(ctx, input_fields, db_table, whereLo
         //Prepare default fields like updated_at etc
         updateData = _.extend(updateData, MISC.generateDefaultDBRecord(ctx, true));
         // console.log("Update Data", msgTitle, updateData);
-        db_updateQ("appdb", db_table, updateData, whereLogic, (ans, errCode, errMessage)=>{
+        _DB.db_updateQ("appdb", db_table, updateData, whereLogic, (ans, errCode, errMessage)=>{
                 if(ans)
                     callback({ status: ans, message: `${msgTitle} updated`, id: whereLogic.id });
                 else
@@ -103,7 +103,7 @@ global.createDBDeleteFromRequest = function(ctx, db_table, whereLogic, msgTitle,
         //Prepare default fields like updated_at etc
         var updateData = _.extend({blocked:'true'}, MISC.generateDefaultDBRecord(ctx, true));
         // console.log("Delete Data", msgTitle, updateData);
-        db_updateQ("appdb", db_table, updateData, whereLogic, (ans, response)=>{
+        _DB.db_updateQ("appdb", db_table, updateData, whereLogic, (ans, response)=>{
                 callback({ status: ans, message: `${msgTitle} deleted`, id: whereLogic.id });
             });
     } catch (err) {

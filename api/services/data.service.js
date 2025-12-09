@@ -12,7 +12,7 @@ module.exports = {
 				path: "/"
 			},
 			async handler(ctx) {
-				var data = await db_selectQ("appdb", "do_lists", "groupid, count(*) as count", {
+				var data = await _DB.db_selectQ("appdb", "do_lists", "groupid, count(*) as count", {
 					"guid": [["global", ctx.meta.user.guid], "IN"],
 					"blocked": "false"
 				}, {}, "GROUP BY groupid ORDER BY sortorder");
@@ -28,7 +28,7 @@ module.exports = {
 				fullPath: "/api/data/:groupid"
 			},
 			async handler(ctx) {
-				var data = await db_selectQ("appdb", "do_lists", cols, {
+				var data = await _DB.db_selectQ("appdb", "do_lists", cols, {
 					"guid": [["global", ctx.meta.user.guid], "IN"],
 					"blocked": "false",
 					"groupid": ctx.params.groupid
@@ -51,7 +51,7 @@ module.exports = {
 			async handler(ctx) {
 				if(!ctx.params.filter) ctx.params.filter = {};
 
-				var data = await db_selectQ("appdb", "do_lists", cols, _.extend({},ctx.params.filter, {
+				var data = await _DB.db_selectQ("appdb", "do_lists", cols, _.extend({},ctx.params.filter, {
 					"guid": [["global", ctx.meta.user.guid], "IN"],
 					"blocked": "false",
 					"groupid": ctx.params.groupid
@@ -73,7 +73,7 @@ module.exports = {
 			async handler(ctx) {
 				if(!ctx.params.filter) ctx.params.filter = {};
 
-				var data = await db_selectQ("appdb", "do_lists", cols, _.extend({},ctx.params.filter, {
+				var data = await _DB.db_selectQ("appdb", "do_lists", cols, _.extend({},ctx.params.filter, {
 					"guid": [["global", ctx.meta.user.guid], "IN"],
 					"blocked": "false",
 					"groupid": [ctx.params.groupids, "IN"]

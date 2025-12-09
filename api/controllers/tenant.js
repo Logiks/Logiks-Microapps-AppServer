@@ -14,7 +14,7 @@ module.exports = {
             "blocked": "false",
             "guid": guid
         };
-        var data = await db_selectQ("appdb", "lgks_tenants", "*", whereCond, {});
+        var data = await _DB.db_selectQ("appdb", "lgks_tenants", "*", whereCond, {});
 
         if(!data || data.length<=0) return false;
 

@@ -32,7 +32,7 @@ module.exports = {
 			async handler(ctx) {
 				const w = ctx.params;
 
-				console.log("NEW_SERVICE_WORKER", w.nodeID, w);
+				// console.log("NEW_SERVICE_WORKER", w.nodeID, w);
 
                 SERVICE_WORKERS.set(w.nodeID, {
 					...w,
@@ -129,6 +129,47 @@ module.exports = {
 				this.activeColor = ctx.params.color;
 				LOGGER.get("server").warn("🔁 Active worker color switched to", this.activeColor);
 				return { activeColor: this.activeColor };
+			}
+		},
+
+		helpers: {
+			params: {
+				cmd: "string",
+				params: "array"
+			},
+			handler: async (ctx) => {
+				switch(ctx.params.cmd) {
+					case "list_helpers":
+						return {
+							"status": "success",
+							"data": _ENV.HELPERS
+						};
+						break;
+					default:
+						const cmd = ctx.params.cmd.split(".");
+						const params = ctx.params.params;
+						if(_ENV.HELPERS.indexOf(cmd[0].toUpperCase())<0) {
+							return {
+								"status": "error",
+								"message": "Helper Not Found",
+								"errors": ["Helper not found"]
+							};
+						}
+						if(!global[cmd[0].toUpperCase()][cmd[1]]) {
+							return {
+								"status": "error",
+								"message": "Helper Does not Contain the required method",
+								"errors": ["Mtehod not found"]
+							};
+						}
+						const data = await global[cmd[0].toUpperCase()][cmd[1]](...params);
+
+						// console.log(cmd, params);
+						return {
+							"status": "success",
+							"data": data
+						};
+				}
 			}
 		}
 	}

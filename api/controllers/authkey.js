@@ -14,7 +14,7 @@ module.exports = {
             "blocked": "false",
             "auth_key": apiKey
         };
-        var data = await db_selectQ("appdb", "lgks_apikeys", "*", whereCond, {});
+        var data = await _DB.db_selectQ("appdb", "lgks_apikeys", "*", whereCond, {});
         
         if(!data || data.length<=0) return false;
 

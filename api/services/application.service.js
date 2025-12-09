@@ -52,8 +52,8 @@ module.exports = {
 				if(ctx.params.module && ctx.params.module!="*") {
 					whereCond["module_name"] = ctx.params.module;
 				}
-				var data1 = await db_selectQ("appdb", "sys_settings", "module_name, setting_name, setting_value, setting_params", whereCond, {});
-				var data2 = await db_selectQ("appdb", "user_settings", "module_name, setting_name, setting_value, setting_params", whereCond, {});
+				var data1 = await _DB.db_selectQ("appdb", "sys_settings", "module_name, setting_name, setting_value, setting_params", whereCond, {});
+				var data2 = await _DB.db_selectQ("appdb", "user_settings", "module_name, setting_name, setting_value, setting_params", whereCond, {});
 
 				return _.extend({}, data1, data2);
 			}

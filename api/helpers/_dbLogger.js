@@ -9,7 +9,7 @@ module.exports = {
 	initialize : function() {},
 
     _log : async function(dbTable, payload, appID) {
-        return await db_insertQ1(DBLOGGER_KEY, `log_${dbTable}`, _.extend({
+        return await _DB.db_insertQ1(DBLOGGER_KEY, `log_${dbTable}`, _.extend({
                 "appid": appID
             }, MISC.generateDefaultDBRecord(payload, false)));
     }

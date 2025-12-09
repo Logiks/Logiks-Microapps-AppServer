@@ -1,6 +1,7 @@
 //Misc Helper Functions
 
 const sha1 = require('sha1');
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = {
 
@@ -51,7 +52,7 @@ module.exports = {
   },
 
   generateUUID : function(prefix,n) {
-    //Math.ceil(Math.random()*10000000)+"-"+uuid();
+    //Math.ceil(Math.random()*10000000)+"-"+uuidv4();
     //return Math.random(1000000);
     if(n==null) n = 8;
     var add = 1, max = 12 - add;
@@ -64,7 +65,7 @@ module.exports = {
     var min = max / 10; // Math.pow(10, n) basically 
     var number = Math.floor(Math.random() * (max - min + 1)) + min;
 
-    return md5(prefix+("" + number).substring(add)+uuid()+moment().format("Y-M-DTHH:mm:ss"));
+    return prefix+sha1(("" + number).substring(add)+uuidv4()+moment().format("Y-M-DTHH:mm:ss"));
   },
 
   timeStamp : function() {

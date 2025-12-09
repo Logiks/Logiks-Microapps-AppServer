@@ -83,7 +83,7 @@ module.exports = {
     ------------------------------------------ */
     exportSchema : async function(dbKey, writeFile = true) {
         try {
-            const mysqlConnection = db_connection(dbKey).promise();
+            const mysqlConnection = _DB.db_connection(dbKey).promise();
 
             const schema = {};
             const [tables] = await mysqlConnection.query(`SHOW TABLES`);
