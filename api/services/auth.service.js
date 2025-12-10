@@ -10,8 +10,6 @@ const REFRESH_TOKEN_TTL = Number(CONFIG.authjwt.refresh_token_ttl || 7 * 24 * 36
 // Redis DB for auth-related state (you can use a dedicated DB index)
 const authRedis = _CACHE.getRedisInstance();
 
-const S2STOKENS = {};
-const TLTOKENS = {};
 const S2STOKENS_MAX = 10;
 const TLTOKENS_MAX = 10;
 
@@ -504,8 +502,15 @@ module.exports = {
 				// For S2S token, we might just check against a known list or database
 				// Here, we just accept any token for demonstration
 				const s2stoken = ctx.params.token;
+				const key = `S2STOKENS:${s2stoken}`;
 
-				if (!S2STOKENS[s2stoken]) {
+				let stored = await authRedis.get(key);
+
+				try {
+					stored = JSON.parse(stored);
+				} catch(e) {}
+
+				if (!stored) {
 					throw new LogiksError(
 						"Invalid S2S token",
 						401,
@@ -513,9 +518,17 @@ module.exports = {
 					);
 				}
 				
-				S2STOKENS[s2stoken].counter += 1;
-				if(S2STOKENS[s2stoken].counter >= S2STOKENS_MAX) {
-					delete S2STOKENS[s2stoken];
+				stored.counter += 1;
+
+				await authRedis.set(
+					key,
+					JSON.stringify(stored),
+					"EX",
+					300 // 5 minutes
+				);
+
+				if(stored.counter >= S2STOKENS_MAX) {
+					await authRedis.del(key);
 
 					throw new LogiksError(
 						"S2S Token can be used only for server-to-server communication for limited API access",
@@ -524,7 +537,7 @@ module.exports = {
 					);
 				}
 				
-				return S2STOKENS[s2stoken]
+				return stored;
 			}
 		},
 		//Verify Generated S2S Token for 1 time use
@@ -536,8 +549,15 @@ module.exports = {
 				// For S2S token, we might just check against a known list or database
 				// Here, we just accept any token for demonstration
 				const tltoken = ctx.params.token;
+				const key = `TLTOKENS:${tltoken}`;
 
-				if (!TLTOKENS[tltoken]) {
+				let stored = await authRedis.get(key);
+
+				try {
+					stored = JSON.parse(stored);
+				} catch(e) {}
+
+				if (!stored) {
 					throw new LogiksError(
 						"Invalid TL token",
 						401,
@@ -545,9 +565,17 @@ module.exports = {
 					);
 				}
 				
-				TLTOKENS[tltoken].counter += 1;
-				if(TLTOKENS[tltoken].counter >= TLTOKENS_MAX) {
-					delete TLTOKENS[tltoken];
+				stored.counter += 1;
+
+				await authRedis.set(
+					key,
+					JSON.stringify(stored),
+					"EX",
+					300 // 5 minutes
+				);
+
+				if(stored.counter >= TLTOKENS_MAX) {
+					await authRedis.del(key);
 
 					throw new LogiksError(
 						"TL Token can be used only for server-to-server communication for limited API access",
@@ -556,7 +584,7 @@ module.exports = {
 					);
 				}
 				
-				return TLTOKENS[tltoken]
+				return stored;
 			}
 		}
 	},
@@ -587,7 +615,7 @@ module.exports = {
 
 			const s2stoken = UNIQUEID.generate(12);
 
-			S2STOKENS[s2stoken] = {
+			const tempObj = {
 				appId: ctx.params.appid,
 				accessToken: accessToken,
 				expiresAt: Date.now() + (ACCESS_TOKEN_TTL * 1000),
@@ -596,6 +624,13 @@ module.exports = {
 				deviceType: "s2s",
 				counter: 0
 			};
+
+			await authRedis.set(
+					`S2STOKENS:${s2stoken}`,
+					JSON.stringify(tempObj),
+					"EX",
+					300 // 5 minutes
+				);
 
 			return {
 				"status": "success",
@@ -633,7 +668,7 @@ module.exports = {
 
 			const tltoken = UNIQUEID.generate(12);
 
-			TLTOKENS[tltoken] = {
+			const tempObj = {
 				appId: ctx.params.appid,
 				accessToken: accessToken,
 				expiresAt: Date.now() + (ACCESS_TOKEN_TTL * 1000),
@@ -642,6 +677,13 @@ module.exports = {
 				deviceType: "s2s",
 				counter: 0
 			};
+
+			await authRedis.set(
+					`TLTOKENS:${tltoken}`,
+					JSON.stringify(tempObj),
+					"EX",
+					300 // 5 minutes
+				);
 
 			return {
 				"status": "success",
