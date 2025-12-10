@@ -219,8 +219,15 @@ module.exports = {
                 return res.status(400).json({ error: "Destructive SQL detected — aborted" });
             }
 
+            const queries = splitSQLStatements(sql);
+
             const conn = await mysqlConnection.getConnection();
-            await conn.query(sql);
+            
+            //await conn.query(sql);
+            for (const query of queries) {
+                await conn.query(query);
+            }
+
             conn.release();
 
             return { success: true, statements: sql.split(";\n").length };
