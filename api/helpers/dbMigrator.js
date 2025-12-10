@@ -166,11 +166,11 @@ module.exports = {
             if(writeFile) {
                 const filename = `migration_${CONFIG.BUILD}.sql`;//${Date.now()}
                 const filepath = path.join(SCHEMA_DIR, filename);
-                await fs1.writeFile(filepath, sql.join("\n"));
+                await fs1.writeFile(filepath, sql.join(""));
 
                 return { success: true, file: filename, statements: sql.length };
             } else {
-                return { success: true, schema: sql.join("\n"), statements: sql.length };
+                return { success: true, schema: sql.join(""), statements: sql.length };
             }
         } catch (err) {
             console.error(err);
