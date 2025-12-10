@@ -7,6 +7,8 @@ const settingsCache = _CACHE.getCacheMap("SETTINGSCACHE");
 const pageCache = _CACHE.getCacheMap("APPLICATION_PAGECACHE");
 const componentCache = _CACHE.getCacheMap("APPLICATION_COMPONENTCACHE");
 
+const DISABLE_CACHE = true;
+
 module.exports = {
     name: "application",
 
@@ -202,6 +204,8 @@ module.exports = {
 				fullPath: "/api/page/:pageid"
 			},
 			async handler(ctx) {
+				if(DISABLE_CACHE) ctx.params.recache = true;
+
 				const appInfo = ctx.meta.appInfo;
 				const userInfo = ctx.meta.user;
 				const pageID = ctx.params.pageid;
@@ -216,6 +220,10 @@ module.exports = {
 				}
 
 				const pageFile = `misc/apps/${ctx.meta.appInfo.appid}/pages/${ctx.params.pageid}.json`;
+
+				if(ctx.params.recache===true) {
+					if(pageCache[pageFile]) delete pageCache[pageFile];
+				}
 
 				if(pageCache[pageFile]) return pageCache[pageFile].data;
 
@@ -247,6 +255,8 @@ module.exports = {
 				fullPath: "/api/component/:compid"
 			},
 			async handler(ctx) {
+				if(DISABLE_CACHE) ctx.params.recache = true;
+				
 				const appInfo = ctx.meta.appInfo;
 				const userInfo = ctx.meta.user;
 
@@ -282,6 +292,8 @@ module.exports = {
 }
 
 async function loadTheme(themeId) {
+	if(DISABLE_CACHE) return null;
+
 	const themeFile = path.resolve(`misc/themes/${themeId}/style.css`);
 
 	try {

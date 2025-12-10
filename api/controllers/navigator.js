@@ -3,8 +3,9 @@
  * 
  * */
 
-const NAVIGATOR_CACHE = _CACHE.getCacheMap("NAVIGATORCACHE");
+const NAVIGATOR_CACHE = {};//_CACHE.getCacheMap("NAVIGATORCACHE");
 //_CACHE.saveCacheMap("NAVIGATORCACHE", NAVIGATOR_CACHE);
+//if(DISABLE_CACHE) ctx.params.recache = true;
 
 module.exports = {
 
@@ -36,6 +37,8 @@ module.exports = {
             NAVIGATOR_CACHE[appID][navID] = _.extend(NAVIGATOR_CACHE[appID][navID], menuItems);
         }
 
+        _CACHE.saveCacheMap("NAVIGATOR_CACHE", NAVIGATOR_CACHE);
+
         return true;
     },
 
@@ -47,6 +50,8 @@ module.exports = {
                 const menuTempObj = await loadAllJsonFromFolder(appMenuDir);
 
                 NAVIGATOR_CACHE[appID][navID] = menuTempObj;
+
+                _CACHE.saveCacheMap("NAVIGATOR_CACHE", NAVIGATOR_CACHE);
             } else {
                 NAVIGATOR_CACHE[appID][navID] = [];
             }

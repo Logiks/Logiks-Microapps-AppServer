@@ -19,6 +19,8 @@ const mimeMap = {
 	// "reports", "forms", "infoviews", "dashboards", "search", "charts"
 };
 
+const DISABLE_CACHE = true;
+
 module.exports = {
 	name: "modules",
 
@@ -29,6 +31,8 @@ module.exports = {
 				fullPath: "/api/modules/:module/:item?"///:action/:item?
 			},
 			async handler(ctx) {
+				if(DISABLE_CACHE) ctx.params.recache = true;
+
 				const moduleName = ctx.params.module;
 				var item = ctx.params.item.split(".");
 				
@@ -105,6 +109,8 @@ module.exports = {
 				fullPath: "/api/modules/:module/component/:item?"
 			},
 			async handler(ctx) {
+				if(DISABLE_CACHE) ctx.params.recache = true;
+				
 				const moduleName = ctx.params.module;
 				var fileName = ctx.params.item;
 				
