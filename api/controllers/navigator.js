@@ -66,7 +66,7 @@ module.exports = {
             }
 
             if(a.privilege) {
-                a.privilege = a.privilege.split(",");
+                if(typeof a.privilege == "string") a.privilege = a.privilege.split(",");
                 // console.log(a.title, a.privilege);
                 if(!(a.privilege.indexOf("*")>=0 || a.privilege.indexOf(userInfo.privilege)>=0 || a.privilege.indexOf(userInfo.userId)>=0)) {
                     return false;
