@@ -310,7 +310,7 @@ async function loadTheme(themeId) {
 
 		_CACHE.saveCacheMap("THEMECACHE", themeCache);
 
-		return themeCache.get(themeId);
+		return themeCache[themeId];
 	} catch (err) {
 		console.log(err);
 		return null;
