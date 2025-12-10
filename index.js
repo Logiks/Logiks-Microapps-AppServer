@@ -55,6 +55,7 @@ LOGGER.preinitialze();
 
 global.BASEAPP = require('./api/baseapp');
 const SERVER = require('./api/server');
+global.SERVER = SERVER;
 
 async function main() {
     var tempConfig = {};

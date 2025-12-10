@@ -131,6 +131,7 @@ module.exports = {
 					};
 				_CACHE.saveCacheMap("MODULES_COMPONENT_CACHE", COMPONENT_CACHE);
 
+				// return Readable.from(fileContent);
 				return fileContent;
 			}
 		},

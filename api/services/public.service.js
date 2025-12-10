@@ -20,7 +20,7 @@ module.exports = {
 		health: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/health"
+				fullPath: "/health"
 			},
 			handler() {
 				return {

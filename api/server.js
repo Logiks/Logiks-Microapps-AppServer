@@ -54,10 +54,17 @@ class LogiksError extends MoleculerError {
 }
 global.LogiksError = LogiksError;
 
+let MAINBROKER = null;
+
 // -------------------------
 // SERVER START
 // -------------------------
 module.exports = {
+
+	getBroker: function() {
+		return MAINBROKER;
+	},
+
 	start: async function startServer() {
 		try {
 			// -------------------------
@@ -69,8 +76,11 @@ module.exports = {
 				console.error("❌ Rate-limit Redis error:", err);
 			});
 
-			const broker = new ServiceBroker({
-				nodeID: process.env.SERVER_ID || os.hostname(),
+			// const nodeID = (process.env.SERVER_ID || os.hostname())+`_${UNIQUEID.generate(8)}`;
+			// console.log("NODEID", nodeID);
+
+			MAINBROKER = new ServiceBroker({
+				nodeID: `gateway-${process.env.SERVER_ID}-${os.hostname()}-${process.pid}`,
 				namespace: process.env.NAMESPACE || "default",
 				transporter: process.env.TRANSPORTER,
 				// validator: v,
@@ -109,6 +119,7 @@ module.exports = {
 					concurrency: 10,
 					maxQueueSize: 100
 				},
+				metricsRate: 1,
 				metrics: true,
 				statistics: true,
 				heartbeatInterval: 10,
@@ -172,7 +183,7 @@ module.exports = {
 			// -------------------------
 			// API GATEWAY SERVICE
 			// -------------------------
-			broker.createService({
+			MAINBROKER.createService({
 				name: `${process.env.SERVER_ID}_MAIN`,
 				mixins: [ApiService],
 
@@ -303,7 +314,27 @@ module.exports = {
 								// }
 							// },
 
+							onAfterCall(ctx, route, req, res, data) {
+								try {
+									const start = ctx.meta.__start || Date.now();
+									const duration = Date.now() - start;
+
+									ctx.broker.emit("system.request_completed", {
+										method: req.method,
+										path: req.url,
+										status: res?.statusCode,
+										duration
+									});
+								} catch (err) {
+									this.logger.error("onAfterCall error:", err);
+								}
+
+								return data;
+							},
+
 							onBeforeCall: async function (ctx, route, req, res) {
+								ctx.meta.__start = Date.now();
+
 								//console.log("REQUEST_PUBLIC", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
 								
 								//res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
@@ -411,8 +442,28 @@ module.exports = {
 							// 	origin: "*",
 							// 	credentials: true
 							// },
+
+							onAfterCall(ctx, route, req, res, data) {
+								try {
+									const start = ctx.meta.__start || Date.now();
+									const duration = Date.now() - start;
+
+									ctx.broker.emit("system.request_completed", {
+										method: req.method,
+										path: req.url,
+										status: res?.statusCode,
+										duration
+									});
+								} catch (err) {
+									this.logger.error("onAfterCall error:", err);
+								}
+
+								return data;
+							},
 							
 							onBeforeCall: async function (ctx, route, req, res) {
+								ctx.meta.__start = Date.now();
+
 								console.log("REQUEST_PRIVATE", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
 								
 								if (req.method === "GET" && req.body && Object.keys(req.body).length > 0) {
@@ -744,8 +795,8 @@ module.exports = {
 			});
 
 			setInterval(() => {
-				//broker.metrics && broker.metrics.clean();
-				broker.ping().then(res => broker.logger.info(res));
+				//MAINBROKER.metrics && MAINBROKER.metrics.clean();
+				MAINBROKER.ping().then(res => MAINBROKER.logger.info(res));
 			}, 5 * 60 * 1000);
 
 			// -------------------------
@@ -758,7 +809,7 @@ module.exports = {
 					if (file.endsWith(".js")) {
 						const filePath = path.join(servicesPath, file);
 						try {
-							broker.loadService(filePath);
+							MAINBROKER.loadService(filePath);
 							LOGGER.get("server").info(`Loaded service ${file}`);
 						} catch (err) {
 							LOGGER.get("server").error(`Failed loading service ${file}`, { error: err });
@@ -776,7 +827,7 @@ module.exports = {
 			const shutdown = async () => {
 				LOGGER.get("server").info("Graceful shutdown initiated...");
 				try {
-					await broker.stop();
+					await MAINBROKER.stop();
 					LOGGER.get("server").info("Broker stopped cleanly");
 					process.exit(0);
 				} catch (err) {
@@ -796,7 +847,7 @@ module.exports = {
 			// -------------------------
 			// START BROKER
 			// -------------------------
-			await broker.start();
+			await MAINBROKER.start();
 			LOGGER.get("server").info("AppServer server startup complete", {
 				port: process.env.PORT || 3000
 			});

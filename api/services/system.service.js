@@ -3,6 +3,8 @@
 // In-memory worker registry (use Redis/DB in prod if needed)
 const SERVICE_WORKERS = new Map();
 
+const ROUTE_MAP = {};
+
 module.exports = {
 	name: "system",
 
@@ -42,7 +44,7 @@ module.exports = {
 
 				LOGGER.get("server").info("📌 Worker registered", w);
 
-				// ✅ Example tasks you may perform here:
+				// Example tasks you may perform here:
 				// ----------------------------------------
 				// 1. Run DB migrations
 				// await this.broker.call("db.migrate");
@@ -72,7 +74,7 @@ module.exports = {
 			}
 		},
         /**
-		 * ✅ Worker heartbeat
+		 * Worker heartbeat
 		 */
 		workerHeartbeat: {
 			params: {
@@ -93,7 +95,7 @@ module.exports = {
 		},
 
 		/**
-		 * ✅ Drain a worker before shutdown (rolling restart)
+		 * Drain a worker before shutdown (rolling restart)
 		 */
 		drainWorker: {
 			params: {
@@ -115,7 +117,7 @@ module.exports = {
 		},
 
 		/**
-		 * ✅ Blue/Green switch — route traffic only to this color
+		 * Blue/Green switch — route traffic only to this color
 		 */
 		switchActiveColor: {
 			rest: {
@@ -171,6 +173,60 @@ module.exports = {
 						};
 				}
 			}
+		},
+
+
+
+		//Private Function
+		selfRestart() {
+			this.logger.warn(`SELF RESTART triggered on ${this.broker.nodeID}`);
+
+			setTimeout(() => {
+				// SAFEST METHOD — Let PM2 restart it
+				process.exit(0);
+
+				// Or replace with a specific PM2 restart:
+				// exec(`pm2 restart moleculer-gateway`);
+			}, 500);
+
+			return {
+				node: this.broker.nodeID,
+				status: "restarting"
+			};
+		},
+
+		routeStatsSummary() {
+			const result = {};
+
+			for (const [route, s] of Object.entries(ROUTE_MAP)) {
+				result[route] = {
+					count: s.count,
+					avgMs: Number((s.total / s.count).toFixed(2)),
+					maxMs: s.max
+				};
+			}
+
+			return result;
 		}
-	}
+	},
+
+	events: {
+		"system.request_completed"(data) {
+			const key = `${data.method} ${data.path}`;
+			// console.log("API REQUEST STATS", key, data);
+
+			if (!ROUTE_MAP[key]) {
+				ROUTE_MAP[key] = {
+					count: 0,
+					total: 0,
+					max: 0
+				};
+			}
+
+			const stats = ROUTE_MAP[key];
+			stats.count++;
+			stats.total += data.duration;
+			stats.max = Math.max(stats.max, data.duration);
+		}
+	},
 };
