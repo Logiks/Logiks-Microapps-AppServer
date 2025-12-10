@@ -24,7 +24,7 @@ module.exports = {
 				const sqlQuery = QUERY.parseQuery(ctx.params.query, ctx.params.filter)
 				const dbkey = sqlQuery.dbkey?sqlQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
 				
-				var dbData = await db_query(dbkey, sqlQuery, {});
+				var dbData = await _DB.db_query(dbkey, sqlQuery, {});
 
 				if(!dbData) dbData = [];
 
@@ -70,7 +70,7 @@ module.exports = {
 				}
 				if(!dbkey) dbkey = "appdb";
 
-				var dbData = await db_query(dbkey, sqlQuery, {});
+				var dbData = await _DB.db_query(dbkey, sqlQuery, {});
 
 				if(!dbData) dbData = [];
 

@@ -62,5 +62,27 @@ module.exports = {
 			"status": validation.passes(),
 			"errors": validation.errors.all()
 		};
+	},
+
+	listRules: async function(filter) {
+		if(!filter) filter = {};
+        
+        var data = await _DB.db_selectQ("appdb", "log_validationrules", "*", _.extend({
+                blocked: "false",
+                // rulecode: ruleID
+            }, filter),{});
+        if(!data) data = [];
+        
+		return data;
+	},
+
+	processRule: async function(ruleID, dataFields) {
+		var data = await _DB.db_selectQ("appdb", "log_validationrules", "*", _.extend({
+                blocked: "false",
+                rulecode: ruleID
+            }, filter),{});
+		if(!data) return false;
+		
+		return this.validateRule(dataFields, data[0].validation_rules);
 	}
 }
