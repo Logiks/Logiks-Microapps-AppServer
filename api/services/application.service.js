@@ -111,6 +111,7 @@ module.exports = {
 						"default";
 
 				let themeData = themeCache[themeId];
+				if(DISABLE_CACHE) themeData = null;
 
 				if (!themeData) {
 					themeData = await loadTheme(themeId);
@@ -292,8 +293,6 @@ module.exports = {
 }
 
 async function loadTheme(themeId) {
-	if(DISABLE_CACHE) return null;
-
 	const themeFile = path.resolve(`misc/themes/${themeId}/style.css`);
 
 	try {
