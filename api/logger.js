@@ -135,8 +135,7 @@ module.exports = {
     if (logKey == null) logKey = "default";
     if (logLevel == null) logLevel = "info";
 
-    const logControl =
-      this.LOGGERS[logKey] || this.LOGGERS["default"];
+    const logControl = this.LOGGERS[logKey] || this.LOGGERS["default"];
 
     if (typeof logObj === "string") {
       logObj = { msg: logObj };

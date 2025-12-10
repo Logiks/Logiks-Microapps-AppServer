@@ -155,12 +155,7 @@ module.exports = {
                 // New column added
                 if (change.kind === "N" && change.path.includes("columns")) {
                 const col = change.rhs;
-                sql.push(`
-                    ALTER TABLE ${table} 
-                    ADD COLUMN ${column} ${col.type} 
-                    ${col.nullable ? "" : "NOT NULL"} 
-                    ${col.default !== null ? `DEFAULT ${col.default}` : ""};
-                `);
+                sql.push(`ALTER TABLE ${table} ADD COLUMN ${column} ${col.type} ${col.nullable ? "" : "NOT NULL"} ${col.default !== null ? `DEFAULT ${col.default}` : ""};`);
                 }
             }
             if(writeFile) {

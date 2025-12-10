@@ -7,8 +7,6 @@ const settingsCache = _CACHE.getCacheMap("SETTINGSCACHE");
 const pageCache = _CACHE.getCacheMap("APPLICATION_PAGECACHE");
 const componentCache = _CACHE.getCacheMap("APPLICATION_COMPONENTCACHE");
 
-const DISABLE_CACHE = true;
-
 module.exports = {
     name: "application",
 
@@ -111,7 +109,7 @@ module.exports = {
 						"default";
 
 				let themeData = themeCache[themeId];
-				if(DISABLE_CACHE) themeData = null;
+				if(CONFIG.disable_cache.application) themeData = null;
 
 				if (!themeData) {
 					themeData = await loadTheme(themeId);
@@ -205,7 +203,7 @@ module.exports = {
 				fullPath: "/api/page/:pageid"
 			},
 			async handler(ctx) {
-				if(DISABLE_CACHE) ctx.params.recache = true;
+				if(CONFIG.disable_cache.application) ctx.params.recache = true;
 
 				const appInfo = ctx.meta.appInfo;
 				const userInfo = ctx.meta.user;
@@ -256,7 +254,7 @@ module.exports = {
 				fullPath: "/api/component/:compid"
 			},
 			async handler(ctx) {
-				if(DISABLE_CACHE) ctx.params.recache = true;
+				if(CONFIG.disable_cache.application) ctx.params.recache = true;
 				
 				const appInfo = ctx.meta.appInfo;
 				const userInfo = ctx.meta.user;

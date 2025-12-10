@@ -8,6 +8,11 @@
     "intercept_axios_response": false,
     "default_lang": "en-gb",
     "base_url": "http://localhost:9999/",
+    "disable_cache": {
+        "application": false,
+        "modules": false,
+        "navigator": false
+    },
     "noauth": [
         "auth.*",
         "public.*",

@@ -5,7 +5,7 @@
 
 const NAVIGATOR_CACHE = {};//_CACHE.getCacheMap("NAVIGATORCACHE");
 //_CACHE.saveCacheMap("NAVIGATORCACHE", NAVIGATOR_CACHE);
-//if(DISABLE_CACHE) ctx.params.recache = true;
+//if(CONFIG.disable_cache.navigator) ctx.params.recache = true;
 
 module.exports = {
 

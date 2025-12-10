@@ -25,10 +25,11 @@ module.exports = {
 				fullPath: "/api/rules/:ruleId"
 			},
             params: {
-                "fields": "object"
+                "fields": "object",
+                // "addonFacts": "object",
             },
 			async handler(ctx) {
-                const results = await RULEENGINE.processRule(ctx.params.ruleId, ctx.params.fields);
+                const results = await RULEENGINE.processRule(ctx.params.ruleId, ctx.params.fields, ctx.params.addonFacts);
                 return results;
             }
         },
@@ -51,11 +52,25 @@ module.exports = {
 				fullPath: "/api/log/:logId"
 			},
             params: {
-                "level": "string",
+                // "type": "string",//local, db
                 "group": "string",
                 "data": "object"
             },
 			async handler(ctx) {
+                if(!req.params.type || ["local", "db"].indexOf(req.params.type)<0)  req.params.type = "db";
+                if(!req.params.level)  req.params.level = "info";
+
+                const logID = req.params.logId;//"activities"
+                const appID = req.meta.appInfo.appid;
+                const guid = req.meta.user.tenantId;
+                
+                ctx.params.data.guid = guid;
+                ctx.params.data.appid = appID;
+                
+                if(req.params.type=="db")
+                    _DBLOGGER._log(logID, appID, guid, ctx.params.data);
+                else
+                    LOGGER.log(ctx.params.data, logID, req.params.level);
             }
         },
         ctrlcenterGet: {
@@ -77,13 +92,22 @@ module.exports = {
                 return {"status": "success", "data": data[0]};
             }
         },
+        listCacheKey: {
+            rest: {
+				method: "GET",
+				fullPath: "/api/cacheMap"
+			},
+            async handler(ctx) {
+                return {"status": "success", "data": _CACHE.listCacheKeys()};
+            }
+        },
         clearCache: {
             rest: {
 				method: "GET",
-				fullPath: "/api/clearCache/:cacheId?"
+				fullPath: "/api/cacheMap/clear/:cacheId?"
 			},
             async handler(ctx) {
-                
+                _CACHE.deleteCacheMap(ctx.params.cacheId);
                 return {"status": "success"};
             }
         }

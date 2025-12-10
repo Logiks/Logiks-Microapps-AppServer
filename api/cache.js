@@ -165,6 +165,10 @@ module.exports = {
 		else return {};
 	},
 
+    listCacheKeys: function() {
+        return Object.keys(CACHESTORE_MAP_KEY);
+    },
+
 	saveCacheMap: async function(mapkey, mapData) {
 		
 		CACHESTORE_MAP_KEY[mapkey] = mapData;
