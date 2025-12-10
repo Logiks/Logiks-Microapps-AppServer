@@ -166,11 +166,11 @@ module.exports = {
             if(writeFile) {
                 const filename = `migration_${CONFIG.BUILD}.sql`;//${Date.now()}
                 const filepath = path.join(SCHEMA_DIR, filename);
-                await fs1.writeFile(filepath, sql.join(""));
+                await fs1.writeFile(filepath, sql.join("\n"));
 
                 return { success: true, file: filename, statements: sql.length };
             } else {
-                return { success: true, schema: sql.join(""), statements: sql.length };
+                return { success: true, schema: sql.join("\n"), statements: sql.length };
             }
         } catch (err) {
             console.error(err);
@@ -192,8 +192,15 @@ module.exports = {
                 return res.status(400).json({ error: "Destructive SQL detected — aborted" });
             }
 
+            const queries = splitSQLStatements(sql);
+
             const conn = await mysqlConnection.getConnection();
-            await conn.query(sql);
+
+            //await conn.query(sql);
+            for (const query of queries) {
+                await conn.query(query);
+            }
+            
             conn.release();
 
             return { success: true, file: filename };
@@ -219,6 +226,7 @@ module.exports = {
             return { success: true, statements: sql.split(";\n").length };
         } catch (err) {
             console.error(err);
+            printObj("Probably the ", "red");
             return { success: false, message: err.message };
         }
     }
@@ -233,4 +241,74 @@ function buildCreateTableSQL(table, def) {
     });
 
     return `CREATE TABLE IF NOT EXISTS ${table} (${cols.join(",")});`;
+}
+
+//Safe SQL Splitter (Handles --, #, /* */, and ;)
+function splitSQLStatements(sql) {
+  const statements = [];
+  let current = "";
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+
+  for (let i = 0; i < sql.length; i++) {
+    const char = sql[i];
+    const next = sql[i + 1];
+
+    // Line comment (-- or #)
+    if (!inSingleQuote && !inDoubleQuote && !inBlockComment) {
+      if ((char === "-" && next === "-") || char === "#") {
+        inLineComment = true;
+      }
+    }
+
+    if (inLineComment && char === "\n") {
+      inLineComment = false;
+    }
+
+    // Block comment (/* */)
+    if (!inSingleQuote && !inDoubleQuote && !inLineComment) {
+      if (char === "/" && next === "*") {
+        inBlockComment = true;
+      }
+    }
+
+    if (inBlockComment && char === "*" && next === "/") {
+      inBlockComment = false;
+      i++; // skip /
+      continue;
+    }
+
+    // Track string literals
+    if (!inLineComment && !inBlockComment) {
+      if (char === "'" && !inDoubleQuote) inSingleQuote = !inSingleQuote;
+      if (char === `"` && !inSingleQuote) inDoubleQuote = !inDoubleQuote;
+    }
+
+    // Real statement delimiter
+    if (
+      char === ";" &&
+      !inSingleQuote &&
+      !inDoubleQuote &&
+      !inLineComment &&
+      !inBlockComment
+    ) {
+      if (current.trim()) {
+        statements.push(current.trim());
+      }
+      current = "";
+      continue;
+    }
+
+    if (!inLineComment && !inBlockComment) {
+      current += char;
+    }
+  }
+
+  if (current.trim()) {
+    statements.push(current.trim());
+  }
+
+  return statements;
 }
