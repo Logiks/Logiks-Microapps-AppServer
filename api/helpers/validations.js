@@ -2,6 +2,37 @@
 
 var Validator = require('validatorjs');
 
+Validator.register('nullable', function(value) {
+	return value === null || value === undefined || value === '';
+	}, 'The :attribute may be null.');
+
+Validator.register('mobile', function(value, requirement, attribute) { // requirement parameter defaults to null
+		if(value==null || value.replace(/ /g,"").length!=10) return false;
+		if(isNaN(value) || value.indexOf(" ")!=-1) return false;
+		//if(!(value.charAt(0)=="9" || value.charAt(0)=="8" || value.charAt(0)=="7")) return false;
+		
+		return true;
+	}, 'The :attribute mobile number is not valid');
+
+Validator.register('json', function (value) {
+		// If value is already an object or array, treat as valid
+		if (typeof value === 'object' && value !== null) {
+		return true;
+		}
+		// If value is a string, try parsing
+		if (typeof value === 'string') {
+		try {
+			JSON.parse(value);
+			return true;
+		} catch (e) {
+			return false;
+		}
+		}
+		return false;
+	},
+	'The :attribute field must be valid JSON.'
+);
+
 module.exports = {
 
 	initialize : function() {
@@ -9,32 +40,7 @@ module.exports = {
 		// 	  return value.match(/^\d{3}-\d{3}-\d{4}$/);
 		// 	}, 'The :attribute phone number is not in the format XXX-XXX-XXXX.');
 
-		Validator.register('mobile', function(value, requirement, attribute) { // requirement parameter defaults to null
-			  if(value==null || value.replace(/ /g,"").length!=10) return false;
-			  if(isNaN(value) || value.indexOf(" ")!=-1) return false;
-			  //if(!(value.charAt(0)=="9" || value.charAt(0)=="8" || value.charAt(0)=="7")) return false;
-			  
-			  return true;
-			}, 'The :attribute mobile number is not valid');
-
-		Validator.register('json', function (value) {
-				// If value is already an object or array, treat as valid
-				if (typeof value === 'object' && value !== null) {
-				return true;
-				}
-				// If value is a string, try parsing
-				if (typeof value === 'string') {
-				try {
-					JSON.parse(value);
-					return true;
-				} catch (e) {
-					return false;
-				}
-				}
-				return false;
-			},
-			'The :attribute field must be valid JSON.'
-		);
+		
 
 		//boolean
 
