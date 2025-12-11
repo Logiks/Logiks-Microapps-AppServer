@@ -145,7 +145,7 @@ module.exports = {
 
 		// results = JSON.parse(JSON.stringify(results));
 
-		return dbResponse.results;
+		return dbResponse;
 	},
 
 	db_insertQ1 : async function(dbkey, table, data) {
