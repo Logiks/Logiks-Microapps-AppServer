@@ -12,6 +12,31 @@ module.exports = {
     initialize : async function() {
     },
 
+    getNavigation: async function(appID, navID, userInfo, filter) {
+        if(!NAVIGATOR_CACHE[appID]) NAVIGATOR_CACHE[appID] = {};
+
+        if(!userInfo.privilege) userInfo.privilege = "";
+        if(!userInfo.roles) userInfo.roles = [];
+        if(!userInfo.scopes) userInfo.scopes = {};
+        CONFIG.log_sql = true;
+        if(!filter) filter = {
+            "onmenu": "true",
+            "privilege": [["*", userInfo.privilege, userInfo.userId, userInfo.scopes, ...userInfo.roles.map(a=>`role:${a}`)], "IN"],
+            //"privilege": [["*", ...userInfo.privilege], "IN"],
+        };
+
+        filter[`FIND_IN_SET('${navID}', menuid)`] = "RAW";
+
+        const dbLinks = await _DB.db_selectQ("appdb", "do_links", "*", _.extend({}, filter, {
+            "blocked": "false",
+            "guid": [["global", userInfo.tenantId], "IN"],
+            "site": [["*", appID], "IN"],
+        }), {}, " ORDER BY weight ASC");
+        
+        return dbLinks;
+    },
+
+    //Importing and Manual Adding
     addNavigation: async function(appID, navID, menuItems) {
         if(!Array.isArray(menuItems)) return false;
 
@@ -75,30 +100,6 @@ module.exports = {
         //     return true;
         // });
     },
-
-    getNavigation: async function(appID, navID, userInfo, filter) {
-        if(!NAVIGATOR_CACHE[appID]) NAVIGATOR_CACHE[appID] = {};
-
-        if(!userInfo.privilege) userInfo.privilege = "";
-        if(!userInfo.roles) userInfo.roles = [];
-        if(!userInfo.scopes) userInfo.scopes = {};
-        CONFIG.log_sql = true;
-        if(!filter) filter = {
-            "onmenu": "true",
-            "privilege": [["*", userInfo.privilege, userInfo.userId, userInfo.scopes, ...userInfo.roles.map(a=>`role:${a}`)], "IN"],
-            //"privilege": [["*", ...userInfo.privilege], "IN"],
-        };
-
-        filter[`FIND_IN_SET('${navID}', menuid)`] = "RAW";
-
-        const dbLinks = await _DB.db_selectQ("appdb", "do_links", "*", _.extend({}, filter, {
-            "blocked": "false",
-            "guid": [["global", userInfo.tenantId], "IN"],
-            "site": [["*", appID], "IN"],
-        }), {}, " ORDER BY weight ASC");
-        
-        return dbLinks;
-    }
 }
 
 async function loadMenuFolder(appID, navID) {

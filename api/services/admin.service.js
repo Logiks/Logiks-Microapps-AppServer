@@ -16,6 +16,17 @@ module.exports = {
 	name: "admin",
 
 	actions: {
+		apps: {
+			rest: {
+				method: "POST",
+				path: "/"
+			},
+			params: {},
+			async handler(ctx) {
+				return {"status": "ok"};
+			}
+		},
+
 		//Manage apps
 		apps: {
 			rest: {

@@ -28,7 +28,7 @@ module.exports = {
 			}
 		});
 
-		// db_query("appdb", "SHOW TABLES", {}, function (authInfo) {
+		// this.db_query("appdb", "SHOW TABLES", {}, function (authInfo) {
 		// 	if(!authInfo) {
 		// 		console.error("❌ DB Connetion not found");
 		// 	}
@@ -48,23 +48,35 @@ module.exports = {
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql, params);
 		}
-		const results = await new Promise((resolve, reject) => {
+		const dbResponse = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, params, function(err, results, fields) {
 					if(err) {
-						console.log(err);
-						reject(false, err.code, err.sqlMessage);
+						//// console.log(err, err.code, err.sqlMessage);
+						// console.log(err);
+						resolve({
+							"status": "error", 
+							"err_code": err.code,
+							"err_message": err.sqlMessage
+						});
 					} else if(results.length<=0) {
-						return resolve([]);
+						resolve({
+							"status": "success", 
+							"results": []
+						});
 					} else {
 						results = JSON.parse(JSON.stringify(results));
-						resolve(results);
+						resolve({
+							"status": "success", 
+							"results": results
+						});
 					}
 				});
 		});
-
+		
+		//console.log("results", dbResponse);
 		// results = JSON.parse(JSON.stringify(results));
 
-		return results;
+		return dbResponse;
 	},
 
 	db_selectQ : async function(dbkey, table, columns, where, whereParams, additionalQueryParams) {
@@ -111,21 +123,29 @@ module.exports = {
 			console.log("SQL", sql, whereParams);
 		}
 		
-		const results = await new Promise((resolve, reject) => {
+		const dbResponse = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, whereParams, function(err, results, fields) {
 					if(err) {
-						console.log(err);
-						reject(false, err.code, err.sqlMessage);
+						// console.log(err);
+						// reject(false, err.code, err.sqlMessage);
+						resolve({
+							"status": "error", 
+							"err_code": err.code,
+							"err_message": err.sqlMessage
+						});
 					} else {
 						results = JSON.parse(JSON.stringify(results));
-						resolve(results);
+						resolve({
+							"status": "success", 
+							"results": results
+						});
 					}
 				});
 		});
 
 		// results = JSON.parse(JSON.stringify(results));
 
-		return results;
+		return dbResponse.results;
 	},
 
 	db_insertQ1 : async function(dbkey, table, data) {
@@ -151,10 +171,16 @@ module.exports = {
 		const results = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, vals, function(err, results, fields) {
 					if(err) {
-						console.log(err);
-						reject(false, err.code, err.sqlMessage);
+						resolve({
+							"status": "error", 
+							"err_code": err.code,
+							"err_message": err.sqlMessage
+						});
 					} else {
-						resolve(results.insertId, err);
+						resolve({
+							"status": "success", 
+							"insertId": results.insertId
+						});
 					}
 				});
 		});
@@ -186,10 +212,16 @@ module.exports = {
 		const results = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, [values], function(err, results, fields) {
 					if(err) {
-						console.log(err);
-						reject(false, err.code, err.sqlMessage);
+						resolve({
+							"status": "error", 
+							"err_code": err.code,
+							"err_message": err.sqlMessage
+						});
 					} else {
-						resolve(results);
+						resolve({
+							"status": "success", 
+							"results": results
+						});
 					}
 				});
 		});
@@ -229,10 +261,16 @@ module.exports = {
 		const results = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, function(err, results, fields) {
 					if(err) {
-						console.log(err);
-						reject(false, err.code, err.sqlMessage);
+						resolve({
+							"status": "error", 
+							"err_code": err.code,
+							"err_message": err.sqlMessage
+						});
 					} else {
-						resolve(results);		
+						resolve({
+							"status": "success", 
+							"results": results
+						});		
 					}
 				
 				});
@@ -279,10 +317,16 @@ module.exports = {
 		const results = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, vals, function(err, results, fields) {
 					if(err) {
-						console.log(err);
-						reject(false,err.code,err.sqlMessage);
+						resolve({
+							"status": "error", 
+							"err_code": err.code,
+							"err_message": err.sqlMessage
+						});
 					} else {
-						resolve(results);
+						resolve({
+							"status": "success", 
+							"results": results
+						});
 					}
 				});
 		});

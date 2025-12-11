@@ -87,7 +87,9 @@ module.exports = {
                 console.log(dataFields, MISC.generateDefaultDBRecord(ctx, false));
                 //Single Insert
 
-                const insertId = await _DB.db_insertQ1("appdb", sqlTable, dataFields);
+                const dbResponse = await _DB.db_insertQ1("appdb", sqlTable, dataFields);
+                const insertId = dbResponse.insertId;
+
                 if(!insertId) {
                     throw new LogiksError(
                         "Error creating db record",
@@ -162,12 +164,9 @@ module.exports = {
                     });
 
                     //Bulk Insert
-                    const results = await db_insert_batchQ("appdb", sqlTable, dataFields);
+                    const dbResponse = await db_insert_batchQ("appdb", sqlTable, dataFields);
 
-                    return {
-                        "status": "success",
-                        "results": results
-                    };
+                    return dbResponse;
                 } else {
                     throw new LogiksError(
                         "Fields should be an array of valid data",
@@ -175,6 +174,61 @@ module.exports = {
                         "INVALID_REQUEST"
                     );
                 }
+            }
+        },
+        fetchSingle: {
+            rest: {
+				method: "POST",
+				path: "/fetch"
+			},
+            params: {
+                "refid": "string",
+                "datahash": "string"
+            },
+            async handler(ctx) {
+                const dbOpsID = ctx.params.refid;
+                const dbOpsHash = ctx.params.datahash;
+                var dataFields = ctx.params.fields;
+                const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user);
+
+                if(!jsonQuery) {
+                    throw new LogiksError(
+                        "Provided RefID is invalid",
+                        401,
+                        "INVALID_REQUEST"
+                    );
+                }
+                // if(jsonQuery.operation!="update") {
+                //     throw new LogiksError(
+                //         "Error in selected operation for the RefID",
+                //         401,
+                //         "INVALID_REQUEST",
+                //         jsonQuery.operation
+                //     );
+                // }
+
+                const sqlTable = jsonQuery.source.table;
+                var sqlWhere = jsonQuery.source.where;
+                const sqlFields = jsonQuery.fields;
+                const sqlRefid = jsonQuery.source.refid;
+
+                if(!sqlWhere || Array.isArray(sqlWhere)) sqlWhere = {};
+                if(sqlRefid) {
+                    sqlWhere = _.extend(sqlWhere, {
+                        "id": sqlRefid
+                    });
+                } else {
+                    throw new LogiksError(
+                        "Which record to update is not defined",
+                        401,
+                        "VALIDATION_ERROR",
+                        vStatus.errors
+                    );
+                }
+                
+                const dbResponse = await _DB.db_selectQ("appdb", sqlTable, sqlFields, sqlWhere, {}, " LIMIT 1");
+                if(!dbResponse.results) return dbResponse;
+                else return dbResponse.results[0];
             }
         },
         update: {
@@ -246,19 +300,9 @@ module.exports = {
                     );
                 }
                 
-                const results = await _DB.db_updateQ("appdb", sqlTable, dataFields, sqlWhere);
-                if(!results) {
-                    throw new LogiksError(
-                        "Error creating db record",
-                        401,
-                        "DB_ERROR"
-                    );
-                }
+                const dbResponse = await _DB.db_updateQ("appdb", sqlTable, dataFields, sqlWhere);
                 
-                return {
-                    "status": "success",
-                    "results": results
-                };
+                return dbResponse;
             }
         },
         delete: {
@@ -313,12 +357,9 @@ module.exports = {
                     );
                 }
 
-                const results = await _DB.db_updateQ("appdb", sqlTable, _.extend( {"blocked": "true"}, MISC.generateDefaultDBRecord(ctx, true)), sqlWhere);
+                const dbResponse = await _DB.db_updateQ("appdb", sqlTable, _.extend( {"blocked": "true"}, MISC.generateDefaultDBRecord(ctx, true)), sqlWhere);
 
-                return {
-                    "status": "success",
-                    "results": results
-                };
+                return dbResponse;
             }
         }
     },

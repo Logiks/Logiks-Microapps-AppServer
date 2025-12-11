@@ -24,12 +24,13 @@ module.exports = {
 				const sqlQuery = QUERY.parseQuery(ctx.params.query, ctx.params.filter)
 				const dbkey = sqlQuery.dbkey?sqlQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
 				
-				var dbData = await _DB.db_query(dbkey, sqlQuery, {});
-
-				if(!dbData) dbData = [];
+				const dbResponse = await _DB.db_query(dbkey, sqlQuery, {});
+				const dbData = dbResponse?.results || [];
 
 				return {
 					"data": dbData,
+					"err_code": dbResponse.err_code,
+					"err_message": dbResponse.err_message,
 					"page": ctx.params.query.page,
 					"limit": ctx.params.query.limit,
 				};
@@ -70,12 +71,13 @@ module.exports = {
 				}
 				if(!dbkey) dbkey = "appdb";
 
-				var dbData = await _DB.db_query(dbkey, sqlQuery, {});
-
-				if(!dbData) dbData = [];
+				const dbResponse = await _DB.db_query(dbkey, sqlQuery, {});
+				const dbData = dbResponse?.results || [];
 
 				return {
 					"data": dbData,
+					"err_code": dbResponse.err_code,
+					"err_message": dbResponse.err_message,
 					"page": queryObj.page,
 					"limit": queryObj.limit,
 				};
