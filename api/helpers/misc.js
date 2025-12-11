@@ -178,7 +178,7 @@ global.convertToValidatorRules = function(schema) {
     if (config.required === true) {
       ruleParts.push("required");
     } else {
-      ruleParts.push("nullable");
+      // ruleParts.push("nullable");
     }
 
     // Type-based rules
