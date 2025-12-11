@@ -1,5 +1,7 @@
 "use strict";
 
+const { Readable } = require('stream');
+
 // const mime = require("mime-types");
 
 // /api/modules/reports/doc.main
