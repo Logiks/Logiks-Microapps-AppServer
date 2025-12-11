@@ -43,7 +43,6 @@ module.exports = {
     },
 
     getQueryByID: async function(queryID, userObj) {
-        console.log(QUERYMAP)
         if(!QUERYMAP[queryID]) return false;
         return QUERYMAP[queryID];
     },

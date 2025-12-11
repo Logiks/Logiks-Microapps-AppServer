@@ -221,8 +221,7 @@ module.exports = {
                     throw new LogiksError(
                         "Which record to update is not defined",
                         401,
-                        "VALIDATION_ERROR",
-                        vStatus.errors
+                        "VALIDATION_ERROR"
                     );
                 }
 

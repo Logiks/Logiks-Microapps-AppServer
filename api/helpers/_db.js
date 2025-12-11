@@ -153,7 +153,7 @@ module.exports = {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
 		}
-console.log("X1", table, data);
+
 		var cols = [];
 		var quest = [];
 		var vals = [];
@@ -162,7 +162,7 @@ console.log("X1", table, data);
 			vals.push(a);
 			quest.push("?");
 		});
-console.log("X1", table, data, cols, quest, vals);
+
 		var sql = "INSERT INTO "+table+" ("+cols.join(",")+") VALUES ("+quest.join(",")+")";
 
 		if(CONFIG.log_sql) {

@@ -161,7 +161,7 @@ module.exports = {
         ...logObj,
       });
     } else {
-      console.log("LOGGER KEY MISSING", logKey);
+      console.log("\x1b[31m%s\x1b[0m", `LOGGER KEY MISSING - ${logKey}`);
     }
   },
 };
