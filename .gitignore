@@ -8,6 +8,9 @@ zold/
 config.json
 ecosystem.config.js
 notes.txt
+uploads/
+usermedia/
+temp/
 
 # Runtime data
 pids

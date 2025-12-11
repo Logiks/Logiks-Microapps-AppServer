@@ -1,62 +1,12 @@
 "use strict";
 
-const multer = require("multer");
-const fs = require("fs-extra");
 const mime = require("mime-types");
-
-const BASE_UPLOAD_ROOT = process.env.UPLOAD_ROOT || path.resolve(ROOT_PATH+"/uploads/");
-
-/* ---------------- STORAGE ENGINE ---------------- */
-
-const storage = multer.diskStorage({
-	async destination(req, file, cb) {
-		try {
-			// user selected base folder
-			const userFolder = req.query.folder || "default";
-
-			const now = new Date();
-			const year = now.getFullYear();
-			const month = String(now.getMonth() + 1).padStart(2, "0");
-
-			// keep original folder structure
-			const relativePath = file.webkitRelativePath || file.originalname;
-			const safeRelative = relativePath.replace(/\.\./g, "");
-
-			const uploadDir = path.join(
-				BASE_UPLOAD_ROOT,
-				userFolder,
-				year.toString(),
-				month,
-				path.dirname(safeRelative)
-			);
-
-			await fs.ensureDir(uploadDir);
-			cb(null, uploadDir);
-		} catch (err) {
-			cb(err);
-		}
-	},
-
-	filename(req, file, cb) {
-		const unique = UNIQUEID.generate(10);
-		const ext = path.extname(file.originalname);
-		cb(null, `${unique}${ext}`);
-	}
-});
-
-/* Security controls */
-const upload = multer({
-	storage,
-	limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
-	fileFilter(req, file, cb) {
-		cb(null, true); // allow all
-	}
-});
+const fsp = fs.promises;
 
 module.exports = {
     name: "files",
 
-    actions: {
+	actions: {
         files: {
 			rest: {
 				method: "GET",
@@ -67,60 +17,57 @@ module.exports = {
 			},
 
 			async handler(ctx) {
+				const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
 				const folder = ctx.params.folder || "default";
-				const root = path.join(BASE_UPLOAD_ROOT, folder);
+				const root = UPLOADS.getTargetPath(folder);
 
-				if (!(await fs.exists(root))) return [];
+				// If root does not exist → return empty array
+				if (!fs.existsSync(root)) return [];
 
-				const walk = async dir => {
-					let results = [];
-					const files = await fs.readdir(dir);
+				const fsFiles = await walkDirectory(root, 2);
 
-					for (const file of files) {
-						const full = path.join(dir, file);
-						const stat = await fs.stat(full);
-
-						if (stat.isDirectory()) {
-							results = results.concat(await walk(full));
-						} else {
-							results.push({
-								id: Buffer.from(full).toString("base64"),
-								name: file,
-								size: stat.size,
-								type: mime.lookup(full),
-								path: full.replace(BASE_UPLOAD_ROOT, "")
-							});
-						}
-					}
-					return results;
-				};
-
-				return walk(root);
+				return fsFiles;
 			}
 		},
 
 		filesPreview: {
 			rest: {
 				method: "GET",
-				filePath: "/api/files/preview/:id"
+				fullPath: "/api/files/preview/:id?"///:id?
+			},
+			params: {
+				// uri: "string"
 			},
 			// could add scopes too if you want additional control
 			async handler(ctx) {
-				const filePath = Buffer.from(ctx.params.id, "base64").toString();
-
-				if (!(await fs.exists(filePath))) {
-					throw new Error("File not found");
+				var fileURI = null;
+				if(ctx.params.id) {
+					fileURI = null;
+					//return "Not Supported Yet";
+				} else if(ctx.params.uri) {
+					fileURI = UPLOADS.getTargetPath(ctx.params.uri);
 				}
 
-				if(ctx.params.download && ctx.params.download===true) {
-					ctx.meta.$responseHeaders = {
-						"Content-Disposition": `attachment; filename="${path.basename(filePath)}"`
-					};
+				if(fileURI) {
+					if(fs.existsSync(fileURI)) {
+						var fileName = path.basename(fileURI);
+						fileName = fileName.split("_").splice(1).join("_");
+						
+						if(ctx.params.download && ctx.params.download===true) {
+							ctx.meta.$responseHeaders = {
+								"Content-Disposition": `attachment; filename="${fileName}"`
+							};
+						}
+
+						ctx.meta.$responseType = mime.lookup(fileURI) || "application/octet-stream";
+
+						return fs.createReadStream(fileURI);
+					} else {
+						throw new LogiksError("File Not Found", 404, "FILE_NOT_FOUND");
+					}
+				} else {
+					throw new LogiksError("File Not Defined or Supported", 401, "FILE_NOT_DEFINED");
 				}
-
-				ctx.meta.$responseType = mime.lookup(filePath) || "application/octet-stream";
-
-				return fs.createReadStream(filePath);
 			}
 		},
 
@@ -129,68 +76,30 @@ module.exports = {
 				method: "POST",
 				fullPath: "/api/files/upload"
 			},
-			// middleware: [upload.array("file")],
-			middleware: [
-				(req, res, next) => {
-					upload.single("file")(req, res, err => {
-
-						if (err) {
-							console.error("Multer error:", err);
-							return next(err);
-						}
-
-						console.log("req.file:", req.file);
-						console.log("ctx exists:", req.$ctx != null);
-
-						console.log(">>> MULTER OUTPUT req.file =", req.file);
-
-						// REQUIRED: Attach multer file to Moleculer context
-						if (req.file) {
-							req.$ctx.meta.file = req.file;
-						}
-
-						next();
-					});
-				}
-			],
 			// params: {
 				// encoded: "boolean",
 				// bucket: "string",
 				// meta: "object"
 			// },
 			async handler(ctx) {
-				// const files = ctx.meta.$multipart || ctx.meta.files;
-
-				// if (!files || files.length === 0) {
-				// 	throw new Error("No file received. Use form field name 'file'");
-				// }
-
-				// return files.map(f => ({
-				// 		originalName: f.originalname,
-				// 		storedName: f.filename,
-				// 		size: f.size,
-				// 		mimetype: f.mimetype,
-				// 		storedPath: f.path.replace(BASE_UPLOAD_ROOT, "")
-				// 	}));
-
-				
-
-				console.log("meta:", ctx.meta);
-				console.log("multipart:", ctx.meta.$multipart);
-				console.log("files:", ctx.meta.files);
-				console.log("upload:", upload);
-
-				const file = ctx.meta.$multipart || ctx.meta.file;
-
+				const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
+				const file = ctx.meta.file;
 				if (!file) throw new Error("No file received");
 
+				// return {
+				// 	originalName: file.originalname,
+				// 	storedName: file.filename,
+				// 	size: file.size,
+				// 	mimetype: file.mimetype,
+				// 	storedPath: file.path.replace(BASE_UPLOAD_ROOT, "")
+				// };
 				return {
-					originalName: file.originalname,
-					storedName: file.filename,
-					size: file.size,
-					mimetype: file.mimetype,
-					storedPath: file.path.replace(BASE_UPLOAD_ROOT, "")
-				};
+					"status": "success",
+					"name": file.originalname,
+					"mime": file.mimetype,
+					"size": file.size,
+					"path": file.path.replace(BASE_UPLOAD_ROOT, "")
+				}
 			}
 		},
 
@@ -199,24 +108,85 @@ module.exports = {
 				method: "POST",
 				fullPath: "/api/files/uploadbulk"
 			},
-			middleware: [upload.array("files")],
 			// params: {
 				// encoded: "boolean",
 				// bucket: "string",
 				// meta: "object"
 			// },
 			async handler(ctx) {
-				console.log("XXXXXX", ctx.meta.$multipart);
-				const files = ctx.meta.$multipart || [];
+				const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
+				const files = ctx.meta.files || [];
 
-				return files.map(file => ({
-					originalName: file.originalname,
-					storedName: file.filename,
-					size: file.size,
-					mimetype: file.mimetype,
-					storedPath: file.path.replace(BASE_UPLOAD_ROOT, "")
-				}));
+				return {
+					"status": "success",
+					"files": files.map(file => ({
+						"name": file.originalname,
+						"mime": file.mimetype,
+						"size": file.size,
+						"path": file.path.replace(BASE_UPLOAD_ROOT, "")
+					}))
+				};
 			}
 		}
     }
-};
+}
+
+
+/**
+ * High-performance directory walker.
+ *
+ * @param {string} root - Base directory path to scan
+ * @param {number} maxDepth - Maximum depth to scan
+ * @returns {Promise<Array>}
+ */
+async function walkDirectory(root, maxDepth = 5) {
+	const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
+    const results = [];
+
+    // Use your stack instead of recursion (faster & safer)
+    const stack = [{ dir: root, depth: 0 }];
+
+    while (stack.length > 0) {
+        const { dir, depth } = stack.pop();
+
+        // Depth limit protection
+        if (depth > maxDepth) continue;
+
+        let entries;
+        try {
+            entries = await fsp.readdir(dir, { withFileTypes: true });
+        } catch (err) {
+            console.error("Failed to read directory:", dir, err);
+            continue;
+        }
+
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+
+            if (entry.isDirectory()) {
+                // Add folder to stack if within depth
+                if (depth < maxDepth) {
+                    stack.push({ dir: fullPath, depth: depth + 1 });
+                }
+            } else {
+                // Stat the file for size (lazy: only when needed)
+                let stat;
+                try {
+                    stat = await fsp.stat(fullPath);
+                } catch {
+                    continue;
+                }
+
+                results.push({
+                    name: entry.name,
+                    size: stat.size,
+                    type: mime.lookup(fullPath),
+					hashid: Buffer.from(fullPath).toString("base64"),
+                    path: fullPath.replace(BASE_UPLOAD_ROOT, "")
+                });
+            }
+        }
+    }
+
+    return results;
+}

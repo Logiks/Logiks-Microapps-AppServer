@@ -403,6 +403,9 @@ module.exports = {
 								json: true,
 								urlencoded: { extended: true }
 							},
+							// aliases: {
+							// 	"POST files/upload": upload.single("file"),
+							// },
 							// Attach Express-compatible middlewares
 							use: [
 								session({
@@ -424,6 +427,68 @@ module.exports = {
 									req.clientIp = MISC.getClientIP(req);
 									req.clientUa = req.headers["user-agent"] || "unknown";
 									next();
+								},
+								(req, res, next) => {
+									if(req.method=="POST") {
+										const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
+										
+										switch(req.url) {
+											case "/files/upload":
+												UPLOADS.getUploadHandler().single("file")(req, res, err => {
+													if (err) return next();
+
+													UPLOADS.registerUploadedFile(req, [req.file]);
+													
+													console.log("Uploaded fields:", req.file);
+
+													req.$ctx.meta.file = req.file;
+
+													// req.$ctx.meta.fields = req.body || {};
+
+													next();
+												});
+												break;
+											case "/files/uploadbulk":
+												UPLOADS.getUploadHandler().array("files", 50)(req, res, err => {
+													if (err) return next();
+
+													UPLOADS.registerUploadedFile(req, req.files);
+													
+													console.log("Uploaded fields:", req.files);
+
+													req.$ctx.meta.files = req.files;
+
+													// req.$ctx.meta.fields = req.body || {};
+
+													next();
+												});
+												break;
+											default:
+												UPLOADS.getUploadHandler().any()(req, res, err => {
+													if (err) return next();
+													
+													try {
+														const fileFields = [...new Set(req.files.map(f => f.fieldname))];
+
+														UPLOADS.registerUploadedFile(req, req.files);
+
+														console.log("Uploaded fields:", fileFields);
+
+														_.each(fileFields, function(field, k) {
+															req.$ctx.meta[field] = req[field]?.path.replace(BASE_UPLOAD_ROOT, "")
+														});
+
+														req.$ctx.meta.fields = req.body || {};
+
+														next();
+													} catch(e) {
+														next();
+													}
+												});
+										}
+									} else {
+										next();
+									}
 								}
 							],
 							// Enable GZIP/Brotli compression
