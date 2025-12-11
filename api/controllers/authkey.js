@@ -16,7 +16,7 @@ module.exports = {
         };
         var data = await _DB.db_selectQ("appdb", "lgks_apikeys", "*", whereCond, {});
         
-        if(!data || !data.results) return false;
+        if(!data || !data.results || data.results.length<=0) return false;
 
         var apiKeyInfo = data.results[0];
 
