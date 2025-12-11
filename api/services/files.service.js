@@ -132,23 +132,26 @@ module.exports = {
 			// middleware: [upload.array("file")],
 			middleware: [
 				(req, res, next) => {
-        upload.single("file")(req, res, err => {
+					upload.single("file")(req, res, err => {
 
-            if (err) {
-                console.error("Multer error:", err);
-                return next(err);
-            }
+						if (err) {
+							console.error("Multer error:", err);
+							return next(err);
+						}
 
-            console.log(">>> MULTER OUTPUT req.file =", req.file);
+						console.log("req.file:", req.file);
+						console.log("ctx exists:", req.$ctx != null);
 
-            // REQUIRED: Attach multer file to Moleculer context
-            if (req.file) {
-                req.$ctx.meta.file = req.file;
-            }
+						console.log(">>> MULTER OUTPUT req.file =", req.file);
 
-            next();
-        });
-    }
+						// REQUIRED: Attach multer file to Moleculer context
+						if (req.file) {
+							req.$ctx.meta.file = req.file;
+						}
+
+						next();
+					});
+				}
 			],
 			// params: {
 				// encoded: "boolean",
@@ -170,8 +173,7 @@ module.exports = {
 				// 		storedPath: f.path.replace(BASE_UPLOAD_ROOT, "")
 				// 	}));
 
-				console.log("req.file:", req.file);
-console.log("ctx exists:", req.$ctx != null);
+				
 
 				console.log("meta:", ctx.meta);
 				console.log("multipart:", ctx.meta.$multipart);

@@ -231,6 +231,10 @@ module.exports = {
 
                     sqlFields = formFields;
                 }
+
+                if(!Array.isArray(sqlFields) && typeof sqlFields == "object") {
+                    sqlFields = Object.keys(sqlFields);
+                }
                 
                 const dbResponse = await _DB.db_selectQ("appdb", sqlTable, sqlFields, sqlWhere, {}, " LIMIT 1");
                 
