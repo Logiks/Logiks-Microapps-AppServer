@@ -159,6 +159,7 @@ module.exports = {
 		var vals = [];
 		_.each(data, function(a,b) {
 			if(Array.isArray(a)) a = a.join(",");
+			else if(typeof a == "object") a = JSON.stringify(a);
 
 			cols.push(b);
 			vals.push(a);
@@ -203,7 +204,13 @@ module.exports = {
 		}
 
 		let cols = Object.keys(data[0]);
-		let values = data.map( obj => cols.map( key => obj[key]));
+		let values = data.map( obj => cols.map( key => {
+			var a = obj[key];
+			if(Array.isArray(a)) a = a.join(",");
+			else if(typeof a == "object") a = JSON.stringify(a);
+			
+			return a;
+		}));
 
 		var sql = "INSERT INTO "+table+" ("+cols.join(",")+") VALUES ?";
 
@@ -231,6 +238,63 @@ module.exports = {
 		return results;
 
 		
+	},
+
+	db_updateQ : async function(dbkey, table, data, where) {
+		if(_MYSQL[dbkey]==null) {
+			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
+			return false;
+		}
+		var fData = [];
+		var vals = [];
+		_.each(data, function(a,b) {
+			if(Array.isArray(a)) a = a.join(",");
+			else if(typeof a == "object") a = JSON.stringify(a);
+
+			fData.push(b+"=?");
+			vals.push(a);
+		});
+
+		var sqlWhere = [];
+		if(typeof where == "object" && !Array.isArray(where)) {
+			_.each(where, function(a, b) {
+				if(a == "RAW") {
+					sqlWhere.push(b);
+				} else if(Array.isArray(a) && a.length==2) {
+					sqlWhere.push(b+a[1]+"'"+a[0]+"'");
+				} else {
+					sqlWhere.push(b+"='"+a+"'");
+				}
+			});
+		} else {
+			sqlWhere.push(where);
+		}
+
+		var sql = "UPDATE "+table+" SET "+fData.join(",")+" WHERE "+sqlWhere.join(" AND ");
+
+		// console.log(sql);
+		if(CONFIG.log_sql) {
+			console.log("SQL", sql, vals);
+		}
+
+		const results = await new Promise((resolve, reject) => {
+			_MYSQL[dbkey].query(sql, vals, function(err, results, fields) {
+					if(err) {
+						resolve({
+							"status": "error", 
+							"err_code": err.code,
+							"err_message": err.sqlMessage
+						});
+					} else {
+						resolve({
+							"status": "success", 
+							"results": results
+						});
+					}
+				});
+		});
+
+		return results;
 	},
 
 	db_deleteQ : async function(dbkey, table, where) {
@@ -275,62 +339,6 @@ module.exports = {
 						});		
 					}
 				
-				});
-		});
-
-		return results;
-		
-	},
-
-	db_updateQ : async function(dbkey, table, data, where) {
-		if(_MYSQL[dbkey]==null) {
-			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
-			return false;
-		}
-		var fData = [];
-		var vals = [];
-		_.each(data, function(a,b) {
-			if(Array.isArray(a)) a = a.join(",");
-			fData.push(b+"=?");
-			vals.push(a);
-		});
-
-		var sqlWhere = [];
-		if(typeof where == "object" && !Array.isArray(where)) {
-			_.each(where, function(a, b) {
-				if(a == "RAW") {
-					sqlWhere.push(b);
-				} else if(Array.isArray(a) && a.length==2) {
-					sqlWhere.push(b+a[1]+"'"+a[0]+"'");
-				} else {
-					sqlWhere.push(b+"='"+a+"'");
-				}
-			});
-		} else {
-			sqlWhere.push(where);
-		}
-
-		var sql = "UPDATE "+table+" SET "+fData.join(",")+" WHERE "+sqlWhere.join(" AND ");
-
-		// console.log(sql);
-		if(CONFIG.log_sql) {
-			console.log("SQL", sql, vals);
-		}
-
-		const results = await new Promise((resolve, reject) => {
-			_MYSQL[dbkey].query(sql, vals, function(err, results, fields) {
-					if(err) {
-						resolve({
-							"status": "error", 
-							"err_code": err.code,
-							"err_message": err.sqlMessage
-						});
-					} else {
-						resolve({
-							"status": "success", 
-							"results": results
-						});
-					}
 				});
 		});
 
