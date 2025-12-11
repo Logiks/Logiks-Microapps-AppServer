@@ -14,7 +14,7 @@ module.exports = {
                         blocked: "false",
                         rulecode: ctx.params.ruleId,
                     },{});
-                if(!data || !data?.results) data = [];
+                if(!data || !data?.results || data.results.length<=0) data = [];
                 
                 return {"status": "success", "data": data};
             }
@@ -87,7 +87,7 @@ module.exports = {
                     whereLogic["var_code"] = ctx.params.ctrlId;
                 }
                 var data = await _DB.db_selectQ("appdb", "do_ctrlcenter", "*", whereLogic,{});
-                if(!data || !data?.results) data = [];
+                if(!data || !data?.results || data.results.length<=0) data = [];
                 
                 return {"status": "success", "data": data[0]};
             }

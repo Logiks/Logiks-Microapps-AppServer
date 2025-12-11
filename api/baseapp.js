@@ -90,7 +90,7 @@ module.exports = {
                 domain_host: serverHost,
                 blocked: "false"
             },{});
-        if(!domainInfo || !domainInfo.results) return false;
+        if(!domainInfo || !domainInfo.results || domainInfo.results.length<=0) return false;
         
         return domainInfo.results[0];
     }

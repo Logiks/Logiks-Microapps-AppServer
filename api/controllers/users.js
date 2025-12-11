@@ -34,15 +34,8 @@ module.exports = {
                 "lgks_users.privilegeid=lgks_privileges.id": "RAW",
                 "lgks_users.accessid=lgks_access.id": "RAW",
                 "lgks_users.groupid=lgks_users_group.id": "RAW",
-            },{}, function (userInfo) {
-                if(!userInfo) {
-                    callback(false, "Userid or Password incorrect");
-                    return;
-                }
-                
-                callback(finalUserInfo)
-            });
-        if(!userInfo || !userInfo?.results) return false;
+            },{});
+        if(!userInfo || !userInfo?.results || userInfo.results.length<=0) return false;
         
         userInfo = userInfo.results[0];
         var encrypted_password = sha1(md5(password));
@@ -80,7 +73,7 @@ module.exports = {
                 "lgks_users.groupid=lgks_users_group.id": "RAW",
             },{});
         
-        if(!userInfo || !userInfo?.results) return false;
+        if(!userInfo || !userInfo?.results || userInfo.results.length<=0) return false;
         
         userInfo = userInfo.results[0];
         // console.log("userInfo-1", userInfo);

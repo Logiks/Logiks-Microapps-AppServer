@@ -63,8 +63,8 @@ module.exports = {
 					"created_by": ctx.meta.user.userId
 				}, whereCond), {});
 
-				if(data1 && data1.results) data1 = data1.results;
-				if(data2 && data2.results) data2 = data2.results;
+				if(!data1 || !data1?.results || data1.results.length<=0) data1 = data1.results;
+				if(!data2 || !data2?.results || data2.results.length<=0) data2 = data2.results;
 
 				settingsCache[ctx.meta.user.userId] = _.extend({}, data1, data2);
 				_CACHE.saveCacheMap("SETTINGSCACHE", settingsCache);

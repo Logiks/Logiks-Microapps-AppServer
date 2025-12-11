@@ -71,7 +71,7 @@ module.exports = {
                 blocked: "false",
                 // rulecode: ruleID
             }, filter),{});
-        if(!data) data = [];
+        if(!data || !data?.results || data.results.length<=0) data = [];
         
 		return data?.results;
 	},
@@ -81,7 +81,7 @@ module.exports = {
                 blocked: "false",
                 rulecode: ruleID
             }, filter),{});
-		if(!data || !data?.results) return false;
+		if(!data || !data?.results || data.results.length<=0) return false;
 		
 		return this.validateRule(dataFields, data[0].validation_rules);
 	}
