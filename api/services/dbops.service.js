@@ -188,7 +188,7 @@ module.exports = {
             async handler(ctx) {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
-                var dataFields = ctx.params.fields;
+                var formFields = ctx.params.fields;
                 const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user);
 
                 if(!jsonQuery) {
@@ -209,8 +209,8 @@ module.exports = {
 
                 const sqlTable = jsonQuery.source.table;
                 var sqlWhere = jsonQuery.source.where;
-                const sqlFields = jsonQuery.fields;
                 const sqlRefid = jsonQuery.source.refid;
+                var sqlFields = jsonQuery.fields;
 
                 if(!sqlWhere || Array.isArray(sqlWhere)) sqlWhere = {};
                 if(sqlRefid) {
@@ -225,8 +225,16 @@ module.exports = {
                         vStatus.errors
                     );
                 }
-                
+
+                if(formFields) {
+                    if(typeof formFields == "string") formFields = formFields.split(",");
+                    else if(!Array.isArray(formFields) && typeof formFields == "object") formFields = Object.keys(formFields);
+
+                    sqlFields = formFields;
+                }
+                CONFIG.log_sql = true;
                 const dbResponse = await _DB.db_selectQ("appdb", sqlTable, sqlFields, sqlWhere, {}, " LIMIT 1");
+                console.log("dbResponse", dbResponse);
                 if(!dbResponse.results) return dbResponse;
                 else return dbResponse.results[0];
             }
