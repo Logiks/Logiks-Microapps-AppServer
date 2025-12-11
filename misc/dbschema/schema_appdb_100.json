@@ -155,6 +155,151 @@
       "PRIMARY"
     ]
   },
+  "do_links": {
+    "columns": {
+      "id": {
+        "type": "int unsigned",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": "global",
+        "primary": false
+      },
+      "menuid": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "title": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "category": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "menugroup": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "class": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "link": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": "#",
+        "primary": false
+      },
+      "iconpath": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "tips": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "site": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": "*",
+        "primary": false
+      },
+      "privilege": {
+        "type": "varchar(500)",
+        "nullable": true,
+        "default": "*",
+        "primary": false
+      },
+      "onmenu": {
+        "type": "enum('true','false')",
+        "nullable": true,
+        "default": "true",
+        "primary": false
+      },
+      "target": {
+        "type": "varchar(55)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "device": {
+        "type": "varchar(20)",
+        "nullable": true,
+        "default": "*",
+        "primary": false
+      },
+      "module": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": "-",
+        "primary": false
+      },
+      "to_check": {
+        "type": "varchar(200)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "weight": {
+        "type": "int",
+        "nullable": true,
+        "default": "0",
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('true','false')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY"
+    ]
+  },
   "do_lists": {
     "columns": {
       "id": {

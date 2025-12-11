@@ -42,44 +42,71 @@ module.exports = {
         return true;
     },
 
-    getNavigation: async function(appID, navID, userInfo) {
-        if(!NAVIGATOR_CACHE[appID]) NAVIGATOR_CACHE[appID] = {};
-        if(!NAVIGATOR_CACHE[appID][navID]) {
-            const appMenuDir = `misc/apps/${appID}/menus/${navID}/`;
-            if(fs.existsSync(appMenuDir)) {
-                const menuTempObj = await loadAllJsonFromFolder(appMenuDir);
+    importNavigtaion: async function(appID, menuArray) {
+        // if(!NAVIGATOR_CACHE[appID][navID]) {
+        //     const menuTempObj = loadMenuFolder(appID, navID);
+        //     if(!menuTempObj) menuTempObj = [];
 
-                NAVIGATOR_CACHE[appID][navID] = menuTempObj;
+        //     NAVIGATOR_CACHE[appID][navID] = menuTempObj;
 
-                _CACHE.saveCacheMap("NAVIGATOR_CACHE", NAVIGATOR_CACHE);
-            } else {
-                NAVIGATOR_CACHE[appID][navID] = [];
-            }
-        }
+        //     //_CACHE.saveCacheMap("NAVIGATOR_CACHE", NAVIGATOR_CACHE);
+        // }
 
-        const menuObj = NAVIGATOR_CACHE[appID][navID];
+        // const menuObj = NAVIGATOR_CACHE[appID][navID];
         
-        return menuObj.filter(a=> {
-            //Check if is enabled
-            if(a.blocked && a.blocked===false) {
-                return false;
-            }
+        // return menuObj.filter(a=> {
+        //     //Check if is enabled
+        //     if(a.blocked && a.blocked===false) {
+        //         return false;
+        //     }
 
-            //Check GUID
-            if(!(a.guid && (a.guid=="*" || a.guid=="global" || a.guid==userInfo.guid))) {
-                return false;
-            }
+        //     //Check GUID
+        //     if(!(a.guid && (a.guid=="*" || a.guid=="global" || a.guid==userInfo.guid))) {
+        //         return false;
+        //     }
 
-            if(a.privilege) {
-                if(typeof a.privilege == "string") a.privilege = a.privilege.split(",");
-                // console.log(a.title, a.privilege);
-                if(!(a.privilege.indexOf("*")>=0 || a.privilege.indexOf(userInfo.privilege)>=0 || a.privilege.indexOf(userInfo.userId)>=0)) {
-                    return false;
-                }
-            }
-            return true;
-        });
+        //     if(a.privilege) {
+        //         if(typeof a.privilege == "string") a.privilege = a.privilege.split(",");
+        //         // console.log(a.title, a.privilege);
+        //         if(!(a.privilege.indexOf("*")>=0 || a.privilege.indexOf(userInfo.privilege)>=0 || a.privilege.indexOf(userInfo.userId)>=0)) {
+        //             return false;
+        //         }
+        //     }
+        //     return true;
+        // });
+    },
+
+    getNavigation: async function(appID, navID, userInfo, filter) {
+        if(!NAVIGATOR_CACHE[appID]) NAVIGATOR_CACHE[appID] = {};
+
+        if(!userInfo.privilege) userInfo.privilege = "";
+        if(!userInfo.roles) userInfo.roles = [];
+        if(!userInfo.scopes) userInfo.scopes = {};
+        CONFIG.log_sql = true;
+        if(!filter) filter = {
+            "onmenu": "true",
+            "privilege": [["*", userInfo.privilege, userInfo.userId, userInfo.scopes, ...userInfo.roles.map(a=>`role:${a}`)], "IN"],
+            //"privilege": [["*", ...userInfo.privilege], "IN"],
+        };
+
+        filter[`FIND_IN_SET('${navID}', menuid)`] = "RAW";
+
+        const dbLinks = await _DB.db_selectQ("appdb", "do_links", "*", _.extend({}, filter, {
+            "blocked": "false",
+            "guid": [["global", userInfo.tenantId], "IN"],
+            "site": [["*", appID], "IN"],
+        }), {}, " ORDER BY weight ASC");
+        
+        return dbLinks;
     }
+}
+
+async function loadMenuFolder(appID, navID) {
+    const appMenuDir = `misc/apps/${appID}/menus/${navID}/`;
+    if(fs.existsSync(appMenuDir)) {
+        const menuTempObj = await loadAllJsonFromFolder(appMenuDir);
+        return menuTempObj;
+    } else return [];
 }
 
 async function loadAllJsonFromFolder(folderPath) {
