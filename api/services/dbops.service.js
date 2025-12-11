@@ -84,7 +84,7 @@ module.exports = {
                     );
                 }
                 dataFields = _.extend(dataFields, MISC.generateDefaultDBRecord(ctx, false));
-                console.log(dataFields, MISC.generateDefaultDBRecord(ctx, false));
+                // console.log(dataFields, MISC.generateDefaultDBRecord(ctx, false));
                 //Single Insert
 
                 const dbResponse = await _DB.db_insertQ1("appdb", sqlTable, dataFields);

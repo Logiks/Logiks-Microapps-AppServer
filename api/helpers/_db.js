@@ -158,6 +158,8 @@ module.exports = {
 		var quest = [];
 		var vals = [];
 		_.each(data, function(a,b) {
+			if(Array.isArray(a)) a = a.join(",");
+
 			cols.push(b);
 			vals.push(a);
 			quest.push("?");
@@ -288,6 +290,7 @@ module.exports = {
 		var fData = [];
 		var vals = [];
 		_.each(data, function(a,b) {
+			if(Array.isArray(a)) a = a.join(",");
 			fData.push(b+"=?");
 			vals.push(a);
 		});
