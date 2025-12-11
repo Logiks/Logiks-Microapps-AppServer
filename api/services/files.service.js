@@ -129,18 +129,36 @@ module.exports = {
 				method: "POST",
 				fullPath: "/api/files/upload"
 			},
-			middleware: [upload.array("file")],
+			// middleware: [upload.array("file")],
+			middleware: [upload.single("file")],
 			// params: {
 				// encoded: "boolean",
 				// bucket: "string",
 				// meta: "object"
 			// },
 			async handler(ctx) {
-				const file = ctx.meta.$multipart;
+				// const files = ctx.meta.$multipart || ctx.meta.files;
 
-				if (!file) {
-					throw new Error("No file received. Use form field name 'file'");
-				}
+				// if (!files || files.length === 0) {
+				// 	throw new Error("No file received. Use form field name 'file'");
+				// }
+
+				// return files.map(f => ({
+				// 		originalName: f.originalname,
+				// 		storedName: f.filename,
+				// 		size: f.size,
+				// 		mimetype: f.mimetype,
+				// 		storedPath: f.path.replace(BASE_UPLOAD_ROOT, "")
+				// 	}));
+
+				console.log("meta:", ctx.meta);
+				console.log("multipart:", ctx.meta.$multipart);
+				console.log("files:", ctx.meta.files);
+				console.log("upload:", upload);
+
+				const file = ctx.meta.$multipart || ctx.meta.file;
+
+				if (!file) throw new Error("No file received");
 
 				return {
 					originalName: file.originalname,

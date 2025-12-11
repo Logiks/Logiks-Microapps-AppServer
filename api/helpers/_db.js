@@ -153,15 +153,16 @@ module.exports = {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
 		}
-
-		cols = [];quest = [];
-		vals = [];
+console.log("X1", table, data);
+		var cols = [];
+		var quest = [];
+		var vals = [];
 		_.each(data, function(a,b) {
 			cols.push(b);
 			vals.push(a);
 			quest.push("?");
 		});
-
+console.log("X1", table, data, cols, quest, vals);
 		var sql = "INSERT INTO "+table+" ("+cols.join(",")+") VALUES ("+quest.join(",")+")";
 
 		if(CONFIG.log_sql) {
@@ -201,7 +202,6 @@ module.exports = {
 
 		let cols = Object.keys(data[0]);
 		let values = data.map( obj => cols.map( key => obj[key]));
-
 
 		var sql = "INSERT INTO "+table+" ("+cols.join(",")+") VALUES ?";
 
