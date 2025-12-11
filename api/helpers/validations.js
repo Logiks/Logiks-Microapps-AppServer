@@ -73,7 +73,7 @@ module.exports = {
             }, filter),{});
         if(!data) data = [];
         
-		return data;
+		return data?.results;
 	},
 
 	processRule: async function(ruleID, dataFields) {
@@ -81,7 +81,7 @@ module.exports = {
                 blocked: "false",
                 rulecode: ruleID
             }, filter),{});
-		if(!data) return false;
+		if(!data || !data?.results) return false;
 		
 		return this.validateRule(dataFields, data[0].validation_rules);
 	}

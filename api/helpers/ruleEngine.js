@@ -19,7 +19,7 @@ module.exports = {
             }, filter),{});
         if(!data) data = [];
         
-		return data;
+		return data?.results;
 	},
 
 	processRule: async function(ruleID, dataFields, addonFacts) {
@@ -27,9 +27,9 @@ module.exports = {
                 blocked: "false",
                 rulecode: ruleID
             },{});
-		if(!data) return false;
+		if(!data || !data?.results) return false;
 
-        data = data[0];
+        data = data.results[0];
 
         if(!data.fields) data.fields = {};
         if(!data.actions) data.actions = {};

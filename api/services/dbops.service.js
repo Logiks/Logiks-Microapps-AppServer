@@ -232,9 +232,9 @@ module.exports = {
 
                     sqlFields = formFields;
                 }
-                CONFIG.log_sql = true;
+                
                 const dbResponse = await _DB.db_selectQ("appdb", sqlTable, sqlFields, sqlWhere, {}, " LIMIT 1");
-                console.log("dbResponse", dbResponse);
+                
                 if(!dbResponse.results) return dbResponse;
                 else return dbResponse.results[0];
             }

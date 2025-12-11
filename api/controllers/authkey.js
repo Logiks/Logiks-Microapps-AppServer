@@ -16,11 +16,9 @@ module.exports = {
         };
         var data = await _DB.db_selectQ("appdb", "lgks_apikeys", "*", whereCond, {});
         
-        if(!data || data.length<=0) return false;
+        if(!data || !data.results) return false;
 
-        // var apiKeyInfo = data[0];
-
-        // apiKeyInfo.allowed_apps = apiKeyInfo.allowed_apps.split(",");
+        var apiKeyInfo = data.results[0];
 
         return apiKeyInfo;
     }

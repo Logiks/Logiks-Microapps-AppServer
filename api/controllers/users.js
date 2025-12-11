@@ -12,14 +12,14 @@ module.exports = {
     listUsers: async function(whereCond, callback) {
         if(whereCond==null) whereCond = {};
         const userInfo = await  _DB.db_selectQ("appdb", "lgks_users", "*", whereCond, {});
-        return userInfo;
+        return userInfo?.results;
     },
 
     getUserInfo: async function(userid, callback) {
         const userInfo = await _DB.db_selectQ("appdb", "lgks_users", "*", {
                 userid: userid,
             },{});
-        return userInfo;
+        return userInfo?.results;
     },
 
     verifyUser: async function(userid, password, callback) {
@@ -42,9 +42,9 @@ module.exports = {
                 
                 callback(finalUserInfo)
             });
-        if(!userInfo) return false;
+        if(!userInfo || !userInfo?.results) return false;
         
-        userInfo = userInfo[0];
+        userInfo = userInfo.results[0];
         var encrypted_password = sha1(md5(password));
         if(userInfo.pwd!=encrypted_password) {
             callback(false, "Userid or Password incorrect");
@@ -80,9 +80,9 @@ module.exports = {
                 "lgks_users.groupid=lgks_users_group.id": "RAW",
             },{});
         
-        if(!userInfo) return false;
-
-        userInfo = userInfo[0];
+        if(!userInfo || !userInfo?.results) return false;
+        
+        userInfo = userInfo.results[0];
         // console.log("userInfo-1", userInfo);
         var finalUserInfo = {
             "guid": userInfo['guid'],

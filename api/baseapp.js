@@ -85,13 +85,14 @@ module.exports = {
     },
 
     getAppForDomain: async function(serverHost) {
+        CONFIG.log_sql = true;
         var domainInfo = await _DB.db_selectQ("appdb", "lgks_domains", "*", {
                 domain_host: serverHost,
                 blocked: "false"
             },{});
-        if(!domainInfo) return false;
+        if(!domainInfo || !domainInfo.results) return false;
         
-        return domainInfo[0];
+        return domainInfo.results[0];
     }
 }
 

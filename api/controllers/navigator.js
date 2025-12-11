@@ -33,7 +33,7 @@ module.exports = {
             "site": [["*", appID], "IN"],
         }), {}, " ORDER BY weight ASC");
         
-        return dbLinks;
+        return dbLinks?.results || [];
     },
 
     //Importing and Manual Adding

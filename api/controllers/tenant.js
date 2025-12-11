@@ -16,9 +16,9 @@ module.exports = {
         };
         var data = await _DB.db_selectQ("appdb", "lgks_tenants", "*", whereCond, {});
 
-        if(!data || data.length<=0) return false;
+        if(!data || !data.results) return false;
 
-        var tenantInfo = data[0];
+        var tenantInfo = data.results[0];
 
         tenantInfo.allowed_apps = tenantInfo.allowed_apps.split(",");
 

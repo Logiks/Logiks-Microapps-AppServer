@@ -17,7 +17,7 @@ module.exports = {
 					"blocked": "false"
 				}, {}, "GROUP BY groupid ORDER BY sortorder");
 				
-				if(!data) data = [];
+				if(!data || !data?.results) data = [];
 
 				return data;
 			}
@@ -34,7 +34,7 @@ module.exports = {
 					"groupid": ctx.params.groupid
 				}, {}, "ORDER BY sortorder");
 				
-				if(!data) data = [];
+				if(!data || !data?.results) data = [];
 
 				return data;
 			}
@@ -57,7 +57,7 @@ module.exports = {
 					"groupid": ctx.params.groupid
 				}), {}, "ORDER BY sortorder");
 				
-				if(!data) data = [];
+				if(!data || !data?.results) data = [];
 
 				return data;
 			}
@@ -79,7 +79,7 @@ module.exports = {
 					"groupid": [ctx.params.groupids, "IN"]
 				}), {}, "ORDER BY groupid, sortorder");
 				
-				if(!data) data = [];
+				if(!data || !data?.results) data = [];
 
 				const grouped = data.reduce((acc, item) => {
 						const key = item.groupid;
