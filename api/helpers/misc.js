@@ -220,7 +220,7 @@ global.convertToValidatorRules = function(schema) {
       }
     }
 
-    rules[field] = ruleParts.join("|");
+    if(ruleParts.length>0) rules[field] = ruleParts.join("|");
   }
 
   return rules;
