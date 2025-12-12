@@ -12,10 +12,43 @@ module.exports = {
 				method: "GET",
 				fullPath: "/api/files"
 			},
+			// meta: {
+			// 	roles: ["admin"],
+			// 	scopes: ["files:list"]
+			// },
 			params: {
 				folder: { type: "string", optional: true }
 			},
+			async handler(ctx) {
+				const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
+				const folder = ctx.params.folder || "";
+				const targetPath = UPLOADS.getTargetPath(folder);
 
+				const fsFiles = await listFolder(targetPath);
+				const error = fsFiles?null:"Given path is not a folder or does not exist";
+
+				var results = {
+					"path": targetPath.replace(BASE_UPLOAD_ROOT, ""),
+					"list": fsFiles,
+				};
+				if(error) results.error = error;
+
+				return results;
+			}
+		},
+
+		fileTree: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/fileTree"
+			},
+			// meta: {
+			// 	roles: ["admin"],
+			// 	scopes: ["files:list"]
+			// },
+			params: {
+				folder: { type: "string", optional: true }
+			},
 			async handler(ctx) {
 				const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
 				const folder = ctx.params.folder || "default";
@@ -131,6 +164,30 @@ module.exports = {
     }
 }
 
+//List folders and files in given path
+async function listFolder(dirPath) {
+	if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) {
+    return false;
+  }
+
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+
+  // Convert to array with name + type
+  const items = entries.map(entry => ({
+    name: entry.name,
+    isDir: entry.isDirectory()
+  }));
+
+  // Sort: folders first, then alphabetical
+  items.sort((a, b) => {
+    if (a.isDir !== b.isDir) {
+      return a.isDir ? -1 : 1; // directories first
+    }
+    return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+  });
+
+  return items;
+}
 
 /**
  * High-performance directory walker.
