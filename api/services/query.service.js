@@ -39,7 +39,7 @@ module.exports = {
 		queryRaw: {
 			rest: {
 				method: "POST",
-				path: "/"
+				path: "/raw"
 			},
             params: {
 				// dbkey: "string",

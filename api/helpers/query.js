@@ -107,7 +107,31 @@ module.exports = {
 
         var sql = `SELECT ${columnsStr} FROM ${sqlObj.table} `;
 
+    //     query: 'profiletbl',
+    // condition: 'leads_tbl.customer_id=profiletbl.id',
+    // limit: 1
+        
         //Handle sqlObj.join
+        if(sqlObj.join && Array.isArray(sqlObj.join)) {
+            _.each(sqlObj.join, function(sqlSingleObj, k) {
+                const query = sqlSingleObj.query;
+                const condition = sqlSingleObj.condition;
+                const as = sqlSingleObj.as?sqlSingleObj.as:"";
+
+                switch(sqlSingleObj.type) {
+                    case "INNER":
+                        sql += ` INNER JOIN (${query}) ${as} ON ${condition}`;
+                        break;
+                    case "RIGHT":
+                        sql += ` RIGHT JOIN (${query}) ${as} ON ${condition}`;
+                        break;
+                    case "LEFT":
+                    default:
+                        sql += ` LEFT JOIN (${query}) ${as} ON ${condition}`;
+                        break;
+                }
+            });
+        }
         //Handle sqlObj.table_connection
 
         var WHERE_ADDED = false;
