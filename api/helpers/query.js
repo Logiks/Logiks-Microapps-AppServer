@@ -107,10 +107,6 @@ module.exports = {
 
         var sql = `SELECT ${columnsStr} FROM ${sqlObj.table} `;
 
-    //     query: 'profiletbl',
-    // condition: 'leads_tbl.customer_id=profiletbl.id',
-    // limit: 1
-        
         //Handle sqlObj.join
         if(sqlObj.join && Array.isArray(sqlObj.join)) {
             _.each(sqlObj.join, function(sqlSingleObj, k) {
@@ -132,6 +128,7 @@ module.exports = {
                 }
             });
         }
+        
         //Handle sqlObj.table_connection
 
         var WHERE_ADDED = false;

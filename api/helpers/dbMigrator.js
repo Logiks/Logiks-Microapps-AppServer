@@ -133,7 +133,7 @@ module.exports = {
     ------------------------------------------ */
     generateMigration : async function(dbKey, newSchemaFile, writeFile = false) {//, oldSchemaFile
         try {
-            const mysqlConnection = _DB.db_connection(dbKey).promise();
+            //const mysqlConnection = _DB.db_connection(dbKey).promise();
 
             //const oldSchema = await fs1.readJson(path.join(SCHEMA_DIR, oldSchemaFile));
             const oldSchema = await DBMIGRATOR.exportSchema("appdb", false);
