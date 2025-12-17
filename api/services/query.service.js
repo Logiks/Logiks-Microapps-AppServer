@@ -36,6 +36,30 @@ module.exports = {
 				};
 			}
 		},
+		queryRaw: {
+			rest: {
+				method: "POST",
+				path: "/"
+			},
+            params: {
+				// dbkey: "string",
+                query: "object",
+				// filter: "object",
+            },
+			async handler(ctx) {
+				if(!ctx.params.dbkey) ctx.params.dbkey = "appdb";
+				if(!ctx.params.filter) ctx.params.filter = {};
+
+				if(!ctx.params.query.page) ctx.params.query.page = 0;
+				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
+
+				const sqlQuery = QUERY.parseQuery(ctx.params.query, ctx.params.filter);
+
+				return {
+					"QUERY": sqlQuery
+				};
+			}
+		},
 		queryid: {
 			rest: {
 				method: "POST",
