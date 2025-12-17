@@ -219,7 +219,7 @@ module.exports = {
                     });
                 } else {
                     throw new LogiksError(
-                        "Which record to update is not defined",
+                        "Which record to update/delete/fetch is not defined",
                         401,
                         "VALIDATION_ERROR"
                     );
@@ -235,6 +235,8 @@ module.exports = {
                 if(!Array.isArray(sqlFields) && typeof sqlFields == "object") {
                     sqlFields = Object.keys(sqlFields);
                 }
+
+                if(!sqlFields || sqlFields.length<=0) sqlFields = "*";
                 
                 const dbResponse = await _DB.db_selectQ("appdb", sqlTable, sqlFields, sqlWhere, {}, " LIMIT 1");
                 
