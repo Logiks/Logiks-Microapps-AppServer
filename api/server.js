@@ -368,7 +368,7 @@ module.exports = {
 								const domainApp = await BASEAPP.getAppForDomain(serverHost);
 								if(!domainApp) {
 									throw new LogiksError(
-										"The active application found for current domain/url",
+										"The no application found for current domain/url",
 										401,
 										"INVALID_REQUEST"
 									);
@@ -555,7 +555,7 @@ module.exports = {
 								const domainApp = await BASEAPP.getAppForDomain(serverHost);
 								if(!domainApp) {
 									throw new LogiksError(
-										"The active application found for current domain/url",
+										"The no application found for current domain/url",
 										401,
 										"INVALID_REQUEST"
 									);

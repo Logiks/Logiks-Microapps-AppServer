@@ -103,6 +103,25 @@ module.exports = {
 			}
 		},
 
+		//Manage plugins
+		plugins: {
+			rest: {
+				method: "POST",
+				path: "/plugins/:task?"
+			},
+			params: {},
+			async handler(ctx) {
+				if(!ctx.params.task) ctx.params.task = "";
+				switch(ctx.params.task) {
+
+					default:
+						return await ctx.call("system.plugins");
+				}
+
+				return {"status": "error"};
+			}
+		},
+
 		//Control Center for the Server
 		ctrls: {
 			rest: {

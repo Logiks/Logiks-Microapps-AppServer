@@ -29,12 +29,11 @@ module.exports = {
 				pid: "number",
 				color: "string",
 				services: { type: "array", items: "string" },
-				menus: "object"
+				menus: "object",
+				plugins: "array"
 			},
 			async handler(ctx) {
 				const w = ctx.params;
-
-				// console.log("NEW_SERVICE_WORKER", w.nodeID, w);
 
                 SERVICE_WORKERS.set(w.nodeID, {
 					...w,
@@ -174,7 +173,32 @@ module.exports = {
 				}
 			}
 		},
+		plugins: {
+			params: {
+				// nodeID: "string"
+			},
+			handler: async (ctx) => {
+				const { nodeID } = ctx.params;
+				var RESULTS = {"PLUGINS": [], "SERVICES": [], "MENUS": []};
+				if(nodeID) {
+					SERVICE_WORKERS.forEach((node, key) => {
+						if(nodeID == key) {
+							RESULTS.PLUGINS = [...RESULTS.PLUGINS, ...node.plugins];
+							RESULTS.SERVICES = [...RESULTS.SERVICES, ...node.services.filter(a=>a!="$node")];
+							RESULTS.MENUS = [...RESULTS.MENUS, ...Object.keys(node.menus)];
+						}
+					});
+				} else {
+					SERVICE_WORKERS.forEach((node, key) => {
+						RESULTS.PLUGINS = [...RESULTS.PLUGINS, ...node.plugins];
+						RESULTS.SERVICES = [...RESULTS.SERVICES, ...node.services.filter(a=>a!="$node")];
+						RESULTS.MENUS = [...RESULTS.MENUS, ...Object.keys(node.menus)];
+					});
+				}
 
+				return RESULTS;
+			}
+		},
 
 
 		//Private Function
