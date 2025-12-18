@@ -250,6 +250,11 @@ function processSQLWhere (sqlWhereObj, colDelimiter = "`", whereJoiner = "AND") 
     if (sqlWhereObj == null || colDelimiter.length <= 0) {
         return "";
     }
+    if(typeof sqlWhereObj == "string") {
+        var temp = {};
+        temp[sqlWhereObj] = "RAW";
+        sqlWhereObj = temp;
+    }
 
     if (colDelimiter.length == 1)
         colDelimiter = [colDelimiter, colDelimiter];
