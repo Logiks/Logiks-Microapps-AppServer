@@ -178,22 +178,47 @@ module.exports = {
 				// nodeID: "string"
 			},
 			handler: async (ctx) => {
-				const { nodeID } = ctx.params;
-				var RESULTS = {"PLUGINS": [], "SERVICES": [], "MENUS": []};
-				if(nodeID) {
-					SERVICE_WORKERS.forEach((node, key) => {
-						if(nodeID == key) {
+				const { nodeID, more } = ctx.params;
+				
+				var RESULTS = {};
+
+				if(more) {
+					RESULTS = {};
+					if(nodeID) {
+						SERVICE_WORKERS.forEach((node, key) => {
+							if(nodeID == key) {
+								RESULTS[key] = {"PLUGINS": [], "SERVICES": [], "MENUS": []};
+
+								RESULTS[key].PLUGINS = node.plugins;
+								RESULTS[key].SERVICES = node.services.filter(a=>a!="$node");
+								RESULTS[key].MENUS = Object.keys(node.menus);
+							}
+						});
+					} else {
+						SERVICE_WORKERS.forEach((node, key) => {
+							RESULTS[key] = {"PLUGINS": [], "SERVICES": [], "MENUS": []};
+							RESULTS[key].PLUGINS = node.plugins;
+							RESULTS[key].SERVICES = node.services.filter(a=>a!="$node");
+							RESULTS[key].MENUS = Object.keys(node.menus);
+						});
+					}
+				} else {
+					RESULTS = {"PLUGINS": [], "SERVICES": [], "MENUS": []};
+					if(nodeID) {
+						SERVICE_WORKERS.forEach((node, key) => {
+							if(nodeID == key) {
+								RESULTS.PLUGINS = [...RESULTS.PLUGINS, ...node.plugins];
+								RESULTS.SERVICES = [...RESULTS.SERVICES, ...node.services.filter(a=>a!="$node")];
+								RESULTS.MENUS = [...RESULTS.MENUS, ...Object.keys(node.menus)];
+							}
+						});
+					} else {
+						SERVICE_WORKERS.forEach((node, key) => {
 							RESULTS.PLUGINS = [...RESULTS.PLUGINS, ...node.plugins];
 							RESULTS.SERVICES = [...RESULTS.SERVICES, ...node.services.filter(a=>a!="$node")];
 							RESULTS.MENUS = [...RESULTS.MENUS, ...Object.keys(node.menus)];
-						}
-					});
-				} else {
-					SERVICE_WORKERS.forEach((node, key) => {
-						RESULTS.PLUGINS = [...RESULTS.PLUGINS, ...node.plugins];
-						RESULTS.SERVICES = [...RESULTS.SERVICES, ...node.services.filter(a=>a!="$node")];
-						RESULTS.MENUS = [...RESULTS.MENUS, ...Object.keys(node.menus)];
-					});
+						});
+					}
 				}
 
 				return RESULTS;

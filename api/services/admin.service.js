@@ -50,8 +50,16 @@ module.exports = {
 						return appInfo;
 						break;
 					case "list":
-					default:
 						return APPLICATION.getAppList();
+						break;
+					default:
+						return {"status": "okay", "commands": [
+							"list",
+							"create",
+							"delete",
+							"update",
+							"info"
+						]};
 				}
 			}
 		},
@@ -113,9 +121,18 @@ module.exports = {
 			async handler(ctx) {
 				if(!ctx.params.task) ctx.params.task = "";
 				switch(ctx.params.task) {
-
-					default:
+					case "list":
 						return await ctx.call("system.plugins");
+						return;
+					case "more":
+						return await ctx.call("system.plugins", {"more": true});
+						break;
+					default:
+						return {"status": "okay", "commands": [
+							"list",
+							"more",
+						]};
+						
 				}
 
 				return {"status": "error"};
