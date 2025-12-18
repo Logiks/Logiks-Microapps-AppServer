@@ -16,13 +16,31 @@ module.exports = {
 	name: "admin",
 
 	actions: {
-		apps: {
+		adminList: {
 			rest: {
-				method: "POST",
+				method: "GET",
 				path: "/"
 			},
 			params: {},
 			async handler(ctx) {
+				// const actions = await ctx.call("$node.actions", {
+				// 	onlyLocal: false,      // include remote nodes
+				// 	skipInternal: true,    // hide $node.* actions
+				// 	withEndpoints: true    // include which node each action belongs to
+				// });//.then(res => console.log(res));
+
+
+				// const services = await ctx.call("$node.services", {
+				// 	onlyLocal: false,
+				// 	skipInternal: true,
+				// 	withActions: true
+				// });//.then(res => console.log(res));
+
+				// const actionsExtended = ctx.broker.registry.getActionList({
+				// 	withEndpoints: true
+				// });
+				// console.log("ADMIN", actions, services, actionsExtended);
+
 				return {"status": "ok"};
 			}
 		},
@@ -120,6 +138,7 @@ module.exports = {
 			params: {},
 			async handler(ctx) {
 				if(!ctx.params.task) ctx.params.task = "";
+
 				switch(ctx.params.task) {
 					case "list":
 						return await ctx.call("system.plugins");

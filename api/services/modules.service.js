@@ -153,6 +153,37 @@ module.exports = {
 				const a1 = await ctx.call(cmdString);
                 return {"status": "okay", "results": a1};
 			}
+		},
+		fetchUI: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/ui/:module/:asset1?/:asset2?"
+			},
+			async handler(ctx) {
+				const moduleName = ctx.params.module;
+				const asset1 = ctx.params.asset1;
+				const asset2 = ctx.params.asset2;
+
+				var cmdString = `${moduleName}.www`;
+
+				console.log("UI_ASSET_HANDLER", cmdString, {folder: asset1, file: asset2});
+
+				if(!asset2 || asset2.length<=0) {
+					const folder = "";
+					const file = asset1;
+
+					const fileContent = await ctx.call(cmdString, {folder: folder, file: file});
+				
+                	return Readable.from(fileContent);
+				} else {
+					const folder = asset1;
+					const file = asset2;
+
+					const fileContent = await ctx.call(cmdString, {folder: folder, file: file});
+				
+                	return Readable.from(fileContent);
+				}
+			}
 		}
 	}
 };
