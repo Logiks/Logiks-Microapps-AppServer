@@ -185,13 +185,36 @@ module.exports = {
 					id: 101,
 					username: "admin",
 					tenantId: "tenant-1",
+					guid: "tenant-1",
 					passwordHash: await bcrypt.hash("admin123", 10),
+					mobile: "",
+					email: "",
+					country: "",
+					zipcode: "",
 					roles: ["admin"],
 					scopes: [
 						"tenant-1:orders:read",
 						"tenant-1:orders:write",
 						"tenant-1:docs:read"
-					]
+					],
+					group: {
+						id: 1,
+						name: "HQ",
+						manager: ""
+					},
+					privilege: {
+						id: 1,
+						name: "admin",
+						hash: misc.generateHash("admin")
+					},
+					access: {
+						id: 1,
+						name: "all",
+						sites: [ctx.meta.appInfo.appid]
+					},
+					avatar: "",
+					timestamp: moment().format("Y-M-D HH:mm:ss"),
+					geolocation: "0,0"
 				};
 
 				if (username !== fakeUserFromDB.username) {

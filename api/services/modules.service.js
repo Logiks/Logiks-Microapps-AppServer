@@ -47,7 +47,7 @@ module.exports = {
 						submoduleFile = `${submoduleFile}.json`;
 					}
 
-					if(ctx.params.recache===true) {
+					if(ctx.params.recache===true || ctx.params.recache==="true") {
 						if(COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`]) delete COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`];
 					}
 
@@ -75,7 +75,7 @@ module.exports = {
 				} else {
 					var submoduleFile = ctx.params.item;
 
-					if(ctx.params.recache===true) {
+					if(ctx.params.recache===true || ctx.params.recache==="true") {
 						if(COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`]) delete COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`];
 					}
 
@@ -116,7 +116,7 @@ module.exports = {
 				
 				console.log("MODULE_COMPONENT_HANDLER", ctx.params);
 
-				if(ctx.params.recache===true) {
+				if(ctx.params.recache===true || ctx.params.recache==="true") {
 					if(COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`]) delete COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`];
 				}
 
@@ -124,7 +124,7 @@ module.exports = {
 					return Readable.from(COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`].data);
 				}
 
-				const fileContent = await ctx.call(`${moduleName}.source`, {folder: "components", file: fileName});
+				const fileContent = await ctx.call(`${moduleName}.source`, {folder: "components", file: fileName, params: ctx.params});
 
 				COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`] = {
 						data: fileContent,

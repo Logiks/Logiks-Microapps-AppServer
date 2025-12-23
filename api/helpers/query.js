@@ -33,6 +33,46 @@ module.exports = {
         console.log("\x1b[36m%s\x1b[0m","Query Engine Initialized");
     },
 
+    processMetaInfo: function(metaInfo) {
+        return generateEnvObj(metaInfo);
+    },
+
+    updateWhereFromEnv: function(whereObj, metaInfo) {
+        if(!whereObj) return whereObj;
+        //console.log("updateWhereFromEnv", whereObj, metaInfo);
+        if(typeof whereObj == "string") {
+            return _replace(whereObj, metaInfo);
+        } else if(Array.isArray(whereObj)) {
+            _.each(whereObj, function(arrObj,k) {
+                _.each(arrObj, function(v, k1) {
+                    try {
+                        if(v.toUpperCase()=="RAW") {
+                            whereObj[k][_replace(k1, metaInfo)] = "RAW";
+                        } else if(typeof v == "string") {
+                            whereObj[k][k1] = _replace(v, metaInfo);
+                        }
+                    } catch(e) {
+                        console.error(e);
+                    }
+                })
+            })
+        } else if(typeof whereObj=="object") {
+            _.each(whereObj, function(v,k) {
+                try {
+                    if(v.toUpperCase()=="RAW") {
+                        whereObj[_replace(k, metaInfo)] = "RAW";
+                    } else if(typeof v == "string") {
+                        whereObj[k] = _replace(v, metaInfo);
+                    }
+                } catch(e) {
+                    console.error(e);
+                }
+            })
+        }
+
+        return whereObj;
+    },
+
     storeQuery : async function(queryObj, userObj, queryID = false) {
         if(!queryID) queryID = UNIQUEID.generate(12);
 
@@ -47,12 +87,16 @@ module.exports = {
         return QUERYMAP[queryID];
     },
 
-    parseQuery : function(sqlObj, filter = {}) {
+    parseQuery : function(sqlObj, filter = {}, metaInfo = {}) {
         if(sqlObj==null) {
             console.error("No JSON Query Found");
             return false;
         }
 
+        //Prepare MetaInfo
+        metaInfo = QUERY.processMetaInfo(metaInfo);
+
+        //Pre-Process sqlObj
         if(typeof sqlObj == "string") {
             try {
                 sqlObj = JSON.parse(sqlObj);
@@ -104,7 +148,8 @@ module.exports = {
         if (!limit || limit == null || limit.length <= 0) {
             limit = process.env.MAX_RECORDS;
         }
-
+        
+        //Prepare final SQL String
         var sql = `SELECT ${columnsStr} FROM ${sqlObj.table} `;
 
         //Handle sqlObj.join
@@ -132,6 +177,11 @@ module.exports = {
         //Handle sqlObj.table_connection
 
         var WHERE_ADDED = false;
+        if(!filter) filter = {};
+
+        filter = QUERY.updateWhereFromEnv(filter, metaInfo);
+        sqlObj.where = QUERY.updateWhereFromEnv(sqlObj.where, metaInfo);
+        sqlObj.filter = QUERY.updateWhereFromEnv(sqlObj.filter, metaInfo);
 
         if(typeof sqlObj.where == "string") {
             sqlObj.where = processTilde(sqlObj.where);
@@ -143,7 +193,7 @@ module.exports = {
             sqlObj.where = temp;
         }
 
-        if(!filter) filter = {};
+        
         sqlObj.where = _.extend(sqlObj.where, filter);
 
         var sqlWhere = processSQLWhere(sqlObj.where, " ");
@@ -218,6 +268,8 @@ module.exports = {
 
         sql = sql.replaceAll(/('')+/g,"'");
         sql = sql.replaceAll(/('')+/g,"'");
+
+        console.log("SQLOBJECT", sqlObj, sql);
 
         return sql;
     }
@@ -616,4 +668,81 @@ function detectDataType(input, defaultValue) {
 
     // Default to String
     return defaultValue;
+}
+
+function generateEnvObj(metaInfo) {
+    if(metaInfo['META_PROCESSED']===true) return metaInfo;
+
+    var newMeta = _.cloneDeep(metaInfo);
+
+    newMeta["SESS_LOGIN_TIME"] = newMeta.user.timestamp;
+
+    newMeta["SESS_GUID"] = newMeta.user.guid;
+    newMeta["SESS_USER_ID"] = newMeta.user.userId;
+    newMeta["SESS_USERID"] = newMeta.user.userId;
+    newMeta["USERID"] = newMeta.user.userId;
+    newMeta["SESS_TENANT_ID"] = newMeta.user.tenantId;
+    newMeta["SESS_USER_NAME"] = newMeta.user.username;
+    newMeta["SESS_USER_MOBILE"] = newMeta.user.mobile;
+    newMeta["SESS_USER_CELL"] = newMeta["SESS_USER_MOBILE"];
+    newMeta["SESS_USER_EMAIL"] = newMeta.user.email;
+    newMeta["SESS_USER_COUNTRY"] = newMeta.user.country;
+    newMeta["SESS_USER_ZIPCODE"] = newMeta.user.zipcode;
+    newMeta["SESS_USER_GEOLOC"] = newMeta.user.geolocation;
+    newMeta["SESS_USER_AVATAR"] = newMeta.user.avatar?newMeta.user.avatar:"";
+
+    newMeta["SESS_ACCESS_ID"] = newMeta.user.access?.id;
+    newMeta["SESS_ACCESS_NAME"] = newMeta.user.access?.name;
+    newMeta["SESS_ACCESS_SITES"] = newMeta.user.access?.sites;
+    
+    newMeta["SESS_PRIVILEGE_ID"] = newMeta.user.privilege?.id;
+    newMeta["SESS_PRIVILEGE_NAME"] = newMeta.user.privilege?.name;
+    newMeta["SESS_PRIVILEGE_HASH"] = newMeta.user.privilege?.hash;
+
+    newMeta["SESS_GROUP_ID"] = newMeta.user.group?.id;
+    newMeta["SESS_GROUP_NAME"] = newMeta.user.group?.name;
+    newMeta["SESS_GROUP_MANAGER"] = newMeta.user.group?.manager;
+    // newMeta["SESS_GROUP_DESCS"] = newMeta.user.group?.groupDescs;
+
+    newMeta["SESS_ACTIVE_SITE"] = newMeta.appInfo.appid;
+    newMeta["SESS_LOGIN_SITE"] = newMeta.appInfo.appid;
+    newMeta["SESS_SITEID"] = newMeta.appInfo.appid;
+    // newMeta["ADMIN_PRIVILEGE_RANGE"] = "";
+
+    newMeta["SESS_CURRENT_DATE"] = moment().format("Y-M-D");
+    newMeta["SESS_CURRENT_DATE_DMY"] = moment().format("D-M-Y");
+    newMeta["SESS_CURRENT_DATETIME"] = moment().format("Y-M-D HH:mm:ss");
+    newMeta["SESS_CURRENT_DAY"] = moment().format("D");
+    newMeta["SESS_CURRENT_DAYNAME"] = moment().format("dddd");
+    newMeta["SESS_CURRENT_MONTH"] = moment().format("M");
+    newMeta["SESS_CURRENT_MONTH_NAME"] = moment().format("MMMM");
+    newMeta["SESS_CURRENT_TIME"] = moment().format("HH:mm:ss");
+    newMeta["SESS_CURRENT_YEAR"] = moment().format("Y");
+    newMeta["SESS_DATE_YESTERDAY"] = moment().subtract(1, 'days').format("Y-M-D");
+
+    // newMeta["SESS_PROFILE_ID"] = newMeta.user.profile.id;
+    // newMeta["SESS_PROFILE_CODE"] = newMeta.user.profile.code;
+    // newMeta["SESS_PROFILE_DESIGNATION"] = newMeta.user.profile.designation;
+    // newMeta["SESS_PROFILE_SUBTYPE"] = newMeta.user.profile.subtype;
+    // newMeta["SESS_REPORTING_TO"] = newMeta.user.profile.reporting_to;
+    // newMeta["SESS_REPORTING_TO_HR"] = newMeta.user.profile.reporting_to_hr;
+
+    // newMeta["SESS_BRANCH_ID"] = newMeta.user.branch.id;
+    // newMeta["SESS_BRANCH_CODE"] = newMeta.user.branch.code;
+    // newMeta["SESS_BRANCH_NAME"] = newMeta.user.branch.name;
+
+    newMeta["SESS_POLICY"] = {};
+    newMeta["SESS_ROLE_LIST"] = newMeta.user.roles;
+    newMeta["SESS_SCOPE_LIST"] = newMeta.user.scopes;
+
+    newMeta["SESS_GEOLOCATION"] = newMeta.geolocation?newMeta.geolocation:newMeta.user.geolocation;
+    newMeta["GEOLOCATION"] = newMeta["SESS_GEOLOCATION"];
+    newMeta["CLIENT_IP"] = newMeta.remoteIP;
+    newMeta["SERVER_IP"] =  newMeta.serverIP?newMeta.serverIP:newMeta.serverHost;
+    
+    newMeta['META_PROCESSED'] = true;
+
+    console.log("META_INFO", newMeta);
+
+    return newMeta;
 }

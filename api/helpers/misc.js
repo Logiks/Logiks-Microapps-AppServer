@@ -144,7 +144,7 @@ module.exports = {
 
 global._replace = function(text, data, strict = false) {
   return text
-    //For variables
+    //For variables with ${}
     .replace(/\$\{([^}]+)\}/g, (match, key) => {
         if(key.substr(0,1)=="$") {//for json path
             var result = JSONPath({path: key.substr(2), json: data});
@@ -155,6 +155,7 @@ global._replace = function(text, data, strict = false) {
         if(strict) return data[key] || data.data[key] || "";
         else return data[key] || data.data[key] || match;
     })
+    //For variables with {{}}
     .replace(/\{\{([^}]+)\}\}/g, (match, key) => {
         if(key.substr(0,1)=="$") {//for json path
             var result = JSONPath({path: key.substr(2), json: data});
@@ -165,6 +166,7 @@ global._replace = function(text, data, strict = false) {
         if(strict) return data[key] || data.data[key] || "";
         else return data[key] || data.data[key] || match;
     })
+    //For variables with ##
     .replace(/#([^}]+)#/g, (match, key) => {
         if(key.substr(0,1)=="$") {//for json path
             var result = JSONPath({path: key.substr(2), json: data});
