@@ -121,7 +121,7 @@ module.exports = {
 				}
 
 				if(COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`]) {
-					return COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`].data;
+					return Readable.from(COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`].data);
 				}
 
 				const fileContent = await ctx.call(`${moduleName}.source`, {folder: "components", file: fileName});
