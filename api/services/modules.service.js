@@ -58,7 +58,7 @@ module.exports = {
 						};
 					}
 
-					const fileContent = await ctx.call(`${pluginID}.source`, {folder: moduleName, file: submoduleFile, params: ctx.params});
+					const fileContent = await ctx.call(`${pluginID}.source`, {folder: moduleName, file: submoduleFile});
 
 					COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`] = {
 							component: modname,
@@ -86,7 +86,7 @@ module.exports = {
 						};
 					}
 
-					const fileContent = await ctx.call(`${pluginID}.source`, {folder: "pages", file: submoduleFile, params: ctx.params});
+					const fileContent = await ctx.call(`${pluginID}.source`, {folder: "pages", file: submoduleFile});
 
 					COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`] = {
 							component: "page",
@@ -124,7 +124,7 @@ module.exports = {
 					return Readable.from(COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`].data);
 				}
 
-				const fileContent = await ctx.call(`${moduleName}.source`, {folder: "components", file: fileName, params: ctx.params});
+				const fileContent = await ctx.call(`${moduleName}.source`, {folder: "components", file: fileName});
 
 				COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`] = {
 						data: fileContent,
@@ -150,7 +150,7 @@ module.exports = {
 
 				console.log("SERVICE_HANDLER", ctx.params, cmdString);
 
-				const a1 = await ctx.call(cmdString, ctx.params, ctx);
+				const a1 = await ctx.call(cmdString, ctx.params);
                 return {"status": "okay", "results": a1};
 			}
 		},
@@ -172,14 +172,14 @@ module.exports = {
 					const folder = "";
 					const file = asset1;
 
-					const fileContent = await ctx.call(cmdString, {folder: folder, file: file, params: ctx.params});
+					const fileContent = await ctx.call(cmdString, {folder: folder, file: file});
 				
                 	return Readable.from(fileContent);
 				} else {
 					const folder = asset1;
 					const file = asset2;
 
-					const fileContent = await ctx.call(cmdString, {folder: folder, file: file, params: ctx.params});
+					const fileContent = await ctx.call(cmdString, {folder: folder, file: file});
 				
                 	return Readable.from(fileContent);
 				}
