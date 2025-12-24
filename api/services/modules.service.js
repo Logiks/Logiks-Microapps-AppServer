@@ -58,7 +58,7 @@ module.exports = {
 						};
 					}
 
-					const fileContent = await ctx.call(`${pluginID}.source`, {folder: moduleName, file: submoduleFile});
+					const fileContent = await ctx.call(`${pluginID}.source`, {folder: moduleName, file: submoduleFile, params: ctx.params});
 
 					COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`] = {
 							component: modname,
@@ -86,7 +86,7 @@ module.exports = {
 						};
 					}
 
-					const fileContent = await ctx.call(`${pluginID}.source`, {folder: "pages", file: submoduleFile});
+					const fileContent = await ctx.call(`${pluginID}.source`, {folder: "pages", file: submoduleFile, params: ctx.params});
 
 					COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`] = {
 							component: "page",
