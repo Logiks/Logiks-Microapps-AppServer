@@ -73,7 +73,7 @@ module.exports = {
 						"content": fileContent
 					};
 				} else {
-					var submoduleFile = ctx.params.item;
+					var submoduleFile = ctx.params.item+".json";
 					const pluginID = moduleName;
 
 					if(ctx.params.recache===true || ctx.params.recache==="true") {
