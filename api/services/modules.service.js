@@ -74,6 +74,7 @@ module.exports = {
 					};
 				} else {
 					var submoduleFile = ctx.params.item;
+					const pluginID = moduleName;
 
 					if(ctx.params.recache===true || ctx.params.recache==="true") {
 						if(COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`]) delete COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`];
