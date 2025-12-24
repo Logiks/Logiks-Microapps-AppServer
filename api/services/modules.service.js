@@ -86,7 +86,7 @@ module.exports = {
 							"content": COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`].data
 						};
 					}
-					console.log("MODULE_HANDLER_2", pluginID, {folder: "pages", file: submoduleFile, params: ctx.params});
+					
 					const fileContent = await ctx.call(`${pluginID}.source`, {folder: "pages", file: submoduleFile, params: ctx.params});
 
 					COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`] = {
@@ -125,7 +125,7 @@ module.exports = {
 					return Readable.from(COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`].data);
 				}
 
-				const fileContent = await ctx.call(`${moduleName}.source`, {folder: "components", file: fileName, params: ctx.params});
+				const fileContent = await ctx.call(`${moduleName}.source`, {folder: "component", file: fileName, params: ctx.params});
 
 				COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`] = {
 						data: fileContent,
