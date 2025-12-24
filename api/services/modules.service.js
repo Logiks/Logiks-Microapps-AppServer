@@ -36,7 +36,7 @@ module.exports = {
 				const moduleName = ctx.params.module;
 				var item = ctx.params.item.split(".");
 				
-				console.log("MODULE_HANDLER", ctx.params, item.length);
+				console.log("MODULE_HANDLER", ctx.params, item.length, item);
 
 				if(item.length>1) {
 					var pluginID = item[0];

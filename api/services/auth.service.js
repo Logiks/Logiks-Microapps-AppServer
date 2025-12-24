@@ -205,7 +205,7 @@ module.exports = {
 					privilege: {
 						id: 1,
 						name: "admin",
-						hash: misc.generateHash("admin")
+						hash: MISC.generateHash("admin")
 					},
 					access: {
 						id: 1,
