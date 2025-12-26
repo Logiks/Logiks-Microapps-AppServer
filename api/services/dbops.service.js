@@ -71,7 +71,7 @@ module.exports = {
                 
                 const sqlTable = jsonQuery.source.table;
                 const sqlFields = jsonQuery.fields;
-                const forcefill = jsonQuery.forcefill;
+                var forcefill = jsonQuery.forcefill;
                 const userInfo = jsonQuery.userInfo;
                 const validationRules = convertToValidatorRules(sqlFields);
 
@@ -143,7 +143,7 @@ module.exports = {
                 
                 const sqlTable = jsonQuery.source.table;
                 const sqlFields = jsonQuery.fields;
-                const forcefill = jsonQuery.forcefill;
+                var forcefill = jsonQuery.forcefill;
                 const userInfo = jsonQuery.userInfo;
                 const validationRules = convertToValidatorRules(sqlFields);
 
@@ -292,7 +292,7 @@ module.exports = {
                 const sqlTable = jsonQuery.source.table;
                 var sqlWhere = jsonQuery.source.where;
                 const sqlFields = jsonQuery.fields;
-                const forcefill = jsonQuery.forcefill;
+                var forcefill = jsonQuery.forcefill;
                 const userInfo = jsonQuery.userInfo;
                 const sqlRefid = jsonQuery.source.refid;
 
