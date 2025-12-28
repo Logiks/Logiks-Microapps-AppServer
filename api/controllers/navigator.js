@@ -18,7 +18,7 @@ module.exports = {
         if(!userInfo.privilege) userInfo.privilege = "";
         if(!userInfo.roles) userInfo.roles = [];
         if(!userInfo.scopes) userInfo.scopes = {};
-        CONFIG.log_sql = true;
+        
         if(!filter) filter = {
             "onmenu": "true",
             "privilege": [["*", userInfo.privilege, userInfo.userId, userInfo.scopes, ...userInfo.roles.map(a=>`role:${a}`)], "IN"],

@@ -51,8 +51,8 @@ module.exports = {
 		const dbResponse = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, params, function(err, results, fields) {
 					if(err) {
-						//// console.log(err, err.code, err.sqlMessage);
-						// console.log(err);
+						if(CONFIG.log_sql) console.log(err);
+						// console.log(err, err.code, err.sqlMessage);
 						resolve({
 							"status": "error", 
 							"err_code": err.code,
@@ -124,9 +124,9 @@ module.exports = {
 		}
 		
 		const dbResponse = await new Promise((resolve, reject) => {
-			_MYSQL[dbkey].query(sql, whereParams, function(err, results, fields) {
+			_MYSQL[dbkey].query(sql, whereParams?Object.values(whereParams):[], function(err, results, fields) {
 					if(err) {
-						// console.log(err);
+						if(CONFIG.log_sql) console.log(err);
 						// reject(false, err.code, err.sqlMessage);
 						resolve({
 							"status": "error", 
@@ -175,6 +175,7 @@ module.exports = {
 		const results = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, vals, function(err, results, fields) {
 					if(err) {
+						if(CONFIG.log_sql) console.log(err);
 						resolve({
 							"status": "error", 
 							"err_code": err.code,
@@ -221,6 +222,7 @@ module.exports = {
 		const results = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, [values], function(err, results, fields) {
 					if(err) {
+						if(CONFIG.log_sql) console.log(err);
 						resolve({
 							"status": "error", 
 							"err_code": err.code,
@@ -280,6 +282,7 @@ module.exports = {
 		const results = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, vals, function(err, results, fields) {
 					if(err) {
+						if(CONFIG.log_sql) console.log(err);
 						resolve({
 							"status": "error", 
 							"err_code": err.code,
@@ -327,6 +330,7 @@ module.exports = {
 		const results = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, function(err, results, fields) {
 					if(err) {
+						if(CONFIG.log_sql) console.log(err);
 						resolve({
 							"status": "error", 
 							"err_code": err.code,

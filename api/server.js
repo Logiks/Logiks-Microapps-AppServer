@@ -333,7 +333,12 @@ module.exports = {
 							},
 
 							onBeforeCall: async function (ctx, route, req, res) {
+								ctx.meta.headers = req.headers; 
 								ctx.meta.__start = Date.now();
+
+								const serverIp = req.socket.localAddress || req.connection.localAddress;
+								const serverHost = req.headers.host;
+								const remoteIP = MISC.getClientIP(req);
 
 								//console.log("REQUEST_PUBLIC", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
 								
@@ -361,10 +366,6 @@ module.exports = {
 								res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
 
 								// IP
-								const ip = MISC.getClientIP(req);
-								ctx.meta.remoteIP = ip;
-
-								const serverHost = req.headers.host;
 								const domainApp = await BASEAPP.getAppForDomain(serverHost);
 								if(!domainApp) {
 									throw new LogiksError(
@@ -385,6 +386,10 @@ module.exports = {
 								
 								ctx.meta.appInfo = appInfo || {};
 								ctx.meta.serverHost = serverHost || "";
+
+								ctx.meta.serverIp = serverIp;
+								ctx.meta.serverHost = serverHost;
+								ctx.meta.remoteIP = remoteIP;
 							}
 						},
 
@@ -527,6 +532,7 @@ module.exports = {
 							},
 							
 							onBeforeCall: async function (ctx, route, req, res) {
+								ctx.meta.headers = req.headers; 
 								ctx.meta.__start = Date.now();
 
 								console.log("REQUEST_PRIVATE", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
@@ -602,7 +608,7 @@ module.exports = {
 						const s2skey = req.query.s2stkn;
 						const serverIp = req.socket.localAddress || req.connection.localAddress;
 						const serverHost = req.headers.host;
-						const clientIP = ctx.meta.remoteIP || "unknown";
+						const remoteIP = MISC.getClientIP(req);
 
 						const appInfo = ctx.meta.appInfo;
 						
@@ -623,7 +629,7 @@ module.exports = {
 								);
 							}
 							
-							if(payload.ip!=clientIP) {
+							if(payload.ip!=remoteIP) {
 								throw new LogiksError(
 									"S2S Token can not be used from changing IP address",
 									401,
@@ -653,7 +659,7 @@ module.exports = {
 								);
 							}
 							
-							if(payload.ip!=clientIP) {
+							if(payload.ip!=remoteIP) {
 								throw new LogiksError(
 									"TimeLimited Token can not be used from changing IP address",
 									401,
@@ -709,6 +715,7 @@ module.exports = {
 									...(user || {}),
 									id: payload.userId,
 									userId: payload.userId,
+									sessionId: payload.sessionId,
 									username: payload.username,
 									tenantId: payload.tenantId ? payload.tenantId : payload.guid,
 									roles: payload.roles || [],
@@ -743,8 +750,13 @@ module.exports = {
 						if (user) {
 							ctx.meta.user = user;
 						}
+						ctx.meta.sessionId = user.sessionId;
 
 						ctx.meta.tenantInfo = await TENANT.getTenantInfo(user.tenantId);
+
+						ctx.meta.serverIp = serverIp;
+						ctx.meta.serverHost = serverHost;
+						ctx.meta.remoteIP = remoteIP;
 
 						return user || null;
 					},

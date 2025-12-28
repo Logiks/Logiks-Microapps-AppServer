@@ -90,8 +90,8 @@ module.exports = {
 
 
   getAdditionalParams : function(dataObj) {
-      if(dataObj.userid!=null) {
-        dataObj.created_by = dataObj.userid;
+      if(dataObj.userId!=null) {
+        dataObj.created_by = dataObj.userId;
       }
       if(dataObj.geocordinates!=null) {
         dataObj.geolocation = dataObj.geocordinates;
@@ -139,6 +139,26 @@ module.exports = {
       "sql" : strSQL,
       "data" : dataValues
     };
+  },
+
+  geoDistanceMeters: function(g1, g2) {
+    const [lat1, lon1] = g1.split(",").map(Number);
+    const [lat2, lon2] = g2.split(",").map(Number);
+
+    const R = 6371000;
+    const toRad = d => d * Math.PI / 180;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) ** 2;
+
+    const c = 2 * Math.asin(Math.sqrt(a));
+    return R * c;
   }
 }
 

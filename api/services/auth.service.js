@@ -12,6 +12,10 @@ const authRedis = _CACHE.getRedisInstance();
 
 const S2STOKENS_MAX = 10;
 const TLTOKENS_MAX = 10;
+const GEO_DISTANCE_MAX = 10000;
+
+const TLTOKEN_SCOPES = ["/api"];
+const S2STOKEN_SCOPES = ["/api"];
 
 authRedis.on("error", (err) => {
 	// eslint-disable-next-line no-console
@@ -32,16 +36,16 @@ module.exports = {
 				path: "/tltoken"
 			},
 			params: {
-				appid: "string"
+				appid: "string",
+				geolocation: { type: "string", optional: true, default: "0,0" },
 			},
 			async handler(ctx) {
-				
 				return this.issueTimeLimitedToken(ctx);
 			}
 		},
 
 		/**
-		 * Server 2 Server token issuance for device level access or server to server communication, they give absolute access to full system
+		 * Server 2 Server token issuance for device level access or server to server communication, they give absolute access to limited part of system
 		 * POST /api/public/auth/s2stoken
 		 */
 		s2stoken: {
@@ -51,10 +55,20 @@ module.exports = {
 			},
 			params: {
 				appid: "string",
-				appkey: "string" 
+				appkey: "string",
+				deviceid: { type: "string", optional: true, default: "" },
+				geolocation: { type: "string", optional: true, default: "0,0" },
 			},
 			async handler(ctx) {
-				
+				//Check appkey is valid with valid appid
+
+				//Check deviceid preloaded,
+				//else load it into waiting queue till approved
+
+				//check if ip lock is enabled for this device, if yes, then check remoteIP
+
+				//check if geofencing is enabled, if yes, then validate the geofencing and generart logs for every change
+
 				return this.issueS2SToken(ctx);
 			}
 		},
@@ -66,7 +80,8 @@ module.exports = {
 		authlink: {
 			rest: {
 				method: "POST",
-				path: "/authlink"
+				path: "/authlink",
+				geolocation: { type: "string", optional: true, default: "0,0" },
 			},
 			async handler(ctx) {
 				if(!CONFIG.logiksauth.enable) {
@@ -86,6 +101,10 @@ module.exports = {
 			}
 		},
 
+		/**
+		 * Called while returning from LogiksAuth Pages
+		 * POST /api/public/auth/logiksauth-login
+		 */
 		logiksAuthLogin: {
 			rest: {
 				method: "GET",
@@ -103,7 +122,9 @@ module.exports = {
 
 		/**
 		 * LogiksAuth Redirect Login Key Verification.
-		 * POST /api/public/auth/s2stoken
+		 * POST /api/public/auth/authtoken
+		 * To Be removed in future
+		 * @todo remove
 		 */
 		authtoken: {
 			rest: {
@@ -113,7 +134,8 @@ module.exports = {
 			params: {
 				appid: "string",
 				client_key: "string",
-				deviceType: { type: "string", optional: true, default: "web" }
+				deviceType: { type: "string", optional: true, default: "web" },
+				geolocation: { type: "string", optional: true, default: "0,0" },
 			},
 			async handler(ctx) {
 				
@@ -132,7 +154,11 @@ module.exports = {
 					id: username,
 					username: username,
 					tenantId: username,
-					passwordHash: await bcrypt.hash("password", 10),
+
+					guid: ctx.params.appid,
+					userId: "ATKN",
+					geolocation: ctx.params.geolocation?ctx.params.geolocation:"0,0",
+
 					privilage: privilage,
 					roles: roles,
 					scopes: scopes
@@ -147,15 +173,17 @@ module.exports = {
 				// 	throw new LogiksError("Invalid credentials", 401);
 				// }
 
-				return this.issueTokensForUser(userData, ctx.meta.remoteIP, deviceType);
+				const token = this.issueTokensForUser(userData, ctx.meta.remoteIP, deviceType, ctx);
+				await log_login(userData, "AUTHTOKEN-GENERATED", "/authtoken", ctx);
+				return token;
 			}
 		},
 
-		//To allow 3rd party federated login (Google, Facebook, Apple, etc)
+		//To allow 3rd party federated login (Google, Facebook, Apple, etc), called while returning to application
 		federatedLogin: {
 			rest: {
 				method: "GET",
-				path: "/fenderated-login"
+				path: "/federated-login/:source?"
 			},
 			async handler(ctx) {
 				console.log("FEDERATED_LOGIN", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
@@ -175,58 +203,84 @@ module.exports = {
 			params: {
 				username: "string",
 				password: "string",
-				deviceType: { type: "string", optional: true, default: "web" }
+				deviceid: { type: "string", optional: true, default: "" },
+				deviceType: { type: "string", optional: true, default: "web" },
+				geolocation: { type: "string", optional: true, default: "0,0" },
 			},
 			async handler(ctx) {
-				const { username, password, deviceType } = ctx.params;
+				var { username, password, deviceType, geolocation } = ctx.params;
 
-				// TODO: replace with real DB lookup
-				const fakeUserFromDB = {
-					id: 101,
-					username: "admin",
-					tenantId: "tenant-1",
-					guid: "tenant-1",
-					passwordHash: await bcrypt.hash("admin123", 10),
-					mobile: "",
-					email: "",
-					country: "",
-					zipcode: "",
-					roles: ["admin"],
-					scopes: [
-						"tenant-1:orders:read",
-						"tenant-1:orders:write",
-						"tenant-1:docs:read"
-					],
-					group: {
-						id: 1,
-						name: "HQ",
-						manager: ""
-					},
-					privilege: {
-						id: 1,
-						name: "admin",
-						hash: MISC.generateHash("admin")
-					},
-					access: {
-						id: 1,
-						name: "all",
-						sites: [ctx.meta.appInfo.appid]
-					},
-					avatar: "",
-					timestamp: moment().format("Y-M-D HH:mm:ss"),
-					geolocation: "0,0"
-				};
-
-				if (username !== fakeUserFromDB.username) {
+				const userInfo = await USERS.verifyUser(username, password, ctx.meta.appInfo.appid);
+				if(!userInfo) {
+					await log_login_error({
+						"guid": "-",
+						"userId": username,
+						"geolocation": geolocation
+					}, "USER-LOGIN", "/login", "Invalid credentials", ctx);
 					throw new LogiksError("Invalid credentials", 401);
 				}
+				var userDataUpdated = await generateUserMap(userInfo, geolocation, ctx.meta.remoteIP, ctx.meta.appInfo.appid);
+				
+				//More fields to be used to authenticate user
+				// {
+				// 	tags: null,
+				// 	registered_site: null,
+				// 	vcode: null,
+				// 	mauth: null,
+				// 	refid: null,
+				// }
+				// console.log("userInfo", userInfo, userDataUpdated);
 
-				const valid = await bcrypt.compare(password, fakeUserFromDB.passwordHash);
-				if (!valid) {
-					throw new LogiksError("Invalid credentials", 401);
+				//Password expiry
+				if(userInfo.expires!=null && userInfo.expires.length>0) {
+					const isPast = new Date(userInfo.expires) < new Date();
+					if(isPast) {
+						await log_login_error({
+							"guid": "-",
+							"userId": username,
+							"geolocation": geolocation
+						}, "USER-LOGIN", "/login", "Password expired, contact admin for renewing your password", ctx);
+						throw new LogiksError("Password expired, contact admin for renewing your password", 401);
+					}
 				}
 
-				return this.issueTokensForUser(fakeUserFromDB, ctx.meta.remoteIP, deviceType);
+				//check if geofencing is enabled, if yes, then validate the geofencing and generart logs for every change
+				if(userInfo.geolocation && userInfo.geolocation.length>0) {
+					if(geolocation=="0,0") {
+						await log_login_error({
+							"guid": "-",
+							"userId": username,
+							"geolocation": geolocation
+						}, "USER-LOGIN", "/login", "Geolocation mandatory for proceeding with login", ctx);
+						throw new LogiksError("Geolocation mandatory for proceeding with login", 401);
+					}
+					const geoDistance = MISC.geoDistanceMeters(userInfo.geolocation, geolocation);
+					if(geoDistance>GEO_DISTANCE_MAX) {
+						await log_login_error({
+							"guid": "-",
+							"userId": username,
+							"geolocation": geolocation
+						}, "USER-LOGIN", "/login", "Locked by Geofence, you are not in allowed geolocation (1)", ctx);
+						throw new LogiksError("Locked by Geofence, you are not in allowed geolocation (1)", 401);
+					}
+				}
+
+				//check if ip lock is enabled for this device, if yes, then check remoteIP
+				if(userInfo.geoip && userInfo.geoip.length>0 && userInfo.geoip!=ctx.meta.remoteIP) {
+					await log_login_error({
+						"guid": "-",
+						"userId": username,
+						"geolocation": geolocation
+					}, "USER-LOGIN", "/login", "Locked by Geofence, you are not in allowed geolocation (2)", ctx);
+					throw new LogiksError("Locked by Geofence, you are not in allowed geolocation (2)", 401);
+				}
+
+				//Check deviceid if device lock is enabled, if yes, then check in log_devices for last access for the user
+				
+
+				const token = this.issueTokensForUser(userDataUpdated, ctx.meta.remoteIP, deviceType, ctx);
+				await log_login(userDataUpdated, "USER-LOGIN", "/login", ctx);
+				return token;
 			}
 		},
 
@@ -240,24 +294,39 @@ module.exports = {
 				path: "/request-otp"
 			},
 			params: {
-				identifier: "string",
-				deviceType: { type: "string", optional: true, default: "web" }
+				username: "string",
+				password: "string",
+				deviceType: { type: "string", optional: true, default: "web" },
+				geolocation: { type: "string", optional: true, default: "0,0" },
 			},
 			async handler(ctx) {
-				const { identifier, deviceType } = ctx.params;
+				var { username, password, deviceType, geolocation } = ctx.params;
+				if(!geolocation) geolocation = "0,0";
 
+				const userInfo = await USERS.verifyUser(username, password, ctx.meta.appInfo.appid);
+				if(!userInfo) {
+					await log_login_error({
+						"guid": "-",
+						"userId": username,
+						"geolocation": geolocation
+					}, "REQUEST-OTP", "/request-otp", "Invalid credentials", ctx);
+					throw new LogiksError("Invalid credentials", 401);
+				}
+				var userDataUpdated = await generateUserMap(userInfo, geolocation, ctx.meta.remoteIP, ctx.meta.appInfo.appid);
+
+				const identifier = MISC.generateUUID("",4);
 				const otp = (Math.floor(100000 + Math.random() * 900000)).toString();
 				const key = `otp:${identifier}`;
 
 				await authRedis.set(
 					key,
-					JSON.stringify({ otp, deviceType }),
+					JSON.stringify({ otp, deviceType, user: userDataUpdated }),
 					"EX",
 					300 // 5 minutes
 				);
 
 				// TODO: integrate SMS/email provider
-				console.log("OTP generated", { identifier, otp, deviceType });
+				console.log("OTP generated", { identifier, otp, deviceType, user: userDataUpdated });
 
 				return { success: true, message: "OTP sent (stub)", ttl: 300 };
 			}
@@ -275,7 +344,8 @@ module.exports = {
 			params: {
 				identifier: "string",
 				otp: "string",
-				deviceType: { type: "string", optional: true, default: "web" }
+				deviceType: { type: "string", optional: true, default: "web" },
+				geolocation: { type: "string", optional: true, default: "0,0" },
 			},
 			async handler(ctx) {
 				const { identifier, otp, deviceType } = ctx.params;
@@ -284,28 +354,32 @@ module.exports = {
 				const stored = await authRedis.get(key);
 
 				if (!stored) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "VERIFY-OTP", "/verify-otp", "Invalid or expired OTP (1)", ctx);
 					throw new LogiksError("Invalid or expired OTP", 401);
 				}
 
 				const parsed = JSON.parse(stored);
 				if (parsed.otp !== otp) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "VERIFY-OTP", "/verify-otp", "Invalid or expired OTP (2)", ctx);
 					throw new LogiksError("Invalid or expired OTP", 401);
 				}
 
 				await authRedis.del(key);
 
 				// TODO: map identifier → real user
-				const user = {
-					id: 202,
-					username: identifier,
-					tenantId: "tenant-2",
-					roles: ["user"],
-					scopes: [
-						"tenant-2:orders:read" // limited scopes for OTP-based login
-					]
-				};
+				const user = parsed.user;
 
-				return this.issueTokensForUser(user, ctx.meta.remoteIP, deviceType);
+				const token = this.issueTokensForUser(user, ctx.meta.remoteIP, deviceType, ctx);
+				await log_login(user, "USER-LOGIN-OTP", "/verify-otp", ctx);
+				return token;
 			}
 		},
 
@@ -320,7 +394,8 @@ module.exports = {
 			},
 			params: {
 				refreshToken: "string",
-				deviceType: { type: "string", optional: true, default: "web" }
+				deviceType: { type: "string", optional: true, default: "web" },
+				geolocation: { type: "string", optional: true, default: "0,0" },
 			},
 			async handler(ctx) {
 				const { refreshToken, deviceType } = ctx.params;
@@ -329,10 +404,20 @@ module.exports = {
 				try {
 					payload = jwt.verify(refreshToken, JWT_SECRET);
 				} catch (err) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "USER-REFRESH-LOGIN", "/refresh", "Invalid refresh token (1)", ctx);
 					throw new LogiksError("Invalid refresh token", 401);
 				}
 
 				if (payload.type !== "refresh") {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "USER-REFRESH-LOGIN", "/refresh", "Invalid refresh token (2)", ctx);
 					throw new LogiksError("Invalid refresh token type", 401);
 				}
 
@@ -341,6 +426,11 @@ module.exports = {
 				const stored = await authRedis.get(key);
 
 				if (!stored) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "USER-REFRESH-LOGIN", "/refresh", "Refresh token revoked", ctx);
 					throw new LogiksError("Refresh token revoked", 401);
 				}
 
@@ -355,7 +445,21 @@ module.exports = {
 					scopes: payload.scopes || []
 				};
 
-				return this.issueTokensForUser(user, ctx.meta.remoteIP, deviceType);
+				var userInfo = await authRedis.get(`user:${ctx.meta.sessionId}`);
+				try {
+					userInfo = JSON.parse(userInfo);
+				} catch(e) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "USER-REFRESH-LOGIN", "/refresh", "User Info Missing, try login again", ctx);
+					throw new LogiksError("User Info Missing, try login again", 401);
+				}
+
+				const token = this.issueTokensForUser(userInfo, ctx.meta.remoteIP, deviceType, ctx);
+				await log_login(userInfo, "USER-REFRESH-LOGIN", "/refresh", ctx);
+				return token;
 			}
 		},
 
@@ -490,20 +594,37 @@ module.exports = {
 				try {
 					payload = jwt.verify(token, JWT_SECRET);
 				} catch (err) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": "0,0"
+					}, "VERIFY-TOKEN", "/-", "Invalid token - ACCESS", ctx);
 					throw new LogiksError("Invalid token", 401);
 				}
 
 				if (payload.type !== "access") {
+					await log_login_error({
+						"guid": payload.guid,
+						"userId": payload.userId,
+						"geolocation": payload.geolocation
+					}, "VERIFY-TOKEN", "/-", "Invalid token type - ACCESS", ctx);
 					throw new LogiksError("Invalid token type", 401);
 				}
 
 				if (payload.jti) {
 					const blacklisted = await authRedis.get(`blacklist:${payload.jti}`);
 					if (blacklisted) {
+						await log_login_error({
+							"guid": payload.guid,
+							"userId": payload.userId,
+							"geolocation": payload.geolocation
+						}, "VERIFY-TOKEN", "/-", "Revoked token - ACCESS", ctx);
 						throw new LogiksError("Token revoked", 401);
 					}
 				}
+				const sessionId = payload.jti.replace("acc:","").replace("ref:","");
 
+				// console.log("XXXXX", payload, sessionId);
 				return {
 					userId: payload.userId,
 					username: payload.username,
@@ -511,7 +632,8 @@ module.exports = {
 					roles: payload.roles || [],
 					scopes: payload.scopes || [],
 					deviceType: payload.deviceType,
-					ip: payload.ip
+					ip: payload.ip,
+					sessionId: sessionId,
 				};
 			}
 		},
@@ -534,6 +656,11 @@ module.exports = {
 				} catch(e) {}
 
 				if (!stored) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": "0,0"
+					}, "VERIFY-TOKEN-S2S", "/-", "Invalid token - S2S", ctx);
 					throw new LogiksError(
 						"Invalid S2S token",
 						401,
@@ -553,6 +680,12 @@ module.exports = {
 				if(stored.counter >= S2STOKENS_MAX) {
 					await authRedis.del(key);
 
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": "0,0"
+					}, "VERIFY-TOKEN-S2S", "/-", "Expired token - S2S", ctx);
+
 					throw new LogiksError(
 						"S2S Token can be used only for server-to-server communication for limited API access",
 						401,
@@ -563,7 +696,7 @@ module.exports = {
 				return stored;
 			}
 		},
-		//Verify Generated S2S Token for 1 time use
+		//Verify Generated TL Token for TLTOKENS_MAX time use and IP match
 		verifyTLToken: {
 			params: {
 				token: "string"
@@ -581,6 +714,26 @@ module.exports = {
 				} catch(e) {}
 
 				if (!stored) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": "0,0"
+					}, "VERIFY-TOKEN-TLT", "/-", "Invalid token - TLT", ctx);
+
+					throw new LogiksError(
+						"Invalid TL token",
+						401,
+						"INVALID_TL_TOKEN"
+					);
+				}
+
+				if(stored.ip!=ctx.meta.remoteIP) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": "0,0"
+					}, "VERIFY-TOKEN-TLT", "/-", "Invalid IP for the given Token - TLT", ctx);
+
 					throw new LogiksError(
 						"Invalid TL token",
 						401,
@@ -600,6 +753,12 @@ module.exports = {
 				if(stored.counter >= TLTOKENS_MAX) {
 					await authRedis.del(key);
 
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": "0,0"
+					}, "VERIFY-TOKEN-TLT", "/-", "Expired token - TLT", ctx);
+
 					throw new LogiksError(
 						"TL Token can be used only for server-to-server communication for limited API access",
 						401,
@@ -609,6 +768,19 @@ module.exports = {
 				
 				return stored;
 			}
+		},
+
+		getMyInfo: {
+			handler: async function(ctx) {
+				var userInfo = await authRedis.get(`user:${ctx.meta.sessionId}`);
+				try {
+					userInfo = JSON.parse(userInfo);
+				} catch(e) {
+					console.error("Error finding UserInfo");
+				}
+
+				return userInfo;
+			},
 		}
 	},
 	methods: {
@@ -640,10 +812,14 @@ module.exports = {
 
 			const tempObj = {
 				appId: ctx.params.appid,
+				guid: ctx.params.appid,
+				userId: "s2s",
+				geolocation: ctx.params.geolocation?ctx.params.geolocation:"0,0",
 				accessToken: accessToken,
 				expiresAt: Date.now() + (ACCESS_TOKEN_TTL * 1000),
-				scopes: ["/api"],
+				scopes: S2STOKEN_SCOPES,
 				ip: ctx.meta.remoteIP,
+				deviceid: ctx.params.deviceid,
 				deviceType: "s2s",
 				counter: 0
 			};
@@ -654,6 +830,8 @@ module.exports = {
 					"EX",
 					300 // 5 minutes
 				);
+			//log_login(userInfo, loginType, loginURI, loginStatus, ctx)
+			await log_login(tempObj, "S2ST-GENERATED", "/tltoken", ctx);
 
 			return {
 				"status": "success",
@@ -669,12 +847,12 @@ module.exports = {
 			const sessionId = `${ctx.params.appid}:${ctx.params.appid}:${Date.now()}`;
 
 			const accessJti = `acc:${sessionId}`;
-			const refreshJti = `ref:${sessionId}`;
+			// const refreshJti = `ref:${sessionId}`;
 
 			const payloadBase = {
 				"appId": ctx.params.appid,
 				"ip": ctx.meta.remoteIP,
-				"deviceType": "s2s"
+				"deviceType": "tlt"
 			};
 
 			const accessToken = jwt.sign(
@@ -693,11 +871,14 @@ module.exports = {
 
 			const tempObj = {
 				appId: ctx.params.appid,
+				guid: ctx.params.appid,
+				userId: "tlt",
+				geolocation: ctx.params.geolocation?ctx.params.geolocation:"0,0",
 				accessToken: accessToken,
 				expiresAt: Date.now() + (ACCESS_TOKEN_TTL * 1000),
-				scopes: ["/api"],
+				scopes: TLTOKEN_SCOPES,
 				ip: ctx.meta.remoteIP,
-				deviceType: "s2s",
+				deviceType: "tlt",
 				counter: 0
 			};
 
@@ -707,6 +888,8 @@ module.exports = {
 					"EX",
 					300 // 5 minutes
 				);
+			//log_login(userInfo, loginType, loginURI, loginStatus, ctx)
+			await log_login(tempObj, "TLT-GENERATED", "/tltoken", ctx);
 
 			return {
 				"status": "success",
@@ -720,7 +903,7 @@ module.exports = {
 		/**
 		 * Issue access + refresh token pair & manage Redis indices.
 		 */
-		async issueTokensForUser(user, ip, deviceType = "web") {
+		async issueTokensForUser(user, ip, deviceType = "web", ctx) {
 			const sessionId = `${user.id}:${Date.now()}:${deviceType}`;
 
 			const accessJti = `acc:${sessionId}`;
@@ -774,6 +957,13 @@ module.exports = {
 				REFRESH_TOKEN_TTL
 			);
 
+			await authRedis.set(
+				`user:${sessionId}`,
+				JSON.stringify(user),
+				"EX",
+				REFRESH_TOKEN_TTL
+			);
+
 			// Index of all refresh tokens per tenant+user
 			await authRedis.sadd(
 				`user_sessions:${user.tenantId}:${user.id}`,
@@ -791,7 +981,7 @@ module.exports = {
 				expiresIn: ACCESS_TOKEN_TTL,
 				user: {
 					id: user.id,
-					userId: user.id,
+					userId: user.userId,
 					username: user.username,
 					tenantId: user.tenantId,
 					roles: user.roles || [],
@@ -801,3 +991,127 @@ module.exports = {
 		}
 	}
 };
+
+
+async function generateUserMap(userInfo, geolocation, geoIP, appid) {
+	return {
+		id: userInfo.id,
+		userId: userInfo.userid,
+		tenantId: userInfo.guid,
+		guid: userInfo.guid,
+		name: userInfo.name,
+		dob: userInfo.dob.split("T")[0],
+		gender: userInfo.gender,
+		mobile: userInfo.mobile,
+		email: userInfo.email,
+		address: userInfo.address,
+		region: userInfo.region,
+		country: userInfo.country,
+		zipcode: userInfo.zipcode,
+		roles: userInfo.roles_list,
+		scopes: userInfo.scopes,//["tenant-1:orders:read", "tenant-1:orders:write", "tenant-1:docs:read"],
+		group: {
+			id: userInfo.groupid,
+			name: userInfo.group_name,
+			manager: userInfo.group_manager,
+			parent: userInfo.group_parent,
+			phone: userInfo.group_phone,
+			email: userInfo.group_email,
+			branch: userInfo.group_branch,
+			area: userInfo.group_area,
+			region: userInfo.group_region,
+			state: userInfo.group_state,
+			zone: userInfo.group_zone,
+			country: userInfo.group_country
+		},
+		privilege: {
+			id: userInfo.privilegeid,
+			name: userInfo.privilege_name,
+			hash: MISC.generateHash(`${userInfo.privilegeid}_${userInfo.privilege_name}`)
+		},
+		access: {
+			id: userInfo.accessid,
+			name: userInfo.access_name,
+			sites: userInfo.scope_sites=="*"? [appid]: userInfo.scope_sites.split(",")
+		},
+		privacy: userInfo.privacy,
+		security_policy: userInfo.security_policy,
+		avatar: await USERS.getUserAvatar(userInfo.avatar, userInfo.avatar_type),
+		timestamp: moment().format("Y-M-D HH:mm:ss"),
+		geolocation: geolocation,
+		geoip: geoIP
+	};
+}
+
+async function log_login(userInfo, loginType, loginURI, ctx) {
+	const dated = moment().format("Y-M-D HH:mm:ss");
+	var userAgent = ctx.meta.headers["user-agent"];
+
+	var createData = {
+		"appid": ctx.meta.appInfo.appid, 
+		"guid": userInfo.guid,
+		"loginid": userInfo.userId, 
+		"event_type": loginType, 
+		"geolocation": userInfo.geolocation, 
+		"uri": loginURI, 
+		"host": ctx.meta.serverHost, 
+		"client_ip": ctx.meta.remoteIP, 
+		"server_ip": ctx.meta.serverIp, 
+		"user_agent": userAgent?userAgent:"-", 
+		"device_fingerprint": ctx.params.deviceid?ctx.params.deviceid:"-", 
+		"medium": ctx.params.device?ctx.params.device:"api", 
+		"reason": "LOGIN", 
+		"status": "SUCCESS",
+		"timestamp": dated, 
+        "created_on": dated,
+        "created_by": userInfo.userId,
+        "edited_on": dated,
+        "edited_by": userInfo.userId,
+	};
+
+	// console.log("LOG_LOGIN", createData);
+	// CONFIG.log_sql = true;
+	var a = await _DB.db_insertQ1("logdb", "log_logins", createData);
+
+	await _DB.db_updateQ("appdb", "lgks_users", {
+		last_login: dated,
+		last_login_ip: ctx.meta.remoteIP
+	}, {
+		"userid": userInfo.userId
+	});
+	
+	return;
+}
+
+async function log_login_error(userInfo, loginType, loginURI, errorMessage, ctx) {
+	const dated = moment().format("Y-M-D HH:mm:ss");
+	var userAgent = ctx.meta.headers["user-agent"];
+
+	var createData = {
+		"appid": ctx.meta.appInfo.appid, 
+		"guid": userInfo.guid?userInfo.guid:"-",
+		"loginid": userInfo.userId, 
+		"event_type": `ERROR-${loginType}`, 
+		"geolocation": userInfo.geolocation, 
+		"uri": loginURI, 
+		"host": ctx.meta.serverHost, 
+		"client_ip": ctx.meta.remoteIP, 
+		"server_ip": ctx.meta.serverIp, 
+		"user_agent": userAgent?userAgent:"-", 
+		"device_fingerprint": ctx.params.deviceid?ctx.params.deviceid:"-", 
+		"medium": ctx.params.device?ctx.params.device:"api", 
+		"reason": errorMessage, 
+		"status": "ERROR", 
+		"timestamp": dated, 
+        "created_on": dated,
+        "created_by": userInfo.userId,
+        "edited_on": dated,
+        "edited_by": userInfo.userId,
+	};
+
+	// console.log("LOG_LOGIN_ERROR", createData);
+	// CONFIG.log_sql = true;
+	var a = await _DB.db_insertQ1("logdb", "log_logins", createData);
+
+	return;
+}

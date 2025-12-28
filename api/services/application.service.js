@@ -287,6 +287,19 @@ module.exports = {
 				}
 			}
 		},
+
+		myInfo: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/me"
+			},
+			async handler(ctx) {
+				// console.log(ctx.meta);
+				return {
+					"info": await ctx.call("auth.getMyInfo")
+				}
+			}
+		}
     },
     methods: {
 

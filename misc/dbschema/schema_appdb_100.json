@@ -992,6 +992,128 @@
       "PRIMARY"
     ]
   },
+  "lgks_orgs": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": "global",
+        "primary": false
+      },
+      "org_name": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "org_email": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "org_mobile": {
+        "type": "varchar(20)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "org_address": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "org_region": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "org_country": {
+        "type": "varchar(150)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "org_zipcode": {
+        "type": "varchar(15)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "org_logo": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "tags": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('true','false')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "account_expires": {
+        "type": "date",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "account_planid": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "remarks": {
+        "type": "varchar(250)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "guid"
+    ]
+  },
   "lgks_privileges": {
     "columns": {
       "id": {
@@ -1326,6 +1448,73 @@
     "indexes": [
       "PRIMARY",
       "scope_id"
+    ]
+  },
+  "lgks_scopes": {
+    "columns": {
+      "id": {
+        "type": "int unsigned",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": "global",
+        "primary": false
+      },
+      "userid": {
+        "type": "varchar(150)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "scopes": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "notes": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('true','false')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY"
     ]
   },
   "lgks_security_iplist": {
@@ -1676,24 +1865,6 @@
         "default": "male",
         "primary": false
       },
-      "organization_name": {
-        "type": "varchar(255)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "organization_position": {
-        "type": "varchar(200)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "organization_email": {
-        "type": "varchar(255)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
       "email": {
         "type": "varchar(200)",
         "nullable": true,
@@ -1854,6 +2025,127 @@
     "indexes": [
       "PRIMARY",
       "userid"
+    ]
+  },
+  "lgks_users_group": {
+    "columns": {
+      "id": {
+        "type": "bigint",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": "global",
+        "primary": false
+      },
+      "group_parent": {
+        "type": "int",
+        "nullable": false,
+        "default": "0",
+        "primary": false
+      },
+      "group_name": {
+        "type": "varchar(150)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "group_manager": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "group_phone": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "group_email": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "group_branch": {
+        "type": "varchar(25)",
+        "nullable": false,
+        "default": "NA",
+        "primary": false
+      },
+      "group_area": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": "NA",
+        "primary": false
+      },
+      "group_region": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": "NA",
+        "primary": false
+      },
+      "group_state": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": "NA",
+        "primary": false
+      },
+      "group_zone": {
+        "type": "varchar(10)",
+        "nullable": false,
+        "default": "NA",
+        "primary": false
+      },
+      "group_country": {
+        "type": "varchar(10)",
+        "nullable": false,
+        "default": "NA",
+        "primary": false
+      },
+      "group_descs": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": false,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY"
     ]
   },
   "log_validationrules": {

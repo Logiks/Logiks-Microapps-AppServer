@@ -2,6 +2,8 @@
  * Users Controller
  * 
  * */
+//node -e "console.log(require('crypto').randomBytes(8).toString('hex'))"
+const USER_SALT = "86199373d1fb88fe";//CONFIG.ENC_SALT
 
 module.exports = {
 
@@ -15,84 +17,130 @@ module.exports = {
         return userInfo?.results;
     },
 
-    getUserInfo: async function(userid, callback) {
-        const userInfo = await _DB.db_selectQ("appdb", "lgks_users", "*", {
-                userid: userid,
-            },{});
-        return userInfo?.results;
-    },
+    getUserInfo: async function(userid, where = {}, more = false, callback) {
+        if(!where) where = {};
+        where.userid = userid;
 
-    verifyUser: async function(userid, password, callback) {
-        //var final_password = md5(CONFIG.ENC_SALT+""+password);
-        // console.log("verifyUser", userid, password);
+        if(more===true) {
+            // where["lgks_users.blocked"] = "RAW";
+            // where["lgks_privileges.blocked"] = "RAW";
+            where["lgks_users.privilegeid=lgks_privileges.id"] = "RAW";
+            where["lgks_users.accessid=lgks_access.id"] = "RAW";
+            
+            var userInfo = await _DB.db_selectQ("appdb", 
+                "lgks_users JOIN lgks_privileges ON lgks_privileges.id = lgks_users.privilegeid JOIN lgks_access ON lgks_access.id = lgks_users.accessid LEFT JOIN lgks_users_group ON lgks_users_group.id = lgks_users.groupid", 
+                "lgks_users.*,lgks_privileges.name as privilege_name, lgks_access.name as access_name, lgks_access.sites as scope_sites, lgks_users_group.*", 
+                where, {});
+            if(!userInfo || !userInfo?.results || userInfo.results.length<=0) return false;
 
-        var userInfo = await _DB.db_selectQ("appdb", "lgks_users,lgks_privileges,lgks_access,lgks_users_group", 
-            "lgks_users.*,lgks_privileges.name as privilege_name, lgks_access.sites as scope_sites,lgks_users_group.bank,lgks_users_group.branch,lgks_users_group.state,lgks_users_group.zone,lgks_users_group.area", {
-                "userid": userid,
-                "lgks_users.blocked": 'false',
-                "lgks_privileges.blocked": 'false',
-                "lgks_users.privilegeid=lgks_privileges.id": "RAW",
-                "lgks_users.accessid=lgks_access.id": "RAW",
-                "lgks_users.groupid=lgks_users_group.id": "RAW",
-            },{});
-        if(!userInfo || !userInfo?.results || userInfo.results.length<=0) return false;
-        
-        userInfo = userInfo.results[0];
-        var encrypted_password = sha1(md5(password));
-        if(userInfo.pwd!=encrypted_password) {
-            callback(false, "Userid or Password incorrect");
-            return;
+            userInfo = userInfo.results[0];
+            delete userInfo.pwd;
+
+            return userInfo;
+        } else {
+            var userInfo = await _DB.db_selectQ("appdb", "lgks_users", "*", where,{});
+            if(!userInfo || !userInfo?.results || userInfo.results.length<=0) return false;
+
+            userInfo = userInfo.results[0];
+            delete userInfo.pwd;
+
+            return userInfo;
         }
-        // console.log("userInfo-1", userInfo);
-        var finalUserInfo = {
-            "guid": userInfo['guid'],
-            "userid": userInfo['userid'],
-            "privilege": userInfo['privilege_name'],
-            "priviledge": userInfo['privilege_name'],
-            "role": userInfo['privilege_name'],
-            "scope": userInfo['scope_sites'],
-            "full_name": userInfo['name'],
-            "designation": userInfo['organization_position'],
-            "bank": userInfo['bank'],
-            "branch": userInfo['branch'],
-            "state": userInfo['state'],
-            "zone": userInfo['zone'],
-            "area": userInfo['area']
-        };
-        return userInfo;
     },
 
-    getUserInfoById: async function(userid, callback) {
-        var userInfo = await _DB.db_selectQ("appdb", "lgks_users,lgks_privileges,lgks_access,lgks_users_group", 
-            "lgks_users.*,lgks_privileges.name as privilege_name, lgks_access.sites as scope_sites,lgks_users_group.bank,lgks_users_group.branch,lgks_users_group.state,lgks_users_group.zone,lgks_users_group.area", {
+    verifyUser: async function(userid, password, appId) {
+        // console.log("verifyUser", userid, password);
+        // passwordHash: await bcrypt.hash("admin123", 10),
+        // const valid = await bcrypt.compare(password, fakeUserFromDB.passwordHash);
+        // CONFIG.log_sql = true;
+
+        var userInfo = await _DB.db_selectQ("appdb", 
+            "lgks_users JOIN lgks_privileges ON lgks_privileges.id = lgks_users.privilegeid JOIN lgks_access ON lgks_access.id = lgks_users.accessid LEFT JOIN lgks_users_group ON lgks_users_group.id = lgks_users.groupid", 
+            //"lgks_users,lgks_privileges,lgks_access LEFT JOIN lgks_users_group ON lgks_users_group.id = lgks_users.groupid", 
+            "lgks_privileges.name as privilege_name, lgks_access.name as access_name, lgks_access.sites as scope_sites, lgks_users_group.*, lgks_users.*, lgks_users.userid as userId", {
                 "userid": userid,
                 "lgks_users.blocked": 'false',
                 "lgks_privileges.blocked": 'false',
-                "lgks_users.privilegeid=lgks_privileges.id": "RAW",
-                "lgks_users.accessid=lgks_access.id": "RAW",
-                "lgks_users.groupid=lgks_users_group.id": "RAW",
-            },{});
-        
+                "(lgks_access.sites='*' OR FIND_IN_SET(?, lgks_access.sites))": "RAW",
+            },{appId});
         if(!userInfo || !userInfo?.results || userInfo.results.length<=0) return false;
         
         userInfo = userInfo.results[0];
         // console.log("userInfo-1", userInfo);
-        var finalUserInfo = {
-            "guid": userInfo['guid'],
-            "userid": userInfo['userid'],
-            "privilege": userInfo['privilege_name'],
-            "priviledge": userInfo['privilege_name'],
-            "role": userInfo['privilege_name'],
-            "scope": userInfo['scope_sites'],
-            "full_name": userInfo['name'],
-            "designation": userInfo['organization_position'],
-            "bank": userInfo['bank'],
-            "branch": userInfo['branch'],
-            "state": userInfo['state'],
-            "zone": userInfo['zone'],
-            "area": userInfo['area']
-        };
 
-        return userInfo;
+        //Assuming hashed password from the frontend
+        var encrypted_password = MISC.generateHash(USER_SALT+""+password);//sha1, generateHash(password)
+        if(userInfo.pwd_salt=="$1") {
+            if(userInfo.pwd==encrypted_password) {
+
+                try {
+					if(userInfo.roles.substr(0,1)=="{") userInfo.roles = JSON.parse(userInfo.roles);
+					else {
+						userInfo.roles = userInfo.roles.split(",");
+					}
+
+                    const userRoles = await _DB.db_selectQ("appdb", "lgks_roles", "*", {
+                        "blocked": "false",
+                        "guid": [["global", userInfo.guid], "IN"],
+                        "id": [userInfo.roles, "IN"]
+                    }, {});
+                    if(!userRoles.results) userRoles.results = [];
+
+                    userInfo.roles_list = userRoles.results.map(a=>a.name);
+				} catch(e) {
+					userInfo.roles = [];
+                    userInfo.roles_list = [];
+				}
+
+                try {
+                    const userScopes = await _DB.db_selectQ("appdb", "lgks_scopes", "*", {
+                        "blocked": "false",
+                        "guid": [["global", userInfo.guid], "IN"],
+                        "id": userInfo.userid
+                    }, {});
+                    if(!userScopes.results) userScopes.results = [];
+                    
+                    userInfo.scopes = [];
+
+                    _.each(userScopes.results, function(row, k) {
+                        userInfo.scopes = _.extend(userInfo.scopes, JSON.parse(row.scopes));
+                    })
+                } catch(e) {
+                    userInfo.scopes = [];
+                }
+
+                delete userInfo.pwd;
+                delete userInfo.pwd_salt;
+                
+                return userInfo;
+            } else {
+                return false;
+            }
+        } else {
+            //Not supported yet
+            return false;
+        }
+    },
+
+    //Assuming hashed password from the frontend, so password = sha1 of user's actual password
+    updateUserPassword: async function(guid, userid, password, password_salt = false) {
+        if(!password_salt) password_salt = "$1";
+        var encrypted_password = MISC.generateHash(USER_SALT+""+password);
+
+        var updateData = MISC.generateDefaultDBRecord(ctx, true);
+
+        updateData.pwd = encrypted_password;
+        updateData.pwd_salt = password_salt;
+
+        var result = await _DB.db_updateQ("appdb", "lgks_users", updateData, {
+            "guid": guid,
+            "userid": userid,
+        });
+
+        return result;
+    },
+
+    getUserAvatar: async function(avatar, avatar_type) {
+        return "";
     }
 }
