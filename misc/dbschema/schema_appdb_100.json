@@ -1817,12 +1817,6 @@
         "default": null,
         "primary": false
       },
-      "pwd_salt": {
-        "type": "varchar(128)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
       "privilegeid": {
         "type": "int",
         "nullable": false,

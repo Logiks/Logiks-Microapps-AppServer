@@ -2,8 +2,6 @@
  * Users Controller
  * 
  * */
-//node -e "console.log(require('crypto').randomBytes(8).toString('hex'))"
-const USER_SALT = "86199373d1fb88fe";//CONFIG.ENC_SALT
 
 module.exports = {
 
@@ -50,8 +48,6 @@ module.exports = {
 
     verifyUser: async function(userid, password, appId) {
         // console.log("verifyUser", userid, password);
-        // passwordHash: await bcrypt.hash("admin123", 10),
-        // const valid = await bcrypt.compare(password, fakeUserFromDB.passwordHash);
         // CONFIG.log_sql = true;
 
         var userInfo = await _DB.db_selectQ("appdb", 
@@ -69,68 +65,61 @@ module.exports = {
         // console.log("userInfo-1", userInfo);
 
         //Assuming hashed password from the frontend
-        var encrypted_password = MISC.generateHash(USER_SALT+""+password);//sha1, generateHash(password)
-        if(userInfo.pwd_salt=="$1") {
-            if(userInfo.pwd==encrypted_password) {
-
-                try {
-					if(userInfo.roles.substr(0,1)=="{") userInfo.roles = JSON.parse(userInfo.roles);
-					else {
-						userInfo.roles = userInfo.roles.split(",");
-					}
-
-                    const userRoles = await _DB.db_selectQ("appdb", "lgks_roles", "*", {
-                        "blocked": "false",
-                        "guid": [["global", userInfo.guid], "IN"],
-                        "id": [userInfo.roles, "IN"]
-                    }, {});
-                    if(!userRoles.results) userRoles.results = [];
-
-                    userInfo.roles_list = userRoles.results.map(a=>a.name);
-				} catch(e) {
-					userInfo.roles = [];
-                    userInfo.roles_list = [];
-				}
-
-                try {
-                    const userScopes = await _DB.db_selectQ("appdb", "lgks_scopes", "*", {
-                        "blocked": "false",
-                        "guid": [["global", userInfo.guid], "IN"],
-                        "id": userInfo.userid
-                    }, {});
-                    if(!userScopes.results) userScopes.results = [];
-                    
-                    userInfo.scopes = [];
-
-                    _.each(userScopes.results, function(row, k) {
-                        userInfo.scopes = _.extend(userInfo.scopes, JSON.parse(row.scopes));
-                    })
-                } catch(e) {
-                    userInfo.scopes = [];
+        // var encrypted_password = ENCRYPTER.generateHash();
+        const isValid = await ENCRYPTER.compareHash(password, userInfo.pwd);
+        if(isValid) {
+            try {
+                if(userInfo.roles.substr(0,1)=="{") userInfo.roles = JSON.parse(userInfo.roles);
+                else {
+                    userInfo.roles = userInfo.roles.split(",");
                 }
 
-                delete userInfo.pwd;
-                delete userInfo.pwd_salt;
-                
-                return userInfo;
-            } else {
-                return false;
+                const userRoles = await _DB.db_selectQ("appdb", "lgks_roles", "*", {
+                    "blocked": "false",
+                    "guid": [["global", userInfo.guid], "IN"],
+                    "id": [userInfo.roles, "IN"]
+                }, {});
+                if(!userRoles.results) userRoles.results = [];
+
+                userInfo.roles_list = userRoles.results.map(a=>a.name);
+            } catch(e) {
+                userInfo.roles = [];
+                userInfo.roles_list = [];
             }
+
+            try {
+                const userScopes = await _DB.db_selectQ("appdb", "lgks_scopes", "*", {
+                    "blocked": "false",
+                    "guid": [["global", userInfo.guid], "IN"],
+                    "id": userInfo.userid
+                }, {});
+                if(!userScopes.results) userScopes.results = [];
+                
+                userInfo.scopes = [];
+
+                _.each(userScopes.results, function(row, k) {
+                    userInfo.scopes = _.extend(userInfo.scopes, JSON.parse(row.scopes));
+                })
+            } catch(e) {
+                userInfo.scopes = [];
+            }
+
+            delete userInfo.pwd;
+            delete userInfo.pwd_salt;
+            
+            return userInfo;
         } else {
-            //Not supported yet
             return false;
         }
     },
 
     //Assuming hashed password from the frontend, so password = sha1 of user's actual password
-    updateUserPassword: async function(guid, userid, password, password_salt = false) {
-        if(!password_salt) password_salt = "$1";
-        var encrypted_password = MISC.generateHash(USER_SALT+""+password);
+    updateUserPassword: async function(guid, userid, password) {
+        var encrypted_password = ENCRYPTER.generateHash(password);
 
         var updateData = MISC.generateDefaultDBRecord(ctx, true);
 
         updateData.pwd = encrypted_password;
-        updateData.pwd_salt = password_salt;
 
         var result = await _DB.db_updateQ("appdb", "lgks_users", updateData, {
             "guid": guid,

@@ -720,7 +720,7 @@ module.exports = {
 									tenantId: payload.tenantId ? payload.tenantId : payload.guid,
 									roles: payload.roles || [],
 									scopes: payload.scopes || [],
-									secure_hash: MISC.generateHash(token)
+									secure_hash: ENCRYPTER.generateHash(token)
 								};
 							} catch (err) {
 								console.error(err);

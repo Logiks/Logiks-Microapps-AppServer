@@ -1027,7 +1027,7 @@ async function generateUserMap(userInfo, geolocation, geoIP, appid) {
 		privilege: {
 			id: userInfo.privilegeid,
 			name: userInfo.privilege_name,
-			hash: MISC.generateHash(`${userInfo.privilegeid}_${userInfo.privilege_name}`)
+			hash: ENCRYPTER.generateHash(`${userInfo.privilegeid}_${userInfo.privilege_name}`)
 		},
 		access: {
 			id: userInfo.accessid,

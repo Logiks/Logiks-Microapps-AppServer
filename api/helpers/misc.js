@@ -48,11 +48,6 @@ module.exports = {
       };
   },
 
-  generateHash : function(content) {
-    if(typeof content == "object") return sha1(JSON.stringify(content));
-    return sha1(content);
-  },
-
   generateUUID : function(prefix,n) {
     //Math.ceil(Math.random()*10000000)+"-"+uuidv4();
     //return Math.random(1000000);
