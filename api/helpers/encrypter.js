@@ -79,7 +79,7 @@ module.exports = {
 
         if(HASH_MODE=="sha1") {
             const hashNew = await ENCRYPTER.generateHash(password);
-            console.log("NEW HASH", hashNew);
+            // console.log("NEW HASH", hashNew);
             return hashNew===passwordHash;
         } else
             return await bcrypt.compare(password, passwordHash);
