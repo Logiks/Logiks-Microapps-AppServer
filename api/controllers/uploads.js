@@ -74,18 +74,71 @@ module.exports = {
         return uploadHandler;
     },
 
-    registerUploadedFile: async function(req, fileArray) {
-        //Log all uploaded files into files_tbl
-        // files_tbl
-        // `guid` varchar(155) NOT NULL,
-        // `appid` varchar(50) NOT NULL,
-        // `filename` varchar(155) DEFAULT NULL,
-        // `folder` varchar(155) DEFAULT NULL,
-        // `path_uri` varchar(255) DEFAULT NULL,
-        // `file_mime` varchar(20) DEFAULT NULL,
-        // `file_size` int DEFAULT '0',
-        // `file_year` varchar(5) NOT NULL DEFAULT '0000',
-        // `flags` varchar(155) DEFAULT NULL,
-        // `metadata` longtext,
+	//Log all uploaded files into files_tbl
+    registerUploadedFile: async function(ctx, fileArray) {
+		// const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
+		// console.log("registerUploadedFile", ctx, fileArray);
+        
+		if(!ctx.params.meta) ctx.params.meta = {};
+		else {
+			try {
+				ctx.params.meta = JSON.parse(ctx.params.meta);
+			} catch(e) {
+				ctx.params.meta = {};
+			}
+		}
+
+        // CONFIG.log_sql = true;
+		var result = {};
+
+		if(Array.isArray(fileArray)) {
+			for(var i=0;i<fileArray.length-1;i++) {
+				const file = fileArray[i];
+
+				const sqlResult = await _DB.db_insertQ1("appdb", "files_tbl", _.extend({
+					"guid": ctx.meta.user.guid,
+					"appid": ctx.meta.appInfo.appid,
+
+					"filename": file.filename,
+					"folder": ctx.params.bucket?ctx.params.bucket:"-",
+					"path_uri": file.path.replace(BASE_UPLOAD_ROOT, ""),
+					"file_mime": file.mimetype,
+					"file_size": file.size,
+					"file_year": new moment().format("Y"),
+					"metadata": JSON.stringify(ctx.params.meta),
+					"extracted_date": "",
+					"processed": "false",
+					"flags": "",
+				}, MISC.generateDefaultDBRecord(ctx, false)));
+
+				//console.log("XXXXX", sqlResult.insertId);
+				
+				result[file.path] = sqlResult.insertId?sqlResult.insertId:0;
+			}
+		} else {
+			const file = fileArray;
+
+			const sqlResult = await _DB.db_insertQ1("appdb", "files_tbl", _.extend({
+                "guid": ctx.meta.user.guid,
+                "appid": ctx.meta.appInfo.appid,
+
+				"filename": file.filename,
+				"folder": ctx.params.bucket?ctx.params.bucket:"-",
+				"path_uri": file.path.replace(BASE_UPLOAD_ROOT, ""),
+				"file_mime": file.mimetype,
+				"file_size": file.size,
+				"file_year": new moment().format("Y"),
+				"metadata": JSON.stringify(ctx.params.meta),
+				"extracted_date": "",
+				"processed": "false",
+				"flags": "",
+            }, MISC.generateDefaultDBRecord(ctx, false)));
+
+			//console.log("XXXXX", sqlResult.insertId);
+
+			result[file.path] = sqlResult.insertId?sqlResult.insertId:0;
+		}
+
+		return result;
     }
 }

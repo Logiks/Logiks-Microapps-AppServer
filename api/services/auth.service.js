@@ -28,12 +28,16 @@ module.exports = {
 	actions: {
 		/**
 		 * Short Lived Tokens that give temporary access to limited part of system
+		 * Used for opening application first page, etc
 		 * POST /api/public/auth/tltoken
 		 */
 		tltoken: {
 			rest: {
 				method: "POST",
 				path: "/tltoken"
+			},
+			meta: {
+				// scopes: ["docs:read"] // only those with docs:read (tenant-aware) see docs
 			},
 			params: {
 				appid: "string",
@@ -45,7 +49,11 @@ module.exports = {
 		},
 
 		/**
-		 * Server 2 Server token issuance for device level access or server to server communication, they give absolute access to limited part of system
+		 * Server 2 Server token issuance for device level access or server to server communication, 
+		 * they give absolute access to limited part of system
+		 * 
+		 * This used for IOT systems or S2S communications
+		 * 
 		 * POST /api/public/auth/s2stoken
 		 */
 		s2stoken: {
@@ -61,20 +69,28 @@ module.exports = {
 			},
 			async handler(ctx) {
 				//Check appkey is valid with valid appid
-
-				//Check deviceid preloaded,
-				//else load it into waiting queue till approved
+				if(ctx.params.appid!=ctx.meta.appInfo.appid) {
+					throw new LogiksError("APPID Mismatch", 401);
+				}
 
 				//check if ip lock is enabled for this device, if yes, then check remoteIP
-
+				const ipAllowed = AUTHKEY.checkClientIP(ctx.meta.remoteIP, ctx.meta.appInfo.appid, false);
+				if(!ipAllowed) {
+					throw new LogiksError("IP Whitelisting Required for S2S Calls", 401);
+				}
+				
 				//check if geofencing is enabled, if yes, then validate the geofencing and generart logs for every change
+
+				//Check deviceid preloaded, else load it into waiting queue till approved
 
 				return this.issueS2SToken(ctx);
 			}
 		},
 
+		//for magic link login
+
 		/**
-		 * Generate Auth Link (for magic link login).
+		 * Generate Auth Link
 		 * POST /api/public/auth/authlink
 		 */
 		authlink: {
@@ -126,58 +142,58 @@ module.exports = {
 		 * To Be removed in future
 		 * @todo remove
 		 */
-		authtoken: {
-			rest: {
-				method: "POST",
-				path: "/authtoken"
-			},
-			params: {
-				appid: "string",
-				client_key: "string",
-				deviceType: { type: "string", optional: true, default: "web" },
-				geolocation: { type: "string", optional: true, default: "0,0" },
-			},
-			async handler(ctx) {
+		// authtoken: {
+		// 	rest: {
+		// 		method: "POST",
+		// 		path: "/authtoken"
+		// 	},
+		// 	params: {
+		// 		appid: "string",
+		// 		client_key: "string",
+		// 		deviceType: { type: "string", optional: true, default: "web" },
+		// 		geolocation: { type: "string", optional: true, default: "0,0" },
+		// 	},
+		// 	async handler(ctx) {
 				
-				const { deviceType } = ctx.params;
-				const username = "";
-				const password = ""; 
-				const privilage= "admin";
-				const roles= ["admin"];
-				const scopes= [
-					"tenant-1:orders:read",
-					"tenant-1:orders:write",
-					"tenant-1:docs:read"
-				];
+		// 		const { deviceType } = ctx.params;
+		// 		const username = "";
+		// 		const password = ""; 
+		// 		const privilage= "admin";
+		// 		const roles= ["admin"];
+		// 		const scopes= [
+		// 			"tenant-1:orders:read",
+		// 			"tenant-1:orders:write",
+		// 			"tenant-1:docs:read"
+		// 		];
 
-				const userData = {
-					id: username,
-					username: username,
-					tenantId: username,
+		// 		const userData = {
+		// 			id: username,
+		// 			username: username,
+		// 			tenantId: username,
 
-					guid: ctx.params.appid,
-					userId: "ATKN",
-					geolocation: ctx.params.geolocation?ctx.params.geolocation:"0,0",
+		// 			guid: ctx.params.appid,
+		// 			userId: "ATKN",
+		// 			geolocation: ctx.params.geolocation?ctx.params.geolocation:"0,0",
 
-					privilage: privilage,
-					roles: roles,
-					scopes: scopes
-				};
+		// 			privilage: privilage,
+		// 			roles: roles,
+		// 			scopes: scopes
+		// 		};
 
-				// if (username !== fakeUserFromDB.username) {
-				// 	throw new LogiksError("Invalid credentials", 401);
-				// }
+		// 		// if (username !== fakeUserFromDB.username) {
+		// 		// 	throw new LogiksError("Invalid credentials", 401);
+		// 		// }
 
-				// const valid = await bcrypt.compare(password, fakeUserFromDB.passwordHash);
-				// if (!valid) {
-				// 	throw new LogiksError("Invalid credentials", 401);
-				// }
+		// 		// const valid = await bcrypt.compare(password, fakeUserFromDB.passwordHash);
+		// 		// if (!valid) {
+		// 		// 	throw new LogiksError("Invalid credentials", 401);
+		// 		// }
 
-				const token = this.issueTokensForUser(userData, ctx.meta.remoteIP, deviceType, ctx);
-				await log_login(userData, "AUTHTOKEN-GENERATED", "/authtoken", ctx);
-				return token;
-			}
-		},
+		// 		const token = this.issueTokensForUser(userData, ctx.meta.remoteIP, deviceType, ctx);
+		// 		await log_login(userData, "AUTHTOKEN-GENERATED", "/authtoken", ctx);
+		// 		return token;
+		// 	}
+		// },
 
 		//To allow 3rd party federated login (Google, Facebook, Apple, etc), called while returning to application
 		federatedLogin: {
@@ -236,7 +252,7 @@ module.exports = {
 					const isPast = new Date(userInfo.expires) < new Date();
 					if(isPast) {
 						await log_login_error({
-							"guid": "-",
+							"guid": userInfo.guid,
 							"userId": username,
 							"geolocation": geolocation
 						}, "USER-LOGIN", "/login", "Password expired, contact admin for renewing your password", ctx);
@@ -248,7 +264,7 @@ module.exports = {
 				if(userInfo.geolocation && userInfo.geolocation.length>0) {
 					if(geolocation=="0,0") {
 						await log_login_error({
-							"guid": "-",
+							"guid": userInfo.guid,
 							"userId": username,
 							"geolocation": geolocation
 						}, "USER-LOGIN", "/login", "Geolocation mandatory for proceeding with login", ctx);
@@ -257,7 +273,7 @@ module.exports = {
 					const geoDistance = MISC.geoDistanceMeters(userInfo.geolocation, geolocation);
 					if(geoDistance>GEO_DISTANCE_MAX) {
 						await log_login_error({
-							"guid": "-",
+							"guid": userInfo.guid,
 							"userId": username,
 							"geolocation": geolocation
 						}, "USER-LOGIN", "/login", "Locked by Geofence, you are not in allowed geolocation (1)", ctx);
@@ -268,7 +284,7 @@ module.exports = {
 				//check if ip lock is enabled for this device, if yes, then check remoteIP
 				if(userInfo.geoip && userInfo.geoip.length>0 && userInfo.geoip!=ctx.meta.remoteIP) {
 					await log_login_error({
-						"guid": "-",
+						"guid": userInfo.guid,
 						"userId": username,
 						"geolocation": geolocation
 					}, "USER-LOGIN", "/login", "Locked by Geofence, you are not in allowed geolocation (2)", ctx);
@@ -276,7 +292,18 @@ module.exports = {
 				}
 
 				//Check deviceid if device lock is enabled, if yes, then check in log_devices for last access for the user
+				await check_log_device(userInfo, ctx);
 				
+				//check_geofencing with office locations
+				const allowedGeoAccess = check_geofencing(userInfo, geolocation);
+				if(!allowedGeoAccess) {
+					await log_login_error({
+						"guid": userInfo.guid,
+						"userId": username,
+						"geolocation": geolocation
+					}, "USER-LOGIN", "/login", "Geofencing Locked, you are not within any allowed premises", ctx);
+					throw new LogiksError("Geofencing Locked, you are not within any allowed premises", 401);
+				}
 
 				const token = this.issueTokensForUser(userDataUpdated, ctx.meta.remoteIP, deviceType, ctx);
 				await log_login(userDataUpdated, "USER-LOGIN", "/login", ctx);
@@ -1114,4 +1141,99 @@ async function log_login_error(userInfo, loginType, loginURI, errorMessage, ctx)
 	var a = await _DB.db_insertQ1("logdb", "log_logins", createData);
 
 	return;
+}
+
+async function check_log_device(userInfo, ctx) {
+	const DEVICE_LOCK_ENABLED = true;
+
+	const dated = moment().format("Y-M-D HH:mm:ss");
+	const geolocation = ctx.params.geolocation?ctx.params.geolocation:"0,0";
+	const deviceId = ctx.params.deviceid?ctx.params.deviceid:deviceId;
+
+	var createData = {
+		"appid": ctx.meta.appInfo.appid, 
+		"guid": userInfo.guid?userInfo.guid:"-",
+		"userid": userInfo.userId, 
+		"device_uuid": deviceId, 
+		"device_model": "-",
+		"os_version": "-",
+		"ip_address": ctx.meta.remoteIP,
+		"geolocation": geolocation, 
+		"is_active": "true",
+		"lock_status": "ALLOWED",//LOCKED, ALLOWED, PENDING_APPROVAL
+		"last_accessed": dated,
+		"access_count": 1,
+        "created_on": dated,
+        "created_by": userInfo.userId,
+        "edited_on": dated,
+        "edited_by": userInfo.userId,
+	};
+
+	var deviceData = await _DB.db_selectQ("logdb", "log_devices", "*", {
+		"blocked": "false",
+		"is_active": "true",
+		// "device_uuid": deviceId, 
+		"userid": userInfo.userId, 
+		"appid": ctx.meta.appInfo.appid, 
+		"guid": userInfo.guid?userInfo.guid:"-",
+	}, {}, " ORDER BY id DESC LIMIT 1");
+
+	if(deviceData && deviceData.results?.length>0) {
+		if(DEVICE_LOCK_ENABLED) {
+			if(deviceData.results[0].device_uuid!=deviceId) {
+				await log_login_error({
+					"guid": userInfo.guid,
+					"userId": userInfo.userId, 
+					"geolocation": geolocation
+				}, "USER-LOGIN", "/login", "DeviceID Changed, please contact admin", ctx);
+				throw new LogiksError("DeviceID Changed, please contact admin", 401);
+			}
+		}
+		if(deviceData.results[0].lock_status=="LOCKED") {
+			await log_login_error({
+				"guid": userInfo.guid,
+				"userId": userInfo.userId, 
+				"geolocation": geolocation
+			}, "USER-LOGIN", "/login", "Device is Locked, use other device", ctx);
+			throw new LogiksError("Device is Locked, use other device", 401);
+		}
+		if(deviceData.results[0].lock_status=="PENDING_APPROVAL") {
+			await log_login_error({
+				"guid": userInfo.guid,
+				"userId": userInfo.userId, 
+				"geolocation": geolocation
+			}, "USER-LOGIN", "/login", "Device is not yet approved, please contact admin", ctx);
+			throw new LogiksError("Device is not yet approved, please contact admin", 401);
+		}
+		
+		var a = await _DB.db_updateQ("logdb", "log_devices", `access_count=access_count+1, last_accessed=now(), geolocation='${geolocation}', ip_address='${ctx.meta.remoteIP}'`, {
+			id: deviceData.results[0].id
+		});
+		// console.log("UPDATED", a);
+	} else {
+		var a = await _DB.db_insertQ1("logdb", "log_devices", createData);
+		// console.log("INSERT", a);
+	}
+
+	return true;
+}
+
+async function check_geofencing(userInfo, geolocation) {
+	const GEOFENCES_ENABLED = true;
+	if(!GEOFENCES_ENABLED) return true;
+
+	if(geolocation=="0,0") {
+		await log_login_error({
+			"guid": userInfo.guid,
+			"userId": username,
+			"geolocation": geolocation
+		}, "USER-LOGIN", "/login", "Geolocation mandatory for proceeding with login", ctx);
+		throw new LogiksError("Geolocation mandatory for proceeding with login", 401);
+	}
+
+	const geoData = await GEOFENCES.listGeofences(userInfo.guid, geolocation);
+	
+	// console.log("GEO_DATA", geoData);
+	
+	return true;
 }

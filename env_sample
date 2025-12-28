@@ -3,6 +3,7 @@ SERVER_ID=server-01
 RUN_MODE=server
 PORT=9999
 HOST=0.0.0.0
+ENC_SALT=
 CLUSTER_TOKEN=super-secret-cluster-token
 CLUSTER_CACHE=true
 CLUSTER_CACHE_TTL=60

@@ -247,15 +247,8 @@ module.exports = {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
 		}
-		var fData = [];
-		var vals = [];
-		_.each(data, function(a,b) {
-			if(Array.isArray(a)) a = a.join(",");
-			else if(typeof a == "object") a = JSON.stringify(a);
 
-			fData.push(b+"=?");
-			vals.push(a);
-		});
+		var sql = "UPDATE ";
 
 		var sqlWhere = [];
 		if(typeof where == "object" && !Array.isArray(where)) {
@@ -272,7 +265,21 @@ module.exports = {
 			sqlWhere.push(where);
 		}
 
-		var sql = "UPDATE "+table+" SET "+fData.join(",")+" WHERE "+sqlWhere.join(" AND ");
+		if(typeof data == "string") {
+			sql += table+" SET "+data+" WHERE "+sqlWhere.join(" AND ");
+		} else {
+			var fData = [];
+			var vals = [];
+			_.each(data, function(a,b) {
+				if(Array.isArray(a)) a = a.join(",");
+				else if(typeof a == "object") a = JSON.stringify(a);
+
+				fData.push(b+"=?");
+				vals.push(a);
+			});
+
+			sql += table+" SET "+fData.join(",")+" WHERE "+sqlWhere.join(" AND ");
+		}
 
 		// console.log(sql);
 		if(CONFIG.log_sql) {

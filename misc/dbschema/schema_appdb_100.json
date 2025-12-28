@@ -701,6 +701,18 @@
         "default": null,
         "primary": false
       },
+      "extracted_date": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "processed": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
       "blocked": {
         "type": "enum('false','true')",
         "nullable": true,
@@ -990,6 +1002,99 @@
     },
     "indexes": [
       "PRIMARY"
+    ]
+  },
+  "lgks_geofences": {
+    "columns": {
+      "id": {
+        "type": "int unsigned",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": "global",
+        "primary": false
+      },
+      "geofence_groupid": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": "general",
+        "primary": false
+      },
+      "geofence_name": {
+        "type": "varchar(200)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "geofence_type": {
+        "type": "varchar(25)",
+        "nullable": false,
+        "default": "polygon",
+        "primary": false
+      },
+      "geofence_area": {
+        "type": "geometry",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "geofence_center": {
+        "type": "point",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "folder_path": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": "/",
+        "primary": false
+      },
+      "remarks": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('true','false')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "area_spatial",
+      "location_spatial"
     ]
   },
   "lgks_orgs": {
@@ -1549,10 +1654,10 @@
         "default": "*",
         "primary": false
       },
-      "active": {
-        "type": "enum('true','false')",
-        "nullable": true,
-        "default": "true",
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": false,
+        "default": "false",
         "primary": false
       },
       "created_by": {
@@ -2135,67 +2240,6 @@
         "type": "datetime",
         "nullable": false,
         "default": "CURRENT_TIMESTAMP",
-        "primary": false
-      }
-    },
-    "indexes": [
-      "PRIMARY"
-    ]
-  },
-  "log_validationrules": {
-    "columns": {
-      "id": {
-        "type": "int",
-        "nullable": false,
-        "default": null,
-        "primary": true
-      },
-      "guid": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": "global",
-        "primary": false
-      },
-      "rulecode": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "title": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "validation_rules": {
-        "type": "text",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "created_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "created_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "edited_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "edited_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": null,
         "primary": false
       }
     },

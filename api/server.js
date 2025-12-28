@@ -383,6 +383,15 @@ module.exports = {
 										"INVALID_REQUEST"
 									);
 								}
+
+								const ipAllowed = await AUTHKEY.checkClientIP(remoteIP, appInfo.appid, true);
+								if(!ipAllowed) {
+									throw new LogiksError(
+										"Client Request IP is required pre-approval",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
 								
 								ctx.meta.appInfo = appInfo || {};
 								ctx.meta.serverHost = serverHost || "";
@@ -442,9 +451,9 @@ module.exports = {
 												UPLOADS.getUploadHandler().single("file")(req, res, err => {
 													if (err) return next();
 
-													UPLOADS.registerUploadedFile(req, [req.file]);
+													// UPLOADS.registerUploadedFile(req, [req.file]);
 													
-													console.log("Uploaded fields:", req.file);
+													// console.log("Uploaded fields:", req.file);
 
 													req.$ctx.meta.file = req.file;
 
@@ -457,9 +466,9 @@ module.exports = {
 												UPLOADS.getUploadHandler().array("files", 50)(req, res, err => {
 													if (err) return next();
 
-													UPLOADS.registerUploadedFile(req, req.files);
+													// UPLOADS.registerUploadedFile(req, req.files);
 													
-													console.log("Uploaded fields:", req.files);
+													// console.log("Uploaded fields:", req.files);
 
 													req.$ctx.meta.files = req.files;
 
@@ -475,9 +484,9 @@ module.exports = {
 													try {
 														const fileFields = [...new Set(req.files.map(f => f.fieldname))];
 
-														UPLOADS.registerUploadedFile(req, req.files);
+														// UPLOADS.registerUploadedFile(req, req.files);
 
-														console.log("Uploaded fields:", fileFields);
+														// console.log("Uploaded fields:", fileFields);
 
 														_.each(fileFields, function(field, k) {
 															req.$ctx.meta[field] = req[field]?.path.replace(BASE_UPLOAD_ROOT, "")
@@ -600,8 +609,7 @@ module.exports = {
 					 */
 					async authenticate(ctx, route, req, res) {
 						const authHeader = req.headers["authorization"];
-						const apiKey =
-							req.headers["x-api-key"] ||
+						const apiKey = req.headers["x-api-key"] ||
 							req.headers["x-api_key"] ||
 							req.query.api_key;
 						const tlkey = req.query.tkn;

@@ -119,6 +119,8 @@ module.exports = {
 				const file = ctx.meta.file;
 				if (!file) throw new Error("No file received");
 
+				const uploadArr = await UPLOADS.registerUploadedFile(ctx, file);
+
 				// return {
 				// 	originalName: file.originalname,
 				// 	storedName: file.filename,
@@ -128,6 +130,7 @@ module.exports = {
 				// };
 				return {
 					"status": "success",
+					"fileId": uploadArr[file.path],
 					"name": file.originalname,
 					"mime": file.mimetype,
 					"size": file.size,
@@ -150,9 +153,12 @@ module.exports = {
 				const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
 				const files = ctx.meta.files || [];
 
+				const uploadArr = await UPLOADS.registerUploadedFile(ctx, files);
+
 				return {
 					"status": "success",
 					"files": files.map(file => ({
+						"fileId": uploadArr[file.path],
 						"name": file.originalname,
 						"mime": file.mimetype,
 						"size": file.size,

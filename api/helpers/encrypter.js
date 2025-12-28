@@ -15,7 +15,7 @@ module.exports = {
     initialize : async function() {
         const encKey = `EK${process.env.SERVER_ID}`;
 
-        if(process.env.ENC_SALT && process.env.ENC_SALT.length>0) {
+        if(process.env.ENC_SALT && process.env.ENC_SALT.length>1) {
             MASTER_SALT = process.env.ENC_SALT;
         } else {
             var encryptionKey = await _CACHE.fetchDataSync(encKey);

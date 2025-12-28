@@ -9,7 +9,7 @@ module.exports = {
 
     },
 
-    getTenantInfo : async function(guid, callback) {
+    getTenantInfo : async function(guid) {
         var whereCond = {
             "blocked": "false",
             "guid": guid
