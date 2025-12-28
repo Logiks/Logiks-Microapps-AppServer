@@ -70,7 +70,7 @@ module.exports = {
 
         if(typeof content == "object") content = JSON.stringify(content);
 
-        if(HASH_MODE=="sha1") return sha1(content);
+        if(HASH_MODE=="sha1") return sha1(pwdSalt+""+content);
         return await bcrypt.hash(pwdSalt+""+content, 10);
     },
 
@@ -79,7 +79,7 @@ module.exports = {
 
         if(HASH_MODE=="sha1") {
             const hashNew = await ENCRYPTER.generateHash(password);
-            // console.log("NEW HASH", hashNew);
+            console.log("NEW HASH", hashNew);
             return hashNew===passwordHash;
         } else
             return await bcrypt.compare(password, passwordHash);
