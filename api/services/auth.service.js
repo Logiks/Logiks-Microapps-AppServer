@@ -18,7 +18,7 @@ const DEVICE_LOCK_ENABLED = false;
 const GEOFENCES_ENABLED = false;
 
 const TLTOKEN_SCOPES = ["/api"];
-const S2STOKEN_SCOPES = ["/api"];
+const S2STOKEN_SCOPES = ["/api/*"];
 
 authRedis.on("error", (err) => {
 	// eslint-disable-next-line no-console
@@ -67,7 +67,7 @@ module.exports = {
 			params: {
 				appid: "string",
 				appkey: "string",
-				deviceid: { type: "string", optional: true, default: "" },
+				deviceid: "string",//{ type: "string", optional: true, default: "" },
 				geolocation: { type: "string", optional: true, default: "0,0" },
 			},
 			async handler(ctx) {
@@ -86,7 +86,12 @@ module.exports = {
 
 				//Check deviceid preloaded, else load it into waiting queue till approved
 
-				return this.issueS2SToken(ctx);
+				const apiInfo = await AUTHKEY.getAPIKeyInfo(ctx.params.appkey, "s2s");
+				if(!apiInfo) {
+					throw new LogiksError("Invalid APPKEY", 401);
+				}
+
+				return this.issueS2SToken(ctx, apiInfo);
 			}
 		},
 
@@ -814,65 +819,6 @@ module.exports = {
 		}
 	},
 	methods: {
-		async issueS2SToken(ctx) {
-			const sessionId = `${ctx.params.appid}:${ctx.params.appid}:${Date.now()}`;
-
-			const accessJti = `acc:${sessionId}`;
-			const refreshJti = `ref:${sessionId}`;
-
-			const payloadBase = {
-				"appId": ctx.params.appid,
-				"ip": ctx.meta.remoteIP,
-				"deviceType": "s2s"
-			};
-
-			const accessToken = jwt.sign(
-				{
-					type: "access",
-					...payloadBase
-				},
-				JWT_SECRET,
-				{
-					expiresIn: ACCESS_TOKEN_TTL,
-					jwtid: accessJti
-				}
-			);
-
-			const s2stoken = UNIQUEID.generate(12);
-
-			const tempObj = {
-				appId: ctx.params.appid,
-				guid: ctx.params.appid,
-				userId: "s2s",
-				geolocation: ctx.params.geolocation?ctx.params.geolocation:"0,0",
-				accessToken: accessToken,
-				expiresAt: Date.now() + (ACCESS_TOKEN_TTL * 1000),
-				scopes: S2STOKEN_SCOPES,
-				ip: ctx.meta.remoteIP,
-				deviceid: ctx.params.deviceid,
-				deviceType: "s2s",
-				counter: 0
-			};
-
-			await authRedis.set(
-					`S2STOKENS:${s2stoken}`,
-					JSON.stringify(tempObj),
-					"EX",
-					300 // 5 minutes
-				);
-			//log_login(userInfo, loginType, loginURI, loginStatus, ctx)
-			await log_login(tempObj, "S2ST-GENERATED", "/tltoken", ctx);
-
-			return {
-				"status": "success",
-				"token_type": "S2S",
-				"token": s2stoken,
-				"accessToken": accessToken,
-				"expiresIn": ACCESS_TOKEN_TTL,
-				"appid": ctx.params.appid
-			}
-		},
-
 		async issueTimeLimitedToken(ctx) {
 			const sessionId = `${ctx.params.appid}:${ctx.params.appid}:${Date.now()}`;
 
@@ -930,6 +876,71 @@ module.exports = {
 				"appid": ctx.params.appid
 			}
 		},
+
+		async issueS2SToken(ctx, apiInfo) {
+			const sessionId = `${ctx.params.appid}:${ctx.params.appid}:${Date.now()}`;
+
+			const accessJti = `acc:${sessionId}`;
+			const refreshJti = `ref:${sessionId}`;
+
+			const payloadBase = {
+				appId: ctx.params.appid,
+				userId: apiInfo.id,
+				username: apiInfo.userId,
+				tenantId: apiInfo.guid,
+				ip: ctx.meta.remoteIP,
+				deviceType: "s2s",
+				roles: apiInfo.roles || [],
+				scopes: apiInfo.scopes || [],
+			};
+
+			const accessToken = jwt.sign(
+				{
+					type: "access",
+					...payloadBase
+				},
+				JWT_SECRET,
+				{
+					expiresIn: ACCESS_TOKEN_TTL,
+					jwtid: accessJti
+				}
+			);
+
+			const s2stoken = UNIQUEID.generate(12);
+
+			const tempObj = {
+				appId: ctx.params.appid,
+				guid: apiInfo.guid,
+				userId: apiInfo.userId,
+				geolocation: ctx.params.geolocation?ctx.params.geolocation:"0,0",
+				accessToken: accessToken,
+				expiresAt: Date.now() + (ACCESS_TOKEN_TTL * 1000),
+				scopes: S2STOKEN_SCOPES,
+				ip: ctx.meta.remoteIP,
+				deviceid: ctx.params.deviceid,
+				deviceType: "s2s",
+				counter: 0
+			};
+
+			await authRedis.set(
+					`S2STOKENS:${s2stoken}`,
+					JSON.stringify(tempObj),
+					"EX",
+					300 // 5 minutes
+				);
+			//log_login(userInfo, loginType, loginURI, loginStatus, ctx)
+			await log_login(tempObj, "S2ST-GENERATED", "/tltoken", ctx);
+
+			return {
+				"status": "success",
+				"token_type": "S2S",
+				"token": s2stoken,
+				"accessToken": accessToken,
+				"expiresIn": ACCESS_TOKEN_TTL,
+				"appid": ctx.params.appid
+			}
+		},
+		
 		/**
 		 * Issue access + refresh token pair & manage Redis indices.
 		 */
@@ -940,6 +951,7 @@ module.exports = {
 			const refreshJti = `ref:${sessionId}`;
 
 			const payloadBase = {
+				appId: ctx.params.appid,
 				userId: user.id,
 				username: user.username,
 				tenantId: user.tenantId,

@@ -624,6 +624,36 @@ module.exports = {
 
 						let user = {};
 
+						//If Time and Use Limted token matches, auto-authenticate as app service user, 
+						if(tlkey) {
+							const payload = await ctx.call("auth.verifyTLToken", { token: tlkey });
+							if(!payload) {
+								throw new LogiksError(
+									"Timelimited Token can be used only for server-to-server communication for limited API access",
+									401,
+									"INVALID_TL_TOKEN"
+								);
+							}
+							
+							if(payload.ip!=remoteIP) {
+								throw new LogiksError(
+									"TimeLimited Token can not be used from changing IP address",
+									401,
+									"INVALID_TL_TOKEN"
+								);
+							}
+
+							user = {
+								...(user || {}),
+								id: appInfo.appid,
+								userId: "TL_"+tlkey,
+								username: "TL Service User",
+								tenantId: appInfo.appid,
+								roles: ["service"],
+								scopes: payload.scopes || ["/api/tenant:*"],
+							};
+						}
+
 						//If S2S token matches, auto-authenticate as app service user, 
 						//This is for limited access and only for server-to-server calls and limited by count
 						if(s2skey) {
@@ -656,39 +686,9 @@ module.exports = {
 							};
 						}
 
-						//If Time and Use Limted token matches, auto-authenticate as app service user, 
-						if(tlkey) {
-							const payload = await ctx.call("auth.verifyTLToken", { token: tlkey });
-							if(!payload) {
-								throw new LogiksError(
-									"Timelimited Token can be used only for server-to-server communication for limited API access",
-									401,
-									"INVALID_TL_TOKEN"
-								);
-							}
-							
-							if(payload.ip!=remoteIP) {
-								throw new LogiksError(
-									"TimeLimited Token can not be used from changing IP address",
-									401,
-									"INVALID_TL_TOKEN"
-								);
-							}
-
-							user = {
-								...(user || {}),
-								id: appInfo.appid,
-								userId: "TL_"+tlkey,
-								username: "TL Service User",
-								tenantId: appInfo.appid,
-								roles: ["service"],
-								scopes: payload.scopes || ["/api/tenant:*"],
-							};
-						}
-
 						// --- API KEY AUTH ---
 						if (apiKey) {
-							const apiInfo =AUTHKEY.getAPIKeyInfo(apiKey, serverHost);
+							const apiInfo = AUTHKEY.getAPIKeyInfo(apiKey, "api");
 
 							if(!apiInfo) {
 								throw new LogiksError(
@@ -703,11 +703,11 @@ module.exports = {
 								...(user || {}),
 								// apiKey,
 								id: apiInfo.guid,
-								userId: apiInfo.guid,
-								username: apiInfo.guid,
+								userId: apiInfo.userId,
+								username: apiInfo.userId,
 								tenantId: apiInfo.guid,
-								roles: ["*"],
-								scopes: apiInfo.scope ? apiInfo.scope.split(",") : ["*"],
+								roles: apiInfo.roles,
+								scopes: apiInfo.scopes,
 							};
 						}
 

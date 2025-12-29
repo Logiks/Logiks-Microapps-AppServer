@@ -841,6 +841,12 @@
         "default": "",
         "primary": false
       },
+      "key_type": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": "s2s,user",
+        "primary": false
+      },
       "environment": {
         "type": "varchar(15)",
         "nullable": false,
@@ -895,8 +901,20 @@
         "default": null,
         "primary": false
       },
-      "scope": {
+      "roles": {
         "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "scopes": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "for_user": {
+        "type": "varbinary(155)",
         "nullable": true,
         "default": null,
         "primary": false
