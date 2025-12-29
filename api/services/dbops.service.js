@@ -397,7 +397,7 @@ module.exports = {
     },
     methods: {
         getDBOpsHash(ctx) {
-            return ctx.meta.user.secure_hash;
+            return ctx.meta.user.secure_hash?ctx.meta.user.secure_hash:UNIQUEID.generate(16);
         }
     }
 }
