@@ -18,7 +18,7 @@ REQUIRED_ENV.forEach((key) => {
 	}
 });
 
-global._ENV = {SERVICES:[], HELPERS: [], CONTROLLERS: []};
+global._ENV = {SERVICES:[], HELPERS: [], CONTROLLERS: [], CONTROLLERS_PUBLIC: []};
 global.CONFIG = {};
 
 global._ = require("lodash");

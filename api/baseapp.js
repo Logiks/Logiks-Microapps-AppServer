@@ -35,7 +35,10 @@ module.exports = {
 
                 if(typeof global[clsName].initialize === "function") {
                     try {
-                        global[clsName].initialize();
+                        const isPublic = global[clsName].initialize();
+                        if(isPublic===true) {
+                            _ENV.CONTROLLERS_PUBLIC.push(clsName);
+                        }
                     } catch(e) {
                         console.error("Error Initializing Controller "+clsName, e.message);
                     }

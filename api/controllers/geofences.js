@@ -6,7 +6,7 @@
 module.exports = {
 
     initialize: function() {
-
+        return true; //Public Controller
     },
 
     findGeofence: async function(guid, geolocation, groupid='general', fenceType = "polygon", limit = 10) {

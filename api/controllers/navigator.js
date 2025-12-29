@@ -10,6 +10,7 @@ const NAVIGATOR_CACHE = {};//_CACHE.getCacheMap("NAVIGATORCACHE");
 module.exports = {
 
     initialize : async function() {
+        return true; //Public Controller
     },
 
     getNavigation: async function(appID, navID, userInfo, filter) {

@@ -7,6 +7,7 @@ module.exports = {
 
     initialize: function() {
         // console.log("\x1b[36m%s\x1b[0m","Users System Initialized");
+        return true; //Public Controller
     },
 
     listUsers: async function(whereCond, callback) {

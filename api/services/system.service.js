@@ -173,6 +173,46 @@ module.exports = {
 				}
 			}
 		},
+		controllers: {
+			params: {
+				cmd: "string",
+				params: "array"
+			},
+			handler: async (ctx) => {
+				switch(ctx.params.cmd) {
+					case "list_controllers":
+						return {
+							"status": "success",
+							"data": _ENV.CONTROLLERS_PUBLIC
+						};
+						break;
+					default:
+						const cmd = ctx.params.cmd.split(".");
+						const params = ctx.params.params;
+						if(_ENV.CONTROLLERS_PUBLIC.indexOf(cmd[0].toUpperCase())<0) {
+							return {
+								"status": "error",
+								"message": "Contoller Not Found",
+								"errors": ["Contoller not found"]
+							};
+						}
+						if(!global[cmd[0].toUpperCase()][cmd[1]]) {
+							return {
+								"status": "error",
+								"message": "Contoller Does not Contain the required method",
+								"errors": ["Mtehod not found"]
+							};
+						}
+						const data = await global[cmd[0].toUpperCase()][cmd[1]](...params);
+
+						// console.log(cmd, params);
+						return {
+							"status": "success",
+							"data": data
+						};
+				}
+			}
+		},
 		plugins: {
 			params: {
 				// nodeID: "string"
