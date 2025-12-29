@@ -14,6 +14,9 @@ const S2STOKENS_MAX = 10;
 const TLTOKENS_MAX = 10;
 const GEO_DISTANCE_MAX = 10000;
 
+const DEVICE_LOCK_ENABLED = false;
+const GEOFENCES_ENABLED = false;
+
 const TLTOKEN_SCOPES = ["/api"];
 const S2STOKEN_SCOPES = ["/api"];
 
@@ -1144,11 +1147,19 @@ async function log_login_error(userInfo, loginType, loginURI, errorMessage, ctx)
 }
 
 async function check_log_device(userInfo, ctx) {
-	const DEVICE_LOCK_ENABLED = true;
-
 	const dated = moment().format("Y-M-D HH:mm:ss");
 	const geolocation = ctx.params.geolocation?ctx.params.geolocation:"0,0";
-	const deviceId = ctx.params.deviceid?ctx.params.deviceid:deviceId;
+	const deviceId = ctx.params.deviceid?ctx.params.deviceid:"";
+	if(!deviceId) {
+		if(DEVICE_LOCK_ENABLED) {
+			await log_login_error({
+				"guid": userInfo.guid,
+				"userId": userInfo.userId, 
+				"geolocation": geolocation
+			}, "USER-LOGIN", "/login", "DeviceID Missing cannot proceed", ctx);
+			throw new LogiksError("DeviceID Missing cannot proceed", 401);
+		}
+	}
 
 	var createData = {
 		"appid": ctx.meta.appInfo.appid, 
@@ -1219,7 +1230,6 @@ async function check_log_device(userInfo, ctx) {
 }
 
 async function check_geofencing(userInfo, geolocation) {
-	const GEOFENCES_ENABLED = true;
 	if(!GEOFENCES_ENABLED) return true;
 
 	if(geolocation=="0,0") {
