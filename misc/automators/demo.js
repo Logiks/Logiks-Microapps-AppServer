@@ -9,7 +9,8 @@ module.exports = {
         printObj("Demo Job Initialization", "grey");
     },
 
-    runJob: function(params) {
+    runJob: async function(params) {
         console.log("Running Demo Job", params);
+        return true;
     }
 }

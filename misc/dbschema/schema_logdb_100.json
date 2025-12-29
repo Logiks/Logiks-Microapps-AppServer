@@ -338,6 +338,136 @@
       "idx_log_audit_trace"
     ]
   },
+  "log_autojobs": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "appid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "job_id": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "job_type": {
+        "type": "varchar(100)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "job_name": {
+        "type": "varchar(250)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "status": {
+        "type": "varchar(50)",
+        "nullable": true,
+        "default": "QUEUED",
+        "primary": false
+      },
+      "details": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "attempts": {
+        "type": "int",
+        "nullable": true,
+        "default": "0",
+        "primary": false
+      },
+      "payload": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "response": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "error_message": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "started_at": {
+        "type": "datetime",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "finished_at": {
+        "type": "datetime",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "worker_id": {
+        "type": "varchar(25)",
+        "nullable": true,
+        "default": "0",
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": "worker",
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": true
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "idx_log_job_jobid",
+      "idx_log_job_status_time",
+      "idx_log_job_tenant_time"
+    ]
+  },
   "log_automator": {
     "columns": {
       "id": {
@@ -1249,124 +1379,6 @@
     },
     "indexes": [
       "PRIMARY"
-    ]
-  },
-  "log_job": {
-    "columns": {
-      "id": {
-        "type": "int",
-        "nullable": false,
-        "default": null,
-        "primary": true
-      },
-      "guid": {
-        "type": "varchar(50)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "appid": {
-        "type": "varchar(50)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "job_id": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "job_type": {
-        "type": "varchar(100)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "status": {
-        "type": "varchar(50)",
-        "nullable": true,
-        "default": "QUEUED",
-        "primary": false
-      },
-      "priority": {
-        "type": "int",
-        "nullable": true,
-        "default": "10",
-        "primary": false
-      },
-      "attempts": {
-        "type": "int",
-        "nullable": true,
-        "default": "0",
-        "primary": false
-      },
-      "payload": {
-        "type": "longtext",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "error_message": {
-        "type": "longtext",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "started_at": {
-        "type": "datetime",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "finished_at": {
-        "type": "datetime",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "worker_id": {
-        "type": "varchar(25)",
-        "nullable": true,
-        "default": "0",
-        "primary": false
-      },
-      "blocked": {
-        "type": "enum('false','true')",
-        "nullable": true,
-        "default": "false",
-        "primary": false
-      },
-      "created_by": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": "worker",
-        "primary": false
-      },
-      "created_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": "CURRENT_TIMESTAMP",
-        "primary": true
-      },
-      "edited_by": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "edited_on": {
-        "type": "datetime",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      }
-    },
-    "indexes": [
-      "PRIMARY",
-      "idx_log_job_jobid",
-      "idx_log_job_status_time",
-      "idx_log_job_tenant_time"
     ]
   },
   "log_logins": {

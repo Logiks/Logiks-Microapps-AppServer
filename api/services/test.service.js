@@ -10,10 +10,12 @@ module.exports = {
 				path: "/"
 			},
             params: {
-                cmd: "string"
+                // cmd: "string"
             },
 			async handler(ctx) {
-                const a1 = await ctx.call(ctx.params.cmd);//"DOCS.createAction"
+                console.log("TEST_CMD", ctx.params);
+                
+                const a1 = "X1";//await ctx.call(ctx.params.cmd);//"DOCS.createAction"
                 return {"status": "okay", "results": a1};
             }
         },

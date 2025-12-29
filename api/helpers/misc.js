@@ -154,6 +154,10 @@ module.exports = {
 
     const c = 2 * Math.asin(Math.sqrt(a));
     return R * c;
+  },
+
+  _replace: function(text, data, strict = false) {
+    return _replace(text, data, strict);
   }
 }
 
