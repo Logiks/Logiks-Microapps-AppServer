@@ -137,11 +137,7 @@ module.exports = {
     getUserData: async function(sessionId, ctx) {
         if(sessionId) {
             var userInfo = await _CACHE.fetchDataSync(`user:${sessionId}`);
-            try {
-                return JSON.parse(userInfo);
-            } catch(e) {
-                return false;
-            }
+            return userInfo;
         } else {
             var userInfo = await _CACHE.fetchDataSync(`user:${ctx.meta.sessionId}`);
             try {

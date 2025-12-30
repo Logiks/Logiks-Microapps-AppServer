@@ -670,12 +670,12 @@ function detectDataType(input, defaultValue) {
     return defaultValue;
 }
 
-function generateEnvObj(metaInfo) {
+async function generateEnvObj(metaInfo) {
     if(metaInfo['META_PROCESSED']===true) return metaInfo;
 
     var newMeta = _.cloneDeep(metaInfo);
 
-    const newUser = USERS.getUserData(newMeta.sessionId);
+    const newUser = await USERS.getUserData(newMeta.sessionId);
 
     newMeta["SESS_LOGIN_TIME"] = newMeta.user.timestamp;
 
