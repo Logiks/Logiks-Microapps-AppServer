@@ -73,6 +73,66 @@ module.exports = {
 			}
 		},
 
+		settings_save: {
+			rest: {
+				method: "POST",
+				fullPath: "/api/settings/save"
+			},
+			params: {
+				module: "string",
+				module_name: "string",
+				setting_name: "string",
+				setting_value: "string|number|boolean|object|array",
+				// setting_params: { type: "object", optional: true }
+			},
+			async handler(ctx) {
+				// Save settings logic here
+				user_settings
+				const params = ctx.params;
+				const userId = ctx.meta.user.userId;
+
+				if(typeof params.setting_value == "object") params.setting_value = JSON.stringify(params.setting_value);
+
+				// Check if setting already exists
+				const existingSetting = await _DB.db_selectQ("appdb", "user_settings", "*", {
+					"guid": ctx.meta.user.guid,
+					"created_by": userId,
+					"module_name": params.module_name,
+					"setting_name": params.setting_name,
+					"blocked": "false"
+				}, { limit: 1 });
+
+				if(existingSetting && existingSetting.results && existingSetting.results.length > 0) {
+					// Update existing setting
+					await _DB.db_update("appdb", "user_settings", {
+						"setting_value": params.setting_value,
+						"edited_by": userId,
+						"edited_on": new moment(str).format("YYYY-MM-DD HH:mm:ss")
+					}, {
+						"id": existingSetting.results[0].id
+					});
+				} else {
+					// Insert new setting
+					await _DB.db_insert("appdb", "user_settings", {
+						"guid": ctx.meta.user.tenantId,
+						"module_name": params.module_name,
+						"setting_name": params.setting_name,
+						"setting_value": params.setting_value,
+						"setting_params": params.setting_params ? JSON.stringify(params.setting_params) : null,
+						"created_by": userId,
+						"created_on": new moment(str).format("YYYY-MM-DD HH:mm:ss"),
+						"edited_by": userId,
+						"edited_on": new moment(str).format("YYYY-MM-DD HH:mm:ss")
+					});
+				}
+
+				// Invalidate cache
+				if(settingsCache[userId]) delete settingsCache[userId];
+
+				return { status: "success", message: "Setting saved successfully." };
+			}
+		},
+
         //Get Application Layout for the tenant
 		layout: {
 			rest: {

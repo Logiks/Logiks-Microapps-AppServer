@@ -79,6 +79,71 @@ module.exports = {
 		return dbResponse;
 	},
 
+	db_findOne : async function(dbkey, table, columns, where, orderBy = "id DESC") {
+		if(_MYSQL[dbkey]==null) {
+			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
+			return false;
+		}
+		if(!columns) columns = "*";
+		else if(Array.isArray(columns)) columns = columns.join(",");
+
+		var sql = "SELECT "+columns+" FROM "+table+" ";
+
+		var sqlWhere = [];
+		if(typeof where == "object" && !Array.isArray(where)) {
+			_.each(where, function(a, b) {
+				if(a == "RAW") {
+					sqlWhere.push(b);
+				} else if(Array.isArray(a) && a.length==2) {
+					sqlWhere.push(b+a[1]+"'"+a[0]+"'");
+				} else {
+					sqlWhere.push(b+"='"+a+"'");
+				}
+			});
+		} else {
+			sqlWhere.push(where);
+		}
+
+		if(sqlWhere.length>0) {
+			sql += " WHERE "+sqlWhere.join(" AND ");
+		}
+
+		if(orderBy!=null && orderBy.length>0) {
+			sql += " ORDER BY "+ orderBy;
+		}
+
+		sql += " LIMIT 1 ";
+
+		if(CONFIG.log_sql) {
+			console.log("SQL", sql);
+		}
+		
+		const dbResponse = await new Promise((resolve, reject) => {
+			_MYSQL[dbkey].query(sql, function(err, results, fields) {
+					if(err || results.length<=0) {
+						if(!err) err = {"code":"NOT_FOUND","sqlMessage":"No records found"};
+						if(CONFIG.log_sql) console.log(err);
+						// reject(false, err.code, err.sqlMessage);
+						resolve({
+							"status": "error", 
+							"err_code": err.code,
+							"err_message": err.sqlMessage
+						});
+					} else {
+						results = JSON.parse(JSON.stringify(results));
+						resolve({
+							"status": "success", 
+							"results": results.length>0?results[0]:null
+						});
+					}
+				});
+		});
+
+		// results = JSON.parse(JSON.stringify(results));
+
+		return dbResponse;
+	},
+
 	db_selectQ : async function(dbkey, table, columns, where, whereParams, additionalQueryParams) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);

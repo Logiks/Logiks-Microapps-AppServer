@@ -80,16 +80,17 @@ module.exports = {
 			},
 			async handler(ctx) {
                 const whereLogic = {
-                        blocked: "false",
-                        module: ctx.params.module,
-                    };
+                    blocked: "false",
+                    guid: ctx.meta.user.guid,
+                    module: ctx.params.module,
+                };
                 if(ctx.params.ctrlId && ctx.params.ctrlId.length>0) {
                     whereLogic["var_code"] = ctx.params.ctrlId;
                 }
-                var data = await _DB.db_selectQ("appdb", "do_ctrlcenter", "*", whereLogic,{});
-                if(!data || !data?.results || data.results.length<=0) data = [];
+                var data = await _DB.db_selectQ("appdb", "lgks_ctrlcenter", "module, var_title, var_code, var_value", whereLogic,{});
+                if(!data || !data?.results || data.results.length<=0) data = {results: []};
                 
-                return {"status": "success", "data": data[0]};
+                return {"status": "success", "module": ctx.params.module, "controls": data.results};
             }
         },
         listCacheKey: {

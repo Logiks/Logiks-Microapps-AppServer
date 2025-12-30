@@ -25,4 +25,11 @@ module.exports = {
         if(dbOpsMap[dbOpsID]) return _.cloneDeep(dbOpsMap[dbOpsID]);
         return false;
     },
+
+    //formObj = source, fields, forcefill
+    saveFormObject: async function(dbops, formObj, userInfo) {
+        if(!["create","update","delete","read","fetch"].includes(dbops)) return false;
+
+        return this.storeDBOpsQuery(formObj.source, formObj.fields, dbops, formObj.forcefill, userInfo);
+    },
 }

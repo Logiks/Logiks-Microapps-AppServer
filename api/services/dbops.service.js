@@ -26,7 +26,8 @@ module.exports = {
             params: {
                 "operation": "string",
                 "source": "object",
-                "fields": "object"
+                "fields": "object",
+                // "forcefill": "object"
             },
             async handler(ctx) {
                 const dbOpsID = await DBOPS.storeDBOpsQuery(ctx.params.source, ctx.params.fields, ctx.params.operation, ctx.params.forcefill, ctx.meta.user);
