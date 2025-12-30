@@ -33,8 +33,8 @@ module.exports = {
         console.log("\x1b[36m%s\x1b[0m","Query Engine Initialized");
     },
 
-    processMetaInfo: function(metaInfo) {
-        return generateEnvObj(metaInfo);
+    processMetaInfo: async function(metaInfo) {
+        return await generateEnvObj(metaInfo);
     },
 
     updateWhereFromEnv: function(whereObj, metaInfo) {
@@ -87,14 +87,14 @@ module.exports = {
         return QUERYMAP[queryID];
     },
 
-    parseQuery : function(sqlObj, filter = {}, metaInfo = {}) {
+    parseQuery : async function(sqlObj, filter = {}, metaInfo = {}) {
         if(sqlObj==null) {
             console.error("No JSON Query Found");
             return false;
         }
 
         //Prepare MetaInfo
-        metaInfo = QUERY.processMetaInfo(metaInfo);
+        metaInfo = await QUERY.processMetaInfo(metaInfo);
 
         //Pre-Process sqlObj
         if(typeof sqlObj == "string") {

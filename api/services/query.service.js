@@ -21,7 +21,7 @@ module.exports = {
 				if(!ctx.params.query.page) ctx.params.query.page = 0;
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
 
-				const sqlQuery = QUERY.parseQuery(ctx.params.query, ctx.params.filter, _.extend({}, ctx.params, ctx.meta))
+				const sqlQuery = await QUERY.parseQuery(ctx.params.query, ctx.params.filter, _.extend({}, ctx.params, ctx.meta))
 				const dbkey = sqlQuery.dbkey?sqlQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
 				
 				const dbResponse = await _DB.db_query(dbkey, sqlQuery, {});
@@ -53,7 +53,7 @@ module.exports = {
 				if(!ctx.params.query.page) ctx.params.query.page = 0;
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
 
-				const sqlQuery = QUERY.parseQuery(ctx.params.query, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
+				const sqlQuery = await QUERY.parseQuery(ctx.params.query, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 
 				return {
 					"QUERY": sqlQuery
@@ -87,7 +87,7 @@ module.exports = {
 				if(!queryObj.page) queryObj.page = 0;
 				if(!queryObj.limit) queryObj.limit = 0;
 				
-				const sqlQuery = QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
+				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				var dbkey = queryObj.dbkey;
 
 				if(ctx.params.dbkey && ctx.params.dbkey.length>0) {
