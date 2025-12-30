@@ -21,21 +21,21 @@ module.exports = {
     },
 
     //Delay the job loading to allow system to stabilize
-    startAutomation: async function() {
+    startJobs: async function() {
         // setTimeout(async function() {
             
         // }, 5000);
 
         await this.loadJobs();
 
-        console.log("\x1b[31m%s\x1b[0m", `\nAutomator Initialized With-${Object.keys(ACTIVE_JOBS).length}/${Object.keys(LOADED_JOBS).length} Active/Loaded Jobs`);
+        console.log("\x1b[31m%s\x1b[0m", `\nAutoJobs Initialized With-${Object.keys(ACTIVE_JOBS).length}/${Object.keys(LOADED_JOBS).length} Active/Loaded Jobs`);
     },
 
     reloadAllJobs: async function() {
         //Deactivate all active jobs
         for(var i=0; i<ACTIVE_JOBS.length; i++) {
             const jobId = ACTIVE_JOBS[i];
-            AUTOMATION.deactivateJob(jobId);
+            AUTOJOBS.deactivateJob(jobId);
         }
         ACTIVE_JOBS.splice(0, ACTIVE_JOBS.length);
 
@@ -50,7 +50,7 @@ module.exports = {
         //Reload Jobs
         await this.loadJobs();
 
-        console.log("\x1b[31m%s\x1b[0m", `\nAutomator Reloaded With-${Object.keys(ACTIVE_JOBS).length}/${Object.keys(LOADED_JOBS).length} Active/Loaded Jobs`);
+        console.log("\x1b[31m%s\x1b[0m", `\nAutoJobs Reloaded With-${Object.keys(ACTIVE_JOBS).length}/${Object.keys(LOADED_JOBS).length} Active/Loaded Jobs`);
     },
 
     loadJobs: async function() {
@@ -73,7 +73,7 @@ module.exports = {
         const allJobs = await getAllJobs();
         _.each(allJobs, function(conf, k) {
             if(conf.schedule==null) {
-                console.log("\x1b[31m%s\x1b[0m","\nAutomator Schedule Not Found or Not Supported - Skipping Job:", conf.name);
+                console.log("\x1b[31m%s\x1b[0m","\nAutoJobs Schedule Not Found or Not Supported - Skipping Job:", conf.name);
                 return;
             }
             try {
@@ -83,7 +83,7 @@ module.exports = {
             }
             conf.active = true;//(conf.active=="true"?true:false);
             conf.job_id = `${conf.name}_${conf.id}`;
-            // console.log("AUTOMATION_JOB", conf, k);
+            // console.log("AUTOJOBS_JOB", conf, k);
 
             if(conf.active) {
                 const job = cron.schedule(conf.schedule, () => {
@@ -164,7 +164,7 @@ module.exports = {
 }
 
 async function runJobNow(jobConfig, userId = "system") {
-    console.log("\x1b[32m%s\x1b[0m", "\nAutomator Running Job -", jobConfig.name);//jobConfig
+    console.log("\x1b[32m%s\x1b[0m", "\nAutoJobs Running Job -", jobConfig.name);//jobConfig
     
     const ctx = await SERVER.getBroker();
 
@@ -185,7 +185,7 @@ async function runJobNow(jobConfig, userId = "system") {
             }
             break;
         case "plugin":
-            if(LOADED_PLUGINS[jobConfig.job_script]) {
+            if(LOADED_PLUGINS[jobConfig.job_script] && LOADED_PLUGINS[jobConfig.job_script].runJob!=null && typeof LOADED_PLUGINS[jobConfig.job_script].runJob==="function") {
                 var response = await LOADED_PLUGINS[jobConfig.job_script].runJob(jobConfig.params, userId);
                 if(!response) {
                     log_jobrun(jobConfig, jobConfig.params, response, "FAILED", `JOB Plugin Failed at Running`, userId);
@@ -195,7 +195,7 @@ async function runJobNow(jobConfig, userId = "system") {
                     return true;
                 }
             } else {
-                log_jobrun(jobConfig, jobConfig.params, response, "FAILED", `JOB Plugin Not Found - ${jobConfig.job_script}`, userId);
+                log_jobrun(jobConfig, jobConfig.params, response, "FAILED", `JOB Plugin Not Found or corrupt - ${jobConfig.job_script}`, userId);
                 return false;
             }
             return true;
@@ -264,7 +264,7 @@ function log_jobrun(jobConfig, payload, response, status, details="", userId = "
     _DB.db_insertQ1("logdb", "log_autojobs", logData);
 
     if(jobConfig.run_only_once=="true" || jobConfig.run_only_once===true) {
-        AUTOMATION.deactivateJob(jobConfig.job_id);
+        AUTOJOBS.deactivateJob(jobConfig.job_id);
 
         _DB.db_updateQ("appdb", "lgks_autojobs", {
             "retired": "true",
