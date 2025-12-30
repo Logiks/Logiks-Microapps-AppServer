@@ -47,6 +47,7 @@ module.exports = {
                 _.each(arrObj, function(v, k1) {
                     try {
                         if(v.toUpperCase()=="RAW") {
+                            delete whereObj[k][k1];
                             whereObj[k][_replace(k1, metaInfo)] = "RAW";
                         } else if(typeof v == "string") {
                             whereObj[k][k1] = _replace(v, metaInfo);
@@ -60,6 +61,7 @@ module.exports = {
             _.each(whereObj, function(v,k) {
                 try {
                     if(v.toUpperCase()=="RAW") {
+                        delete whereObj[k];
                         whereObj[_replace(k, metaInfo)] = "RAW";
                     } else if(typeof v == "string") {
                         whereObj[k] = _replace(v, metaInfo);
