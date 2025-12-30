@@ -721,7 +721,7 @@ module.exports = {
 								const payload = await ctx.call("auth.verifyAccessToken", { token });
 								user = {
 									...(user || {}),
-									id: payload.userId,
+									id: payload.id,
 									userId: payload.userId,
 									sessionId: payload.sessionId,
 									username: payload.username,

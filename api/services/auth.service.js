@@ -951,12 +951,12 @@ module.exports = {
 			const refreshJti = `ref:${sessionId}`;
 
 			const payloadBase = {
-				appId: ctx.params.appid,
+				appId: ctx.meta.appInfo.appid,
 				id: user.id,
-				userId: user.userid,
+				userId: user.userId,
 				username: user.name,
 				tenantId: user.tenantId,
-				guid: user.tenantId,
+				guid: user.guid,
 				roles: user.roles || [],
 				scopes: user.scopes || [],
 				ip,
