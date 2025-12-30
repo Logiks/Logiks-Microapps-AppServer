@@ -132,5 +132,23 @@ module.exports = {
 
     getUserAvatar: async function(avatar, avatar_type) {
         return "";
+    },
+
+    getUserData: async function(sessionId, ctx) {
+        if(sessionId) {
+            var userInfo = await authRedis.get(`user:${sessionId}`);
+            try {
+                return JSON.parse(userInfo);
+            } catch(e) {
+                return false;
+            }
+        } else {
+            var userInfo = await authRedis.get(`user:${ctx.meta.sessionId}`);
+            try {
+                return JSON.parse(userInfo);
+            } catch(e) {
+                return false;
+            }
+        }
     }
 }

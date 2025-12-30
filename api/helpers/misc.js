@@ -9,6 +9,10 @@ module.exports = {
     console.log("\x1b[36m%s\x1b[0m","Misc Attributes and Supporting Methods Initialized");
   },
 
+  getEnv: function() {
+    return process.env.NODE_ENV?process.env.NODE_ENV.toUpperCase():"DEV";
+  },
+
   slugify : function(text) {
     return text.toString().toLowerCase()
       .replace(/\s+/g, '-')           // Replace spaces with -

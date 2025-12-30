@@ -952,9 +952,11 @@ module.exports = {
 
 			const payloadBase = {
 				appId: ctx.params.appid,
-				userId: user.id,
-				username: user.username,
+				id: user.id,
+				userId: user.userid,
+				username: user.name,
 				tenantId: user.tenantId,
+				guid: user.tenantId,
 				roles: user.roles || [],
 				scopes: user.scopes || [],
 				ip,

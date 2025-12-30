@@ -783,7 +783,7 @@ module.exports = {
 						const actionName = ctxAction?.name;
 						const requiredScopes = ctxAction?.meta?.scopes || [];
 
-						//console.log("DUE_AUTHORIZATION", req.url, sess, ctx.meta, actionName, user.scope, requiredScopes);//route
+						// console.log("DUE_AUTHORIZATION", req.url, sess, ctx.meta, actionName, user.roles, user.scopes, requiredScopes);
 						
 						// Admin namespace requires admin role
 						if (actionName && actionName.startsWith("admin.")) {
@@ -816,12 +816,13 @@ module.exports = {
 						const tenantId = user.tenantId || "*";
 
 						return requiredScopes.every((required) => {
-							// console.log("SCOPE_ANALYSIS", required, userScopes);
 							// required: "orders:read"
 							const tenantScoped = `${tenantId}:${required}`;
 							const tenantScopedMore = `${tenantId}:${required}:*`;
 							const wildcardScoped = `*:${required}`;
 							const wildcardScopedMore = `*:${required}:*`;
+
+							console.log("SCOPE_ANALYSIS", required, tenantId, userScopes, [tenantScoped, tenantScopedMore, wildcardScoped, wildcardScopedMore]);
 
 							return (
 								userScopes.includes(tenantScoped) ||

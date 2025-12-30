@@ -675,34 +675,36 @@ function generateEnvObj(metaInfo) {
 
     var newMeta = _.cloneDeep(metaInfo);
 
+    const newUser = USERS.getUserData(newMeta.sessionId);
+
     newMeta["SESS_LOGIN_TIME"] = newMeta.user.timestamp;
 
-    newMeta["SESS_GUID"] = newMeta.user.guid;
-    newMeta["SESS_USER_ID"] = newMeta.user.userId;
-    newMeta["SESS_USERID"] = newMeta.user.userId;
-    newMeta["USERID"] = newMeta.user.userId;
-    newMeta["SESS_TENANT_ID"] = newMeta.user.tenantId;
-    newMeta["SESS_USER_NAME"] = newMeta.user.username;
-    newMeta["SESS_USER_MOBILE"] = newMeta.user.mobile;
+    newMeta["SESS_GUID"] = newUser.guid;
+    newMeta["SESS_USER_ID"] = newUser.userId;
+    newMeta["SESS_USERID"] = newUser.userId;
+    newMeta["USERID"] = newUser.userId;
+    newMeta["SESS_TENANT_ID"] = newUser.tenantId;
+    newMeta["SESS_USER_NAME"] = newUser.username;
+    newMeta["SESS_USER_MOBILE"] = newUser.mobile;
     newMeta["SESS_USER_CELL"] = newMeta["SESS_USER_MOBILE"];
-    newMeta["SESS_USER_EMAIL"] = newMeta.user.email;
-    newMeta["SESS_USER_COUNTRY"] = newMeta.user.country;
-    newMeta["SESS_USER_ZIPCODE"] = newMeta.user.zipcode;
-    newMeta["SESS_USER_GEOLOC"] = newMeta.user.geolocation;
-    newMeta["SESS_USER_AVATAR"] = newMeta.user.avatar?newMeta.user.avatar:"";
+    newMeta["SESS_USER_EMAIL"] = newUser.email;
+    newMeta["SESS_USER_COUNTRY"] = newUser.country;
+    newMeta["SESS_USER_ZIPCODE"] = newUser.zipcode;
+    newMeta["SESS_USER_GEOLOC"] = newUser.geolocation;
+    newMeta["SESS_USER_AVATAR"] = newUser.avatar?newUser.avatar:"";
 
-    newMeta["SESS_ACCESS_ID"] = newMeta.user.access?.id;
-    newMeta["SESS_ACCESS_NAME"] = newMeta.user.access?.name;
-    newMeta["SESS_ACCESS_SITES"] = newMeta.user.access?.sites;
+    newMeta["SESS_ACCESS_ID"] = newUser.access?.id;
+    newMeta["SESS_ACCESS_NAME"] = newUser.access?.name;
+    newMeta["SESS_ACCESS_SITES"] = newUser.access?.sites;
     
-    newMeta["SESS_PRIVILEGE_ID"] = newMeta.user.privilege?.id;
-    newMeta["SESS_PRIVILEGE_NAME"] = newMeta.user.privilege?.name;
-    newMeta["SESS_PRIVILEGE_HASH"] = newMeta.user.privilege?.hash;
+    newMeta["SESS_PRIVILEGE_ID"] = newUser.privilege?.id;
+    newMeta["SESS_PRIVILEGE_NAME"] = newUser.privilege?.name;
+    newMeta["SESS_PRIVILEGE_HASH"] = newUser.privilege?.hash;
 
-    newMeta["SESS_GROUP_ID"] = newMeta.user.group?.id;
-    newMeta["SESS_GROUP_NAME"] = newMeta.user.group?.name;
-    newMeta["SESS_GROUP_MANAGER"] = newMeta.user.group?.manager;
-    // newMeta["SESS_GROUP_DESCS"] = newMeta.user.group?.groupDescs;
+    newMeta["SESS_GROUP_ID"] = newUser.group?.id;
+    newMeta["SESS_GROUP_NAME"] = newUser.group?.name;
+    newMeta["SESS_GROUP_MANAGER"] = newUser.group?.manager;
+    // newMeta["SESS_GROUP_DESCS"] = newUser.group?.groupDescs;
 
     newMeta["SESS_ACTIVE_SITE"] = newMeta.appInfo.appid;
     newMeta["SESS_LOGIN_SITE"] = newMeta.appInfo.appid;
@@ -720,22 +722,22 @@ function generateEnvObj(metaInfo) {
     newMeta["SESS_CURRENT_YEAR"] = moment().format("Y");
     newMeta["SESS_DATE_YESTERDAY"] = moment().subtract(1, 'days').format("Y-M-D");
 
-    // newMeta["SESS_PROFILE_ID"] = newMeta.user.profile.id;
-    // newMeta["SESS_PROFILE_CODE"] = newMeta.user.profile.code;
-    // newMeta["SESS_PROFILE_DESIGNATION"] = newMeta.user.profile.designation;
-    // newMeta["SESS_PROFILE_SUBTYPE"] = newMeta.user.profile.subtype;
-    // newMeta["SESS_REPORTING_TO"] = newMeta.user.profile.reporting_to;
-    // newMeta["SESS_REPORTING_TO_HR"] = newMeta.user.profile.reporting_to_hr;
+    // newMeta["SESS_PROFILE_ID"] = newUser.profile.id;
+    // newMeta["SESS_PROFILE_CODE"] = newUser.profile.code;
+    // newMeta["SESS_PROFILE_DESIGNATION"] = newUser.profile.designation;
+    // newMeta["SESS_PROFILE_SUBTYPE"] = newUser.profile.subtype;
+    // newMeta["SESS_REPORTING_TO"] = newUser.profile.reporting_to;
+    // newMeta["SESS_REPORTING_TO_HR"] = newUser.profile.reporting_to_hr;
 
-    // newMeta["SESS_BRANCH_ID"] = newMeta.user.branch.id;
-    // newMeta["SESS_BRANCH_CODE"] = newMeta.user.branch.code;
-    // newMeta["SESS_BRANCH_NAME"] = newMeta.user.branch.name;
+    // newMeta["SESS_BRANCH_ID"] = newUser.branch.id;
+    // newMeta["SESS_BRANCH_CODE"] = newUser.branch.code;
+    // newMeta["SESS_BRANCH_NAME"] = newUser.branch.name;
 
     newMeta["SESS_POLICY"] = {};
-    newMeta["SESS_ROLE_LIST"] = newMeta.user.roles;
-    newMeta["SESS_SCOPE_LIST"] = newMeta.user.scopes;
+    newMeta["SESS_ROLE_LIST"] = newUser.roles;
+    newMeta["SESS_SCOPE_LIST"] = newUser.scopes;
 
-    newMeta["SESS_GEOLOCATION"] = newMeta.geolocation?newMeta.geolocation:newMeta.user.geolocation;
+    newMeta["SESS_GEOLOCATION"] = newMeta.geolocation?newMeta.geolocation:newUser.geolocation;
     newMeta["GEOLOCATION"] = newMeta["SESS_GEOLOCATION"];
     newMeta["CLIENT_IP"] = newMeta.remoteIP;
     newMeta["SERVER_IP"] =  newMeta.serverIP?newMeta.serverIP:newMeta.serverHost;
