@@ -22,7 +22,7 @@ module.exports = {
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
 
 				const sqlQuery = await QUERY.parseQuery(ctx.params.query, ctx.params.filter, _.extend({}, ctx.params, ctx.meta))
-				const dbkey = sqlQuery.dbkey?sqlQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
+				const dbkey = ctx.params.query.dbkey?ctx.params.query.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
 				
 				const dbResponse = await _DB.db_query(dbkey, sqlQuery, {});
 				const dbData = dbResponse?.results || [];
