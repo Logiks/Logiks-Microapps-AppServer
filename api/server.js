@@ -226,6 +226,15 @@ module.exports = {
 					ip: process.env.HOST || "0.0.0.0",
 					httpServerTimeout: 30 * 1000,
 
+					cors: {
+						origin: "*",//origin: ["https://app.example.com"],
+						methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+						// methods: ["GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE", "CONNECT", "TRACE"],
+						credentials: false,
+						allowedHeaders: "*",
+						exposedHeaders: "*",
+					},
+
 					// SERVE STATIC FILES
 					assets: {
 						folder: path.join(ROOT_PATH, "public"),
