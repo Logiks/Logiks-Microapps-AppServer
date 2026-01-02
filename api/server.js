@@ -304,7 +304,7 @@ module.exports = {
 							},
 							mappingPolicy: "restrict",
 							autoAliases: true,
-							cors: true,
+							// cors: true,
 							// cors: {
 							// 	methods: ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
 							// 	origin: "*",
@@ -524,7 +524,7 @@ module.exports = {
 							// mappingPolicy: "all",
 							mappingPolicy: "restrict",
 							autoAliases: true,
-							cors: true,
+							// cors: true,
 							// cors: {
 							// 	methods: ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
 							// 	origin: "*",
