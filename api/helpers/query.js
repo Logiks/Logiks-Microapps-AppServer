@@ -687,6 +687,7 @@ async function generateEnvObj(metaInfo) {
     newMeta["USERID"] = newUser.userId;
     newMeta["SESS_TENANT_ID"] = newUser.tenantId;
     newMeta["SESS_USER_NAME"] = newUser.username;
+    newMeta["SESS_REPORTING_TO"] = newUser.reporting_to;
     newMeta["SESS_USER_MOBILE"] = newUser.mobile;
     newMeta["SESS_USER_CELL"] = newMeta["SESS_USER_MOBILE"];
     newMeta["SESS_USER_EMAIL"] = newUser.email;

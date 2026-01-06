@@ -41,6 +41,8 @@ module.exports = {
 			},
 			meta: {
 				// scopes: ["docs:read"] // only those with docs:read (tenant-aware) see docs
+				// deviceType: { type: "string", optional: true, default: "web" },
+				// deviceid: "string",//{ type: "string", optional: true, default: "" },
 			},
 			params: {
 				appid: "string",
@@ -68,6 +70,7 @@ module.exports = {
 				appid: "string",
 				appkey: "string",
 				deviceid: "string",//{ type: "string", optional: true, default: "" },
+				deviceType: { type: "string", optional: true, default: "web" },
 				geolocation: { type: "string", optional: true, default: "0,0" },
 			},
 			async handler(ctx) {
@@ -1044,6 +1047,7 @@ async function generateUserMap(userInfo, geolocation, geoIP, appid) {
 		tenantId: userInfo.guid,
 		guid: userInfo.guid,
 		name: userInfo.name,
+		reporting_to: userInfo.reporting_to,
 		dob: userInfo.dob.split("T")[0],
 		gender: userInfo.gender,
 		mobile: userInfo.mobile,

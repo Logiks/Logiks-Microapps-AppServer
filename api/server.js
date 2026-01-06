@@ -227,7 +227,7 @@ module.exports = {
 					httpServerTimeout: 30 * 1000,
 
 					cors: {
-						origin: "*",//origin: ["https://app.example.com"],
+						origin: "*",//origin: ["https://app.example.com"], ["*", "null"],
 						methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 						// methods: ["GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE", "CONNECT", "TRACE"],
 						credentials: false,

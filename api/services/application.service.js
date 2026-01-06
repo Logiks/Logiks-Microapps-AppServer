@@ -245,12 +245,13 @@ module.exports = {
 		navigator: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/navigator/:navid?"
+				fullPath: "/api/navigator/:navid?/:deviceType?"
 			},
 			async handler(ctx) {
 				const appInfo = ctx.meta.appInfo;
 				const userInfo = ctx.meta.user;
 				const appID = appInfo.appid;
+				//deviceType
 
 				const menuObj = await NAVIGATOR.getNavigation(appID, ctx.params.navid, userInfo);
 
