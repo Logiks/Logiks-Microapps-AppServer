@@ -106,7 +106,7 @@ module.exports = {
 					"file_size": file.size,
 					"file_year": new moment().format("Y"),
 					"metadata": JSON.stringify(ctx.params.meta),
-					"extracted_date": "",
+					"extracted_data": "",
 					"processed": "false",
 					"flags": "",
 				}, MISC.generateDefaultDBRecord(ctx, false)));
@@ -129,7 +129,7 @@ module.exports = {
 				"file_size": file.size,
 				"file_year": new moment().format("Y"),
 				"metadata": JSON.stringify(ctx.params.meta),
-				"extracted_date": "",
+				"extracted_data": "",
 				"processed": "false",
 				"flags": "",
             }, MISC.generateDefaultDBRecord(ctx, false)));
