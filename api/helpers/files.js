@@ -44,7 +44,7 @@ module.exports = {
             "id": fileId,
             "blocked": "false"
         }, {});
-        if(!sqlResult || sqlResult.length==0) return null;
+        if(!sqlResult || sqlResult?.results.length==0) return null;
 
         return sqlResult[0];
     },
@@ -63,7 +63,7 @@ module.exports = {
             "id": fileId,
             "blocked": "false"
         }, {});
-        if(!sqlResult || sqlResult.length==0) return null;
+        if(!sqlResult || sqlResult?.results.length==0) return null;
 
         const filePath = path.join(UPLOADS.baseUploadFolder(), sqlResult[0].path_uri);
         const fileMime = sqlResult[0].file_mime;
