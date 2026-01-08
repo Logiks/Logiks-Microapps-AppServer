@@ -39,7 +39,7 @@ module.exports = {
     },
 
     getFileInfo: async function(guid, fileId) {
-        const sqlResult = await _DB.db_selectQ("appdb", "files_tbl", {
+        const sqlResult = await _DB.db_selectQ("appdb", "files_tbl", "*", {
             "guid": guid,
             "id": fileId,
             "blocked": "false"
@@ -58,7 +58,7 @@ module.exports = {
     // },
 
     getFileById: async function(guid, fileId, responseType = "stream", moreData = false) {
-        const sqlResult = await _DB.db_selectQ("appdb", "files_tbl", {
+        const sqlResult = await _DB.db_selectQ("appdb", "files_tbl", "*", {
             "guid": guid,
             "id": fileId,
             "blocked": "false"
