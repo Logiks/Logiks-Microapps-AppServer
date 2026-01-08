@@ -33,7 +33,7 @@ module.exports = {
             "limit": 10,
             "order_by": "created_at DESC"
         }, {});
-        if(!sqlResult || sqlResult.length==0) return [];
+        if(!sqlResult || sqlResult?.results.length==0) return null;
 
         return sqlResult;
     },
@@ -64,9 +64,11 @@ module.exports = {
             "blocked": "false"
         }, {});
         if(!sqlResult || sqlResult?.results.length==0) return null;
+        
+        sqlResult = sqlResult.results[0];
 
-        const filePath = path.join(UPLOADS.baseUploadFolder(), sqlResult[0].path_uri);
-        const fileMime = sqlResult[0].file_mime;
+        const filePath = path.join(UPLOADS.baseUploadFolder(), sqlResult.path_uri);
+        const fileMime = sqlResult.file_mime;
 
         if(!filePath || !fs.existsSync(filePath)) {
             return null;
@@ -75,9 +77,9 @@ module.exports = {
         var responseObj = {};
         if(moreData) {
             responseObj = {
-                folder: sqlResult[0].folder,
-                year: sqlResult[0].file_year,
-                metadata: sqlResult[0].metadata
+                folder: sqlResult.folder,
+                year: sqlResult.file_year,
+                metadata: sqlResult.metadata
             };
         }
 
@@ -87,7 +89,7 @@ module.exports = {
                 ...responseObj,
                 stream: fileStream,
                 mime: fileMime,
-                filename: sqlResult[0].filename,
+                filename: sqlResult.filename,
             };
         } else if(responseType=="buffer") {
             const fileBuffer = fs.readFileSync(filePath);
@@ -95,7 +97,7 @@ module.exports = {
                 ...responseObj,
                 buffer: fileBuffer,
                 mime: fileMime,
-                filename: sqlResult[0].filename,
+                filename: sqlResult.filename,
             };
         } else if(responseType=="content") {
             const content = await fs.readFileSync(filePath, "utf8");
@@ -103,7 +105,7 @@ module.exports = {
                 ...responseObj,
                 content: content,
                 mime: fileMime,
-                filename: sqlResult[0].filename,
+                filename: sqlResult.filename,
             };
         }
 
