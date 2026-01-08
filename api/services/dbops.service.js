@@ -57,14 +57,14 @@ module.exports = {
                 if(!jsonQuery) {
                     throw new LogiksError(
                         "Provided RefID is invalid",
-                        401,
+                        400,
                         "INVALID_REQUEST"
                     );
                 }
                 if(jsonQuery.operation!="create") {
                     throw new LogiksError(
                         "Error in selected operation for the RefID",
-                        401,
+                        400,
                         "INVALID_REQUEST",
                         jsonQuery.operation
                     );
@@ -81,7 +81,7 @@ module.exports = {
                 if (!vStatus.status) {
                     throw new LogiksError(
                         "Input Validation Failed",
-                        401,
+                        400,
                         "VALIDATION_ERROR",
                         vStatus.errors
                     );
@@ -99,7 +99,7 @@ module.exports = {
                 if(!insertId) {
                     throw new LogiksError(
                         "Error creating db record",
-                        401,
+                        400,
                         "DB_ERROR"
                     );
                 }
@@ -129,14 +129,14 @@ module.exports = {
                 if(!jsonQuery) {
                     throw new LogiksError(
                         "Provided RefID is invalid",
-                        401,
+                        400,
                         "INVALID_REQUEST"
                     );
                 }
                 if(jsonQuery.operation!="create") {
                     throw new LogiksError(
                         "Error in selected operation for the RefID",
-                        401,
+                        400,
                         "INVALID_REQUEST",
                         jsonQuery.operation
                     );
@@ -163,7 +163,7 @@ module.exports = {
                     if(Object.keys(errors).length>0) {
                         throw new LogiksError(
                             "Input Validation Failed some of the data",
-                            401,
+                            400,
                             "VALIDATION_ERROR",
                             errors
                         );
@@ -182,7 +182,7 @@ module.exports = {
                 } else {
                     throw new LogiksError(
                         "Fields should be an array of valid data",
-                        401,
+                        400,
                         "INVALID_REQUEST"
                     );
                 }
@@ -206,14 +206,14 @@ module.exports = {
                 if(!jsonQuery) {
                     throw new LogiksError(
                         "Provided RefID is invalid",
-                        401,
+                        400,
                         "INVALID_REQUEST"
                     );
                 }
                 // if(jsonQuery.operation!="update") {
                 //     throw new LogiksError(
                 //         "Error in selected operation for the RefID",
-                //         401,
+                //         400,
                 //         "INVALID_REQUEST",
                 //         jsonQuery.operation
                 //     );
@@ -232,7 +232,7 @@ module.exports = {
                 } else {
                     throw new LogiksError(
                         "Which record to update/delete/fetch is not defined",
-                        401,
+                        400,
                         "VALIDATION_ERROR"
                     );
                 }
@@ -277,14 +277,14 @@ module.exports = {
                 if(!jsonQuery) {
                     throw new LogiksError(
                         "Provided RefID is invalid",
-                        401,
+                        400,
                         "INVALID_REQUEST"
                     );
                 }
                 if(jsonQuery.operation!="update") {
                     throw new LogiksError(
                         "Error in selected operation for the RefID",
-                        401,
+                        400,
                         "INVALID_REQUEST",
                         jsonQuery.operation
                     );
@@ -307,7 +307,7 @@ module.exports = {
                 if (!vStatus.status) {
                     throw new LogiksError(
                         "Input Validation Failed",
-                        401,
+                        400,
                         "VALIDATION_ERROR",
                         vStatus.errors
                     );
@@ -323,7 +323,7 @@ module.exports = {
                 } else {
                     throw new LogiksError(
                         "Which record to update is not defined",
-                        401,
+                        400,
                         "VALIDATION_ERROR",
                         vStatus.errors
                     );
@@ -356,14 +356,14 @@ module.exports = {
                 if(!jsonQuery) {
                     throw new LogiksError(
                         "Provided RefID is invalid",
-                        401,
+                        400,
                         "INVALID_REQUEST"
                     );
                 }
                 if(jsonQuery.operation!="update" && jsonQuery.operation!="delete") {
                     throw new LogiksError(
                         "Error in selected operation for the RefID",
-                        401,
+                        400,
                         "INVALID_REQUEST",
                         jsonQuery.operation
                     );
@@ -382,7 +382,7 @@ module.exports = {
                 } else {
                     throw new LogiksError(
                         "Which record to delete is not defined",
-                        401,
+                        400,
                         "VALIDATION_ERROR",
                         vStatus.errors
                     );

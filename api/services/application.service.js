@@ -23,7 +23,7 @@ module.exports = {
 				if(!applicationInfo) {
 					throw new LogiksError(
 						"Invalid Application key",
-						401,
+						404,
 						"INVALID_APPLICATION"
 					);
 				}
@@ -150,7 +150,7 @@ module.exports = {
 				} else {
 					throw new LogiksError(
 						"Invalid Application Layout Identifier",
-						401,
+						404,
 						"INVALID_LAYOUT_KEY",
 						ctx.params.layoutid
 					);

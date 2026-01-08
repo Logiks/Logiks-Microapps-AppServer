@@ -99,7 +99,7 @@ module.exports = {
 						throw new LogiksError("File Not Found", 404, "FILE_NOT_FOUND");
 					}
 				} else {
-					throw new LogiksError("File Not Defined or Supported", 401, "FILE_NOT_DEFINED");
+					throw new LogiksError("File Not Defined or Supported", 400, "FILE_NOT_DEFINED");
 				}
 			}
 		},

@@ -25,7 +25,7 @@ module.exports = {
 				if(!tenantInfo) {
 					throw new LogiksError(
 						"Invalid Tenant key",
-						401,
+						404,
 						"INVALID_TENANT_KEY"
 					);
 				}
@@ -41,7 +41,7 @@ module.exports = {
 					if(!data) {
 						throw new LogiksError(
 							"Tenant does not have access to this application",
-							401,
+							404,
 							"UNAUTHORISED_TENANT"
 						);
 					}

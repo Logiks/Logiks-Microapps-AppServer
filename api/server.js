@@ -47,8 +47,8 @@ const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 300);
 
 //Error Controller
 class LogiksError extends MoleculerError {
-  constructor(message = "Internal only action", errCode = 403, errShortName = "INTERNAL_ONLY", errObj = {}) {
-  	super(message, errCode, errShortName, errObj);
+  constructor(message = "Source Not Found", errCode = 404, errShortName = "INTERNAL_ONLY", errObj = {}) {
+    super(message, errCode, errShortName, errObj);
     this.name = "LogiksError";
   }
 }
