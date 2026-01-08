@@ -166,6 +166,8 @@ module.exports = {
 }
 
 global._replace = function(text, data, strict = false) {
+  if(data==null) data = {};
+  
   return text
     //For variables with ${}
     .replace(/\$\{([^}]+)\}/g, (match, key) => {
