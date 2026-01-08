@@ -15,7 +15,7 @@ module.exports = {
 			async handler(ctx) {
                 console.log("TEST_CMD", ctx.params);
                 
-                const a1 = "X1";//await ctx.call(ctx.params.cmd);//"DOCS.createAction"
+                const a1 = await ctx.call(ctx.params.cmd);
                 return {"status": "okay", "results": a1};
             }
         },
