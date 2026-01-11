@@ -38,6 +38,14 @@ module.exports = {
 	db_connection : function(dbkey) {
 		return _MYSQL[dbkey];
 	},
+
+	db_now: function() {
+		return moment().format("Y-M-D HH:mm:ss");
+	},
+
+	db_nowunix: function() {
+		return Math.floor(Date.now() / 1000);
+	},
 	
 	//Standard MySQL
 	db_query : async function(dbkey, sql, params) {

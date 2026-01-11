@@ -166,8 +166,90 @@ module.exports = {
 					}))
 				};
 			}
+		},
+
+		//View Trashed Files
+		trash: {
+			rest: {
+				method: "POST",
+				fullPath: "/api/files/trash"
+			},
+			params: {
+				filters: "object"
+			},
+			async handler(ctx) {
+				const filters = ctx.params.filters || {};
+
+				const filterData = {
+					...filters,
+					"blocked": "true",
+					"guid": ctx.meta.user.guid
+				};
+
+				const res = await _DB.db_selectQ("appdb", "files_tbl", "*", filterData, {});
+
+				return res;
+			}
+		},
+
+		delete: {
+			rest: {
+				method: "DELETE",
+				fullPath: "/api/files/delete"
+			},
+			params: {
+				fileId: "string",
+			},
+			async handler(ctx) {
+				const fileId = ctx.params.fileId;
+				if (!fileId) throw new Error("File ID is required");
+
+				const fileRecord = await _DB.db_findOne("appdb", "files_tbl", "*", { id: fileId }, {});
+				if (!fileRecord) throw new Error("File not found");
+
+				if(fileRecord.blocked == "true") {
+					const filePath = UPLOADS.getTargetPath(fileRecord.path);
+					if (fs.existsSync(filePath)) {
+						fs.unlinkSync(filePath);
+					}
+
+					await _DB.db_delete("appdb", "files_tbl", { id: fileId });
+				} else {
+					await _DB.db_updateQ("appdb", "files_tbl", {
+						"blocked": "true",
+						"edited_on": _DB.db_now(),
+						"edited_by": ctx.meta.user.userid
+					}, { id: fileId });
+				}
+
+				return { status: "success", message: "File deleted successfully." };
+			}
+		},
+
+		purge: {
+			rest: {
+				method: "DELETE",
+				fullPath: "/api/files/purge"
+			},
+			async handler(ctx) {
+				const trashedFiles = await _DB.db_selectQ("appdb", "files_tbl", "*", { 
+					blocked: "true",
+					guid: ctx.meta.user.guid
+			 	}, {});
+
+				for (const fileRecord of trashedFiles) {
+					const filePath = UPLOADS.getTargetPath(fileRecord.path);
+					if (fs.existsSync(filePath)) {
+						fs.unlinkSync(filePath);
+					}
+
+					await _DB.db_delete("appdb", "files_tbl", { id: fileRecord.id });
+				}
+
+				return { status: "success", message: "Trashed files purged successfully." };
+			}
 		}
-    }
+	}
 }
 
 //List folders and files in given path
