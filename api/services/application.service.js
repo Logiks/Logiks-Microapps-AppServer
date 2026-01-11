@@ -349,6 +349,23 @@ module.exports = {
 			}
 		},
 
+		template: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/template/:templatecode"
+			},
+			async handler(ctx) {
+				const templateCode = ctx.params.templatecode;
+				const data = ctx.params.data || {};
+
+				const templateContent = await TEMPLATES.loadTemplate(templateCode, data, ctx);
+
+				return {
+					template: templateContent
+				};
+			}
+		},
+
 		myInfo: {
 			rest: {
 				method: "GET",

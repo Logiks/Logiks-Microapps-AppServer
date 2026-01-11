@@ -8,7 +8,7 @@ module.exports = {
     },
 
     loadTemplate: async function(templateCode, data, ctx) {
-        const templateObj = await _DB.db_findOne("appdb", "templates", "*", {template_code: templateCode, "blocked": "false"}, {});
+        const templateObj = await _DB.db_findOne("appdb", "do_templates", "*", {template_code: templateCode, blocked: "false", guid: ctx.meta.user.guid}, {});
         if(!templateObj) throw new Error("Template not found: " + templateCode);
 
         if(!templateObj.params) templateObj.params = {};
