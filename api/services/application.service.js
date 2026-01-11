@@ -252,8 +252,8 @@ module.exports = {
 				const userInfo = ctx.meta.user;
 				const appID = appInfo.appid;
 				//deviceType
-
-				const menuObj = await NAVIGATOR.getNavigation(appID, ctx.params.navid, userInfo);
+ 
+				const menuObj = await NAVIGATOR.getNavigation(appID, ctx.params.navid, ctx.params.deviceType, userInfo);
 
 				if(!menuObj) menuObj = {};
 

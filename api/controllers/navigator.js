@@ -13,15 +13,19 @@ module.exports = {
         return true; //Public Controller
     },
 
-    getNavigation: async function(appID, navID, userInfo, filter) {
+    getNavigation: async function(appID, navID, deviceType, userInfo, filter) {
         if(!NAVIGATOR_CACHE[appID]) NAVIGATOR_CACHE[appID] = {};
 
         if(!userInfo.privilege) userInfo.privilege = "";
         if(!userInfo.roles) userInfo.roles = [];
         if(!userInfo.scopes) userInfo.scopes = {};
         
-        if(!filter) filter = {
+        if(!filter) filter = {};
+
+        filter = {
+            ...filter,
             "onmenu": "true",
+            "device": [["*", deviceType || "*"], "IN"],
             "privilege": [["*", userInfo.privilege, userInfo.userId, userInfo.scopes, ...userInfo.roles.map(a=>`role:${a}`)], "IN"],
             //"privilege": [["*", ...userInfo.privilege], "IN"],
         };
