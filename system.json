@@ -1,0 +1,4 @@
+{
+    "CORE_MODULES": ["reports", "forms", "infoview", "dashboard", "search", "charts", "pages", "datagrid", "webform"],
+    "JSON_MODULES": ["reports", "forms", "infoview", "dashboard", "search", "charts", "pages", "multiform"]
+}

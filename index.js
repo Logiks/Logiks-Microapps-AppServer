@@ -75,8 +75,8 @@ async function main() {
         default:
             console.info("\n\nConfig Type Not Supported, Skipping the loading of Config");
     }
-
-    global.CONFIG = _.extend({}, tempConfig, packageConfig, {
+    const systemConfig = require("./system.json");
+    global.CONFIG = _.extend({}, tempConfig, systemConfig, packageConfig, {
         "SERVER_ID": process.env.SERVER_ID,
         "ROOT_PATH": __dirname,
         "VERSION": packageConfig.version,

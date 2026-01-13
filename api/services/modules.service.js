@@ -25,6 +25,9 @@ module.exports = {
 	name: "modules",
 
 	actions: {
+		//For supporting
+		// /api/modules/reports/lead.main
+		// /api/modules/lead/main
 		fetchModule: {
 			rest: {
 				method: "GET",
@@ -43,7 +46,7 @@ module.exports = {
 					var submoduleFile = item[1];
 					var modname = moduleName.substring(moduleName.length-1,moduleName.length)=="s"?moduleName.substring(0,moduleName.length-1):moduleName;
 
-					if(["reports", "forms", "infoview", "dashboard", "search", "charts", "pages"].indexOf(moduleName)>=0) {
+					if(CONFIG.JSON_MODULES.indexOf(moduleName)>=0) {
 						submoduleFile = `${submoduleFile}.json`;
 					}
 
@@ -141,13 +144,13 @@ module.exports = {
 		fetchService: {
 			rest: {
 				method: "POST",
-				fullPath: "/api/services/:module/:action?"
+				fullPath: "/api/services/:moduleId/:actionId?"
 			},
 			async handler(ctx) {
-				const moduleName = ctx.params.module;
-				const action = ctx.params.action;
+				const moduleName = ctx.params.moduleId;
+				const actionId = ctx.params.actionId;
 				
-				var cmdString = `${moduleName}.${action}`;
+				var cmdString = `${moduleName}.${actionId}`;
 
 				console.log("SERVICE_HANDLER", ctx.params, cmdString);
 
