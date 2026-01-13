@@ -21,11 +21,19 @@ module.exports = {
 				if(!ctx.params.query.page) ctx.params.query.page = 0;
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
 
-				const sqlQuery = await QUERY.parseQuery(ctx.params.query, ctx.params.filter, _.extend({}, ctx.params, ctx.meta))
+				var queryObjCount = _.cloneDeep(ctx.params.query);
+				queryObjCount.column = "count(*) as count";
+
+				const sqlQuery = await QUERY.parseQuery(ctx.params.query, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
+				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta))
+
 				const dbkey = ctx.params.query.dbkey?ctx.params.query.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
 				
 				const dbResponse = await _DB.db_query(dbkey, sqlQuery, {});
 				const dbData = dbResponse?.results || [];
+
+				const dbResponseCount = await _DB.db_query(dbkey, sqlQueryCount, {});
+				const dbDataCount = dbResponseCount?.results || [{"count": 0}];
 
 				return {
 					"data": dbData,
@@ -33,6 +41,7 @@ module.exports = {
 					"err_message": dbResponse.err_message,
 					"page": ctx.params.query.page,
 					"limit": ctx.params.query.limit,
+					"max": dbDataCount[0]['count']
 				};
 			}
 		},
@@ -86,8 +95,12 @@ module.exports = {
 
 				if(!queryObj.page) queryObj.page = 0;
 				if(!queryObj.limit) queryObj.limit = 0;
+
+				var queryObjCount = _.cloneDeep(queryObj);
+				queryObjCount.column = "count(*) as count";
 				
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
+				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				var dbkey = queryObj.dbkey;
 
 				if(ctx.params.dbkey && ctx.params.dbkey.length>0) {
@@ -98,12 +111,16 @@ module.exports = {
 				const dbResponse = await _DB.db_query(dbkey, sqlQuery, {});
 				const dbData = dbResponse?.results || [];
 
+				const dbResponseCount = await _DB.db_query(dbkey, sqlQueryCount, {});
+				const dbDataCount = dbResponseCount?.results || [{"count": 0}];
+
 				return {
 					"data": dbData,
 					"err_code": dbResponse.err_code,
 					"err_message": dbResponse.err_message,
 					"page": queryObj.page,
 					"limit": queryObj.limit,
+					"max": dbDataCount[0]['count']
 				};
 			}
 		},
