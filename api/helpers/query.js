@@ -60,7 +60,7 @@ module.exports = {
         } else if(typeof whereObj=="object") {
             _.each(whereObj, function(v,k) {
                 try {
-                    if(v.toUpperCase()=="RAW") {
+                    if(typeof v == "string" && v.toUpperCase()=="RAW") {
                         delete whereObj[k];
                         whereObj[_replace(k, metaInfo)] = "RAW";
                     } else if(typeof v == "string") {
