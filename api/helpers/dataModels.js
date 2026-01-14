@@ -29,6 +29,8 @@ module.exports = {
         if(MODEL_MAP[table]) return MODEL_MAP[table];
         const pluginID = table.split("_")[0];
 
+        if(["tables", "lgks", "do", "sys", "cache"].indexOf(pluginID.toLowerCase())>=0) return false;
+
         const tableModel = await _call(`${pluginID}.source`, {folder: "dataModels", file: `${table}.json`, params: {}});
         // console.log("tableModel", table, pluginID, tableModel);
 

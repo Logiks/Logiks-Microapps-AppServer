@@ -554,7 +554,7 @@ module.exports = {
 								ctx.meta.headers = req.headers; 
 								ctx.meta.__start = Date.now();
 
-								console.log("REQUEST_PRIVATE", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
+								// console.log("REQUEST_PRIVATE", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
 								
 								if (req.method === "GET" && req.body && Object.keys(req.body).length > 0) {
 									res.writeHead(400, { "Content-Type": "application/json" });
@@ -794,7 +794,7 @@ module.exports = {
 						const actionName = ctxAction?.name;
 						const requiredScopes = ctxAction?.meta?.scopes || [];
 
-						// console.log("DUE_AUTHORIZATION", req.url, sess, ctx.meta, actionName, user.roles, user.scopes, requiredScopes);
+						console.log("DUE_AUTHORIZATION", req.url, sess, ctx.meta, actionName, user.privilege, user.roles, user.scopes, requiredScopes);
 						
 						// Admin namespace requires admin role
 						if (actionName && actionName.startsWith("admin.")) {

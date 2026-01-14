@@ -17,10 +17,6 @@ const { Readable } = require('stream');
 
 const COMPONENT_CACHE = _CACHE.getCacheMap("MODULES_COMPONENT_CACHE");
 
-const mimeMap = {
-	// "reports", "forms", "infoviews", "dashboards", "search", "charts"
-};
-
 module.exports = {
 	name: "modules",
 
@@ -144,7 +140,7 @@ module.exports = {
 		fetchService: {
 			rest: {
 				method: "POST",
-				fullPath: "/api/services/:moduleId/:actionId?"
+				fullPath: "/api/requests/:moduleId/:actionId?"
 			},
 			async handler(ctx) {
 				const moduleName = ctx.params.moduleId;
