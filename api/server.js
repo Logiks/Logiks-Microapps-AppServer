@@ -346,7 +346,7 @@ module.exports = {
 								ctx.meta.headers = req.headers; 
 								ctx.meta.__start = Date.now();
 
-								const serverIp = req.socket.localAddress || req.connection.localAddress;
+								const serverIP = req.socket.localAddress || req.connection.localAddress;
 								const serverHost = req.headers.host;
 								const remoteIP = MISC.getClientIP(req);
 
@@ -406,7 +406,7 @@ module.exports = {
 								ctx.meta.appInfo = appInfo || {};
 								ctx.meta.serverHost = serverHost || "";
 
-								ctx.meta.serverIp = serverIp;
+								ctx.meta.serverIP = serverIP;
 								ctx.meta.serverHost = serverHost;
 								ctx.meta.remoteIP = remoteIP;
 							}
@@ -624,13 +624,13 @@ module.exports = {
 							req.query.api_key;
 						const tlkey = req.query.tkn;
 						const s2skey = req.query.s2stkn;
-						const serverIp = req.socket.localAddress || req.connection.localAddress;
+						const serverIP = req.socket.localAddress || req.connection.localAddress;
 						const serverHost = req.headers.host;
 						const remoteIP = MISC.getClientIP(req);
 
 						const appInfo = ctx.meta.appInfo;
 						
-						//console.log("AUTH_HEADERS", { authHeader, apiKey, s2skey, serverIp, serverHost, appInfo });
+						//console.log("AUTH_HEADERS", { authHeader, apiKey, s2skey, serverIP, serverHost, appInfo });
 
 						let user = {};
 
@@ -773,7 +773,7 @@ module.exports = {
 
 						ctx.meta.tenantInfo = await TENANT.getTenantInfo(user.tenantId);
 
-						ctx.meta.serverIp = serverIp;
+						ctx.meta.serverIP = serverIP;
 						ctx.meta.serverHost = serverHost;
 						ctx.meta.remoteIP = remoteIP;
 
