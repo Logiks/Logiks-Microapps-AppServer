@@ -24,9 +24,11 @@ module.exports = {
 		registerWorker: {
 			params: {
 				nodeID: "string",
+				token: "string",
 				role: "string",
 				host: "string",
 				pid: "number",
+				pwd: "string",
 				color: "string",
 				services: { type: "array", items: "string" },
 				menus: "object",
@@ -35,6 +37,18 @@ module.exports = {
 			async handler(ctx) {
 				const w = ctx.params;
 
+				if(w.token!=process.env.CLUSTER_TOKEN) {
+					console.log("CLUSTER_TOKEN_ERROR", "Worker registeration failed due to cluster token mismatch");
+					LOGGER.get("server").info("Worker registeration failed due to cluster token mismatch", w);
+					
+					SERVER.getBroker().removeNode(w.nodeID);
+					
+					return {
+						success: false,
+						message: "Cluster Token Mismatch"
+					};
+				}
+
                 SERVICE_WORKERS.set(w.nodeID, {
 					...w,
 					status: "active",
@@ -42,7 +56,7 @@ module.exports = {
 				});
 
 				LOGGER.get("server").info("📌 Worker registered", w);
-
+				
 				// Example tasks you may perform here:
 				// ----------------------------------------
 				// 1. Run DB migrations
@@ -101,14 +115,20 @@ module.exports = {
 				nodeID: "string"
 			},
 			handler: (ctx) => {
+				//console.log("drainWorker", ctx.params, SERVICE_WORKERS);
 				const { nodeID } = ctx.params;
 				if(!SERVICE_WORKERS) return { ok: true };
+
 				const worker = SERVICE_WORKERS.get(nodeID);
 				if (worker) {
 					worker.status = "draining";
+					LOGGER.get("server").warn("🚫 Worker draining", worker);
+
 					SERVICE_WORKERS.set(nodeID, worker);
 
-					LOGGER.get("server").warn("🚫 Worker draining", worker);
+					setTimeout(function() {
+						SERVICE_WORKERS.delete(nodeID);
+					}, 5000);
 				}
 
 				return { ok: true };
@@ -265,7 +285,6 @@ module.exports = {
 			}
 		},
 
-
 		//Private Function
 		selfRestart() {
 			this.logger.warn(`SELF RESTART triggered on ${this.broker.nodeID}`);
@@ -319,3 +338,7 @@ module.exports = {
 		}
 	},
 };
+
+async function loadPluginAttributes(pluginId) {
+
+}

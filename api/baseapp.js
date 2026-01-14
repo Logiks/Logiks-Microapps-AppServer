@@ -1,6 +1,7 @@
 //For Bootstraping the application
 
 var applicationData = {};
+const DBKEYS = ["appdb", "logdb"];
 
 module.exports = {
 
@@ -51,11 +52,15 @@ module.exports = {
         console.log("\x1b[36m%s\x1b[0m",`Bootstrapping Completed with ${applicationData.length} Loaded Applications`);
     },
 
+    getDBKeys: function() {
+        return DBKEYS;
+    },
+
     //This does migrations and other tasks
     postInitalization: async function() {
         //Migration Testing and Running if required
         console.log("\x1b[36m%s\x1b[0m",`Checking if DB Migration is Required`);
-        const DBKEYS = ["appdb", "logdb"];
+        
         switch(process.env.MIGRATION_MODE) {
             case "IMPORT":
                 printObj("Running Migration - Importing", "yellow");

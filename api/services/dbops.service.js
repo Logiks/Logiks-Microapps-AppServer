@@ -61,14 +61,14 @@ module.exports = {
                         "INVALID_REQUEST"
                     );
                 }
-                if(jsonQuery.operation!="create") {
-                    throw new LogiksError(
-                        "Error in selected operation for the RefID",
-                        400,
-                        "INVALID_REQUEST",
-                        jsonQuery.operation
-                    );
-                }
+                // if(jsonQuery.operation!="create") {
+                //     throw new LogiksError(
+                //         "Error in selected operation for the RefID",
+                //         400,
+                //         "INVALID_REQUEST",
+                //         jsonQuery.operation
+                //     );
+                // }
                 
                 const sqlTable = jsonQuery.source.table;
                 const sqlFields = jsonQuery.fields;
@@ -133,14 +133,14 @@ module.exports = {
                         "INVALID_REQUEST"
                     );
                 }
-                if(jsonQuery.operation!="create") {
-                    throw new LogiksError(
-                        "Error in selected operation for the RefID",
-                        400,
-                        "INVALID_REQUEST",
-                        jsonQuery.operation
-                    );
-                }
+                // if(jsonQuery.operation!="create") {
+                //     throw new LogiksError(
+                //         "Error in selected operation for the RefID",
+                //         400,
+                //         "INVALID_REQUEST",
+                //         jsonQuery.operation
+                //     );
+                // }
                 
                 const sqlTable = jsonQuery.source.table;
                 const sqlFields = jsonQuery.fields;
@@ -281,14 +281,14 @@ module.exports = {
                         "INVALID_REQUEST"
                     );
                 }
-                if(jsonQuery.operation!="update") {
-                    throw new LogiksError(
-                        "Error in selected operation for the RefID",
-                        400,
-                        "INVALID_REQUEST",
-                        jsonQuery.operation
-                    );
-                }
+                // if(jsonQuery.operation!="update") {
+                //     throw new LogiksError(
+                //         "Error in selected operation for the RefID",
+                //         400,
+                //         "INVALID_REQUEST",
+                //         jsonQuery.operation
+                //     );
+                // }
 
                 const sqlTable = jsonQuery.source.table;
                 var sqlWhere = jsonQuery.source.where;
@@ -360,14 +360,14 @@ module.exports = {
                         "INVALID_REQUEST"
                     );
                 }
-                if(jsonQuery.operation!="update" && jsonQuery.operation!="delete") {
-                    throw new LogiksError(
-                        "Error in selected operation for the RefID",
-                        400,
-                        "INVALID_REQUEST",
-                        jsonQuery.operation
-                    );
-                }
+                // if(jsonQuery.operation!="update" && jsonQuery.operation!="delete") {
+                //     throw new LogiksError(
+                //         "Error in selected operation for the RefID",
+                //         400,
+                //         "INVALID_REQUEST",
+                //         jsonQuery.operation
+                //     );
+                // }
 
                 const sqlTable = jsonQuery.source.table;
                 var sqlWhere = jsonQuery.source.where;

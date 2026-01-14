@@ -271,7 +271,7 @@ module.exports = {
         sql = sql.replaceAll(/('')+/g,"'");
         sql = sql.replaceAll(/('')+/g,"'");
 
-        console.log("SQLOBJECT", sqlObj, sql);
+        // console.log("SQLOBJECT", sqlObj, sql);
 
         return sql;
     }
@@ -747,7 +747,7 @@ async function generateEnvObj(metaInfo) {
     
     newMeta['META_PROCESSED'] = true;
 
-    console.log("META_INFO", newMeta);
+    // console.log("META_INFO", newMeta);
 
     return newMeta;
 }

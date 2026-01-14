@@ -1,6 +1,20 @@
 /*
  * Data Models, Hooks, Encryption Layer etc
- * 
+ *
+ * Handles - Encryption, Hooks, Meta Update Rules, Cascading
+ * Sample Schema (plugins/<module>/dataModels/<table>.json):
+ * {
+        "hooks": {
+            "insert": [],
+            "update": [],
+            "delete": []
+        },
+        "fields": {
+            "lgks_users.email": {
+                "encrypted": true
+            }
+        }
+    }
  * */
 
 const MODEL_MAP = {};
@@ -15,7 +29,7 @@ module.exports = {
         if(MODEL_MAP[table]) return MODEL_MAP[table];
         const pluginID = table.split("_")[0];
 
-        const tableModel = await _call(`${pluginID}.source`, {folder: "dataModel", file: `${table}.json`, params: {}});
+        const tableModel = await _call(`${pluginID}.source`, {folder: "dataModels", file: `${table}.json`, params: {}});
         // console.log("tableModel", table, pluginID, tableModel);
 
         if(!tableModel) return false;
@@ -25,7 +39,22 @@ module.exports = {
         return false;
     },
 
-    //Prepare data before encryption
+    //insert -> param -> insertId or array of insertId
+    //update -> param -> where
+    //delete -> param -> where
+    checkHook: async function(tables, operation, dbkey = "app", param = "") {
+        const tableList = tables.split(",");
+        _.each(tableList, async function(tbl, k) {
+            const dataModel = await DATAMODELS.getModel(tbl);
+            if(dataModel && dataModel.hooks && dataModel.hooks[operation]) {
+                _.each(dataModel.hooks[operation], async function(query, k1) {
+                    await _DB.db_query(dbkey, query, {});
+                });
+            }
+        })
+    },
+
+    //Prepare field before encryption
     prepareField: async function(table, field, data) {
         const dataModel = await DATAMODELS.getModel(table)
         if(!dataModel) return data;
@@ -37,7 +66,7 @@ module.exports = {
         return data;
     },
 
-    //Process data before sending out
+    //Process field before sending out
     processField: async function(table, field, data) {
         const dataModel = await DATAMODELS.getModel(table)
         if(!dataModel) return data;
@@ -49,6 +78,7 @@ module.exports = {
         return data;
     },
 
+    //Process record before sending out
     processData: function(singleRecord) {
         _.each(singleRecord, function(val, col) {
             var colArr = col.split(".");
@@ -58,6 +88,7 @@ module.exports = {
         });
     },
 
+    //Prepare record before encryption
     prepareData: function(table, singleRecord) {
         _.each(singleRecord, function(val, col) {
             var colArr = col.split(".");

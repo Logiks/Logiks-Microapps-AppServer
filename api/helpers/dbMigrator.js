@@ -30,6 +30,61 @@ module.exports = {
         }
     },
 
+    pluginMigration: async function(pluginID, schemaFile) {
+        printObj(`Plugin Migration Checking for ${pluginID} - mode:${process.env.MIGRATION_MODE}`, "pink", 2);
+
+        const DBKEYS = BASEAPP.getDBKeys();
+        switch(process.env.MIGRATION_MODE) {
+            case "IMPORT":
+                var responses = {};
+                const dbkeyList = Object.keys(schemaFile);
+                for(i=0;i<dbkeyList.length;i++) {
+                    const dbkey = dbkeyList[i];
+                    const schema = schemaFile[dbkey];
+
+                    printObj(`Running Migration - Importing in ${dbkey} for ${pluginID}`, "pink", 3);
+                    var schemaData = await DBMIGRATOR.generateMigration(dbkey, schema, false, false);
+                    // console.log("XXXXXXXXXXX", pluginID, dbkey, schemaData);
+                    
+                    if(schemaData.success) {
+                        if(schemaData.statements>0) {
+                            printObj(`DB Difference Found in ${dbkey} for with ${schemaData.statements} changes`, "pink", 3);
+
+                            var result = await DBMIGRATOR.applyMigrationSchema(dbkey, schemaData.schema);
+
+                            printObj(`Migration Completed in ${dbkey} for with status - ${result.success}`, "pink", 3);
+
+                            if(result.success)
+                                responses[dbkey] = {"mode": process.env.MIGRATION_MODE, "status": "success", "message": "Successfully Migrated", "statements": schemaData.statements};
+                            else
+                                responses[dbkey] = {"mode": process.env.MIGRATION_MODE, "status": "error", "message": result.message};
+                        } else {
+                            printObj(`Migration Completed in ${dbkey} for with No Changes Found`, "pink", 3);
+
+                            responses[dbkey] = {"mode": process.env.MIGRATION_MODE, "status": "success", "message": "No Changes Found"};
+                        }
+                    } else {
+                        printObj(`Migration Completed for ${dbkey} with Error - ${schemaData.message}`, "pink", 3);
+                        responses[dbkey] = {"mode": process.env.MIGRATION_MODE, "status": "error", "message": schemaData.message};
+                    }
+                }
+                return {"mode": process.env.MIGRATION_MODE, "responses": responses};
+                break;
+            case "EXPORT":
+                var result = {};
+                for(i=0;i<DBKEYS.length;i++) {
+                    const dbkey = DBKEYS[i];
+                    printObj(`Running Migration - Exporting in ${dbkey} for ${pluginID}`, "pink", 3);
+                    result[dbkey] = await DBMIGRATOR.exportSchema(dbkey, false, pluginID);
+                }
+                return {"mode": process.env.MIGRATION_MODE, "schema": result};
+                break;
+            default:
+                printObj("Running Migration - Mode Not Supported", "grey", 3);
+                return {"mode": process.env.MIGRATION_MODE, "status": "error", "message": "Running Migration - Mode Not Supported"};
+        }
+    },
+
     startMigration : async function(dbkey) {
         printObj(`Migration Checking for ${dbkey}`, "yellow", 2);
 
@@ -83,7 +138,7 @@ module.exports = {
     /* ------------------------------------------
     1. EXPORT SCHEMA → JSON
     ------------------------------------------ */
-    exportSchema : async function(dbKey, writeFile = true) {
+    exportSchema : async function(dbKey, writeFile = true, tablePrefix = false) {
         try {
             const mysqlConnection = _DB.db_connection(dbKey).promise();
 
@@ -94,6 +149,10 @@ module.exports = {
                 const table = Object.values(t)[0];
                 
                 if(["z", "y", "x", "backup", "temp"].indexOf(table.toLowerCase().split("_")[0])>=0) continue;
+
+                if(tablePrefix) {
+                    if(table.indexOf(`${tablePrefix}_`)!==0) continue;
+                }
 
                 const [columns] = await mysqlConnection.query(`DESCRIBE ${table}`);
                 const [indexes] = await mysqlConnection.query(`SHOW INDEX FROM ${table}`);
@@ -131,13 +190,20 @@ module.exports = {
     /* ------------------------------------------
     2. GENERATE MIGRATION SCRIPT (DDL ONLY)
     ------------------------------------------ */
-    generateMigration : async function(dbKey, newSchemaFile, writeFile = false) {//, oldSchemaFile
+    generateMigration : async function(dbKey, newSchemaFile, writeFile = false, inputSchemaIsFile = true) {//, oldSchemaFile
         try {
             //const mysqlConnection = _DB.db_connection(dbKey).promise();
 
+            var fileContent = false;
+            if(inputSchemaIsFile) {
+                fileContent = await fs1.readJson(path.join(SCHEMA_DIR, newSchemaFile));
+            } else {
+                fileContent = newSchemaFile;
+            }
+
             //const oldSchema = await fs1.readJson(path.join(SCHEMA_DIR, oldSchemaFile));
             const oldSchema = await DBMIGRATOR.exportSchema("appdb", false);
-            const newSchema = await fs1.readJson(path.join(SCHEMA_DIR, newSchemaFile));
+            const newSchema = fileContent;
 
             const changes = diff(oldSchema, newSchema);
             if (!changes) return { success: true, message: "No schema changes found.", statements: 0 };

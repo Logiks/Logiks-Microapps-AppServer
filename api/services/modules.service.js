@@ -31,7 +31,7 @@ module.exports = {
 		fetchModule: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/modules/:module/:item?"///:action/:item?
+				fullPath: "/api/modules/:module/:item?/:operation?/:refid?"///:action/:item?
 			},
 			async handler(ctx) {
 				if(CONFIG.disable_cache.modules) ctx.params.recache = true;
@@ -57,7 +57,7 @@ module.exports = {
 					if(COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`]) {
 						return {
 							"component": modname,
-							"content": COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`].data
+							"content": await processQueryForId(COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`].data, ctx.params.item, ctx.params.module, ctx)
 						};
 					}
 
@@ -70,10 +70,10 @@ module.exports = {
 							updatedAt: Date.now()
 						};
 					_CACHE.saveCacheMap("MODULES_COMPONENT_CACHE", COMPONENT_CACHE);
-
+					
 					return {
 						"component": modname,
-						"content": fileContent
+						"content": await processQueryForId(fileContent, ctx.params.item, ctx.params.module, ctx)
 					};
 				} else {
 					var submoduleFile = ctx.params.item+".json";
@@ -86,7 +86,7 @@ module.exports = {
 					if(COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`]) {
 						return {
 							"component": "page",
-							"content": COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`].data
+							"content": await processQueryForId(COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`].data, ctx.params.item, ctx.params.module, ctx)
 						};
 					}
 					
@@ -102,7 +102,7 @@ module.exports = {
 
 					return {
 						"component": "page",
-						"content": fileContent
+						"content": await processQueryForId(fileContent, ctx.params.item, ctx.params.module, ctx)
 					};
 				}
 			}
@@ -191,3 +191,167 @@ module.exports = {
 		}
 	}
 };
+
+async function processQueryForId(jsonObj, objId, moduleId, ctx) {
+	// console.log("processQueryForId", objId, moduleId, jsonObj);
+	try {
+		var tempObj = _.cloneDeep(jsonObj);
+		if(typeof tempObj == "string") tempObj  = JSON.parse(tempObj);
+		
+		switch(moduleId) {
+			case "forms":
+				if(tempObj.source && tempObj.source.type=="sql") {
+					const operationId = ctx.params.operation?ctx.params.operation:"create";
+					const refid = ctx.params.refid?ctx.params.refid:0;
+					if(operationId!="create") {
+						tempObj.source.refid = refid;
+					}
+					const dbOpsID = await DBOPS.storeDBOpsQuery(tempObj.source, tempObj.fields, operationId, tempObj.forcefill?tempObj.forcefill:{}, ctx.meta.user);
+					tempObj.source = {
+						"type": "sql",
+						"dbopsid": dbOpsID
+					};
+				}
+				// tempObj.fields.filter && type!= "dataMethod" && .table
+				//Process Data to generate options
+				_.each(tempObj.fields, async function(v,k) {
+					if(v.table) {
+						tempObj.fields[k] = {
+							...v,
+							queryid: await QUERY.storeQuery(v.filter, ctx.meta.user),
+						};
+						if(tempObj.fields[k].table) delete tempObj.fields[k].table;
+						if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
+						if(tempObj.fields[k].where) delete tempObj.fields[k].where;
+					}
+				})
+
+				jsonObj = tempObj;
+				break;
+			case "infoview":
+				if(tempObj.source && tempObj.source.type=="sql") {
+					const operationId = ctx.params.operation?ctx.params.operation:"fetch";
+					const refid = ctx.params.refid?ctx.params.refid:0;
+					tempObj.source.refid = refid;
+					const dbOpsID = await DBOPS.storeDBOpsQuery(tempObj.source, tempObj.fields, operationId, tempObj.forcefill?tempObj.forcefill:{}, ctx.meta.user);
+					tempObj.source = {
+						"type": "sql",
+						"dbopsid": dbOpsID
+					};
+				}
+				_.each(tempObj.fields, async function(v,k) {
+					if(v.table) {
+						tempObj.fields[k] = {
+							...v,
+							queryid: await QUERY.storeQuery(v.filter, ctx.meta.user),
+						};
+						if(tempObj.fields[k].table) delete tempObj.fields[k].table;
+						if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
+						if(tempObj.fields[k].where) delete tempObj.fields[k].where;
+					}
+				})
+				_.each(tempObj.infoview.groups, async function(v,k) {
+					if(v.config && v.config.table) {
+						if(!tempObj.infoview.groups[k].config.columns && tempObj.infoview.groups[k].config.cols) {
+							tempObj.infoview.groups[k].config.columns = tempObj.infoview.groups[k].config.cols;
+							delete tempObj.infoview.groups[k].config.cols;
+						}
+
+						tempObj.infoview.groups[k].config = {
+							...v.config,
+							queryid: await QUERY.storeQuery(v.config, ctx.meta.user),
+						};
+
+						if(tempObj.infoview.groups[k].config.table) delete tempObj.infoview.groups[k].config.table;
+						if(tempObj.infoview.groups[k].config.columns) delete tempObj.infoview.groups[k].config.columns;
+						if(tempObj.infoview.groups[k].config.where) delete tempObj.infoview.groups[k].config.where;
+					}
+
+					if(v.config && v.config.form && v.config.form.source && v.config.form.source.type=="sql") {
+						const dbOpsID = await DBOPS.storeDBOpsQuery(v.config.form.source, v.config.form.fields, "fetch", v.config.form.forcefill?v.config.form.forcefill:{}, ctx.meta.user);
+						v.config.form.source = {
+							"type": "sql",
+							"dbopsid": dbOpsID
+						};
+					}
+				});
+				
+
+				jsonObj = tempObj;
+				break;
+			case "dashboards":
+			case "dashboard":
+				_.each(tempObj.cards, async function(v,k) {
+					if(v.source && v.source.type && v.source.type=="sql") {
+						tempObj.cards[k].source = {
+							type: "sql",
+							queryid: await QUERY.storeQuery(v.source, ctx.meta.user),
+						};
+					}
+				})
+				if(tempObj.filters) {
+					_.each(tempObj.filters, async function(v,k) {
+						if(v.table) {
+							tempObj.filters[k] = {
+								...v,
+								queryid: await QUERY.storeQuery(v.filter, ctx.meta.user),
+							};
+							if(tempObj.filters[k].table) delete tempObj.filters[k].table;
+							if(tempObj.filters[k].columns) delete tempObj.filters[k].columns;
+							if(tempObj.filters[k].where) delete tempObj.filters[k].where;
+						}
+					})
+				}
+
+				jsonObj = tempObj;
+				break;
+			case "charts":
+				if(tempObj.filters) {
+					_.each(tempObj.filters, async function(v,k) {
+						if(v.table) {
+							tempObj.filters[k] = {
+								...v,
+								queryid: await QUERY.storeQuery(v.filter, ctx.meta.user),
+							};
+							if(tempObj.filters[k].table) delete tempObj.filters[k].table;
+							if(tempObj.filters[k].columns) delete tempObj.filters[k].columns;
+							if(tempObj.filters[k].where) delete tempObj.filters[k].where;
+						}
+					})
+				}
+			case "reports":
+				// tempObj.datagrid.filter && type!= "dataMethod" && .table
+				_.each(tempObj.datagrid, async function(v,k) {
+					if(v.filter && v.filter.table) {
+						tempObj.datagrid[k].filter = {
+							type: v.filter.type,
+							queryid: await QUERY.storeQuery(v.filter, ctx.meta.user),
+						};
+					}
+				})
+			default:
+				if(tempObj.source && tempObj.source.type=="sql") {
+					if(!tempObj.source.columns && tempObj.source.cols) {
+						tempObj.source.columns = tempObj.source.cols;
+						delete tempObj.source.cols;
+					}
+					
+					const queryID = await QUERY.storeQuery(tempObj.source, ctx.meta.user);
+					tempObj.source = {
+						"type": "sql",
+						"queryid": queryID
+					};
+				}
+
+				jsonObj = tempObj;
+				break;
+		}
+	} catch(e) {
+		console.error(e);
+	}
+	
+	jsonObj.module_refid = objId;
+	jsonObj.module_type = moduleId;
+
+	return jsonObj;
+}

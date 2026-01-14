@@ -82,7 +82,7 @@ module.exports = {
 			async handler(ctx) {
 				if(!ctx.params.filter) ctx.params.filter = {};
 
-				const queryObj = await QUERY.getQueryByID(ctx.params.queryid, ctx.params.user);
+				const queryObj = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user);
 
 				if(!queryObj) {
 					throw new LogiksError(
@@ -138,7 +138,7 @@ module.exports = {
 
 				ctx.params.query['dbkey'] = ctx.params.dbkey;
 
-				const queryID = await QUERY.storeQuery(ctx.params.query, ctx.params.user);
+				const queryID = await QUERY.storeQuery(ctx.params.query, ctx.meta.user);
 
 				return {
 					"status": "success",

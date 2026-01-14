@@ -14,6 +14,8 @@ module.exports = {
 				delete conf.enable;
 				delete conf.keyid;
 
+				//conf["nestTables"] = ".";//nestTables: true = for tree
+
 				//.filter(a=>["host","port","user","password","database","insecureAuth","connectionLimit","debug"].indexOf(a)>=0)
 				_MYSQL[keyid] = mysql.createPool(conf);
 
@@ -21,7 +23,7 @@ module.exports = {
 						if (err || connection==null) {
 							throw err;
 							return;
-						}   
+						}
 						
 						console.log("\x1b[36m%s\x1b[0m","MYSQL Initialized - "+keyid);
 					});
@@ -56,6 +58,12 @@ module.exports = {
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql, params);
 		}
+		var table = sql.toLowerCase().split("from");
+		if(table[1]) table = table[1].trim().split(" ")[0];
+		else table = false;
+
+		if(table && table!="lgks_domains") sql = {sql: sql, nestTables: "."};
+		
 		const dbResponse = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, params, function(err, results, fields) {
 					if(err) {
@@ -73,6 +81,16 @@ module.exports = {
 						});
 					} else {
 						results = JSON.parse(JSON.stringify(results));
+
+						_.each(results, async function(row, k) {
+							_.each(row, async function(val, col) {
+								if(col.indexOf(".")>0 || !table)
+									results[k][col] = await field_decrypter(`${col}`, val);
+								else
+									results[k][col] = await field_decrypter(`${table}.${col}`, val);
+							});
+						})
+
 						resolve({
 							"status": "success", 
 							"results": results
@@ -125,6 +143,10 @@ module.exports = {
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql);
 		}
+
+		if(table.indexOf(",")>0) {
+			sql = {sql: sql, nestTables: "."};
+		}
 		
 		const dbResponse = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, function(err, results, fields) {
@@ -139,9 +161,15 @@ module.exports = {
 						});
 					} else {
 						results = JSON.parse(JSON.stringify(results));
+						_.each(results[0], async function(val, col) {
+							if(col.indexOf(".")>0)
+								results[0][col] = await field_decrypter(`${col}`, val);
+							else
+								results[0][col] = await field_decrypter(`${table}.${col}`, val);
+						});
 						resolve({
 							"status": "success", 
-							"results": results.length>0?results[0]:null
+							"results": results[0],//results.length>0?results[0]:null
 						});
 					}
 				});
@@ -195,6 +223,10 @@ module.exports = {
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql, whereParams);
 		}
+
+		if(table.indexOf(",")>0) {
+			sql = {sql: sql, nestTables: "."};
+		}
 		
 		const dbResponse = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, whereParams?Object.values(whereParams):[], function(err, results, fields) {
@@ -208,6 +240,16 @@ module.exports = {
 						});
 					} else {
 						results = JSON.parse(JSON.stringify(results));
+						
+						_.each(results, async function(row, k) {
+							_.each(row, async function(val, col) {
+								if(col.indexOf(".")>0)
+									results[k][col] = await field_decrypter(`${col}`, val);
+								else
+									results[k][col] = await field_decrypter(`${table}.${col}`, val);
+							});
+						})
+
 						resolve({
 							"status": "success", 
 							"results": results
@@ -230,9 +272,14 @@ module.exports = {
 		var cols = [];
 		var quest = [];
 		var vals = [];
-		_.each(data, function(a,b) {
+		_.each(data, async function(a,b) {
 			if(Array.isArray(a)) a = a.join(",");
 			else if(typeof a == "object") a = JSON.stringify(a);
+
+			if(b.indexOf(".")>0)
+				a = await field_encrypter(`${b}`, a, data);
+			else
+				a = await field_encrypter(`${table}.${b}`, a, data);
 
 			cols.push(b);
 			vals.push(a);
@@ -255,6 +302,7 @@ module.exports = {
 							"err_message": err.sqlMessage
 						});
 					} else {
+						DATAMODELS.checkHook(table, "insert", dbkey, results.insertId);
 						resolve({
 							"status": "success", 
 							"insertId": results.insertId
@@ -278,10 +326,15 @@ module.exports = {
 		}
 
 		let cols = Object.keys(data[0]);
-		let values = data.map( obj => cols.map( key => {
+		let values = data.map( obj => cols.map( async (key) => {
 			var a = obj[key];
 			if(Array.isArray(a)) a = a.join(",");
 			else if(typeof a == "object") a = JSON.stringify(a);
+
+			if(key.indexOf(".")>0)
+				a = await field_encrypter(`${key}`, a, obj);
+			else
+				a = await field_encrypter(`${table}.${key}`, a, obj);
 			
 			return a;
 		}));
@@ -302,6 +355,7 @@ module.exports = {
 							"err_message": err.sqlMessage
 						});
 					} else {
+						DATAMODELS.checkHook(table, "insert", dbkey, results);
 						resolve({
 							"status": "success", 
 							"results": results
@@ -343,9 +397,14 @@ module.exports = {
 		} else {
 			var fData = [];
 			var vals = [];
-			_.each(data, function(a,b) {
+			_.each(data, async function(a,b) {
 				if(Array.isArray(a)) a = a.join(",");
 				else if(typeof a == "object") a = JSON.stringify(a);
+
+				if(b.indexOf(".")>0)
+					a = await field_encrypter(`${b}`, a);
+				else
+					a = await field_encrypter(`${table}.${b}`, a);
 
 				fData.push(b+"=?");
 				vals.push(a);
@@ -369,6 +428,7 @@ module.exports = {
 							"err_message": err.sqlMessage
 						});
 					} else {
+						DATAMODELS.checkHook(table, "update", dbkey, sqlWhere);
 						resolve({
 							"status": "success", 
 							"results": results
@@ -417,6 +477,7 @@ module.exports = {
 							"err_message": err.sqlMessage
 						});
 					} else {
+						DATAMODELS.checkHook(table, "delete", dbkey, sqlWhere);
 						resolve({
 							"status": "success", 
 							"results": results
@@ -428,4 +489,18 @@ module.exports = {
 
 		return results;
 	}
+}
+
+//fieldId = table.column
+async function field_encrypter(fieldId, data) {
+	// console.log("field_encrypter", fieldId, data);
+	var colArr = fieldId.split(".");
+	return await DATAMODELS.prepareField(colArr[0], colArr[1], data);
+}
+
+//fieldId = table.column
+async function field_decrypter(fieldId, data) {
+	// console.log("field_decrypter", fieldId, data);
+	var colArr = fieldId.split(".");
+	return await DATAMODELS.processField(colArr[0], colArr[1], data);
 }

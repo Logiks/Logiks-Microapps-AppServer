@@ -133,7 +133,7 @@ module.exports = {
 		plugins: {
 			rest: {
 				method: "POST",
-				path: "/plugins/:task?"
+				path: "/plugins/:task?/:pluginId?"
 			},
 			params: {},
 			async handler(ctx) {
@@ -146,6 +146,13 @@ module.exports = {
 					case "more":
 						return await ctx.call("system.plugins", {"more": true});
 						break;
+					// case "info":
+					// 	if(ctx.params.pluginId && ctx.params.pluginId.length>0) {
+					// 		return await ctx.call("system.pluginInfo", {"pluginId": ctx.params.pluginId});
+					// 	} else {
+					// 		return {"status": "error", "message": "PluginId Not Defined"};
+					// 	}
+					// 	break;
 					default:
 						return {"status": "okay", "commands": [
 							"list",
@@ -162,13 +169,13 @@ module.exports = {
 		ctrls: {
 			rest: {
 				method: "POST",
-				path: "/ctrls/:task?"
+				path: "/ctrls/:task?/:refid?"
 			},
 			params: {},
 			async handler(ctx) {
 				this.verifyAdmin(ctx);
 
-				const commandList = ["stats", "restart", "restartNode", "restartAll", "check_update", "run_update", "nodes", "services", "backup", "app_module_map", "routeStats"];
+				const commandList = ["stats", "restart", "restartNode", "restartAll", "check_update", "run_update", "nodes", "nodeInfo", "services", "backup", "app_module_map", "routeStats"];
 
 				switch(ctx.params.task) {
 					case "stats":
@@ -215,6 +222,9 @@ module.exports = {
 						break;
 					case "nodes":
 						return listNodes();
+						break;
+					case "nodeInfo":
+						return nodeInfo(ctx.params.refid);
 						break;
 					case "services":
 						return getLocalServiceNames();
@@ -309,7 +319,7 @@ async function restartHandler(cmd, ctx) {
 			};
 			break;
 		case "restartNode":
-			// _appcall("system.restart");
+			// _call("system.restart");
 			const { nodeIDs } = ctx.params;
 
 			SERVER.getBroker().logger.warn("Restarting selected nodes:", gatewayNodes.map(n => n.id));
@@ -340,5 +350,15 @@ function getLocalServiceNames() {
 
 async function listNodes() {
     const nodes = await SERVER.getBroker().call("$node.list");
-    return nodes.map(n => n.id);
+    return nodes.filter(n => n.available === true).map(n => n.id);
+}
+
+async function nodeInfo(nodeId) {
+	if(!nodeId) return {"status": "error", "message": "NodeID not defined"};
+	
+	const nodes = await SERVER.getBroker().call("$node.list");
+	const nodeInfo = nodes.filter(a=>a.id==nodeId);
+
+	if(nodeInfo.length<=0) return {"status": "error", "message": "Node Not Found"};
+	return nodeInfo[0];
 }
