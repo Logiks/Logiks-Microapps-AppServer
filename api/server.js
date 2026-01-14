@@ -798,7 +798,7 @@ module.exports = {
 						
 						// Admin namespace requires admin role
 						if (actionName && actionName.startsWith("admin.")) {
-							if (!user || !user.roles || !user.roles.includes("admin")) {
+							if (!user || !user.roles || !user.roles.includes("admin") || !["root", "devroot", "admin"].includes(user.privilege)) {
 								throw new LogiksError(
 									"Forbidden",
 									403,
