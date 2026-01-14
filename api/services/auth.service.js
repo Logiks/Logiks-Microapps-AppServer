@@ -667,6 +667,7 @@ module.exports = {
 					userId: payload.userId,
 					username: payload.username,
 					tenantId: payload.tenantId,
+					privilege: payload.privilege,
 					roles: payload.roles || [],
 					scopes: payload.scopes || [],
 					deviceType: payload.deviceType,
@@ -960,6 +961,7 @@ module.exports = {
 				username: user.name,
 				tenantId: user.tenantId,
 				guid: user.guid,
+				privilege: user.privilege,
 				roles: user.roles || [],
 				scopes: user.scopes || [],
 				ip,
@@ -1082,6 +1084,7 @@ async function generateUserMap(userInfo, geolocation, geoIP, appid) {
 			name: userInfo.access_name,
 			sites: userInfo.scope_sites=="*"? [appid]: userInfo.scope_sites.split(",")
 		},
+		privilege: userInfo.privilege_name,
 		privacy: userInfo.privacy,
 		security_policy: userInfo.security_policy,
 		avatar: await USERS.getUserAvatar(userInfo.avatar, userInfo.avatar_type),

@@ -25,13 +25,14 @@ module.exports = {
         filter = {
             ...filter,
             "onmenu": "true",
-            "privilege": [["*", userInfo.privilege, userInfo.userId, userInfo.scopes, ...userInfo.roles.map(a=>`role:${a}`)], "IN"],
+            "guid": userInfo.guid,
+            "privilege": [["*", userInfo.privilege, userInfo.userId, ...userInfo.scopes, ...userInfo.roles.map(a=>`role:${a}`)], "IN"],
             //"privilege": [["*", ...userInfo.privilege], "IN"],
         };
         if(deviceType && deviceType.length>0) {
             filter['device'] = [["*", deviceType], "IN"];
         }
-
+        
         filter[`FIND_IN_SET('${navID}', menuid)`] = "RAW";
 
         const dbLinks = await _DB.db_selectQ("appdb", "do_links", "*", _.extend({}, filter, {

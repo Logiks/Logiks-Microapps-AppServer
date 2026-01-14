@@ -83,6 +83,7 @@ module.exports = {
 				nodeID: `gateway-${process.env.SERVER_ID}-${os.hostname()}-${process.pid}`,
 				namespace: process.env.NAMESPACE || "default",
 				transporter: process.env.TRANSPORTER,
+				internalServices: true,
 				// validator: v,
 
 				// Redis Cacher (distributed)
@@ -734,6 +735,7 @@ module.exports = {
 									userId: payload.userId,
 									sessionId: payload.sessionId,
 									username: payload.username,
+									privilege: payload.privilege,
 									tenantId: payload.tenantId ? payload.tenantId : payload.guid,
 									roles: payload.roles || [],
 									scopes: payload.scopes || [],

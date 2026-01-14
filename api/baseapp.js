@@ -137,11 +137,19 @@ global.printObj = function(msg, clr, intent) {
   }
 }
 
-global._appcall = async function(serviceString, ...args) {
-    console.log("CALLING_SERVICE", serviceString);
+global._call = async function(serviceString, ...args) {
+    // console.log("CALLING_SERVICE", serviceString);
 
-    return await SERVER.getBroker().call(serviceString, args, {
-            timeout: 5000,
-            retries: 0
-        });
+    try {
+        const response = await SERVER.getBroker().call(serviceString, ...args, {
+                timeout: 5000,
+                retries: 0
+            });
+        
+        return response;
+    } catch(err) {
+        // console.error(err);
+        log_error(err);
+        return null;
+    }
 }
