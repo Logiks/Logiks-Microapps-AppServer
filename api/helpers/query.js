@@ -326,7 +326,7 @@ function processSQLWhere (sqlWhereObj, colDelimiter = "`", whereJoiner = "AND") 
             } else if (["~", "!", "@", "#"].indexOf(a[0]) >= 0) {
                 sqlWhere.push(parseRelation(b, a, colDelimiter));
             } else {
-                b = b.replace(/`/g, "");
+                if(typeof b == "string") b = b.replace(/`/g, "");
                 sqlWhere.push(
                     `${colDelimiter[0]}${b}${colDelimiter[1]}` +
                         "='" +

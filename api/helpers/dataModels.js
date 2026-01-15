@@ -62,7 +62,7 @@ module.exports = {
         if(!dataModel) return data;
 
         if(dataModel.fields[field].encrypted) {
-            return ENCRYPTER.encrypt(data, `${table}.${CONFIG.SALT_KEY}`);
+            return ENCRYPTER.encrypt(data, `${table}.${field}.${CONFIG.SALT_KEY}`);
         }
 
         return data;
@@ -74,7 +74,7 @@ module.exports = {
         if(!dataModel) return data;
 
         if(dataModel.fields[field].encrypted) {
-            return ENCRYPTER.decrypt(data, `${table}.${CONFIG.SALT_KEY}`);
+            return ENCRYPTER.decrypt(data, `${table}.${field}.${CONFIG.SALT_KEY}`);
         }
 
         return data;

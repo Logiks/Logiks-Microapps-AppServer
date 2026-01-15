@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
 const JWT_SECRET = CONFIG.authjwt.secret;
+const JWT_ALGORITHM = CONFIG.authjwt.algorithm || "HS256";//RS256, HS256
 const ACCESS_TOKEN_TTL = Number(CONFIG.authjwt.access_token_ttl || 3600);              // seconds
 const REFRESH_TOKEN_TTL = Number(CONFIG.authjwt.refresh_token_ttl || 7 * 24 * 3600);   // seconds
 
@@ -842,6 +843,7 @@ module.exports = {
 				},
 				JWT_SECRET,
 				{
+					algorithm: JWT_ALGORITHM,
 					expiresIn: ACCESS_TOKEN_TTL,
 					jwtid: accessJti
 				}
@@ -905,6 +907,7 @@ module.exports = {
 				},
 				JWT_SECRET,
 				{
+					algorithm: JWT_ALGORITHM,
 					expiresIn: ACCESS_TOKEN_TTL,
 					jwtid: accessJti
 				}
@@ -975,6 +978,7 @@ module.exports = {
 				},
 				JWT_SECRET,
 				{
+					algorithm: JWT_ALGORITHM,
 					expiresIn: ACCESS_TOKEN_TTL,
 					jwtid: accessJti
 				}
@@ -987,6 +991,7 @@ module.exports = {
 				},
 				JWT_SECRET,
 				{
+					algorithm: JWT_ALGORITHM,
 					expiresIn: REFRESH_TOKEN_TTL,
 					jwtid: refreshJti
 				}

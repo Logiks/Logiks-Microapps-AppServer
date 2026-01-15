@@ -35,5 +35,11 @@ module.exports = {
                 return fileContent;
             }
         }
+    },
+    events: {
+        "test1.testing"(payload) {
+            //ctx.emit("test1.testing", {"a":2});
+            console.log("Event Testing", payload);
+        }
     }
 }
