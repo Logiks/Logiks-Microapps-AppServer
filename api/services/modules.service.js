@@ -203,7 +203,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 		}
 	}
 	jsonObj = await RBAC.processJSONComponent(ctx, jsonObj);
-console.log("jsonObj", jsonObj);
+
 	//Process For Query
 	try {
 		var tempObj = _.cloneDeep(jsonObj);

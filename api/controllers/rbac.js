@@ -40,7 +40,7 @@ module.exports = {
 
     //policyStr = a.b.c format
     checkPolicy: async function(ctx, policyStr, defaultValue = false) {
-        console.log("RBAC.checkPolicy", policyStr, defaultValue, ctx.meta.user, ctx.meta.appInfo, ctx.meta.appInfo.appid);
+        // console.log("RBAC.checkPolicy", policyStr, defaultValue, ctx.meta.user, ctx.meta.appInfo, ctx.meta.appInfo.appid);
         if(!ctx || !ctx.meta.user || !ctx.meta.appInfo || !ctx.meta.appInfo.appid) return defaultValue;
 
         await checkRBACControls(ctx);
