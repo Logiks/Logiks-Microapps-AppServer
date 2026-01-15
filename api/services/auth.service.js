@@ -663,6 +663,8 @@ module.exports = {
 				}
 				const sessionId = payload.jti.replace("acc:","").replace("ref:","");
 
+				payload = JSON.parse(ENCRYPTER.decrypt(payload.payload, JWT_SECRET));
+
 				// console.log("XXXXX", payload, sessionId);
 				return {
 					userId: payload.userId,
@@ -974,7 +976,8 @@ module.exports = {
 			const accessToken = jwt.sign(
 				{
 					type: "access",
-					...payloadBase
+					// ...payloadBase
+					payload: ENCRYPTER.encrypt(JSON.stringify(payloadBase), JWT_SECRET)
 				},
 				JWT_SECRET,
 				{
@@ -987,7 +990,8 @@ module.exports = {
 			const refreshToken = jwt.sign(
 				{
 					type: "refresh",
-					...payloadBase
+					// ...payloadBase
+					payload: ENCRYPTER.encrypt(JSON.stringify(payloadBase), JWT_SECRET)
 				},
 				JWT_SECRET,
 				{
@@ -1033,14 +1037,14 @@ module.exports = {
 				refreshToken,
 				tokenType: "Bearer",
 				expiresIn: ACCESS_TOKEN_TTL,
-				user: {
-					id: user.id,
-					userId: user.userId,
-					username: user.username,
-					tenantId: user.tenantId,
-					roles: user.roles || [],
-					scopes: user.scopes || []
-				}
+				// user: {
+				// 	id: user.id,
+				// 	userId: user.userId,
+				// 	username: user.username,
+				// 	tenantId: user.tenantId,
+				// 	roles: user.roles || [],
+				// 	scopes: user.scopes || []
+				// }
 			};
 		}
 	}
