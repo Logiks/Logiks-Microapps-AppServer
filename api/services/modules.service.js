@@ -53,7 +53,7 @@ module.exports = {
 					if(COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`]) {
 						return {
 							"component": modname,
-							"content": await processQueryForId(COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`].data, ctx.params.item, ctx.params.module, ctx)
+							"content": await processJSONComponent(COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`].data, ctx.params.item, ctx.params.module, ctx)
 						};
 					}
 
@@ -69,7 +69,7 @@ module.exports = {
 					
 					return {
 						"component": modname,
-						"content": await processQueryForId(fileContent, ctx.params.item, ctx.params.module, ctx)
+						"content": await processJSONComponent(fileContent, ctx.params.item, ctx.params.module, ctx)
 					};
 				} else {
 					var submoduleFile = ctx.params.item+".json";
@@ -82,7 +82,7 @@ module.exports = {
 					if(COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`]) {
 						return {
 							"component": "page",
-							"content": await processQueryForId(COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`].data, ctx.params.item, ctx.params.module, ctx)
+							"content": await processJSONComponent(COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`].data, ctx.params.item, ctx.params.module, ctx)
 						};
 					}
 					
@@ -98,7 +98,7 @@ module.exports = {
 
 					return {
 						"component": "page",
-						"content": await processQueryForId(fileContent, ctx.params.item, ctx.params.module, ctx)
+						"content": await processJSONComponent(fileContent, ctx.params.item, ctx.params.module, ctx)
 					};
 				}
 			}
@@ -188,8 +188,23 @@ module.exports = {
 	}
 };
 
-async function processQueryForId(jsonObj, objId, moduleId, ctx) {
-	// console.log("processQueryForId", objId, moduleId, jsonObj);
+async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
+	// console.log("processJSONComponent", objId, moduleId, jsonObj);
+	
+	//Process For Policies
+	if(jsonObj.policy && jsonObj.policy.length>0) {
+		var isAllowed = await RBAC.checkPolicy(ctx, jsonObj.policy, false);
+		if(!isAllowed) {
+			throw new LogiksError(
+				"Forbidden",
+				403,
+				"FORBIDDEN_ADMIN_ONLY"
+			);
+		}
+	}
+	jsonObj = await RBAC.processJSONComponent(ctx, jsonObj);
+console.log("jsonObj", jsonObj);
+	//Process For Query
 	try {
 		var tempObj = _.cloneDeep(jsonObj);
 		if(typeof tempObj == "string") tempObj  = JSON.parse(tempObj);

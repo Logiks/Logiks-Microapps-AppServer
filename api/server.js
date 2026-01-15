@@ -794,7 +794,7 @@ module.exports = {
 						const actionName = ctxAction?.name;
 						const requiredScopes = ctxAction?.meta?.scopes || [];
 
-						console.log("DUE_AUTHORIZATION", req.url, sess, ctx.meta, actionName, user.privilege, user.roles, user.scopes, requiredScopes);
+						// console.log("DUE_AUTHORIZATION", req.url, sess, ctx.meta, actionName, user.privilege, user.roles, user.scopes, requiredScopes);
 						
 						// Admin namespace requires admin role
 						if (actionName && actionName.startsWith("admin.")) {
