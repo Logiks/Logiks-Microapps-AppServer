@@ -248,6 +248,7 @@ module.exports = {
 					throw new LogiksError("Invalid credentials", 401);
 				}
 				var userDataUpdated = await generateUserMap(userInfo, geolocation, ctx.meta.remoteIP, ctx.meta.appInfo.appid);
+				userDataUpdated.vcode = userInfo.vcode;
 				
 				//More fields to be used to authenticate user
 				// {
@@ -475,14 +476,6 @@ module.exports = {
 
 				// Rotate: delete old
 				await authRedis.del(key);
-
-				const user = {
-					id: payload.userId,
-					username: payload.username,
-					tenantId: payload.tenantId,
-					roles: payload.roles || [],
-					scopes: payload.scopes || []
-				};
 
 				var userInfo = await authRedis.get(`user:${ctx.meta.sessionId}`);
 				try {
@@ -889,7 +882,6 @@ module.exports = {
 			const sessionId = `${ctx.params.appid}:${ctx.params.appid}:${Date.now()}`;
 
 			const accessJti = `acc:${sessionId}`;
-			const refreshJti = `ref:${sessionId}`;
 
 			const payloadBase = {
 				appId: ctx.params.appid,
