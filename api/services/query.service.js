@@ -31,10 +31,18 @@ module.exports = {
 				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
 				if(ctx.params.groupby) queryObj.groupby = ctx.params.groupby;
 
-				const sqlQuery = await QUERY.parseQuery(ctx.params.query, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
+				try {
+					queryObj.offset = parseInt(queryObj.page)*parseInt(ctx.params.limit);
+				} catch(e) {
+					queryObj.offset = 0;
+				}
+
+				queryObjCount.offset = 0;
+
+				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta))
 
-				const dbkey = ctx.params.query.dbkey?ctx.params.query.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
+				const dbkey = queryObj.dbkey?queryObj.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
 				
 				const dbResponse = await _DB.db_query(dbkey, sqlQuery, {});
 				const dbData = dbResponse?.results || [];
@@ -112,7 +120,9 @@ module.exports = {
 				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
 				if(ctx.params.groupby) queryObj.groupby = ctx.params.groupby;
 
-				return queryObj;
+				return {
+					"query": queryObj
+				};
 			}
 		},
 		queryid: {
@@ -159,6 +169,8 @@ module.exports = {
 				} catch(e) {
 					queryObj.offset = 0;
 				}
+
+				queryObjCount.offset = 0;
 
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
