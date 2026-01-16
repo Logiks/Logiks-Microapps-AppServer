@@ -1148,7 +1148,7 @@ async function log_login_error(userInfo, loginType, loginURI, errorMessage, ctx)
 		"uri": loginURI, 
 		"host": ctx.meta.serverHost, 
 		"client_ip": ctx.meta.remoteIP, 
-		"server_ip": ctx.meta.serverIP, 
+		"server_ip": ctx.meta.serverIP || "0.0.0.0", 
 		"user_agent": userAgent?userAgent:"-", 
 		"device_fingerprint": ctx.params.deviceid?ctx.params.deviceid:"-", 
 		"medium": ctx.params.device?ctx.params.device:"api", 
