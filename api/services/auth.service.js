@@ -434,8 +434,8 @@ module.exports = {
 			},
 			params: {
 				refreshToken: "string",
-				deviceType: { type: "string", optional: true, default: "web" },
-				geolocation: { type: "string", optional: true, default: "0,0" },
+				deviceType: "string",
+				geolocation: "string",
 			},
 			async handler(ctx) {
 				const { refreshToken, deviceType } = ctx.params;
