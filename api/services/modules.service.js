@@ -193,7 +193,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 	
 	//Process For Policies
 	if(jsonObj.policy && jsonObj.policy.length>0) {
-		var isAllowed = await RBAC.checkPolicy(ctx, jsonObj.policy, false);
+		var isAllowed = await RBAC.checkPolicy(ctx, jsonObj.policy);//false
 		if(!isAllowed) {
 			throw new LogiksError(
 				"Forbidden",
