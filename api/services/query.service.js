@@ -143,7 +143,7 @@ module.exports = {
 				if(!ctx.params.filter) ctx.params.filter = {};
 
 				const queryObjOne = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user);
-console.log("queryObjOne", queryObjOne);
+
 				if(!queryObj) {
 					throw new LogiksError(
 						"QueryID Not Found",
@@ -152,15 +152,15 @@ console.log("queryObjOne", queryObjOne);
 						ctx.params.queryid
 					);
 				}
-
+console.log("queryObjOne_1", queryObjOne);
 				var queryObj = _.cloneDeep(queryObjOne);
-
+console.log("queryObjOne_2", queryObj);
 				if(!queryObj.page) queryObj.page = 0;
 				if(!queryObj.limit) queryObj.limit = 0;
 
 				var queryObjCount = _.cloneDeep(queryObj);
 				queryObjCount.column = "count(*) as count";
-
+console.log("queryObjOne_3", queryObj);
 				if(ctx.params.page) queryObj.page = ctx.params.page;
 				if(ctx.params.limit) queryObj.limit = ctx.params.limit;
 				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
