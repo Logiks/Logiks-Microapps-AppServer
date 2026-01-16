@@ -26,10 +26,12 @@ module.exports = {
     },
 
     getModel: async function(table) {
+        return false;
+        
         if(MODEL_MAP[table]) return MODEL_MAP[table];
         const pluginID = table.split("_")[0];
 
-        if(["tables", "lgks", "do", "sys", "cache", "log", "logs"].indexOf(pluginID.toLowerCase())>=0 || pluginID.length<=2) return false;
+        if(["tables", "lgks", "do", "sys", "cache", "log", "logs", "data", "mapps", "my"].indexOf(pluginID.toLowerCase())>=0 || pluginID.length<=2) return false;
 
         const tableModel = await _call(`${pluginID}.source`, {folder: "dataModels", file: `${table}.json`, params: {}});
         // console.log("tableModel", table, pluginID, tableModel);
