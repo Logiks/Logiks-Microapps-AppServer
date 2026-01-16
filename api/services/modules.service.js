@@ -232,7 +232,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 					if(v.table) {
 						tempObj.fields[k] = {
 							...v,
-							queryid: await QUERY.storeQuery(v.filter, ctx.meta.user),
+							queryid: await QUERY.storeQuery(v, ctx.meta.user),
 						};
 						if(tempObj.fields[k].table) delete tempObj.fields[k].table;
 						if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
@@ -260,7 +260,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 					if(v.table) {
 						tempObj.fields[k] = {
 							...v,
-							queryid: await QUERY.storeQuery(v.filter, ctx.meta.user),
+							queryid: await QUERY.storeQuery(v, ctx.meta.user),
 						};
 						if(tempObj.fields[k].table) delete tempObj.fields[k].table;
 						if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
