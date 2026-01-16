@@ -33,7 +33,7 @@ module.exports = {
 
     processJSONComponent: async function(ctx, jsonObject) {
         var response = await filterByPolicy(jsonObject, async function(policyKey) {
-            return await RBAC.checkPolicy(ctx, policyKey, false);
+            return await RBAC.checkPolicy(ctx, policyKey);//false
         });
         return response;
     },
