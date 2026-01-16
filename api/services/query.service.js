@@ -161,7 +161,7 @@ module.exports = {
 
 				const dbResponseCount = await _DB.db_query(dbkey, sqlQueryCount, {});
 				const dbDataCount = dbResponseCount?.results || [{"count": 0}];
-
+console.log("DB_QUERY", sqlQueryCount, dbResponseCount);
 				return {
 					"data": dbData,
 					"err_code": dbResponse.err_code,
