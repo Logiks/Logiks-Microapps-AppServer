@@ -90,7 +90,9 @@ module.exports = {
                 // console.log(dataFields, MISC.generateDefaultDBRecord(ctx, false));
                 //Single Insert
 
-                forcefill = QUERY.updateWhereFromEnv(forcefill, await QUERY.processMetaInfo(ctx.meta));
+                const forcefillData = await QUERY.processMetaInfo(ctx.meta);
+                forcefillData = _.extend(forcefillData, ctx.params);
+                forcefill = QUERY.updateWhereFromEnv(forcefill, forcefillData);
                 if(forcefill && Object.keys(forcefill).length>0) dataFields = _.extend(dataFields, forcefill);
 
                 const dbResponse = await _DB.db_insertQ1("appdb", sqlTable, dataFields);
@@ -153,8 +155,10 @@ module.exports = {
                 var forcefill = jsonQuery.forcefill;
                 const userInfo = jsonQuery.userInfo;
                 const validationRules = convertToValidatorRules(sqlFields);
-
-                forcefill = QUERY.updateWhereFromEnv(forcefill, await QUERY.processMetaInfo(ctx.meta));
+                
+                const forcefillData = await QUERY.processMetaInfo(ctx.meta);
+                forcefillData = _.extend(forcefillData, ctx.params);
+                forcefill = QUERY.updateWhereFromEnv(forcefill, forcefillData);
 
                 if(Array.isArray(dataFields)) {
                     var errors = {};
@@ -178,7 +182,7 @@ module.exports = {
                     _.each(dataFields, function(data, k) {
                         dataFields[k] = _.extend(data, MISC.generateDefaultDBRecord(ctx, false));
                         
-                        if(forcefill && Object.keys(forcefill)>0) dataFields[k] = _.extend(dataFields[k], forcefill);
+                        if(forcefill && Object.keys(forcefill).length>0) dataFields[k] = _.extend(dataFields[k], forcefill);
                     });
 
                     //Bulk Insert
@@ -262,7 +266,10 @@ module.exports = {
 
                 if(!sqlFields || sqlFields.length<=0) sqlFields = "*";
 
-                sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await QUERY.processMetaInfo(ctx.meta));
+                // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await QUERY.processMetaInfo(ctx.meta));
+                const sqlWhereData = await QUERY.processMetaInfo(ctx.meta);
+                sqlWhereData = _.extend(sqlWhereData, ctx.params);
+                sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
                 
                 const dbResponse = await _DB.db_selectQ("appdb", sqlTable, sqlFields, sqlWhere, {}, " LIMIT 1");
                 
@@ -341,7 +348,10 @@ module.exports = {
                     );
                 }
 
-                sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await QUERY.processMetaInfo(ctx.meta));
+                // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await QUERY.processMetaInfo(ctx.meta));
+                const sqlWhereData = await QUERY.processMetaInfo(ctx.meta);
+                sqlWhereData = _.extend(sqlWhereData, ctx.params);
+                sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
                 
                 const dbResponse = await _DB.db_updateQ("appdb", sqlTable, dataFields, sqlWhere);
 
@@ -406,7 +416,10 @@ module.exports = {
                     );
                 }
                 
-                sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await QUERY.processMetaInfo(ctx.meta));
+                // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await QUERY.processMetaInfo(ctx.meta));
+                const sqlWhereData = await QUERY.processMetaInfo(ctx.meta);
+                sqlWhereData = _.extend(sqlWhereData, ctx.params);
+                sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
 
                 const dbResponse = await _DB.db_updateQ("appdb", sqlTable, _.extend( {"blocked": "true"}, MISC.generateDefaultDBRecord(ctx, true)), sqlWhere);
 
