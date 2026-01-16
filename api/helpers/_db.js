@@ -364,6 +364,9 @@ module.exports = {
 				data[i][key] = a;
 			}
 		}
+		let values = data.map( obj => cols.map( (key) => {
+			return obj[key];
+		}));
 
 		// let values = data.map( obj => cols.map( async (key) => {
 		// 	var a = obj[key];
