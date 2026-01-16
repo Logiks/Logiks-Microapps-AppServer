@@ -116,6 +116,7 @@ module.exports = {
         var having = false;
 
         if(!sqlObj.column && sqlObj.cols) sqlObj.column = sqlObj.cols;
+        if(!sqlObj.column && sqlObj.columns) sqlObj.column = sqlObj.columns;
 
         if (Array.isArray(sqlObj.column)) {
             columnsStr = sqlObj.column

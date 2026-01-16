@@ -72,7 +72,7 @@ module.exports = {
 		viewquery: {
 			rest: {
 				method: "POST",
-				path: "/run"
+				path: "/view"
 			},
             params: {
 				// dbkey: "string",
@@ -145,7 +145,7 @@ module.exports = {
 				if(ctx.params.groupby) queryObj.groupby = ctx.params.groupby;
 
 				var queryObjCount = _.cloneDeep(queryObj);
-				queryObjCount.column = "count(*) as count";
+				queryObjCount.columns = "count(*) as count";
 				
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
