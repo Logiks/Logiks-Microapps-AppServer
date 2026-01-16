@@ -90,7 +90,7 @@ module.exports = {
                 // console.log(dataFields, MISC.generateDefaultDBRecord(ctx, false));
                 //Single Insert
 
-                forcefill = QUERY.updateWhereFromEnv(forcefill, QUERY.processMetaInfo(ctx.meta));
+                forcefill = QUERY.updateWhereFromEnv(forcefill, await QUERY.processMetaInfo(ctx.meta));
                 if(forcefill && Object.keys(forcefill)>0) dataFields = _.extend(dataFields, forcefill);
 
                 const dbResponse = await _DB.db_insertQ1("appdb", sqlTable, dataFields);
@@ -154,7 +154,7 @@ module.exports = {
                 const userInfo = jsonQuery.userInfo;
                 const validationRules = convertToValidatorRules(sqlFields);
 
-                forcefill = QUERY.updateWhereFromEnv(forcefill, QUERY.processMetaInfo(ctx.meta));
+                forcefill = QUERY.updateWhereFromEnv(forcefill, await QUERY.processMetaInfo(ctx.meta));
 
                 if(Array.isArray(dataFields)) {
                     var errors = {};
@@ -262,7 +262,7 @@ module.exports = {
 
                 if(!sqlFields || sqlFields.length<=0) sqlFields = "*";
 
-                sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, QUERY.processMetaInfo(ctx.meta));
+                sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await QUERY.processMetaInfo(ctx.meta));
                 
                 const dbResponse = await _DB.db_selectQ("appdb", sqlTable, sqlFields, sqlWhere, {}, " LIMIT 1");
                 
@@ -341,7 +341,7 @@ module.exports = {
                     );
                 }
 
-                sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, QUERY.processMetaInfo(ctx.meta));
+                sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await QUERY.processMetaInfo(ctx.meta));
                 
                 const dbResponse = await _DB.db_updateQ("appdb", sqlTable, dataFields, sqlWhere);
 
@@ -406,7 +406,7 @@ module.exports = {
                     );
                 }
                 
-                sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, QUERY.processMetaInfo(ctx.meta));
+                sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await QUERY.processMetaInfo(ctx.meta));
 
                 const dbResponse = await _DB.db_updateQ("appdb", sqlTable, _.extend( {"blocked": "true"}, MISC.generateDefaultDBRecord(ctx, true)), sqlWhere);
 
