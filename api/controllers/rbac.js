@@ -90,8 +90,8 @@ async function filterByPolicy(obj, checkPolicy) {
   if (Array.isArray(obj)) {
     for (let index = 0; index < obj.length; index++) {
         const item = array[index];
-        var result = await filterByPolicy(item, checkPolicy);
-        if(!result) delete obj[index];
+        var response = await filterByPolicy(item, checkPolicy);
+        if(!response) delete obj[index];
     }
     return Object.values(obj);
     // return obj
