@@ -142,8 +142,8 @@ module.exports = {
 			async handler(ctx) {
 				if(!ctx.params.filter) ctx.params.filter = {};
 
-				const queryObj = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user);
-
+				const queryObjOne = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user);
+console.log("queryObjOne", queryObjOne);
 				if(!queryObj) {
 					throw new LogiksError(
 						"QueryID Not Found",
@@ -152,6 +152,8 @@ module.exports = {
 						ctx.params.queryid
 					);
 				}
+
+				var queryObj = _.cloneDeep(queryObjOne);
 
 				if(!queryObj.page) queryObj.page = 0;
 				if(!queryObj.limit) queryObj.limit = 0;

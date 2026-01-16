@@ -343,18 +343,40 @@ module.exports = {
 		}
 
 		let cols = Object.keys(data[0]);
-		let values = data.map( obj => cols.map( async (key) => {
-			var a = obj[key];
-			if(Array.isArray(a)) a = a.join(",");
-			else if(typeof a == "object") a = JSON.stringify(a);
 
-			if(key.indexOf(".")>0)
-				a = await field_encrypter(`${key}`, a, obj);
-			else
-				a = await field_encrypter(`${table}.${key}`, a, obj);
+		for(i=0;i<data.length;i++) {
+			const obj = data[i];
+
+			for(j=0;j<cols.length;j++) {
+				var key = cols[j];
+				
+				if(!obj[key]) continue;
+
+				var a = obj[key];
+				if(Array.isArray(a)) a = a.join(",");
+				else if(typeof a == "object") a = JSON.stringify(a);
+
+				if(key.indexOf(".")>0)
+					a = await field_encrypter(`${key}`, a, obj);
+				else
+					a = await field_encrypter(`${table}.${key}`, a, obj);
+
+				data[i][key] = a;
+			}
+		}
+
+		// let values = data.map( obj => cols.map( async (key) => {
+		// 	var a = obj[key];
+		// 	if(Array.isArray(a)) a = a.join(",");
+		// 	else if(typeof a == "object") a = JSON.stringify(a);
+
+		// 	if(key.indexOf(".")>0)
+		// 		a = await field_encrypter(`${key}`, a, obj);
+		// 	else
+		// 		a = await field_encrypter(`${table}.${key}`, a, obj);
 			
-			return a;
-		}));
+		// 	return a;
+		// }));
 
 		var sql = "INSERT INTO "+table+" ("+cols.join(",")+") VALUES ?";
 
