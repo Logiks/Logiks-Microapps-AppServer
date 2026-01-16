@@ -41,7 +41,7 @@ module.exports = {
 					"err_message": dbResponse.err_message,
 					"page": ctx.params.query.page,
 					"limit": ctx.params.query.limit,
-					"max": dbDataCount[0]['count']
+					"max": dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0
 				};
 			}
 		},
@@ -161,14 +161,14 @@ module.exports = {
 
 				const dbResponseCount = await _DB.db_query(dbkey, sqlQueryCount, {});
 				const dbDataCount = dbResponseCount?.results || [{"count": 0}];
-console.log("DB_QUERY", sqlQueryCount, dbResponseCount);
+
 				return {
 					"data": dbData,
 					"err_code": dbResponse.err_code,
 					"err_message": dbResponse.err_message,
 					"page": queryObj.page,
 					"limit": queryObj.limit,
-					"max": dbDataCount[0]['count']
+					"max": dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0
 				};
 			}
 		},
