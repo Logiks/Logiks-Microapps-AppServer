@@ -33,7 +33,7 @@ module.exports = {
 				const dbData = dbResponse?.results || [];
 
 				const dbResponseCount = await _DB.db_query(dbkey, sqlQueryCount, {});
-				const dbDataCount = dbResponseCount?.results || [{"count": 0}];
+				const dbDataCount = dbResponseCount?.results || [{".count": 0}];
 
 				return {
 					"data": dbData,
@@ -160,7 +160,7 @@ module.exports = {
 				const dbData = dbResponse?.results || [];
 
 				const dbResponseCount = await _DB.db_query(dbkey, sqlQueryCount, {});
-				const dbDataCount = dbResponseCount?.results || [{"count": 0}];
+				const dbDataCount = dbResponseCount?.results || [{".count": 0}];
 
 				return {
 					"data": dbData,
