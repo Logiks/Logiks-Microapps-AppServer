@@ -144,7 +144,7 @@ global.printObj = function(msg, clr, intent) {
 
 global._call = async function(serviceString, ...args) {
     // console.log("CALLING_SERVICE", serviceString);
-    if(["Tables.source", "lgks.source", "do.source", "sys.source", "cache.source"].indexOf(serviceString)>=0) return null;
+    if(["Tables.source", "lgks.source", "do.source", "sys.source", "cache.source", "data.source"].indexOf(serviceString)>=0) return null;
     
     try {
         const response = await SERVER.getBroker().call(serviceString, ...args, {
