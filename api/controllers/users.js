@@ -116,7 +116,7 @@ module.exports = {
 
     //Assuming hashed password from the frontend, so password = sha1 of user's actual password
     updateUserPassword: async function(guid, userid, password) {
-        var encrypted_password = ENCRYPTER.generateHash(password);
+        var encrypted_password = await ENCRYPTER.generateHash(password);
         var dated = moment().format("Y-M-D HH:mm:ss");
 
         var updateData = {
