@@ -18,10 +18,12 @@ module.exports = {
 				if(!ctx.params.dbkey) ctx.params.dbkey = "appdb";
 				if(!ctx.params.filter) ctx.params.filter = {};
 
+				var queryObj = ctx.params.query;
+
 				if(!ctx.params.query.page) ctx.params.query.page = 0;
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
 
-				var queryObjCount = _.cloneDeep(ctx.params.query);
+				var queryObjCount = _.cloneDeep(queryObj);
 				queryObjCount.column = "count(*) as count";
 
 				if(ctx.params.page) queryObj.page = ctx.params.page;
