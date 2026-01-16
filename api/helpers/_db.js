@@ -272,7 +272,11 @@ module.exports = {
 		var cols = [];
 		var quest = [];
 		var vals = [];
-		_.each(data, async function(a,b) {
+		const colKeys = Object.keys(data);
+		for(i=0;i<colKeys.length;i++) {
+			var b = colKeys[i];
+			var a = data[b];
+
 			if(Array.isArray(a)) a = a.join(",");
 			else if(typeof a == "object") a = JSON.stringify(a);
 
@@ -284,7 +288,20 @@ module.exports = {
 			cols.push(b);
 			vals.push(a);
 			quest.push("?");
-		});
+		}
+		// _.each(data, async function(a,b) {
+		// 	if(Array.isArray(a)) a = a.join(",");
+		// 	else if(typeof a == "object") a = JSON.stringify(a);
+
+		// 	if(b.indexOf(".")>0)
+		// 		a = await field_encrypter(`${b}`, a, data);
+		// 	else
+		// 		a = await field_encrypter(`${table}.${b}`, a, data);
+
+		// 	cols.push(b);
+		// 	vals.push(a);
+		// 	quest.push("?");
+		// });
 
 		var sql = "INSERT INTO "+table+" ("+cols.join(",")+") VALUES ("+quest.join(",")+")";
 
@@ -393,11 +410,22 @@ module.exports = {
 		}
 
 		if(typeof data == "string") {
+			if(data.length<=0) {
+				return {
+					"status": "error", 
+					"err_code": "DATA_NOT_FOUND",
+					"err_message": "Columns to update not found"
+				}
+			}
 			sql += table+" SET "+data+" WHERE "+sqlWhere.join(" AND ");
 		} else {
 			var fData = [];
 			var vals = [];
-			_.each(data, async function(a,b) {
+			const colKeys = Object.keys(data);
+			for(i=0;i<colKeys.length;i++) {
+				var b = colKeys[i];
+				var a = data[b];
+
 				if(Array.isArray(a)) a = a.join(",");
 				else if(typeof a == "object") a = JSON.stringify(a);
 
@@ -408,8 +436,15 @@ module.exports = {
 
 				fData.push(b+"=?");
 				vals.push(a);
-			});
-
+			}
+			
+			if(!fData || fData.length<=0) {
+				return {
+					"status": "error", 
+					"err_code": "DATA_NOT_FOUND",
+					"err_message": "Columns to update not found"
+				}
+			}
 			sql += table+" SET "+fData.join(",")+" WHERE "+sqlWhere.join(" AND ");
 		}
 
