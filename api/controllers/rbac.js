@@ -89,7 +89,7 @@ async function filterByPolicy(obj, checkPolicy) {
   // If it's an array, process each element and remove invalid ones
   if (Array.isArray(obj)) {
     for (let index = 0; index < obj.length; index++) {
-        const item = array[index];
+        const item = obj[index];
         var response = await filterByPolicy(item, checkPolicy);
         if(!response) delete obj[index];
     }
