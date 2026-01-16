@@ -438,7 +438,7 @@ module.exports = {
 				geolocation: "string",
 			},
 			async handler(ctx) {
-				const { refreshToken, deviceType } = ctx.params;
+				const { refreshToken, deviceType, geolocation } = ctx.params;
 				let payload;
 
 				try {
