@@ -88,9 +88,18 @@ async function filterByPolicy(obj, checkPolicy) {
 
   // If it's an array, process each element and remove invalid ones
   if (Array.isArray(obj)) {
-    return obj
-      .map(async item => await filterByPolicy(item, checkPolicy))
-      .filter(item => item !== null);
+    for (let index = 0; index < obj.length; index++) {
+        const item = array[index];
+        var result = await filterByPolicy(item, checkPolicy);
+        if(!result) delete obj[index];
+    }
+    return Object.values(obj);
+    // return obj
+    //   .map(async (item) => {
+    //     var result = await filterByPolicy(item, checkPolicy);
+    //     return result;
+    //   })
+    //   .filter(item => item !== null);
   }
 
   // If this object itself contains "policy"
