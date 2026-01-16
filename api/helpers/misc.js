@@ -177,8 +177,8 @@ global._replace = function(text, data, strict = false) {
             // console.log("JSON_PATH", key, key.substr(2), result);
             return result;
         }
-        if(strict) return data[key] || data.data[key] || "";
-        else return data[key] || data.data[key] || match;
+        if(strict) return data[key] || data?.data[key] || "";
+        else return data[key] || data?.data[key] || match;
     })
     //For variables with {{}}
     .replace(/\{\{([^}]+)\}\}/g, (match, key) => {
@@ -188,8 +188,8 @@ global._replace = function(text, data, strict = false) {
             //console.log("JSON_PATH", key, key.substr(2), result);
             return result;
         }
-        if(strict) return data[key] || data.data[key] || "";
-        else return data[key] || data.data[key] || match;
+        if(strict) return data[key] || data?.data[key] || "";
+        else return data[key] || data?.data[key] || match;
     })
     //For variables with ##
     .replace(/#([^}]+)#/g, (match, key) => {
@@ -199,8 +199,8 @@ global._replace = function(text, data, strict = false) {
             //console.log("JSON_PATH", key, key.substr(2), result);
             return result;
         }
-        if(strict) return data[key] || data.data[key] || "";
-        else return data[key] || data.data[key] || match;
+        if(strict) return data[key] || data?.data[key] || "";
+        else return data[key] || data?.data[key] || match;
     });
 }
 
