@@ -147,12 +147,18 @@ module.exports = {
 				if(!queryObj.limit) queryObj.limit = 0;
 
 				var queryObjCount = _.cloneDeep(queryObj);
-				queryObjCount.columns = "count(*) as count";
+				queryObjCount.column = "count(*) as count";
 
 				if(ctx.params.page) queryObj.page = ctx.params.page;
 				if(ctx.params.limit) queryObj.limit = ctx.params.limit;
 				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
 				if(ctx.params.groupby) queryObj.groupby = ctx.params.groupby;
+
+				try {
+					queryObj.offset = parseInt(queryObj.page)*parseInt(ctx.params.limit);
+				} catch(e) {
+					queryObj.offset = 0;
+				}
 
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
