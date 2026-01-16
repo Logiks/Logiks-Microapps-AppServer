@@ -69,6 +69,45 @@ module.exports = {
 				};
 			}
 		},
+		viewquery: {
+			rest: {
+				method: "POST",
+				path: "/run"
+			},
+            params: {
+				// dbkey: "string",
+				queryid: "string",
+                filter: "object"
+				// page
+				// limit
+				// orderby
+				// groupby
+            },
+			async handler(ctx) {
+				if(!ctx.params.filter) ctx.params.filter = {};
+
+				const queryObj = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user);
+
+				if(!queryObj) {
+					throw new LogiksError(
+						"QueryID Not Found",
+						404,
+						"INVALID_QUERYID",
+						ctx.params.queryid
+					);
+				}
+
+				if(!queryObj.page) queryObj.page = 0;
+				if(!queryObj.limit) queryObj.limit = 0;
+
+				if(ctx.params.page) queryObj.page = ctx.params.page;
+				if(ctx.params.limit) queryObj.limit = ctx.params.limit;
+				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
+				if(ctx.params.groupby) queryObj.groupby = ctx.params.groupby;
+
+				return queryObj;
+			}
+		},
 		queryid: {
 			rest: {
 				method: "POST",
