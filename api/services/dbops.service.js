@@ -92,7 +92,7 @@ module.exports = {
 
                 forcefill = QUERY.updateWhereFromEnv(forcefill, await QUERY.processMetaInfo(ctx.meta));
                 if(forcefill && Object.keys(forcefill)>0) dataFields = _.extend(dataFields, forcefill);
-console.log("FORCEFILL", forcefill, dataFields);
+console.log("FORCEFILL", forcefill, dataFields, (forcefill && Object.keys(forcefill)>0));
                 const dbResponse = await _DB.db_insertQ1("appdb", sqlTable, dataFields);
                 const insertId = dbResponse.insertId;
 
