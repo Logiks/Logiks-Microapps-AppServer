@@ -946,7 +946,7 @@ module.exports = {
 		 * Issue access + refresh token pair & manage Redis indices.
 		 */
 		async issueTokensForUser(user, ip, deviceType = "web", ctx) {
-			const sessionId = `${user.id}:${Date.now()}:${deviceType}`;
+			const sessionId = `${user?.id}:${Date.now()}:${deviceType}`;
 
 			const accessJti = `acc:${sessionId}`;
 			const refreshJti = `ref:${sessionId}`;
