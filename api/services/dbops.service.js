@@ -91,8 +91,8 @@ module.exports = {
                 //Single Insert
 
                 forcefill = QUERY.updateWhereFromEnv(forcefill, await QUERY.processMetaInfo(ctx.meta));
-                if(forcefill && Object.keys(forcefill)>0) dataFields = _.extend(dataFields, forcefill);
-console.log("FORCEFILL", forcefill, dataFields, (forcefill && Object.keys(forcefill)>0), forcefill, Object.keys(forcefill), typeof forcefill);
+                if(forcefill && Object.keys(forcefill).length>0) dataFields = _.extend(dataFields, forcefill);
+
                 const dbResponse = await _DB.db_insertQ1("appdb", sqlTable, dataFields);
                 const insertId = dbResponse.insertId;
 
