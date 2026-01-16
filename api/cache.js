@@ -160,7 +160,7 @@ module.exports = {
     },
 
     //All Cache Store related functions
-    getCacheMap: async function(mapkey) {
+    getCacheMap: function(mapkey) {
 		if(CACHESTORE_MAP_KEY[mapkey]) return CACHESTORE_MAP_KEY[mapkey];
 		else return {};
 	},
