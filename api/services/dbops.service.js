@@ -103,6 +103,12 @@ module.exports = {
                         "DB_ERROR"
                     );
                 }
+
+                if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
+                    _.each(jsonQuery.hooks.postsubmit, function(func, k) {
+                        _call(func, {"id": insertId, "data": dataFields, "operation": "insert"});
+                    });
+                }
                 
                 return {
                     "status": "success",
@@ -177,6 +183,12 @@ module.exports = {
 
                     //Bulk Insert
                     const dbResponse = await db_insert_batchQ("appdb", sqlTable, dataFields);
+
+                    if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
+                        _.each(jsonQuery.hooks.postsubmit, function(func, k) {
+                            _call(func, {"response": dbResponse, "operation": "insert_bulk"});
+                        });
+                    }
 
                     return dbResponse;
                 } else {
@@ -332,6 +344,12 @@ module.exports = {
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, QUERY.processMetaInfo(ctx.meta));
                 
                 const dbResponse = await _DB.db_updateQ("appdb", sqlTable, dataFields, sqlWhere);
+
+                if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
+                    _.each(jsonQuery.hooks.postsubmit, function(func, k) {
+                        _call(func, {"where": sqlWhere, "data": dataFields, "operation": "update"});
+                    });
+                }
                 
                 return dbResponse;
             }
@@ -391,6 +409,12 @@ module.exports = {
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, QUERY.processMetaInfo(ctx.meta));
 
                 const dbResponse = await _DB.db_updateQ("appdb", sqlTable, _.extend( {"blocked": "true"}, MISC.generateDefaultDBRecord(ctx, true)), sqlWhere);
+
+                if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
+                    _.each(jsonQuery.hooks.postsubmit, function(func, k) {
+                        _call(func, {"where": sqlWhere, "data": {}, "operation": "delete"});
+                    });
+                }
 
                 return dbResponse;
             }

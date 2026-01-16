@@ -5,9 +5,12 @@
  * Sample Schema (plugins/<module>/dataModels/<table>.json):
  * {
         "hooks": {
-            "insert": [],
-            "update": [],
-            "delete": []
+            "insert": {
+                "UPDATE tabl1.col1=tabl1.col1+1 where id=2": "sql",
+                "docs.test1": "method"
+            },
+            "update": {},
+            "delete": {}
         },
         "fields": {
             "lgks_users.email": {
@@ -26,14 +29,12 @@ module.exports = {
     },
 
     getModel: async function(table) {
-        return false;
-        
         if(MODEL_MAP[table]) return MODEL_MAP[table];
         const pluginID = table.split("_")[0];
 
         if(["tables", "lgks", "do", "sys", "cache", "log", "logs", "data", "mapps", "my"].indexOf(pluginID.toLowerCase())>=0 || pluginID.length<=2) return false;
 
-        const tableModel = await _call(`${pluginID}.source`, {folder: "dataModels", file: `${table}.json`, params: {}});
+        const tableModel = await _call(`${pluginID}.source`, {folder: "dataModels", file: `${table}.json`, silent: true, params: {}});
         // console.log("tableModel", table, pluginID, tableModel);
 
         if(!tableModel) return false;
@@ -51,8 +52,15 @@ module.exports = {
         _.each(tableList, async function(tbl, k) {
             const dataModel = await DATAMODELS.getModel(tbl);
             if(dataModel && dataModel.hooks && dataModel.hooks[operation]) {
-                _.each(dataModel.hooks[operation], async function(query, k1) {
-                    await _DB.db_query(dbkey, query, {});
+                _.each(dataModel.hooks[operation], async function(runType, query) {
+                    switch(query) {
+                        case "sql":
+                            await _DB.db_query(dbkey, query, {});
+                            break;
+                        case "method":
+                            _call(query, {tables, operation, dbkey, param});
+                            break;
+                    }
                 });
             }
         })

@@ -217,6 +217,9 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 					if(operationId!="create") {
 						tempObj.source.refid = refid;
 					}
+					
+					if(tempObj.hooks) tempObj.source.hooks = tempObj.hooks;
+
 					const dbOpsID = await DBOPS.storeDBOpsQuery(tempObj.source, tempObj.fields, operationId, tempObj.forcefill?tempObj.forcefill:{}, ctx.meta.user);
 					tempObj.source = {
 						"type": "sql",
@@ -244,6 +247,9 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 					const operationId = ctx.params.operation?ctx.params.operation:"fetch";
 					const refid = ctx.params.refid?ctx.params.refid:0;
 					tempObj.source.refid = refid;
+
+					if(tempObj.hooks) tempObj.source.hooks = tempObj.hooks;
+
 					const dbOpsID = await DBOPS.storeDBOpsQuery(tempObj.source, tempObj.fields, operationId, tempObj.forcefill?tempObj.forcefill:{}, ctx.meta.user);
 					tempObj.source = {
 						"type": "sql",
@@ -279,6 +285,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 					}
 
 					if(v.config && v.config.form && v.config.form.source && v.config.form.source.type=="sql") {
+						if(v.config.hooks) v.config.form.source.hooks = v.config.hooks;
 						const dbOpsID = await DBOPS.storeDBOpsQuery(v.config.form.source, v.config.form.fields, "fetch", v.config.form.forcefill?v.config.form.forcefill:{}, ctx.meta.user);
 						v.config.form.source = {
 							"type": "sql",
@@ -360,7 +367,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 	} catch(e) {
 		console.error(e);
 	}
-	
+
 	jsonObj.module_refid = objId;
 	jsonObj.module_type = moduleId;
 
