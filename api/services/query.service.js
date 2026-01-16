@@ -24,6 +24,11 @@ module.exports = {
 				var queryObjCount = _.cloneDeep(ctx.params.query);
 				queryObjCount.column = "count(*) as count";
 
+				if(ctx.params.page) queryObj.page = ctx.params.page;
+				if(ctx.params.limit) queryObj.limit = ctx.params.limit;
+				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
+				if(ctx.params.groupby) queryObj.groupby = ctx.params.groupby;
+
 				const sqlQuery = await QUERY.parseQuery(ctx.params.query, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta))
 
@@ -139,14 +144,14 @@ module.exports = {
 				if(!queryObj.page) queryObj.page = 0;
 				if(!queryObj.limit) queryObj.limit = 0;
 
+				var queryObjCount = _.cloneDeep(queryObj);
+				queryObjCount.columns = "count(*) as count";
+
 				if(ctx.params.page) queryObj.page = ctx.params.page;
 				if(ctx.params.limit) queryObj.limit = ctx.params.limit;
 				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
 				if(ctx.params.groupby) queryObj.groupby = ctx.params.groupby;
 
-				var queryObjCount = _.cloneDeep(queryObj);
-				queryObjCount.columns = "count(*) as count";
-				
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				var dbkey = queryObj.dbkey;
