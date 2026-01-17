@@ -6,12 +6,12 @@
 var DB_DRIVERS = {};
 const BASE_DRIVER_DIR = __dirname+'/drivers/';
 
-const QUERYMAP = _CACHE.getCacheMap("QUERYMAP");
+var QUERYMAP = {};//_CACHE.getCacheMap("QUERYMAP");
 
 module.exports = {
 
-    initialize : function() {
-        
+    initialize : async function() {
+        QUERYMAP = await _CACHE.getCacheMap("QUERYMAP");
         //Load all drivers
         // fs.readdirSync(BASE_DRIVER_DIR).forEach(function(file) {
         //     if ((file.indexOf(".js") > 0 && (file.indexOf(".js") + 3 == file.length))) {
