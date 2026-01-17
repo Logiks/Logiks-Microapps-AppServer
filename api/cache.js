@@ -161,17 +161,16 @@ module.exports = {
 
     //All Cache Store related functions
     getCacheMap: async function(mapkey) {
-		if(CACHESTORE_MAP_KEY[mapkey]) return CACHESTORE_MAP_KEY[mapkey];
+		if(CACHESTORE_MAP[mapkey]) return CACHESTORE_MAP[mapkey];
 		else return {};
 	},
 
     listCacheKeys: function() {
-        return Object.keys(CACHESTORE_MAP_KEY);
+        return Object.keys(CACHESTORE_MAP);
     },
 
 	saveCacheMap: async function(mapkey, mapData) {
-		
-		CACHESTORE_MAP_KEY[mapkey] = mapData;
+		CACHESTORE_MAP[mapkey] = mapData;
 		
 		if(CACHESTORE_SAVE_PERIOD==0) {
 			await _CACHE.storeData(CACHESTORE_MAP_KEY, CACHESTORE_MAP);
@@ -180,7 +179,7 @@ module.exports = {
 
 	deleteCacheMap: async function(mapkey) {
 		
-		if(CACHESTORE_MAP_KEY[mapkey]) delete CACHESTORE_MAP_KEY[mapkey];
+		if(CACHESTORE_MAP[mapkey]) delete CACHESTORE_MAP[mapkey];
 		
 		await _CACHE.storeData(CACHESTORE_MAP_KEY, CACHESTORE_MAP);
 	},

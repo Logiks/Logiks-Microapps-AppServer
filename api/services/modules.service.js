@@ -190,6 +190,8 @@ module.exports = {
 
 async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 	// console.log("processJSONComponent", objId, moduleId, jsonObj);
+
+	if(!jsonObj) return false;
 	
 	//Process For Policies
 	if(jsonObj.policy && jsonObj.policy.length>0) {
@@ -220,7 +222,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 					
 					if(tempObj.hooks) tempObj.source.hooks = tempObj.hooks;
 
-					const dbOpsID = await DBOPS.storeDBOpsQuery(tempObj.source, tempObj.fields, operationId, tempObj.forcefill?tempObj.forcefill:{}, ctx.meta.user);
+					const dbOpsID = await DBOPS.storeDBOpsQuery(tempObj.source, tempObj.fields, operationId, tempObj.forcefill?tempObj.forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid});
 					tempObj.source = {
 						"type": "sql",
 						"dbopsid": dbOpsID
@@ -232,7 +234,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 					if(v.table) {
 						tempObj.fields[k] = {
 							...v,
-							queryid: await QUERY.storeQuery(v, ctx.meta.user),
+							queryid: await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}`}),
 						};
 						if(tempObj.fields[k].table) delete tempObj.fields[k].table;
 						if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
@@ -250,7 +252,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 
 					if(tempObj.hooks) tempObj.source.hooks = tempObj.hooks;
 
-					const dbOpsID = await DBOPS.storeDBOpsQuery(tempObj.source, tempObj.fields, operationId, tempObj.forcefill?tempObj.forcefill:{}, ctx.meta.user);
+					const dbOpsID = await DBOPS.storeDBOpsQuery(tempObj.source, tempObj.fields, operationId, tempObj.forcefill?tempObj.forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid}, {objId, moduleId, "refid": tempObj.source.refid});
 					tempObj.source = {
 						"type": "sql",
 						"dbopsid": dbOpsID
@@ -260,7 +262,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 					if(v.table) {
 						tempObj.fields[k] = {
 							...v,
-							queryid: await QUERY.storeQuery(v, ctx.meta.user),
+							queryid: await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId}),
 						};
 						if(tempObj.fields[k].table) delete tempObj.fields[k].table;
 						if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
@@ -276,7 +278,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 
 						tempObj.infoview.groups[k].config = {
 							...v.config,
-							queryid: await QUERY.storeQuery(v.config, ctx.meta.user),
+							queryid: await QUERY.storeQuery(v.config, ctx.meta.user, false, {objId, moduleId, "refid": `infoview.groups.${k}`}),
 						};
 
 						if(tempObj.infoview.groups[k].config.table) delete tempObj.infoview.groups[k].config.table;
@@ -286,7 +288,8 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 
 					if(v.config && v.config.form && v.config.form.source && v.config.form.source.type=="sql") {
 						if(v.config.hooks) v.config.form.source.hooks = v.config.hooks;
-						const dbOpsID = await DBOPS.storeDBOpsQuery(v.config.form.source, v.config.form.fields, "fetch", v.config.form.forcefill?v.config.form.forcefill:{}, ctx.meta.user);
+						v.config.form.source.refid = tempObj.source.refid;
+						const dbOpsID = await DBOPS.storeDBOpsQuery(v.config.form.source, v.config.form.fields, "fetch", v.config.form.forcefill?v.config.form.forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid});
 						v.config.form.source = {
 							"type": "sql",
 							"dbopsid": dbOpsID
@@ -303,7 +306,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 					if(v.source && v.source.type && v.source.type=="sql") {
 						tempObj.cards[k].source = {
 							type: "sql",
-							queryid: await QUERY.storeQuery(v.source, ctx.meta.user),
+							queryid: await QUERY.storeQuery(v.source, ctx.meta.user, false, {objId, moduleId, "refid": `cards.${k}`}),
 						};
 					}
 				})
@@ -312,7 +315,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 						if(v.table) {
 							tempObj.filters[k] = {
 								...v,
-								queryid: await QUERY.storeQuery(v.filter, ctx.meta.user),
+								queryid: await QUERY.storeQuery(v.filter, ctx.meta.user, false, {objId, moduleId, "refid": `filters.${k}`}),
 							};
 							if(tempObj.filters[k].table) delete tempObj.filters[k].table;
 							if(tempObj.filters[k].columns) delete tempObj.filters[k].columns;
@@ -329,7 +332,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 						if(v.table) {
 							tempObj.filters[k] = {
 								...v,
-								queryid: await QUERY.storeQuery(v.filter, ctx.meta.user),
+								queryid: await QUERY.storeQuery(v.filter, ctx.meta.user, false, {objId, moduleId, "refid": `filters.${k}`}),
 							};
 							if(tempObj.filters[k].table) delete tempObj.filters[k].table;
 							if(tempObj.filters[k].columns) delete tempObj.filters[k].columns;
@@ -343,7 +346,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 					if(v.filter && v.filter.table) {
 						tempObj.datagrid[k].filter = {
 							type: v.filter.type,
-							queryid: await QUERY.storeQuery(v.filter, ctx.meta.user),
+							queryid: await QUERY.storeQuery(v.filter, ctx.meta.user, false, {objId, moduleId, "refid": `datagrid.${k}`}),
 						};
 					}
 				})
@@ -354,7 +357,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 						delete tempObj.source.cols;
 					}
 					
-					const queryID = await QUERY.storeQuery(tempObj.source, ctx.meta.user);
+					const queryID = await QUERY.storeQuery(tempObj.source, ctx.meta.user, false, {objId, moduleId, "refid": "source"});
 					tempObj.source = {
 						"type": "sql",
 						"queryid": queryID

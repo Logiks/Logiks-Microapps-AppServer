@@ -101,7 +101,7 @@ module.exports = {
 			async handler(ctx) {
 				if(!ctx.params.filter) ctx.params.filter = {};
 
-				const queryObj = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user);
+				const queryObj = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user, ctx);
 
 				if(!queryObj) {
 					throw new LogiksError(
@@ -142,7 +142,7 @@ module.exports = {
 			async handler(ctx) {
 				if(!ctx.params.filter) ctx.params.filter = {};
 
-				const queryObjOne = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user);
+				const queryObjOne = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user, ctx);
 
 				if(!queryObjOne) {
 					throw new LogiksError(
