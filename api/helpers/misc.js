@@ -101,7 +101,7 @@ module.exports = {
   },
 
   generateDefaultDBRecord : function(ctx, forUpdate = false) {
-    var dated = moment().format("Y-M-D HH:mm:ss");
+    var dated = moment().format("Y-MM-DD HH:mm:ss");
     // console.log("generateDefaultDBRecord", ctx.meta.user);
     if(forUpdate) {
       return {
