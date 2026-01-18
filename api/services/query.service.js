@@ -207,8 +207,8 @@ module.exports = {
             params: {
 				// dbkey: "string",
 				query: "object",
-				srcid: "string",
-				moduleid: "string",
+				// srcid: "string",
+				// moduleid: "string",
             },
 			async handler(ctx) {
 				if(!ctx.params.dbkey) ctx.params.dbkey = "appdb";
