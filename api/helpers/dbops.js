@@ -13,7 +13,7 @@ module.exports = {
 
     storeDBOpsQuery: async function(jsonQuery, fields, operation, forcefill, userInfo, params) {
         //jsonQuery = table, where, fields
-        const dbOpsID = params? `${params.moduleId}@${params.objId}@${params.refid || ''}`: UNIQUEID.generate(12);
+        const dbOpsID = params? encodeURIComponent(`${params.moduleId}@${params.objId}@${params.refid || ''}`): UNIQUEID.generate(12);
         
         dbOpsMap[dbOpsID] = {"operation": operation, "source": jsonQuery, "fields": fields, "forcefill": forcefill, "userInfo": userInfo};
         _CACHE.saveCacheMap("DBOPSMAP", dbOpsMap);
@@ -25,7 +25,7 @@ module.exports = {
         if(dbOpsMap[dbOpsID]) return _.cloneDeep(dbOpsMap[dbOpsID]);
         // console.log("getDBOpsQuery", dbOpsID);
 
-        var queryIDTemp = `${dbOpsID}`.split("@");
+        var queryIDTemp = decodeURIComponent(`${dbOpsID}`).split("@");
         var params = {};
         params.module = queryIDTemp[0];
         params.item = queryIDTemp[1];

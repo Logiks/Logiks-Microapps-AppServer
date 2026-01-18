@@ -155,7 +155,12 @@ global._call = async function(serviceString, ...args) {
         return response;
     } catch(err) {
         // console.error(err);
-        log_error(err);
+        if(args && args.length>0 && args[0].silent===true) {
+
+        } else {
+            log_error(err);
+        }
+        
         return null;
     }
 }
