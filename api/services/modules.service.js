@@ -248,7 +248,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 								
 								v.ajaxchain[k].src = {
 									"type": "sql",
-									queryid: await QUERY.storeQuery(v.ajaxchain[k].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.${k1}`}),
+									queryid: await QUERY.storeQuery(v.ajaxchain[k1].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.${k1}`}),
 								}
 							}
 						else
