@@ -214,53 +214,6 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 		
 		switch(moduleId) {
 			case "forms":
-				if(tempObj.source && tempObj.source.type=="sql") {
-					const operationId = ctx.params.operation?ctx.params.operation:"create";
-					const refid = ctx.params.refid?ctx.params.refid:0;
-					if(operationId!="create") {
-						tempObj.source.refid = refid;
-					}
-					
-					if(tempObj.hooks) tempObj.source.hooks = tempObj.hooks;
-
-					const dbOpsID = await DBOPS.storeDBOpsQuery(tempObj.source, tempObj.fields, operationId, tempObj.forcefill?tempObj.forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid});
-					tempObj.source = {
-						"type": "sql",
-						"dbopsid": dbOpsID
-					};
-				}
-				// tempObj.fields.filter && type!= "dataMethod" && .table
-				//Process Data to generate options
-				_.each(tempObj.fields, async function(v,k) {
-					if(v.table) {
-						tempObj.fields[k] = {
-							...v,
-							queryid: await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}`}),
-						};
-						if(tempObj.fields[k].table) delete tempObj.fields[k].table;
-						if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
-						if(tempObj.fields[k].where) delete tempObj.fields[k].where;
-					}
-					if(v.ajaxchain) {
-						if(Array.isArray(v.ajaxchain))
-							for (let k1 = 0; k1 < v.ajaxchain.length; k1++) {
-								const obj = v.ajaxchain[k1];
-								
-								v.ajaxchain[k].src = {
-									"type": "sql",
-									queryid: await QUERY.storeQuery(v.ajaxchain[k1].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.${k1}`}),
-								}
-							}
-						else
-							v.ajaxchain.src = {
-								"type": "sql",
-								queryid: await QUERY.storeQuery(v.ajaxchain.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.0`}),
-							};
-					}
-				})
-
-				jsonObj = tempObj;
-				break;
 			case "infoview":
 				if(tempObj.source && tempObj.source.type=="sql") {
 					const operationId = ctx.params.operation?ctx.params.operation:"fetch";
@@ -275,18 +228,56 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 						"dbopsid": dbOpsID
 					};
 				}
-				_.each(tempObj.fields, async function(v,k) {
-					if(v.table) {
-						tempObj.fields[k] = {
-							...v,
-							queryid: await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId}),
-						};
-						if(tempObj.fields[k].table) delete tempObj.fields[k].table;
-						if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
-						if(tempObj.fields[k].where) delete tempObj.fields[k].where;
+				const fieldList = Object.keys(tempObj.fields);
+				for (var i = fieldList.length - 1; i >= 0; i--) {
+					const k = fieldList[i];
+					const v = tempObj.fields[k];
+
+					switch(v.type) {
+						case 'dataMethod': case 'dataSelector': case 'dataSelectorFromUniques': case 'dataSelectorFromTable':
+						case 'dropdown': case 'select': //case 'selectAJAX':
+							var selectorOptions = await generateSelector(v, k, ctx);
+							if(!selectorOptions) selectorOptions = [];
+
+							tempObj.fields[k].options = selectorOptions;
+
+							if(tempObj.fields[k].table) delete tempObj.fields[k].table;
+							if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
+							if(tempObj.fields[k].where) delete tempObj.fields[k].where;
+							break;
+						default:
+							if(v.table) {
+								tempObj.fields[k] = {
+									...v,
+									queryid: await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId}),
+								};
+								if(tempObj.fields[k].table) delete tempObj.fields[k].table;
+								if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
+								if(tempObj.fields[k].where) delete tempObj.fields[k].where;
+							}
 					}
-				})
-				_.each(tempObj.infoview.groups, async function(v,k) {
+					if(v.ajaxchain) {
+						if(Array.isArray(v.ajaxchain))
+							for (let k1 = 0; k1 < v.ajaxchain.length; k1++) {
+								const obj = v.ajaxchain[k1];
+								
+								v.ajaxchain[k1].src = {
+									"type": "sql",
+									queryid: await QUERY.storeQuery(v.ajaxchain[k1].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.${k1}`}),
+								}
+							}
+						else
+							v.ajaxchain.src = {
+								"type": "sql",
+								queryid: await QUERY.storeQuery(v.ajaxchain.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.0`}),
+							};
+					}
+				}
+				
+				const groupList = Object.keys(tempObj.infoview.groups);
+				for (var i = groupList.length - 1; i >= 0; i--) {
+					const k = groupList[i];
+					const v = tempObj.infoview.groups[k];
 					if(v.config && v.config.table) {
 						if(!tempObj.infoview.groups[k].config.columns && tempObj.infoview.groups[k].config.cols) {
 							tempObj.infoview.groups[k].config.columns = tempObj.infoview.groups[k].config.cols;
@@ -312,23 +303,38 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 							"dbopsid": dbOpsID
 						};
 					}
-				});
-				
 
+					if(v.config && v.config['popup.form'] && v.config['popup.form'].source && v.config['popup.form'].source.type=="sql") {
+						if(v.config.hooks) v.config['popup.form'].source.hooks = v.config.hooks;
+						v.config['popup.form'].source.refid = tempObj.source.refid;
+						const dbOpsID = await DBOPS.storeDBOpsQuery(v.config['popup.form'].source, v.config['popup.form'].fields, "fetch", v.config['popup.form'].forcefill?v.config['popup.form'].forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid});
+						v.config['popup.form'].source = {
+							"type": "sql",
+							"dbopsid": dbOpsID
+						};
+					}
+				};
+				
 				jsonObj = tempObj;
 				break;
 			case "dashboards":
 			case "dashboard":
-				_.each(tempObj.cards, async function(v,k) {
+				const cardList = Object.keys(tempObj.cards);
+				for (var i = cardList.length - 1; i >= 0; i--) {
+					const k = cardList[i];
+					const v = tempObj.cards[k];
 					if(v.source && v.source.type && v.source.type=="sql") {
 						tempObj.cards[k].source = {
 							type: "sql",
 							queryid: await QUERY.storeQuery(v.source, ctx.meta.user, false, {objId, moduleId, "refid": `cards.${k}`}),
 						};
 					}
-				})
+				}
 				if(tempObj.filters) {
-					_.each(tempObj.filters, async function(v,k) {
+					const filterList = Object.keys(tempObj.filters);
+					for (var i = filterList.length - 1; i >= 0; i--) {
+						const k = filterList[i];
+						const v = tempObj.filters[k];
 						if(v.table) {
 							tempObj.filters[k] = {
 								...v,
@@ -338,14 +344,17 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 							if(tempObj.filters[k].columns) delete tempObj.filters[k].columns;
 							if(tempObj.filters[k].where) delete tempObj.filters[k].where;
 						}
-					})
+					}
 				}
 
 				jsonObj = tempObj;
 				break;
 			case "charts":
 				if(tempObj.filters) {
-					_.each(tempObj.filters, async function(v,k) {
+					const filterList = Object.keys(tempObj.filters);
+					for (var i = filterList.length - 1; i >= 0; i--) {
+						const k = filterList[i];
+						const v = tempObj.filters[k];
 						if(v.table) {
 							tempObj.filters[k] = {
 								...v,
@@ -355,18 +364,21 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 							if(tempObj.filters[k].columns) delete tempObj.filters[k].columns;
 							if(tempObj.filters[k].where) delete tempObj.filters[k].where;
 						}
-					})
+					}
 				}
 			case "reports":
 				// tempObj.datagrid.filter && type!= "dataMethod" && .table
-				_.each(tempObj.datagrid, async function(v,k) {
+				const datagridList = Object.keys(tempObj.datagrid);
+				for (var i = datagridList.length - 1; i >= 0; i--) {
+					const k = datagridList[i];
+					const v = tempObj.datagrid[k];
 					if(v.filter && v.filter.table) {
 						tempObj.datagrid[k].filter = {
 							type: v.filter.type,
 							queryid: await QUERY.storeQuery(v.filter, ctx.meta.user, false, {objId, moduleId, "refid": `datagrid.${k}`}),
 						};
 					}
-				})
+				}
 			default:
 				if(tempObj.source && tempObj.source.type=="sql") {
 					if(!tempObj.source.columns && tempObj.source.cols) {
@@ -392,4 +404,41 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 	jsonObj.module_type = moduleId;
 
 	return jsonObj;
+}
+
+async function generateSelector(fieldObj, fieldKey, ctx) {
+	switch(fieldObj.type) {
+		case 'dataMethod': 
+			if(fieldObj.src) return await _call(fieldObj.src, fieldObj);
+			else if(fieldObj.method) return await _call(fieldObj.method, fieldObj);
+			return [];
+			break;
+		case 'dataSelector': 
+			if(!fieldObj.groupid) return [];
+			const sqlData1 = await _DB.db_selectQ("appdb", "do_lists", "title, value, class, privilege", {
+					"blocked": false,
+					"guid": ctx.meta.user.guid,
+					"groupid": fieldObj.groupid,
+					"privilege": [["*", ctx.meta.user.privilege], "IN"]
+				}, {}, " ORDER BY sortorder ASC");
+			if(!sqlData1.results) sqlData1.results = [];
+			return sqlData1.results;
+			break;
+		case 'dataSelectorFromUniques': 
+			// fieldObj.where['guid'] = ctx.meta.user.guid;
+			const sqlData2 = await _DB.db_selectQ("appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || 'id'} ORDER BY ${fieldObj.orderby || 'id'}`);
+			if(!sqlData2.results) sqlData2.results = [];
+			return sqlData2.results;
+			break;
+		case 'dataSelectorFromTable':
+			const sqlData3 = await _DB.db_selectQ("appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || 'id'} ORDER BY ${fieldObj.orderby || 'id'}`);
+			if(!sqlData3.results) sqlData3.results = [];
+			return sqlData3.results;
+			break;
+		case 'dropdown':
+		case 'select': 
+			if(!fieldObj.options) return [];
+			return fieldObj.options;
+			break;
+	}
 }
