@@ -241,6 +241,22 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 						if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
 						if(tempObj.fields[k].where) delete tempObj.fields[k].where;
 					}
+					if(v.ajaxchain) {
+						if(Array.isArray(v.ajaxchain))
+							for (let k1 = 0; k1 < v.ajaxchain.length; k1++) {
+								const obj = v.ajaxchain[k1];
+								
+								v.ajaxchain[k].src = {
+									"type": "sql",
+									queryid: await QUERY.storeQuery(v.ajaxchain[k].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.${k1}`}),
+								}
+							}
+						else
+							v.ajaxchain.src = {
+								"type": "sql",
+								queryid: await QUERY.storeQuery(v.ajaxchain.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.0`}),
+							};
+					}
 				})
 
 				jsonObj = tempObj;
