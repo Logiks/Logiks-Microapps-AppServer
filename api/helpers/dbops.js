@@ -11,11 +11,11 @@ module.exports = {
         console.log("\x1b[36m%s\x1b[0m","DBOperation Engine Initialized");
     },
 
-    storeDBOpsQuery: async function(jsonQuery, fields, operation, forcefill, userInfo, params) {
+    storeDBOpsQuery: async function(jsonQuery, fields, operation, forcefill, userInfo, params, hooks) {
         //jsonQuery = table, where, fields
         const dbOpsID = params? encodeURIComponent(`${params.moduleId}@${params.objId}@${params.refid || ''}`): UNIQUEID.generate(12);
         
-        dbOpsMap[dbOpsID] = {"operation": operation, "source": jsonQuery, "fields": fields, "forcefill": forcefill, "userInfo": userInfo};
+        dbOpsMap[dbOpsID] = {"operation": operation, "source": jsonQuery, "fields": fields, "forcefill": forcefill, "userInfo": userInfo, "hooks": hooks};
         _CACHE.saveCacheMap("DBOPSMAP", dbOpsMap);
 
         return dbOpsID;
