@@ -252,6 +252,13 @@ module.exports = {
                         "VALIDATION_ERROR"
                     );
                 }
+                if(!sqlTable) {
+                    throw new LogiksError(
+                        "Unable to find the Table to work on",
+                        400,
+                        "VALIDATION_ERROR"
+                    );
+                }
 
                 if(formFields) {
                     if(typeof formFields == "string") formFields = formFields.split(",");
