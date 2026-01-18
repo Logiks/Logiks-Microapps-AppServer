@@ -207,13 +207,17 @@ module.exports = {
             params: {
 				// dbkey: "string",
 				query: "object",
+				srcid: "string",
+				moduleid: "string",
             },
 			async handler(ctx) {
 				if(!ctx.params.dbkey) ctx.params.dbkey = "appdb";
 
 				ctx.params.query['dbkey'] = ctx.params.dbkey;
+				var tblArr = ctx.params.query.table.split("_");
+				console.log("ctx.meta.headers?.referer", ctx.meta.headers?.referer);
 
-				const queryID = await QUERY.storeQuery(ctx.params.query, ctx.meta.user);
+				const queryID = await QUERY.storeQuery(ctx.params.query, ctx.meta.user, {moduleId: ctx.params.moduleid || tblArr[0], objId: ctx.params.srcid});
 
 				return {
 					"status": "success",
