@@ -31,7 +31,8 @@ module.exports = {
 			},
 			async handler(ctx) {
 				if(CONFIG.disable_cache.modules) ctx.params.recache = true;
-
+				if(!ctx.params.item) return false;
+				
 				const moduleName = ctx.params.module;
 				var item = ctx.params.item.split(".");
 				
