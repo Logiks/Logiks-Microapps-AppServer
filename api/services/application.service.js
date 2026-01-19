@@ -384,6 +384,9 @@ module.exports = {
 				method: "GET",
 				fullPath: "/api/appvers"
 			},
+			params: {
+				packageid: "string"
+			},
 			async handler(ctx) {
 				var appInfo = await APPLICATION.getAppInfo(ctx.params.appid);
 				return {
