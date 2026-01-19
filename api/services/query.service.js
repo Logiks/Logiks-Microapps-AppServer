@@ -219,7 +219,7 @@ module.exports = {
 				const moduleId = srcId[0];
 				// var tblArr = ctx.params.query.table.split("_");
 
-				const queryID = await QUERY.storeQuery(ctx.params.query, ctx.meta.user, {moduleId: moduleId, objId: ctx.params.srcid});
+				const queryID = await QUERY.storeQuery(ctx.params.query, ctx.meta.user, false, {moduleId: moduleId, objId: ctx.params.srcid});
 
 				return {
 					"status": "success",
