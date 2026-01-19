@@ -52,6 +52,9 @@ module.exports = {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
                 var dataFields = ctx.params.fields;
+
+                if(!ctx.params.refid1) ctx.params.refid = ctx.params.refid1;
+
                 const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user, ctx);
 
                 if(!jsonQuery) {
@@ -132,6 +135,9 @@ module.exports = {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
                 var dataFields = ctx.params.fields;
+
+                if(!ctx.params.refid1) ctx.params.refid = ctx.params.refid1;
+
                 const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user, ctx);
 
                 if(!jsonQuery) {
@@ -217,6 +223,9 @@ module.exports = {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
                 var formFields = ctx.params.fields;
+
+                if(!ctx.params.refid1) ctx.params.refid = ctx.params.refid1;
+
                 const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user, ctx);
 
                 if(!jsonQuery) {
@@ -298,6 +307,9 @@ module.exports = {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
                 var dataFields = ctx.params.fields;
+
+                if(!ctx.params.refid1) ctx.params.refid = ctx.params.refid1;
+
                 const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user, ctx);
 
                 if(!jsonQuery) {
@@ -385,6 +397,9 @@ module.exports = {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
                 var dataFields = ctx.params.fields;
+
+                if(!ctx.params.refid1) ctx.params.refid = ctx.params.refid1;
+
                 var filter = ctx.params.filter?ctx.params.filter:{};
                 const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user, ctx);
 
