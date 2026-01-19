@@ -379,6 +379,21 @@ module.exports = {
 			}
 		},
 
+		appVers: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/appvers"
+			},
+			async handler(ctx) {
+				var appInfo = await APPLICATION.getAppInfo(ctx.params.appid);
+				return {
+					"appid": ctx.params.appid,
+					"vers": appInfo.vers,
+					"env": appInfo.env
+				}
+			}
+		},
+
 		passwordUpdate: {
 			rest: {
 				method: "POST",
