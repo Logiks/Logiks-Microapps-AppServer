@@ -375,9 +375,9 @@ module.exports = {
 				packageid: "string"
 			},
 			async handler(ctx) {
-				var appInfo = await APPLICATION.getAppInfo(ctx.params.appid);
+				var appInfo = await APPLICATION.getAppInfo(ctx.meta.appInfo.appid);
 				return {
-					"appid": ctx.params.appid,
+					"appid": ctx.meta.appInfo.appid,
 					"vers": appInfo.vers,
 					"env": appInfo.env
 				}
