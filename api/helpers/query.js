@@ -564,7 +564,8 @@ function parseRelation (col, arr, colDelimiter = ["`", "`"]) {
                 s = `${col} NOT IN (${arr[0]})`;
             }
             break;
-
+        // case "daterange":
+        //     break;
         case "range":
             if (typeof arr[0] == "object") {
                 if (is_numeric(arr[0][0]) || is_float(arr[0][0])) {

@@ -366,19 +366,6 @@ module.exports = {
 			}
 		},
 
-		myInfo: {
-			rest: {
-				method: "GET",
-				fullPath: "/api/me"
-			},
-			async handler(ctx) {
-				// console.log(ctx.meta);
-				return {
-					"info": await ctx.call("auth.getMyInfo")
-				}
-			}
-		},
-
 		appVers: {
 			rest: {
 				method: "GET",
@@ -393,6 +380,19 @@ module.exports = {
 					"appid": ctx.params.appid,
 					"vers": appInfo.vers,
 					"env": appInfo.env
+				}
+			}
+		},
+
+		myInfo: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/me"
+			},
+			async handler(ctx) {
+				// console.log(ctx.meta);
+				return {
+					"info": await ctx.call("auth.getMyInfo")
 				}
 			}
 		},

@@ -126,7 +126,9 @@ module.exports = {
 				}
 
 				const fileContent = await ctx.call(`${moduleName}.source`, {folder: "component", file: fileName, params: ctx.params});
-
+				if(!fileContent) {
+					return false;
+				}
 				COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`] = {
 						data: fileContent,
 						version: Date.now(),
@@ -192,7 +194,11 @@ module.exports = {
 async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 	// console.log("processJSONComponent", objId, moduleId, jsonObj);
 
+	try {
+		if(typeof jsonObj == "string") jsonObj = JSON.parse(jsonObj);
+	} catch(e) {}
 	if(!jsonObj) return false;
+
 	
 	//Process For Policies
 	if(jsonObj.policy && jsonObj.policy.length>0) {
@@ -220,101 +226,63 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 					const refid = ctx.params.refid?ctx.params.refid:0;
 					tempObj.source.refid = refid;
 
-					if(tempObj.hooks) tempObj.source.hooks = tempObj.hooks;
-
-					const dbOpsID = await DBOPS.storeDBOpsQuery(tempObj.source, tempObj.fields, operationId, tempObj.forcefill?tempObj.forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid}, {objId, moduleId, "refid": tempObj.source.refid}, tempObj.hooks?tempObj.hooks:{});
+					const dbOpsID = await DBOPS.storeDBOpsQuery(tempObj.source, tempObj.fields, operationId, tempObj.forcefill?tempObj.forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid}, tempObj.hooks?tempObj.hooks:{});
 					tempObj.source = {
 						"type": "sql",
 						"dbopsid": dbOpsID
 					};
 				}
-				const fieldList = Object.keys(tempObj.fields);
-				for (var i = fieldList.length - 1; i >= 0; i--) {
-					const k = fieldList[i];
-					const v = tempObj.fields[k];
+				tempObj.fields = await processFormFields(tempObj.fields, ctx, objId, moduleId);
 
-					switch(v.type) {
-						case 'dataMethod': case 'dataSelector': case 'dataSelectorFromUniques': case 'dataSelectorFromTable':
-						case 'dropdown': case 'select': //case 'selectAJAX':
-							var selectorOptions = await generateSelector(v, k, ctx);
-							if(!selectorOptions) selectorOptions = [];
-							
-							tempObj.fields[k].type = "select";
-							tempObj.fields[k].options = selectorOptions;
+				if(tempObj.infoview && tempObj.infoview.groups) {
+					const groupList = Object.keys(tempObj.infoview.groups);
+					for (var i = groupList.length - 1; i >= 0; i--) {
+						const k = groupList[i];
+						const v = tempObj.infoview.groups[k];
+						if(v.config && v.config.table) {
+							if(!tempObj.infoview.groups[k].config.columns && tempObj.infoview.groups[k].config.cols) {
+								tempObj.infoview.groups[k].config.columns = tempObj.infoview.groups[k].config.cols;
+								delete tempObj.infoview.groups[k].config.cols;
+							}
 
-							if(tempObj.fields[k].table) delete tempObj.fields[k].table;
-							if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
-							if(tempObj.fields[k].where) delete tempObj.fields[k].where;
-							break;
-						default:
-							if(v.table) {
-								tempObj.fields[k] = {
-									...v,
-									queryid: await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId}),
-								};
-								if(tempObj.fields[k].table) delete tempObj.fields[k].table;
-								if(tempObj.fields[k].columns) delete tempObj.fields[k].columns;
-								if(tempObj.fields[k].where) delete tempObj.fields[k].where;
-							}
-					}
-					if(v.ajaxchain) {
-						if(Array.isArray(v.ajaxchain))
-							for (let k1 = 0; k1 < v.ajaxchain.length; k1++) {
-								const obj = v.ajaxchain[k1];
-								
-								v.ajaxchain[k1].src = {
-									"type": "sql",
-									queryid: await QUERY.storeQuery(v.ajaxchain[k1].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.${k1}`}),
-								}
-							}
-						else
-							v.ajaxchain.src = {
-								"type": "sql",
-								queryid: await QUERY.storeQuery(v.ajaxchain.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.0`}),
+							tempObj.infoview.groups[k].config = {
+								...v.config,
+								queryid: await QUERY.storeQuery(v.config, ctx.meta.user, false, {objId, moduleId, "refid": `infoview.groups.${k}`}),
 							};
-					}
-				}
-				
-				const groupList = Object.keys(tempObj.infoview.groups);
-				for (var i = groupList.length - 1; i >= 0; i--) {
-					const k = groupList[i];
-					const v = tempObj.infoview.groups[k];
-					if(v.config && v.config.table) {
-						if(!tempObj.infoview.groups[k].config.columns && tempObj.infoview.groups[k].config.cols) {
-							tempObj.infoview.groups[k].config.columns = tempObj.infoview.groups[k].config.cols;
-							delete tempObj.infoview.groups[k].config.cols;
+
+							if(tempObj.infoview.groups[k].config.table) delete tempObj.infoview.groups[k].config.table;
+							if(tempObj.infoview.groups[k].config.columns) delete tempObj.infoview.groups[k].config.columns;
+							if(tempObj.infoview.groups[k].config.where) delete tempObj.infoview.groups[k].config.where;
 						}
 
-						tempObj.infoview.groups[k].config = {
-							...v.config,
-							queryid: await QUERY.storeQuery(v.config, ctx.meta.user, false, {objId, moduleId, "refid": `infoview.groups.${k}`}),
-						};
+						if(v.config && v.config.form && v.config.form.source && v.config.form.source.type=="sql") {
+							if(v.config.hooks) v.config.form.source.hooks = v.config.hooks;
+							v.config.form.source.refid = tempObj.source.refid;
+							const dbOpsID = await DBOPS.storeDBOpsQuery(v.config.form.source, v.config.form.fields, "fetch", v.config.form.forcefill?v.config.form.forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid}, v.config.form.hooks?v.config.form.hooks:{});
+							v.config.form.source = {
+								"type": "sql",
+								"dbopsid": dbOpsID
+							};
 
-						if(tempObj.infoview.groups[k].config.table) delete tempObj.infoview.groups[k].config.table;
-						if(tempObj.infoview.groups[k].config.columns) delete tempObj.infoview.groups[k].config.columns;
-						if(tempObj.infoview.groups[k].config.where) delete tempObj.infoview.groups[k].config.where;
-					}
+							if(v.config.form.fields) {
+								v.config.form.fields = await processFormFields(v.config.form.fields, ctx, objId, moduleId);
+							}
+						}
 
-					if(v.config && v.config.form && v.config.form.source && v.config.form.source.type=="sql") {
-						if(v.config.hooks) v.config.form.source.hooks = v.config.hooks;
-						v.config.form.source.refid = tempObj.source.refid;
-						const dbOpsID = await DBOPS.storeDBOpsQuery(v.config.form.source, v.config.form.fields, "fetch", v.config.form.forcefill?v.config.form.forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid}, v.config.form.hooks?v.config.form.hooks:{});
-						v.config.form.source = {
-							"type": "sql",
-							"dbopsid": dbOpsID
-						};
-					}
-
-					if(v.config && v.config['popup.form'] && v.config['popup.form'].source && v.config['popup.form'].source.type=="sql") {
-						if(v.config.hooks) v.config['popup.form'].source.hooks = v.config.hooks;
-						v.config['popup.form'].source.refid = tempObj.source.refid;
-						const dbOpsID = await DBOPS.storeDBOpsQuery(v.config['popup.form'].source, v.config['popup.form'].fields, "fetch", v.config['popup.form'].forcefill?v.config['popup.form'].forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid}, v.config['popup.form'].hooks?v.config['popup.form'].hooks:{});
-						v.config['popup.form'].source = {
-							"type": "sql",
-							"dbopsid": dbOpsID
-						};
-					}
-				};
+						if(v.config && v.config['popup.form'] && v.config['popup.form'].source && v.config['popup.form'].source.type=="sql") {
+							if(v.config.hooks) v.config['popup.form'].source.hooks = v.config.hooks;
+							v.config['popup.form'].source.refid = tempObj.source.refid;
+							const dbOpsID = await DBOPS.storeDBOpsQuery(v.config['popup.form'].source, v.config['popup.form'].fields, "fetch", v.config['popup.form'].forcefill?v.config['popup.form'].forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid}, v.config['popup.form'].hooks?v.config['popup.form'].hooks:{});
+							v.config['popup.form'].source = {
+								"type": "sql",
+								"dbopsid": dbOpsID
+							};
+							if(v.config['popup.form'].fields) {
+								v.config['popup.form'].fields = await processFormFields(v.config['popup.form'].fields, ctx, objId, moduleId);
+							}
+						}
+					};
+				}
 				
 				jsonObj = tempObj;
 				break;
@@ -373,11 +341,47 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 				for (var i = datagridList.length - 1; i >= 0; i--) {
 					const k = datagridList[i];
 					const v = tempObj.datagrid[k];
+					
 					if(v.filter && v.filter.table) {
-						tempObj.datagrid[k].filter = {
-							type: v.filter.type,
-							queryid: await QUERY.storeQuery(v.filter, ctx.meta.user, false, {objId, moduleId, "refid": `datagrid.${k}`}),
-						};
+						// 	tempObj.datagrid[k].filter = {
+						// 		type: v.filter.type,
+						// 		queryid: await QUERY.storeQuery(v.filter, ctx.meta.user, false, {objId, moduleId, "refid": `datagrid.${k}`}),
+						// 	};
+						switch(v.filter.type) {
+							case 'dataMethod': case 'dataSelector': case 'dataSelectorFromUniques': case 'dataSelectorFromTable':
+							case 'dropdown': case 'select': //case 'selectAJAX':
+								var selectorOptions = await generateSelector(v.filter, k, ctx);
+								if(!selectorOptions) selectorOptions = [];
+
+								tempObj.datagrid[k].filter.type = "select";
+								tempObj.datagrid[k].filter.options = selectorOptions;
+
+								if(tempObj.datagrid[k].filter.table) delete tempObj.datagrid[k].filter.table;
+								if(tempObj.datagrid[k].filter.columns) delete tempObj.datagrid[k].filter.columns;
+								if(tempObj.datagrid[k].filter.where) delete tempObj.datagrid[k].filter.where;
+							break;
+						}
+					}
+					if(v.editor && v.editor.table) {
+						// tempObj.datagrid[k].editor = {
+						// 	type: v.editor.type,
+						// 	queryid: await QUERY.storeQuery(v.editor, ctx.meta.user, false, {objId, moduleId, "refid": `datagrid.${k}`}),
+						// };
+
+						switch(v.editor.type) {
+							case 'dataMethod': case 'dataSelector': case 'dataSelectorFromUniques': case 'dataSelectorFromTable':
+							case 'dropdown': case 'select': //case 'selectAJAX':
+								var selectorOptions = await generateSelector(v.editor, k, ctx);
+								if(!selectorOptions) selectorOptions = [];
+
+								tempObj.datagrid[k].editor.type = "select";
+								tempObj.datagrid[k].editor.options = selectorOptions;
+
+								if(tempObj.datagrid[k].editor.table) delete tempObj.datagrid[k].editor.table;
+								if(tempObj.datagrid[k].editor.columns) delete tempObj.datagrid[k].editor.columns;
+								if(tempObj.datagrid[k].editor.where) delete tempObj.datagrid[k].editor.where;
+							break;
+						}
 					}
 				}
 			default:
@@ -405,6 +409,57 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 	jsonObj.module_type = moduleId;
 
 	return jsonObj;
+}
+
+async function processFormFields(formFields, ctx, objId, moduleId) {
+	const fieldList = Object.keys(formFields);
+	for (var i = fieldList.length - 1; i >= 0; i--) {
+		const k = fieldList[i];
+		const v = formFields[k];
+
+		switch(v.type) {
+			case 'dataMethod': case 'dataSelector': case 'dataSelectorFromUniques': case 'dataSelectorFromTable':
+			case 'dropdown': case 'select': //case 'selectAJAX':
+				var selectorOptions = await generateSelector(v, k, ctx);
+				if(!selectorOptions) selectorOptions = [];
+				
+				formFields[k].type = "select";
+				formFields[k].options = selectorOptions;
+
+				if(formFields[k].table) delete formFields[k].table;
+				if(formFields[k].columns) delete formFields[k].columns;
+				if(formFields[k].where) delete formFields[k].where;
+				break;
+			default:
+				if(v.table) {
+					formFields[k] = {
+						...v,
+						queryid: await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId}),
+					};
+					if(formFields[k].table) delete formFields[k].table;
+					if(formFields[k].columns) delete formFields[k].columns;
+					if(formFields[k].where) delete formFields[k].where;
+				}
+		}
+		if(v.ajaxchain) {
+			if(Array.isArray(v.ajaxchain))
+				for (let k1 = 0; k1 < v.ajaxchain.length; k1++) {
+					const obj = v.ajaxchain[k1];
+					
+					v.ajaxchain[k1].src = {
+						"type": "sql",
+						queryid: await QUERY.storeQuery(v.ajaxchain[k1].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.${k1}`}),
+					}
+				}
+			else
+				v.ajaxchain.src = {
+					"type": "sql",
+					queryid: await QUERY.storeQuery(v.ajaxchain.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.0`}),
+				};
+		}
+	}
+
+	return formFields;
 }
 
 async function generateSelector(fieldObj, fieldKey, ctx) {

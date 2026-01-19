@@ -265,3 +265,18 @@ global.convertToValidatorRules = function(schema) {
 
   return rules;
 }
+
+global.is_numeric  = function(value) {
+  return typeof value === 'number' ||
+    (typeof value === 'string' &&
+     value.trim() !== '' &&
+     !isNaN(value));
+}
+
+global.is_float = function(value) {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    !Number.isInteger(value)
+  );
+}
