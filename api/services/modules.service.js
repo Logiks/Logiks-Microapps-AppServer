@@ -238,7 +238,8 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 						case 'dropdown': case 'select': //case 'selectAJAX':
 							var selectorOptions = await generateSelector(v, k, ctx);
 							if(!selectorOptions) selectorOptions = [];
-
+							
+							tempObj.fields[k].type = "select";
 							tempObj.fields[k].options = selectorOptions;
 
 							if(tempObj.fields[k].table) delete tempObj.fields[k].table;
