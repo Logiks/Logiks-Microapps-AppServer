@@ -101,7 +101,7 @@ module.exports = {
 			async handler(ctx) {
 				if(!ctx.params.filter) ctx.params.filter = {};
 
-				if(!ctx.params.refid1) ctx.params.refid = ctx.params.refid1;
+				ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
 				const queryObj = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user, ctx);
 
@@ -144,7 +144,7 @@ module.exports = {
 			async handler(ctx) {
 				if(!ctx.params.filter) ctx.params.filter = {};
 
-				if(!ctx.params.refid1) ctx.params.refid = ctx.params.refid1;
+				ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
 				const queryObjOne = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user, ctx);
 
