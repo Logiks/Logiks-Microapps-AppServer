@@ -77,7 +77,7 @@ module.exports = {
                 const sqlFields = jsonQuery.fields;
                 var forcefill = jsonQuery.forcefill;
                 const userInfo = jsonQuery.userInfo;
-                const validationRules = convertToValidatorRules(sqlFields);
+                const validationRules = convertToValidatorRules(sqlFields, "create");
 
                 var vStatus = VALIDATIONS.validateRule(dataFields, validationRules);
                 

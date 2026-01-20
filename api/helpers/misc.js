@@ -214,7 +214,7 @@ global.convertToValidatorRules = function(schema, mode="edit") {
     const config = schema[field];
     const ruleParts = [];
 
-    if(mode=="create" && field.vmode=="edit") {
+    if(mode!=field.vmode) {//mode=="create" && field.vmode="edit"
       continue;
     }
 
