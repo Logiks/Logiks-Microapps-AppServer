@@ -333,7 +333,9 @@ module.exports = {
                 const sqlFields = jsonQuery.fields;
                 var forcefill = jsonQuery.forcefill;
                 const userInfo = jsonQuery.userInfo;
-                const sqlRefid = jsonQuery.source.refid;
+                var sqlRefid = jsonQuery.source.refid;
+
+                sqlRefid = ctx.params.refid1 ?? jsonQuery.source.refid;
 
                 _.each(sqlFields, function(conf, field) {
                     if(!dataFields[field]) delete sqlFields[field];
