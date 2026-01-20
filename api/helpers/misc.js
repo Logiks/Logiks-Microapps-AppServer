@@ -217,6 +217,9 @@ global.convertToValidatorRules = function(schema, mode="edit") {
     if(mode!=field.vmode) {//mode=="create" && field.vmode="edit"
       continue;
     }
+    if(field.vmode=="view") {
+      continue;
+    }
 
     // Required rule
     if (config.required === true) {
