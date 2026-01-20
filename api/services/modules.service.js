@@ -127,7 +127,11 @@ module.exports = {
 
 				const fileContent = await ctx.call(`${moduleName}.source`, {folder: "component", file: fileName, params: ctx.params});
 				if(!fileContent) {
-					return false;
+					throw new LogiksError(
+						"Invalid Component",
+						404,
+						"COMPONENT_NOT_FOUND"
+					);
 				}
 				COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`] = {
 						data: fileContent,
