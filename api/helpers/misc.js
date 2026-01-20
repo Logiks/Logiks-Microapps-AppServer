@@ -207,12 +207,16 @@ global._replace = function(text, data, strict = false) {
     });
 }
 
-global.convertToValidatorRules = function(schema) {
+global.convertToValidatorRules = function(schema, mode="edit") {
   const rules = {};
 
   for (const field in schema) {
     const config = schema[field];
     const ruleParts = [];
+
+    if(mode=="create" && field.vmode=="edit") {
+      continue;
+    }
 
     // Required rule
     if (config.required === true) {
