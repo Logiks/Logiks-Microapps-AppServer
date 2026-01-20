@@ -244,10 +244,10 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 								tempObj.infoview.groups[k].config.columns = tempObj.infoview.groups[k].config.cols;
 								delete tempObj.infoview.groups[k].config.cols;
 							}
-
+							const newRefID1 = `${objId}.infoviewTable.${k}`;
 							tempObj.infoview.groups[k].config = {
 								...v.config,
-								queryid: await QUERY.storeQuery(v.config, ctx.meta.user, false, {objId, moduleId, "refid": `infoview.groups.${k}`}),
+								queryid: await QUERY.storeQuery(v.config, ctx.meta.user, false, {newRefID1, moduleId, "refid": `infoview.groups.${k}`}),
 							};
 
 							if(tempObj.infoview.groups[k].config.table) delete tempObj.infoview.groups[k].config.table;
@@ -258,7 +258,8 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 						if(v.config && v.config.form && v.config.form.source && v.config.form.source.type=="sql") {
 							if(v.config.hooks) v.config.form.source.hooks = v.config.hooks;
 							v.config.form.source.refid = tempObj.source.refid;
-							const dbOpsID = await DBOPS.storeDBOpsQuery(v.config.form.source, v.config.form.fields, "fetch", v.config.form.forcefill?v.config.form.forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid}, v.config.form.hooks?v.config.form.hooks:{});
+							const newRefID = `${objId}.infoview.${k}`;
+							const dbOpsID = await DBOPS.storeDBOpsQuery(v.config.form.source, v.config.form.fields, "fetch", v.config.form.forcefill?v.config.form.forcefill:{}, ctx.meta.user, {newRefID, moduleId, "refid": tempObj.source.refid}, v.config.form.hooks?v.config.form.hooks:{});
 							v.config.form.source = {
 								"type": "sql",
 								"dbopsid": dbOpsID
@@ -272,7 +273,8 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 						if(v.config && v.config['popup.form'] && v.config['popup.form'].source && v.config['popup.form'].source.type=="sql") {
 							if(v.config.hooks) v.config['popup.form'].source.hooks = v.config.hooks;
 							v.config['popup.form'].source.refid = tempObj.source.refid;
-							const dbOpsID = await DBOPS.storeDBOpsQuery(v.config['popup.form'].source, v.config['popup.form'].fields, "fetch", v.config['popup.form'].forcefill?v.config['popup.form'].forcefill:{}, ctx.meta.user, {objId, moduleId, "refid": tempObj.source.refid}, v.config['popup.form'].hooks?v.config['popup.form'].hooks:{});
+							const newRefID1 = `${objId}.infoview_popup.${k}`;
+							const dbOpsID = await DBOPS.storeDBOpsQuery(v.config['popup.form'].source, v.config['popup.form'].fields, "fetch", v.config['popup.form'].forcefill?v.config['popup.form'].forcefill:{}, ctx.meta.user, {newRefID1, moduleId, "refid": tempObj.source.refid}, v.config['popup.form'].hooks?v.config['popup.form'].hooks:{});
 							v.config['popup.form'].source = {
 								"type": "sql",
 								"dbopsid": dbOpsID
