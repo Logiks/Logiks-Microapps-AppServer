@@ -376,9 +376,10 @@ module.exports = {
 			},
 			async handler(ctx) {
 				var appInfo = await APPLICATION.getAppInfo(ctx.meta.appInfo.appid);
+				
 				return {
 					"appid": ctx.meta.appInfo.appid,
-					"vers": appInfo.vers,
+					"vers": (appInfo.env=="dev" || appInfo.env=="development")?_db.db_nowunix():appInfo.vers,
 					"env": appInfo.env
 				}
 			}
