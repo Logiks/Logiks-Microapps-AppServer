@@ -29,6 +29,22 @@ module.exports = {
 					timestamp: Date.now()
 				};
 			}
+		},
+		file: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/public/files/:fileUri"
+			},
+			params: {
+				"fileId": "string"
+			},
+			async handler(ctx) {
+				const fileResponse = await FILES.getFilePublished(ctx.params.fileUri,  "stream");
+				if(fileResponse && fileResponse.stream)
+					return fileResponse.stream;
+				else
+					return "File not found";
+			}
 		}
 	}
 };

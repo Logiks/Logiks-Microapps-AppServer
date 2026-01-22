@@ -57,6 +57,43 @@ module.exports = {
     //     return content;
     // },
 
+    publishFile: async function(guid, fileId, expiresOn, ctx) {
+        var sqlResult = await _DB.db_selectQ("appdb", "files_tbl", "*", {
+            "guid": guid,
+            "id": fileId,
+            "blocked": "false"
+        }, {});
+        if(!sqlResult || sqlResult?.results.length==0) return false;
+
+        var dated = moment().format("Y-MM-DD HH:mm:ss");
+        const fileURI = UNIQUEID.generate(8);
+
+        const insertResponse = await _DB.db_insertQ1("appdb", "files_published", {
+					"guid": guid,
+					"file_id": fileId,
+                    "uri": fileURI,
+					"filename": file.filename,
+					"expires": expiresOn,
+                    "created_on": dated,
+                    "created_by": ctx?ctx.meta.user.userId:"",
+                    "edited_on": dated,
+                    "edited_by": ctx?ctx.meta.user.userId:"",
+				});
+        if(insertResponse) return `${CONFIG.base_url}api/public/files/${fileURI}`;
+        else return false;
+    },
+
+    getFilePublished: async function(fileURI, responseType = "stream", moreData = false) {
+        var sqlResult = await _DB.db_selectQ("appdb", "files_tbl", "*", {
+            "uri": fileURI,
+            "blocked": "false"
+        }, {});
+        if(!sqlResult || sqlResult?.results.length==0) return false;
+
+        const fileInfo = sqlResult.results[0];
+        return FILES.getFileById(fileInfo.guid, fileInfo.file_id, responseType, moreData);
+    },
+
     getFileById: async function(guid, fileId, responseType = "stream", moreData = false) {
         var sqlResult = await _DB.db_selectQ("appdb", "files_tbl", "*", {
             "guid": guid,

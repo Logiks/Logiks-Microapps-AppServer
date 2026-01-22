@@ -70,13 +70,17 @@ module.exports = {
 			},
 			params: {
 				// uri: "string"
+				// fileid: "string"
 			},
 			// could add scopes too if you want additional control
 			async handler(ctx) {
 				var fileURI = null;
-				if(ctx.params.id) {
-					fileURI = null;
-					//return "Not Supported Yet";
+				if(ctx.params.fileid) {
+					const fileResponse = FILES.getFileById(ctx.meta.user.guid, ctx.params.fileid, "stream");
+					if(fileResponse && fileResponse.stream)
+						return fileResponse.stream;
+					else
+						return "File not found";
 				} else if(ctx.params.uri) {
 					fileURI = UPLOADS.getTargetPath(ctx.params.uri);
 				}
