@@ -251,7 +251,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 							const newRefID1 = `${objId}.infoviewTable.${k}`;
 							tempObj.infoview.groups[k].config = {
 								...v.config,
-								queryid: await QUERY.storeQuery(v.config, ctx.meta.user, false, {newRefID1, moduleId, "refid": `infoview.groups.${k}`}),
+								queryid: await QUERY.storeQuery(v.config, ctx.meta.user, false, {objId: newRefID1, moduleId, "refid": `infoview.groups.${k}`}),
 							};
 
 							if(tempObj.infoview.groups[k].config.table) delete tempObj.infoview.groups[k].config.table;
