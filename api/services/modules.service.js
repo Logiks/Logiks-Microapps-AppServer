@@ -263,7 +263,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 							if(v.config.hooks) v.config.form.source.hooks = v.config.hooks;
 							v.config.form.source.refid = tempObj.source.refid;
 							const newRefID = `${objId}.infoview.${k}`;
-							const dbOpsID = await DBOPS.storeDBOpsQuery(v.config.form.source, v.config.form.fields, "fetch", v.config.form.forcefill?v.config.form.forcefill:{}, ctx.meta.user, {newRefID, moduleId, "refid": tempObj.source.refid}, v.config.form.hooks?v.config.form.hooks:{});
+							const dbOpsID = await DBOPS.storeDBOpsQuery(v.config.form.source, v.config.form.fields, "fetch", v.config.form.forcefill?v.config.form.forcefill:{}, ctx.meta.user, {objId: newRefID, moduleId, "refid": tempObj.source.refid}, v.config.form.hooks?v.config.form.hooks:{});
 							v.config.form.source = {
 								"type": "sql",
 								"dbopsid": dbOpsID
@@ -278,7 +278,7 @@ async function processJSONComponent(jsonObj, objId, moduleId, ctx) {
 							if(v.config.hooks) v.config['popup.form'].source.hooks = v.config.hooks;
 							v.config['popup.form'].source.refid = tempObj.source.refid;
 							const newRefID1 = `${objId}.infoview_popup.${k}`;
-							const dbOpsID = await DBOPS.storeDBOpsQuery(v.config['popup.form'].source, v.config['popup.form'].fields, "fetch", v.config['popup.form'].forcefill?v.config['popup.form'].forcefill:{}, ctx.meta.user, {newRefID1, moduleId, "refid": tempObj.source.refid}, v.config['popup.form'].hooks?v.config['popup.form'].hooks:{});
+							const dbOpsID = await DBOPS.storeDBOpsQuery(v.config['popup.form'].source, v.config['popup.form'].fields, "fetch", v.config['popup.form'].forcefill?v.config['popup.form'].forcefill:{}, ctx.meta.user, {objId: newRefID1, moduleId, "refid": tempObj.source.refid}, v.config['popup.form'].hooks?v.config['popup.form'].hooks:{});
 							v.config['popup.form'].source = {
 								"type": "sql",
 								"dbopsid": dbOpsID
