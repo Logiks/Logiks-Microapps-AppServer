@@ -39,7 +39,7 @@ module.exports = {
 
     updateWhereFromEnv: function(whereObj, metaInfo) {
         if(!whereObj) return whereObj;
-        //console.log("updateWhereFromEnv", whereObj, metaInfo);
+        // console.log("updateWhereFromEnv", whereObj, typeof whereObj);
         if(typeof whereObj == "string") {
             return _replace(whereObj, metaInfo);
         } else if(Array.isArray(whereObj)) {

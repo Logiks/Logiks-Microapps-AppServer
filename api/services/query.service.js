@@ -199,7 +199,7 @@ module.exports = {
 					"err_message": dbResponse.err_message,
 					"page": queryObj.page,
 					"limit": queryObj.limit,
-					"max": dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0
+					"max": (dbDataCount && dbDataCount[0])?(dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0):0
 				};
 			}
 		},

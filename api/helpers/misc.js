@@ -194,7 +194,7 @@ global._replace = function(text, data, strict = false) {
         else return data[key] || data?.data[key] || match;
     })
     //For variables with ##
-    .replace(/#([^}]+)#/g, (match, key) => {
+    .replace(/#([^#]+)#/g, (match, key) => {//#([^}]+)#
         if(key.substr(0,1)=="$") {//for json path
             var result = JSONPath({path: key.substr(2), json: data});
             if(Array.isArray(result)) result = result.join(",");
