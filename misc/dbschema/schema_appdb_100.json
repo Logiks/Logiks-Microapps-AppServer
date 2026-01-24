@@ -1581,6 +1581,12 @@
         "default": "SYSTEM",
         "primary": false
       },
+      "policystr": {
+        "type": "varchar(90)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
       "module": {
         "type": "varchar(100)",
         "nullable": false,
@@ -1599,22 +1605,16 @@
         "default": null,
         "primary": false
       },
-      "privilegehash": {
-        "type": "varchar(80)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
       "remarks": {
         "type": "varchar(200)",
         "nullable": true,
         "default": null,
         "primary": false
       },
-      "allow": {
-        "type": "enum('true','false')",
+      "allowed_roles": {
+        "type": "text",
         "nullable": false,
-        "default": "false",
+        "default": null,
         "primary": false
       },
       "role_type": {
@@ -1623,16 +1623,16 @@
         "default": "auto",
         "primary": false
       },
-      "policystr": {
-        "type": "varchar(90)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
       "rolehash": {
         "type": "varchar(80)",
         "nullable": false,
         "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": false,
+        "default": "false",
         "primary": false
       },
       "created_by": {
@@ -1662,7 +1662,10 @@
     },
     "indexes": [
       "PRIMARY",
-      "rolehash"
+      "rolehash",
+      "policystr",
+      "module",
+      "allowed_roles"
     ]
   },
   "lgks_roles": {
@@ -1729,7 +1732,8 @@
       }
     },
     "indexes": [
-      "PRIMARY"
+      "PRIMARY",
+      "name"
     ]
   },
   "lgks_rolescope": {

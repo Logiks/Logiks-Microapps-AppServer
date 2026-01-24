@@ -45,12 +45,18 @@ module.exports = {
         } else if(Array.isArray(whereObj)) {
             _.each(whereObj, function(arrObj,k) {
                 _.each(arrObj, function(v, k1) {
+                    // console.log("YYYY", v, k1, typeof v);
                     try {
                         if(v.toUpperCase()=="RAW") {
                             delete whereObj[k][k1];
                             whereObj[k][_replace(k1, metaInfo)] = "RAW";
                         } else if(typeof v == "string") {
                             whereObj[k][k1] = _replace(v, metaInfo);
+                        } else if(typeof v == "object") {
+                            try {
+                                const v1 = JSON.parse(_replace(JSON.stringify(v), metaInfo));
+                                if(v1!=null) whereObj[k][k1] = v1;
+                            } catch(e1) {}
                         }
                     } catch(e) {
                         console.error(e);
@@ -59,12 +65,18 @@ module.exports = {
             })
         } else if(typeof whereObj=="object") {
             _.each(whereObj, function(v,k) {
+                // console.log("XXXX", v, k, typeof v);
                 try {
                     if(typeof v == "string" && v.toUpperCase()=="RAW") {
                         delete whereObj[k];
                         whereObj[_replace(k, metaInfo)] = "RAW";
                     } else if(typeof v == "string") {
                         whereObj[k] = _replace(v, metaInfo);
+                    } else if(typeof v == "object") {
+                        try {
+                            const v1 = JSON.parse(_replace(JSON.stringify(v), metaInfo));
+                            if(v1!=null) whereObj[k] = v1;
+                        } catch(e1) {}
                     }
                 } catch(e) {
                     console.error(e);
