@@ -40,7 +40,7 @@ module.exports = {
 
     //policyStr = a.b.c format
     checkPolicy: async function(ctx, policyStr, defaultValue = true) {
-        // console.log("RBAC.checkPolicy", policyStr, defaultValue, ctx.meta.user, ctx.meta.appInfo, ctx.meta.appInfo.appid);
+        console.log("RBAC.checkPolicy", policyStr, defaultValue, ctx.meta.user, ctx.meta.appInfo, ctx.meta.appInfo.appid, ctx.meta.user.roles);
         if(!ctx || !ctx.meta.user || !ctx.meta.appInfo || !ctx.meta.appInfo.appid) return defaultValue;
 
         await checkRBACControls(ctx);
@@ -49,7 +49,21 @@ module.exports = {
         const appid = ctx.meta.appInfo.appid;
 
         if(RBAC_CACHE[appid] && RBAC_CACHE[appid][rbacRoleID]) {
-            return RBAC_CACHE[appid][rbacRoleID][policyStr] || defaultValue;
+            if(!RBAC_CACHE[appid][rbacRoleID][policyStr]) RBAC_CACHE[appid][rbacRoleID][policyStr] = [];
+            else if(typeof RBAC_CACHE[appid][rbacRoleID][policyStr] == "string") RBAC_CACHE[appid][rbacRoleID][policyStr] = RBAC_CACHE[appid][rbacRoleID][policyStr].split(",");
+            
+            const userRoles = ctx.meta.user.roles;
+            const allowedRoles = RBAC_CACHE[appid][rbacRoleID][policyStr];
+
+            const hasAllowedRoles = [...new Set(userRoles)].filter(item => allowedRoles.includes(item));
+            if(hasAllowedRoles.length>0) return !policyStr.toLowerCase().includes("blacklist");
+
+            if(allowedRoles.includes(`PRIVILEGE:${ctx.meta.user.privilege}`)) !policyStr.toLowerCase().includes("blacklist");
+
+            if(allowedRoles.includes(`USER:${ctx.meta.user.userId}`)) !policyStr.toLowerCase().includes("blacklist");
+
+            // RBAC_CACHE[appid][rbacRoleID][policyStr].indexOf()
+            // return RBAC_CACHE[appid][rbacRoleID][policyStr] || defaultValue;
         }
 
         return defaultValue;
