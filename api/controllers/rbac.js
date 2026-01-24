@@ -55,15 +55,14 @@ module.exports = {
             const userRoles = ctx.meta.user.roles;
             const allowedRoles = RBAC_CACHE[appid][rbacRoleID][policyStr];
 
+            //policyStr.toLowerCase().includes("blacklist")
+
             const hasAllowedRoles = [...new Set(userRoles)].filter(item => allowedRoles.includes(item));
-            if(hasAllowedRoles.length>0) return !policyStr.toLowerCase().includes("blacklist");
+            if(hasAllowedRoles.length>0) return true;
 
-            if(allowedRoles.includes(`PRIVILEGE:${ctx.meta.user.privilege}`)) !policyStr.toLowerCase().includes("blacklist");
+            if(allowedRoles.includes(`PRIVILEGE:${ctx.meta.user.privilege}`)) true;
 
-            if(allowedRoles.includes(`USER:${ctx.meta.user.userId}`)) !policyStr.toLowerCase().includes("blacklist");
-
-            // RBAC_CACHE[appid][rbacRoleID][policyStr].indexOf()
-            // return RBAC_CACHE[appid][rbacRoleID][policyStr] || defaultValue;
+            if(allowedRoles.includes(`USER:${ctx.meta.user.userId}`)) true;
         }
 
         return defaultValue;
