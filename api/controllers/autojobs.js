@@ -28,7 +28,7 @@ module.exports = {
 
         await this.loadJobs();
 
-        console.log("\x1b[31m%s\x1b[0m", `\nAutoJobs Initialized With-${Object.keys(ACTIVE_JOBS).length}/${Object.keys(LOADED_JOBS).length} Active/Loaded Jobs`);
+        console.log("\x1b[34m%s\x1b[0m", `\nAutoJobs Initialized With-${Object.keys(ACTIVE_JOBS).length}/${Object.keys(LOADED_JOBS).length} Active/Loaded Jobs`);
     },
 
     reloadAllJobs: async function() {

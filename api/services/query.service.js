@@ -208,15 +208,23 @@ module.exports = {
 
 				ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
-				const queryObjOne = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user, ctx);
+				var queryObjOne = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user, ctx);
 
 				if(!queryObjOne) {
-					throw new LogiksError(
-						"QueryID Not Found",
-						404,
-						"INVALID_QUERYID",
-						ctx.params.queryid
-					);
+					const queryObj = QUERY.getSavedQuery(ctx.params.queryid, ctx);
+					if(!queryObj) {
+						throw new LogiksError(
+							"QueryID Not Found",
+							404,
+							"INVALID_QUERYID",
+							ctx.params.queryid
+						);
+					}
+					queryObjOne = queryObj.json_query;
+					queryObjOne.dbkey = (queryObj.dbkey!="*"?queryObj.dbkey:"appdb");
+					ctx.params = _.extend(ctx.params, queryObj.params || {});
+					
+					if(!isPord) ctx.params.DEBUG = queryObj.debug;
 				}
 
 				var queryObj = _.cloneDeep(queryObjOne);

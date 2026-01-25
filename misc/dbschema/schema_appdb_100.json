@@ -330,6 +330,117 @@
       "PRIMARY"
     ]
   },
+  "do_queries": {
+    "columns": {
+      "id": {
+        "type": "int unsigned",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": "global",
+        "primary": false
+      },
+      "queryid": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "title": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "category": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "module": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": "-",
+        "primary": false
+      },
+      "tags": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "dbkey": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": "*",
+        "primary": false
+      },
+      "json_query": {
+        "type": "mediumtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "params": {
+        "type": "mediumtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "debug": {
+        "type": "enum('false','true')",
+        "nullable": false,
+        "default": "false",
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "rowhash": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "rowhash",
+      "queryid"
+    ]
+  },
   "do_templates": {
     "columns": {
       "id": {

@@ -87,7 +87,66 @@ module.exports = {
         return whereObj;
     },
 
-    storeQuery : async function(queryObj, userObj, queryID = false, params) {
+    saveQuery: async function(sqlObj, params, ctx, dbkey='*', module='general', title = 'Query', category = '-') {
+        const queryId = UNIQUEID.generate(10);
+
+        if(!params) params = {};
+
+        var dataFields = _.extend({
+            queryid: queryId,
+            title: title,
+            category: category,
+            module: module,
+            dbkey: dbkey,
+            json_query: JSON.stringify(sqlObj),
+            params: JSON.stringify(params),
+            debug: "false",
+            rowhash: ENCRYPTER.generateHash(`${queryId}${title}${category}${module}${dbkey}${JSON.stringify(sqlObj)}${JSON.stringify(params)}`)
+        }, MISC.generateDefaultDBRecord(ctx, false));
+
+        const ans = await _DB.db_insertQ1("appdb", "do_queries", dataFields);
+        
+        if(ans.status=="success")
+            return queryId;
+        else {
+            log_error(ans);
+            return false;
+        }
+    },
+
+    getSavedQuery: async function(queryId, ctx, more = false) {
+        var savedQuery = await _DB.db_selectQ("appdb", "do_queries", "*", {
+                queryid: queryId,
+                guid: ctx.meta.user.guid,
+                blocked: "false"
+            },{});
+        if(!savedQuery || !savedQuery.results || savedQuery.results.length<=0) return false;
+        
+        try {
+            savedQuery.results[0].json_query = JSON.parse(savedQuery.results[0].json_query);
+        } catch(e) {
+            return false;
+        }
+
+        try {
+            savedQuery.results[0].params = JSON.parse(savedQuery.results[0].params);
+        } catch(e) {
+            savedQuery.results[0].params = {};
+        }
+
+        if(more)
+            return savedQuery.results[0];
+        else return {
+            id: savedQuery.results[0].id,
+            queryId: queryId,
+            dbkey: savedQuery.results[0].dbkey,
+            json_query: savedQuery.results[0].json_query,
+            params: savedQuery.results[0].params,
+            debug: (savedQuery.results[0].debug=="true"?true:false)
+        }
+    },
+
+    storeQuery: async function(queryObj, userObj, queryID = false, params) {
         if(!queryID) queryID = encodeURIComponent(`${params.moduleId}@${params.objId}@${params.refid}`);//UNIQUEID.generate(12);
 
         QUERYMAP[queryID] = queryObj;
