@@ -425,7 +425,11 @@ module.exports = {
 				if(a == "RAW") {
 					sqlWhere.push(b);
 				} else if(Array.isArray(a) && a.length==2) {
-					sqlWhere.push(b+a[1]+"'"+a[0]+"'");
+					if(Array.isArray(a[0])) {
+						sqlWhere.push(`${b} ${a[1]} (${a[0].map(a=>`'${a}'`).join(",")})`);
+					} else {
+						sqlWhere.push(`${b} ${a[1]} '${a[0]}'`);
+					}
 				} else {
 					sqlWhere.push(b+"='"+a+"'");
 				}
@@ -506,13 +510,17 @@ module.exports = {
 			return false;
 		}
 
-		sqlWhere = [];
+		var sqlWhere = [];
 		if(typeof where == "object" && !Array.isArray(where)) {
 			_.each(where, function(a, b) {
 				if(a == "RAW") {
 					sqlWhere.push(b);
 				} else if(Array.isArray(a) && a.length==2) {
-					sqlWhere.push(b+a[1]+"'"+a[0]+"'");
+					if(Array.isArray(a[0])) {
+						sqlWhere.push(`${b} ${a[1]} (${a[0].map(a=>`'${a}'`).join(",")})`);
+					} else {
+						sqlWhere.push(`${b} ${a[1]} '${a[0]}'`);
+					}
 				} else {
 					sqlWhere.push(b+"='"+a+"'");
 				}
