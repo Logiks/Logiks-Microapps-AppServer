@@ -32,7 +32,8 @@ module.exports = {
 				color: "string",
 				services: { type: "array", items: "string" },
 				menus: "object",
-				plugins: "array"
+				plugins: "array",
+				policies: "object",
 			},
 			async handler(ctx) {
 				const w = ctx.params;
@@ -283,6 +284,15 @@ module.exports = {
 
 				return RESULTS;
 			}
+		},
+
+		policyCatalog: function() {
+			var RESULTS = [];
+			SERVICE_WORKERS.forEach((node, key) => {
+				RESULTS.push(node.policies);
+			});
+
+			return RESULTS;
 		},
 
 		//Private Function
