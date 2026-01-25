@@ -22,8 +22,6 @@ const { MoleculerError } = require("moleculer").Errors;
 // const { Errors } = require("moleculer");
 // const { MoleculerClientError } = Errors;
 
-const isProd = process.env.NODE_ENV === "production";
-
 // Distributed rate limit settings
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 300);
@@ -373,7 +371,7 @@ module.exports = {
 								res.setHeader("X-Frame-Options", "DENY");
 								res.setHeader("X-XSS-Protection", "1; mode=block");
 								res.setHeader("X-Powered-By", "Logiks Microapps AppServer");
-								res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
+								// res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
 
 								// IP
 								const domainApp = await BASEAPP.getAppForDomain(serverHost);
@@ -570,8 +568,7 @@ module.exports = {
 								res.setHeader("X-Frame-Options", "DENY");
 								res.setHeader("X-XSS-Protection", "1; mode=block");
 								res.setHeader("X-Powered-By", "Logiks Microapps AppServer");
-								res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
-
+								// res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
 								// res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
 								// res.setHeader('Pragma', 'no-cache');
 								// res.setHeader('Expires', '0');

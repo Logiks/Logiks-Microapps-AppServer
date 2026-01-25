@@ -4,6 +4,7 @@ module.exports = {
 	name: "query",
 
 	actions: {
+		//Direct Query through API, will need Restricted API Access
 		query: {
 			rest: {
 				method: "POST",
@@ -15,6 +16,15 @@ module.exports = {
 				// filter: "object",
             },
 			async handler(ctx) {
+				//Add additioanl restrictions for running the queries recieved through this channel
+				// if(isProd || isStaging) {
+				// 	throw new LogiksError(
+				// 		"Restricted, Only Development Environment has access to this API",
+				// 		404,
+				// 		"RESTRICTED_ENVIRONMENT"
+				// 	);
+				// }
+				
 				if(!ctx.params.dbkey) ctx.params.dbkey = "appdb";
 				if(!ctx.params.filter) ctx.params.filter = {};
 
@@ -71,6 +81,13 @@ module.exports = {
 				// filter: "object",
             },
 			async handler(ctx) {
+				if(isProd || isStaging) {
+					throw new LogiksError(
+						"Restricted, Only Development Environment has access to this API",
+						404,
+						"RESTRICTED_ENVIRONMENT"
+					);
+				}
 				if(!ctx.params.dbkey) ctx.params.dbkey = "appdb";
 				if(!ctx.params.filter) ctx.params.filter = {};
 
@@ -99,6 +116,14 @@ module.exports = {
 				// groupby
             },
 			async handler(ctx) {
+				if(isProd || isStaging) {
+					throw new LogiksError(
+						"Restricted, Only Development Environment has access to this API",
+						404,
+						"RESTRICTED_ENVIRONMENT"
+					);
+				}
+
 				if(!ctx.params.filter) ctx.params.filter = {};
 
 				ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
@@ -127,6 +152,43 @@ module.exports = {
 				};
 			}
 		},
+		storeQuery: {
+			rest: {
+				method: "POST",
+				path: "/save"
+			},
+            params: {
+				// dbkey: "string",
+				query: "object",
+				srcid: "string",
+				// moduleid: "string",
+            },
+			async handler(ctx) {
+				if(isProd || isStaging) {
+					throw new LogiksError(
+						"Restricted, Only Development Environment has access to this API",
+						404,
+						"RESTRICTED_ENVIRONMENT"
+					);
+				}
+				if(!ctx.params.dbkey) ctx.params.dbkey = "appdb";
+
+				ctx.params.query['dbkey'] = ctx.params.dbkey;
+
+				var srcId = ctx.params.srcid.split(".");
+				const moduleId = srcId[0];
+				// var tblArr = ctx.params.query.table.split("_");
+
+				const queryID = await QUERY.storeQuery(ctx.params.query, ctx.meta.user, false, {moduleId: moduleId, objId: ctx.params.srcid});
+
+				return {
+					"status": "success",
+					"queryid": queryID
+				};
+			}
+		},
+
+		//Run Query
 		queryid: {
 			rest: {
 				method: "POST",
@@ -200,34 +262,6 @@ module.exports = {
 					"page": queryObj.page,
 					"limit": queryObj.limit,
 					"max": (dbDataCount && dbDataCount[0])?(dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0):0
-				};
-			}
-		},
-		storeQuery: {
-			rest: {
-				method: "POST",
-				path: "/save"
-			},
-            params: {
-				// dbkey: "string",
-				query: "object",
-				srcid: "string",
-				// moduleid: "string",
-            },
-			async handler(ctx) {
-				if(!ctx.params.dbkey) ctx.params.dbkey = "appdb";
-
-				ctx.params.query['dbkey'] = ctx.params.dbkey;
-
-				var srcId = ctx.params.srcid.split(".");
-				const moduleId = srcId[0];
-				// var tblArr = ctx.params.query.table.split("_");
-
-				const queryID = await QUERY.storeQuery(ctx.params.query, ctx.meta.user, false, {moduleId: moduleId, objId: ctx.params.srcid});
-
-				return {
-					"status": "success",
-					"queryid": queryID
 				};
 			}
 		}

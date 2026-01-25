@@ -30,6 +30,14 @@ module.exports = {
                 // "forcefill": "object"
             },
             async handler(ctx) {
+                if(isProd || isStaging) {
+					throw new LogiksError(
+						"Restricted, Only Development Environment has access to this API",
+						404,
+						"RESTRICTED_ENVIRONMENT"
+					);
+				}
+                
                 const dbOpsID = await DBOPS.storeDBOpsQuery(ctx.params.source, ctx.params.fields, ctx.params.operation, ctx.params.forcefill, ctx.meta.user, false);
 
                 return {

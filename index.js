@@ -31,6 +31,9 @@ global.crypto = require('crypto');
 global.ROOT_PATH = __dirname;
 global.START_TIME = moment().format();
 
+global.isProd = process.env.NODE_ENV === "production";
+global.isStaging = process.env.NODE_ENV === "uat" || process.env.NODE_ENV === "staging";
+
 console.log("\x1b[34m%s\x1b[0m","\nAppServer Initialization Started\n");
 
 //Loading Moleculer Errors for all

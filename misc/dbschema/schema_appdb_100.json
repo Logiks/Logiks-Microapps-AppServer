@@ -471,10 +471,10 @@
         "default": null,
         "primary": false
       },
-      "value": {
+      "folder": {
         "type": "varchar(155)",
         "nullable": true,
-        "default": null,
+        "default": "-",
         "primary": false
       },
       "link_type": {
@@ -1006,6 +1006,73 @@
       "auth_key"
     ]
   },
+  "lgks_appvers": {
+    "columns": {
+      "id": {
+        "type": "int unsigned",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": "global",
+        "primary": false
+      },
+      "packageid": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "version_no": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": "0",
+        "primary": false
+      },
+      "status": {
+        "type": "enum('active','in_active')",
+        "nullable": true,
+        "default": "in_active",
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('true','false')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "timestamp",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "timestamp",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY"
+    ]
+  },
   "lgks_autojobs": {
     "columns": {
       "id": {
@@ -1230,6 +1297,91 @@
         "type": "varchar(15)",
         "nullable": false,
         "default": "-",
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY"
+    ]
+  },
+  "lgks_environment": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(75)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "module": {
+        "type": "varchar(75)",
+        "nullable": false,
+        "default": "-",
+        "primary": false
+      },
+      "var_title": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "var_code": {
+        "type": "varchar(55)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "var_value": {
+        "type": "varchar(100)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "var_params": {
+        "type": "tinytext",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "var_nature": {
+        "type": "varchar(25)",
+        "nullable": false,
+        "default": "frontend",
         "primary": false
       },
       "blocked": {
@@ -1700,6 +1852,12 @@
         "default": null,
         "primary": false
       },
+      "addon_policies": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
       "blocked": {
         "type": "enum('true','false')",
         "nullable": true,
@@ -1734,92 +1892,6 @@
     "indexes": [
       "PRIMARY",
       "name"
-    ]
-  },
-  "lgks_rolescope": {
-    "columns": {
-      "id": {
-        "type": "int unsigned",
-        "nullable": false,
-        "default": null,
-        "primary": true
-      },
-      "guid": {
-        "type": "varchar(64)",
-        "nullable": false,
-        "default": "global",
-        "primary": false
-      },
-      "privilegeid": {
-        "type": "varchar(80)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "scope_title": {
-        "type": "varchar(90)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "scope_id": {
-        "type": "varchar(90)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "scope_type": {
-        "type": "varchar(20)",
-        "nullable": false,
-        "default": "generic",
-        "primary": false
-      },
-      "scope_params": {
-        "type": "text",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "remarks": {
-        "type": "varchar(200)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "blocked": {
-        "type": "enum('false','true')",
-        "nullable": false,
-        "default": "false",
-        "primary": false
-      },
-      "created_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "created_on": {
-        "type": "timestamp",
-        "nullable": false,
-        "default": "CURRENT_TIMESTAMP",
-        "primary": false
-      },
-      "edited_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "edited_on": {
-        "type": "timestamp",
-        "nullable": false,
-        "default": "CURRENT_TIMESTAMP",
-        "primary": false
-      }
-    },
-    "indexes": [
-      "PRIMARY",
-      "scope_id"
     ]
   },
   "lgks_scopes": {
@@ -2495,6 +2567,115 @@
         "type": "datetime",
         "nullable": false,
         "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY"
+    ]
+  },
+  "lgks_webhooks": {
+    "columns": {
+      "id": {
+        "type": "int unsigned",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": "global",
+        "primary": false
+      },
+      "name": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "subpath": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "method": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "authkey": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "module": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "func_name": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "validation": {
+        "type": "text",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "params": {
+        "type": "text",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "site": {
+        "type": "varchar(125)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "keep_log": {
+        "type": "enum('true','false')",
+        "nullable": false,
+        "default": "true",
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('true','false')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
         "primary": false
       },
       "edited_by": {
