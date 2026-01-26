@@ -77,3 +77,4 @@ temp/
 tmp/
 
 api/config.js
+*.code-workspace
