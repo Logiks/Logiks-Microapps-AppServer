@@ -33,7 +33,7 @@ module.exports = {
     pluginMigration: async function(pluginID, schemaFile) {
         printObj(`Plugin Migration Checking for ${pluginID} - mode:${process.env.MIGRATION_MODE}`, "pink", 2);
 
-        const DBKEYS = BASEAPP.getDBKeys();
+        const DBKEYS = _dbkeys();
         switch(process.env.MIGRATION_MODE) {
             case "IMPORT":
                 var responses = {};

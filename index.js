@@ -44,6 +44,8 @@ console.log("\x1b[34m%s\x1b[0m","\nAppServer Initialization Started\n");
 // global.promisify = promisify;
 
 //Load Core Modules
+require('./api/commons');
+
 const LOGGER = require('./api/logger');
 global.LOGGER = LOGGER;
 

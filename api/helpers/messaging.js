@@ -11,7 +11,9 @@ var MESSAGING_DRIVER = {};
 module.exports = {
 
     initialize : function() {
-        this.loadDrivers();
+        addAppEventListener("messaging", function() {
+            MESSAGING.loadDrivers();
+        });
 
         //Load Messaging Vendors from DB
 
@@ -19,6 +21,8 @@ module.exports = {
     },
 
     loadDrivers: async function() {
+        MESSAGING_DRIVER = {};
+
         MESSAGING_DRIVER['email'] = {
             "method": "sendEmail",
             "params": {
@@ -28,6 +32,13 @@ module.exports = {
             },
             "credentials": CONFIG.email || CONFIG.mail || false
         };
+
+        const tempObj = VENDORS.getAvailableVendors("messaging");
+        if(tempObj) tempObj.forEach(a=> {
+            MESSAGING_DRIVER[a.vendor_code] = a;
+        })
+        
+        console.log("\x1b[35m%s\x1b[0m", `Loaded Messaging Drivers from Vendors - ${Object.keys(MESSAGING_DRIVER).length}`);
     },
 
     getDrivers: function() {
