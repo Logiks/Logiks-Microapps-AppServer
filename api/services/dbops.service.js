@@ -200,7 +200,7 @@ module.exports = {
                     });
 
                     //Bulk Insert
-                    const dbResponse = await db_insert_batchQ("appdb", sqlTable, dataFields);
+                    const dbResponse = await _DB.db_insert_batchQ("appdb", sqlTable, dataFields);
 
                     if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
                         _.each(jsonQuery.hooks.postsubmit, function(func, k) {

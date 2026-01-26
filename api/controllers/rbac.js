@@ -38,6 +38,66 @@ module.exports = {
         return response;
     },
 
+    buildPolicyTable: async function(ctx) {
+        const policyCatalog = await ctx.call("system.policyCatalog");
+        //const policyItems = [...new Set(Object.values(policyCatalog).flatMap(innerObj => Object.keys(innerObj)))];
+        const policyList = Object.values(policyCatalog).reduce((acc, innerObj) => {
+                        Object.keys(innerObj).forEach(key => {
+                            acc[key] = innerObj[key];
+                        });
+                        return acc;
+                    }, {});
+        const policyItems = Object.keys(policyList);
+
+        // console.log("policyCatalog", policyCatalog);
+
+        const roleList = await _DB.db_selectQ("appdb", "lgks_rolemodel", "*", {
+            "guid": ctx.meta.user.guid,
+            "site": ctx.meta.appInfo.appid,
+            "blocked": "false",
+            "policystr": [policyItems, "IN"]
+        })
+        if(!roleList.results) roleList.results = [];
+
+        if(roleList.results.length==policyItems.length) {
+            return {
+                status: "success",
+                created: 0,
+                total: roleList.results.length
+            };
+        }
+        const existingPolicies = roleList.results.map(obj => obj.policystr);
+        const newPolicies = policyItems.filter(a=>!existingPolicies.includes(a));
+        
+        var bulkInsert = [];
+        for (let index = 0; index < newPolicies.length; index++) {
+            const policyStr = newPolicies[index];
+            const policyArr = policyStr.split(".");
+            const policyRemarks = policyStr.replaceAll('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            bulkInsert.push(_.extend({
+                site: ctx.meta.appInfo.appid, 
+                category: "Generated",
+                policystr: policyStr,
+                module: policyArr[0],
+                activity: policyArr[1],
+                action: policyArr[2],
+                remarks: policyRemarks,
+                allowed_roles: ((policyList[policyStr]=="true" || policyList[policyStr]===true)?"*":""),
+                role_type: "auto",
+                rolehash: await ENCRYPTER.generateHash(`${ctx.meta.appInfo.appid}${ctx.meta.user.guid}${policyStr}`),
+            }, MISC.generateDefaultDBRecord(ctx, false)));
+        }
+        
+        const dbResponse = await _DB.db_insert_batchQ("appdb", "lgks_rolemodel", bulkInsert);
+        // console.log("newPolicies", newPolicies, bulkInsert, dbResponse);
+        return {
+            status: "success",
+            created: newPolicies.length,
+            total: (newPolicies.length+existingPolicies.length)
+        };
+    },
+
     //policyStr = a.b.c format
     checkPolicy: async function(ctx, policyStr, defaultValue = true) {
         console.log("RBAC.checkPolicy", policyStr, defaultValue, ctx.meta.user, ctx.meta.appInfo, ctx.meta.appInfo.appid, ctx.meta.user.roles);

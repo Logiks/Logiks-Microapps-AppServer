@@ -287,9 +287,9 @@ module.exports = {
 		},
 
 		policyCatalog: function() {
-			var RESULTS = [];
+			var RESULTS = {};
 			SERVICE_WORKERS.forEach((node, key) => {
-				RESULTS.push(node.policies);
+				RESULTS = {...RESULTS, ...node.policies}
 			});
 
 			return RESULTS;
