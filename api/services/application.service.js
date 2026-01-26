@@ -361,7 +361,8 @@ module.exports = {
 				const templateContent = await TEMPLATES.loadTemplate(templateCode, data, ctx);
 
 				return {
-					template: templateContent
+					template: templateContent.content,
+					subject: templateContent.subject
 				};
 			}
 		},

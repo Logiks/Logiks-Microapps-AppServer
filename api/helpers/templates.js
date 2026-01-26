@@ -22,7 +22,10 @@ module.exports = {
         
         var templateContent = await this.process(templateObj.template_content, templateObj.sql_source.split("\n"), data, templateObj.params, ctx);
 
-        return `<style>${templateObj.template_style}</style>${templateContent}`;
+        return {
+            content: `<style>${templateObj.template_style}</style>${templateContent}`,
+            subject: templateObj.subject
+        };
     },
 
     process: async function(template, sqlSource, data = {}, params = {}, ctx) {

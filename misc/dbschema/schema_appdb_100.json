@@ -467,6 +467,12 @@
         "default": null,
         "primary": false
       },
+      "engine": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": "print",
+        "primary": false
+      },
       "category": {
         "type": "varchar(155)",
         "nullable": true,

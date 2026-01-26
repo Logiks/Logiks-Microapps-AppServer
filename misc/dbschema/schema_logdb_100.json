@@ -1502,12 +1502,6 @@
         "default": "0",
         "primary": false
       },
-      "sent_at": {
-        "type": "timestamp",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
       "xtras_1": {
         "type": "varchar(255)",
         "nullable": true,
