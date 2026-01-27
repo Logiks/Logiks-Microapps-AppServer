@@ -41,8 +41,12 @@ module.exports = {
             "site": [["*", appID], "IN"],
         }), {}, " ORDER BY weight ASC");
 
-        var finalLinks = [];
-        _.each(dbLinks?.results, async function(link, k) {
+        var finalLinks = dbLinks?.results;
+        if(!finalLinks) finalLinks = [];
+
+        for (var i = finalLinks.length - 1; i >= 0; i--) {
+            var link = finalLinks[i];
+
             // Process link URL
             // if(link.linktype == "internal") {
             //     link.url = _APPCONFIG.getInternalLink(link.link);
@@ -63,7 +67,7 @@ module.exports = {
                         case "policy":
                             const response = await RBAC.checkPolicy(ctx, checkArr[1]);
                             if(!response) {
-                                dbLinks.results[k].blocked = "true";
+                                link.blocked = "true";
                             }
                             break;
                         case "module":
@@ -74,8 +78,8 @@ module.exports = {
                 }
             }
 
-            finalLinks.push(link);
-        });
+            finalLinks[i] = link;
+        }
         
         return finalLinks.filter(a=>a.blocked!=="true");
     },
