@@ -61,7 +61,7 @@ module.exports = {
 
                     switch(checkArr[0]) {
                         case "policy":
-                            const response = await checkPolicy(ctx, checkArr[1]);
+                            const response = await RBAC.checkPolicy(ctx, checkArr[1]);
                             if(!response) {
                                 dbLinks.results[k].blocked = "true";
                             }
