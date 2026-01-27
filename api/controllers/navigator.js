@@ -54,21 +54,23 @@ module.exports = {
             //     link.url = "#";
             // }
             // link.url = _APPCONFIG.processLink(link.link, link.linktype, appID);
-            const toCheck = link.to_check.split(",");
-            for(const checkItem of toCheck) {
-                const checkArr = checkItem.split(":");
+            if(link.to_check.length>0) {
+                const toCheck = link.to_check.split(",");
+                for(const checkItem of toCheck) {
+                    const checkArr = checkItem.split(":");
 
-                switch(checkArr[0]) {
-                    case "policy":
-                        const response = await checkPolicy(ctx, checkArr[1]);
-                        if(!response) {
-                            dbLinks.results[k].blocked = true;
-                        }
-                        break;
-                    case "module":
-                        break;
-                    default:
-                        break;
+                    switch(checkArr[0]) {
+                        case "policy":
+                            const response = await checkPolicy(ctx, checkArr[1]);
+                            if(!response) {
+                                dbLinks.results[k].blocked = true;
+                            }
+                            break;
+                        case "module":
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
 
