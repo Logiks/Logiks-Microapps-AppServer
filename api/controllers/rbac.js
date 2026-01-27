@@ -117,7 +117,7 @@ module.exports = {
 
             //policyStr.toLowerCase().includes("blacklist")
 
-            const hasAllowedRoles = [...new Set(userRoles)].filter(item => allowedRoles.includes(item));
+            const hasAllowedRoles = [...new Set(userRoles)].filter(item => allowedRoles.includes(item.toLowerCase()));
             if(hasAllowedRoles.length>0) return true;
 
             if(allowedRoles.includes(`PRIVILEGE:${ctx.meta.user.privilege}`)) true;
