@@ -54,7 +54,6 @@ module.exports = {
             //     link.url = "#";
             // }
             // link.url = _APPCONFIG.processLink(link.link, link.linktype, appID);
-            console.log("XXXXXXXX", link.to_check, link);
             if(link.to_check && link.to_check.length>0) {
                 const toCheck = link.to_check.split(",");
                 for(const checkItem of toCheck) {

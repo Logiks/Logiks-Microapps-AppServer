@@ -185,6 +185,8 @@ module.exports = {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
 		}
+		if(!table) return false;
+		if(!columns) columns = "*";
 
 		if(Array.isArray(columns)) columnsStr = columns.join(",");
 		else columnsStr = columns;
