@@ -308,6 +308,22 @@ module.exports = {
                         queryid: await QUERY.storeQuery(v.ajaxchain.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.0`}),
                     };
             }
+            if(v.autocomplete) {
+                if(Array.isArray(v.autocomplete))
+                    for (let k1 = 0; k1 < v.autocomplete.length; k1++) {
+                        const obj = v.autocomplete[k1];
+                        
+                        v.autocomplete[k1].src = {
+                            "type": "sql",
+                            queryid: await QUERY.storeQuery(v.autocomplete[k1].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.autocomplete.${k1}`}),
+                        }
+                    }
+                else
+                    v.autocomplete.src = {
+                        "type": "sql",
+                        queryid: await QUERY.storeQuery(v.autocomplete.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.autocomplete.0`}),
+                    };
+            }
         }
 
         return formFields;
