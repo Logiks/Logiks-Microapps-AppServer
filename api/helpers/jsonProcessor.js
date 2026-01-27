@@ -280,6 +280,8 @@ module.exports = {
                     if(formFields[k].table) delete formFields[k].table;
                     if(formFields[k].columns) delete formFields[k].columns;
                     if(formFields[k].where) delete formFields[k].where;
+                case 'autosuggest':
+                    formFields[k].type = "autosuggest";
                     break;
                 default:
                     if(v.table) {
@@ -309,20 +311,10 @@ module.exports = {
                     };
             }
             if(v.autocomplete) {
-                if(Array.isArray(v.autocomplete))
-                    for (let k1 = 0; k1 < v.autocomplete.length; k1++) {
-                        const obj = v.autocomplete[k1];
-                        
-                        v.autocomplete[k1].src = {
-                            "type": "sql",
-                            queryid: await QUERY.storeQuery(v.autocomplete[k1].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.autocomplete.${k1}`}),
-                        }
-                    }
-                else
-                    v.autocomplete.src = {
-                        "type": "sql",
-                        queryid: await QUERY.storeQuery(v.autocomplete.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.autocomplete.0`}),
-                    };
+                v.autocomplete.src = {
+                    "type": "sql",
+                    queryid: await QUERY.storeQuery(v.autocomplete.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.autocomplete.0`}),
+                };
             }
         }
 

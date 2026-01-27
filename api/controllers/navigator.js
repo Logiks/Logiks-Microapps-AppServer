@@ -40,8 +40,42 @@ module.exports = {
             "guid": [["global", userInfo.tenantId], "IN"],
             "site": [["*", appID], "IN"],
         }), {}, " ORDER BY weight ASC");
+
+        const finalLinks = [];
+        _.each(dbLinks?.results, async function(link, k) {
+            // Process link URL
+            // if(link.linktype == "internal") {
+            //     link.url = _APPCONFIG.getInternalLink(link.link);
+            // } else if(link.linktype == "external") {
+            //     link.url = link.link;
+            // } else if(link.linktype == "module") {
+            //     link.url = _APPCONFIG.getModuleLink(link.link, appID);
+            // } else {
+            //     link.url = "#";
+            // }
+            // link.url = _APPCONFIG.processLink(link.link, link.linktype, appID);
+            const toCheck = link.to_check.split(",");
+            for(const checkItem of toCheck) {
+                const checkArr = checkItem.split(":");
+
+                switch(checkArr[0]) {
+                    case "policy":
+                        const response = await checkPolicy(ctx, checkArr[1]);
+                        if(!response) {
+                            dbLinks.results[k].blocked = true;
+                        }
+                        break;
+                    case "module":
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            finalLinks.push(link);
+        });
         
-        return dbLinks?.results || [];
+        return finalLinks.filter(a=>!a.blocked);
     },
 
     //Importing and Manual Adding
