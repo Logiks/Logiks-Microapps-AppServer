@@ -54,7 +54,7 @@ module.exports = {
             //     link.url = "#";
             // }
             // link.url = _APPCONFIG.processLink(link.link, link.linktype, appID);
-            if(link.to_check.length>0) {
+            if(link.to_check && link.to_check.length>0) {
                 const toCheck = link.to_check.split(",");
                 for(const checkItem of toCheck) {
                     const checkArr = checkItem.split(":");
