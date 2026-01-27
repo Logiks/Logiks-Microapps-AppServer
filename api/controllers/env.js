@@ -18,14 +18,16 @@ module.exports = {
             },{});
         if(!envData || !envData.results || envData.results.length<=0) return false;
         for(var i=0; i<envData.results.length; i++) {
-            ENVIRONMENTS[envData.results[i].var_code.toUpperCase()] = envData.results[i].var_value;
+            if(!ENVIRONMENTS[envData.results[i]['guid']]) ENVIRONMENTS[envData.results[i]['guid']] = {};
+            ENVIRONMENTS[envData.results[i]['guid']][envData.results[i].var_code.toUpperCase()] = envData.results[i].var_value;
         }
 
         // console.log(ENVIRONMENTS);
     },
 
-    registerEnvVariable : function(module, varName, varValue, varParams = {}, varNature = 'backend', ctx = null) {
-        ENVIRONMENTS[varName] = varValue;
+    registerEnvVariable : function(ctx, module, varName, varValue, varParams = {}, varNature = 'backend') {
+        if(!ENVIRONMENTS[ctx?.meta?.user?.guid || "global"]) ENVIRONMENTS[ctx?.meta?.user?.guid || "global"] = {};
+        ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][varName] = varValue;
 
         var dated = moment().format("Y-M-D HH:mm:ss");
         _DB.db_insertQ1("appdb", "lgks_environment", {
@@ -36,6 +38,7 @@ module.exports = {
             "var_value": varValue, 
             "var_params": JSON.stringify(varParams), 
             "var_nature": varNature, 
+            "privilege": "admin",
             "blocked": "false", 
             "created_on": dated, 
             "created_by": ctx?.meta?.user?.userId || "system", 
@@ -46,22 +49,27 @@ module.exports = {
         return varValue;
     },
 
-    updateEnvVariable : function(varCode, varValue, varParams = {}, varNature = 'backend', ctx = null) {
+    updateEnvVariable : function(ctx, varCode, varValue, varParams = {}, varNature = 'backend', varPrivilege = 'admin') {
+        if(!ENVIRONMENTS[ctx?.meta?.user?.guid || "global"]) return false;
+
         var dated = moment().format("Y-M-D HH:mm:ss");
         _DB.db_updateQ1("appdb", "lgks_environment", {
             "var_value": varValue, 
             "var_params": JSON.stringify(varParams), 
             "var_nature": varNature, 
+            "privilege": varPrivilege,
             "edited_on": dated, 
             "edited_by": ctx?.meta?.user?.userId || "system", 
         }, {
             "var_code": varCode
         });
 
-        ENVIRONMENTS[`${module}:${varName}`.toUpperCase().trim()] = varValue;
+        ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][`${module}:${varName}`.toUpperCase().trim()] = varValue;
     },
 
-    deleteEnvVariable : function(varCode, ctx = null) {
+    deleteEnvVariable : function(ctx, varCode) {
+        if(!ENVIRONMENTS[ctx?.meta?.user?.guid || "global"]) return false;
+
         var dated = moment().format("Y-M-D HH:mm:ss");
         _DB.db_updateQ1("appdb", "lgks_environment", {
             "blocked": "true", 
@@ -71,24 +79,25 @@ module.exports = {
             "var_code": varCode
         });
 
-        delete ENVIRONMENTS[varCode];
+        delete ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][varCode];
     },
 
-    importEnvVariables: async function(module, envList, ctx = null) {
+    importEnvVariables: async function(ctx, module, envList) {
         for(var i=0; i<envList.length; i++) {
-            var existingVar = ENVIRONMENTS[`${module}:${envList[i].var_name}`.toUpperCase().trim()];
+            var existingVar = ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][`${module}:${envList[i].var_name}`.toUpperCase().trim()];
             if(existingVar===undefined) {
-                this.registerEnvVariable(module, envList[i].var_name, envList[i].var_value, envList[i].var_params || {}, envList[i].var_nature || 'backend', ctx);
+                this.registerEnvVariable(ctx, module, envList[i].var_name, envList[i].var_value, envList[i].var_params || {}, envList[i].var_nature || 'backend');
             } else {
-                this.updateEnvVariable(`${module}:${envList[i].var_name}`.toUpperCase().trim(), envList[i].var_value, envList[i].var_params || {}, envList[i].var_nature || 'backend', ctx);
+                this.updateEnvVariable(ctx, `${module}:${envList[i].var_name}`.toUpperCase().trim(), envList[i].var_value, envList[i].var_params || {}, envList[i].var_nature || 'backend');
             }
         }
     },
     
     //nature = backend/frontend/mobile
-    fetchEnvByNature: async function(nature) {
+    fetchEnvByNature: async function(ctx, nature) {
         var tempEnv = {};
         var envData = await _DB.db_selectQ("appdb", "lgks_environment", "*", {
+                guid: ctx?.meta?.user?.guid || "global", 
                 var_nature: nature,
                 blocked: "false"
             },{});
@@ -101,9 +110,11 @@ module.exports = {
         return tempEnv;
     },
 
-    getEnvModule: function(moduleName) {
+    getEnvModule: function(ctx, moduleName) {
+        if(!ENVIRONMENTS[ctx?.meta?.user?.guid || "global"]) return false;
+
         var moduleEnv = {};
-        _.each(ENVIRONMENTS, function(value, key) {
+        _.each(ENVIRONMENTS[ctx?.meta?.user?.guid || "global"], function(value, key) {
             if(key.startsWith(moduleName.toUpperCase()+":")) {
                 moduleEnv[key] = value;
             }
@@ -111,9 +122,11 @@ module.exports = {
         return moduleEnv;
     },
 
-    getEnvVariable: function(varName, defaultValue=null) {
-        if(ENVIRONMENTS[varName] && ENVIRONMENTS[varName].length>0) {
-            return process.env[varName];
+    getEnvVariable: function(ctx, varName, defaultValue=null) {
+        if(!ENVIRONMENTS[ctx?.meta?.user?.guid || "global"]) return false;
+
+        if(ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][varName] && ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][varName].length>0) {
+            return ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][varName];
         }
         return defaultValue;
     },
