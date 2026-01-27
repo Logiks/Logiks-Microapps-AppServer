@@ -242,7 +242,20 @@ module.exports = {
 				}
 			}
 		},
-		
+
+		buildPolicy: {
+			rest: {
+				method: "GET",
+				path: "/buildPolicy"
+			},
+			params: {
+			},
+			async handler(ctx) {
+				RBAC.buildPolicyTable(ctx);
+				return {"status": "ok"};
+			}
+		},
+
 		//Manage Themes
 	},
 	methods: {

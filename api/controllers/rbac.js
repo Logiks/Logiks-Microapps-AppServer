@@ -67,7 +67,7 @@ module.exports = {
             };
         }
         const existingPolicies = roleList.results.map(obj => obj.policystr);
-        const newPolicies = policyItems.filter(a=>!existingPolicies.includes(a));
+        const newPolicies = policyItems.filter(a=>!existingPolicies.includes(a.toLowerCase()));
         
         var bulkInsert = [];
         for (let index = 0; index < newPolicies.length; index++) {
@@ -78,7 +78,7 @@ module.exports = {
             bulkInsert.push(_.extend({
                 site: ctx.meta.appInfo.appid, 
                 category: "Generated",
-                policystr: policyStr,
+                policystr: policyStr.toLowerCase(),
                 module: policyArr[0],
                 activity: policyArr[1],
                 action: policyArr[2],
