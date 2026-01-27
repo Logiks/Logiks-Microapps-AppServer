@@ -107,14 +107,13 @@ module.exports = {
 
         const rbacRoleID = RBAC.getRoleId(ctx);
         const appid = ctx.meta.appInfo.appid;
+        const userRoles = ctx.meta.user.roles;
 
         if(RBAC_CACHE[appid] && RBAC_CACHE[appid][rbacRoleID]) {
             if(!RBAC_CACHE[appid][rbacRoleID][policyStr]) RBAC_CACHE[appid][rbacRoleID][policyStr] = [];
             else if(typeof RBAC_CACHE[appid][rbacRoleID][policyStr] == "string") RBAC_CACHE[appid][rbacRoleID][policyStr] = RBAC_CACHE[appid][rbacRoleID][policyStr].split(",");
             
-            const userRoles = ctx.meta.user.roles;
             const allowedRoles = RBAC_CACHE[appid][rbacRoleID][policyStr];
-
             //policyStr.toLowerCase().includes("blacklist")
 
             const hasAllowedRoles = [...new Set(userRoles)].filter(item => allowedRoles.includes(item.toLowerCase()));
