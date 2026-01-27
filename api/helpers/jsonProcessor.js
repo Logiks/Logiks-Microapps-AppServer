@@ -270,8 +270,11 @@ module.exports = {
             const v = formFields[k];
 
             switch(v.type) {
-                case 'dataMethod': case 'dataSelectorFromUniques': case 'dataSelectorFromTable':
+                case 'dataMethod': case 'dataSelector': case 'dataSelectorFromUniques': case 'dataSelectorFromTable':
                 case 'dropdown': case 'select': case 'autosuggest'://case 'selectAJAX':
+                    // v.table = 
+                    // v.columns = 
+                    // v.where = 
                     var selectorOptions = await JSONPROCESSOR.generateSelector(v, k, ctx);
                     if(!selectorOptions) selectorOptions = [];
                     
@@ -281,11 +284,9 @@ module.exports = {
                     if(formFields[k].table) delete formFields[k].table;
                     if(formFields[k].columns) delete formFields[k].columns;
                     if(formFields[k].where) delete formFields[k].where;
-
+                    
                     if(v.type=="autosuggest") {
                         // formFields[k].type = "autosuggest";
-                    } else if(v.type=="dataSelector") {
-                        formFields[k].type = "dataSelector";
                     }
                     break;
                 default:
@@ -350,6 +351,7 @@ module.exports = {
                 return sqlData2.results;
                 break;
             case 'dataSelectorFromTable':
+            case 'autosuggest':
                 const sqlData3 = await _DB.db_selectQ("appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || 'id'} ORDER BY ${fieldObj.orderby || 'id'}`);
                 if(!sqlData3.results) sqlData3.results = [];
                 return sqlData3.results;
