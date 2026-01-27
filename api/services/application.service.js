@@ -35,23 +35,6 @@ module.exports = {
 			}
 		},
 
-		environment: {
-			rest: {
-				method: "GET",
-				fullPath: "/api/env"
-			},
-			params: {
-				nature: { type: "string", optional: true, enum: ["backend", "frontend", "mobile"] }
-			},
-			async handler(ctx) {
-				const envInfo = await ENV.fetchEnvByNature(ctx.params.nature || "frontend");
-				
-				if(!envInfo) envInfo = {};
-
-				return envInfo;
-			}
-		},
-
 		settings: {
 			rest: {
 				method: "POST",
@@ -397,7 +380,7 @@ module.exports = {
 				
 				return {
 					"appid": ctx.meta.appInfo.appid,
-					"vers": (appInfo.env=="dev" || appInfo.env=="development")?_db.db_nowunix():appInfo.vers,
+					"vers": (appInfo.env=="dev" || appInfo.env=="development")?_DB.db_nowunix():appInfo.vers,
 					"env": appInfo.env
 				}
 			}

@@ -33,6 +33,23 @@ module.exports = {
                 return results;
             }
         },
+        runAPI: {
+            rest: {
+				method: "POST",
+				fullPath: "/api/api/:apiCode"
+			},
+            params: {
+                // "query": "object",
+                // "body": "object",
+            },
+			async handler(ctx) {
+                const results = await APIHUB.runAPI(ctx.params.apiCode, {
+                    query: ctx.params.query || {},
+                    body: ctx.params.body || {}
+                }, ctx);
+                return results;
+            }
+        },
         runValidation: {
             rest: {
 				method: "POST",
@@ -68,7 +85,7 @@ module.exports = {
                 ctx.params.data.appid = appID;
                 
                 if(req.params.type=="db")
-                    _DBLOGGER._log(logID, appID, guid, ctx.params.data);
+                    _DBLOGGER._log(logID, ctx.params.data, ctx);
                 else
                     LOGGER.log(ctx.params.data, logID, req.params.level);
             }

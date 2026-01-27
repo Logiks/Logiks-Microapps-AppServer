@@ -120,7 +120,7 @@
       "PRIMARY"
     ]
   },
-  "log_api": {
+  "log_apihub": {
     "columns": {
       "id": {
         "type": "int",
@@ -130,6 +130,12 @@
       },
       "guid": {
         "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "api_code": {
+        "type": "varchar(55)",
         "nullable": false,
         "default": null,
         "primary": false
@@ -160,18 +166,6 @@
       },
       "latency_ms": {
         "type": "int",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "ip_address": {
-        "type": "varchar(50)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "user_agent": {
-        "type": "varchar(255)",
         "nullable": true,
         "default": null,
         "primary": false
@@ -2234,6 +2228,115 @@
       }
     },
     "indexes": []
+  },
+  "log_webhooks": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "appid": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "webhook": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "method": {
+        "type": "varchar(10)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "latency_ms": {
+        "type": "int",
+        "nullable": true,
+        "default": "0",
+        "primary": false
+      },
+      "status_code": {
+        "type": "int",
+        "nullable": true,
+        "default": "0",
+        "primary": false
+      },
+      "ip_address": {
+        "type": "varchar(25)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "user_agent": {
+        "type": "varchar(200)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "request_payload": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "response_payload": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "error_message": {
+        "type": "varchar(200)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY"
+    ]
   },
   "sys_vendors": {
     "columns": {

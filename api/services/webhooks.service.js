@@ -1,0 +1,21 @@
+"use strict";
+
+module.exports = {
+	name: "webhooks",
+
+	actions: {
+		runWebhook: {
+            rest: {
+				method: "POST",
+				fullPath: "/webhooks/:webhookid"
+			},
+            params: {
+                // cmd: "string"
+            },
+			async handler(ctx) {
+                const response = await WEBHOOKS.receiveRequest(ctx.params.webhookid, ctx);
+                return response;
+            }
+        }
+    }
+}

@@ -7,7 +7,7 @@ module.exports = {
     initialize : function() {
         this.loadEnvironment();
 
-        console.log("\x1b[36m%s\x1b[0m","Environment Variables Loaded from ", envFilePath);
+        console.log("\x1b[36m%s\x1b[0m","Environment Variables Loaded");
         return true;
     },
 

@@ -52,6 +52,19 @@ module.exports = {
       };
   },
 
+  executeFunctionByName: async function(functionName, dataParams, ctx) {
+    const func = global[functionName];
+    const functionArr = functionName.split(".");
+
+    if (typeof func === "function") {
+      return func(dataParams, ctx);
+    } else if(global[functionArr[0]] && typeof global[functionArr[0]][functionArr[1]] === "object") {
+      return global[functionArr[0]][functionArr[1]](dataParams, ctx);
+    } else {
+      return ctx.call(functionName, dataParams);
+    }
+  },
+
   generateUUID : function(prefix,n) {
     //Math.ceil(Math.random()*10000000)+"-"+uuidv4();
     //return Math.random(1000000);
@@ -106,15 +119,15 @@ module.exports = {
     if(forUpdate) {
       return {
         "edited_on": dated,
-        "edited_by": ctx.meta.user.userId,
+        "edited_by": ctx.meta?.user?.userId || "-",
       };
     } else {
       return {
-        "guid": ctx.meta.user.guid,
+        "guid": ctx?.meta?.user?.guid || "-",
         "created_on": dated,
-        "created_by": ctx.meta.user.userId,
+        "created_by": ctx.meta?.user?.userId || "-",
         "edited_on": dated,
-        "edited_by": ctx.meta.user.userId,
+        "edited_by": ctx.meta?.user?.userId || "-",
       };
     }
   },
@@ -160,9 +173,30 @@ module.exports = {
     return R * c;
   },
 
+  _replaceObj: function(jsonObj, ctx) {
+    if(!jsonObj) return {};
+    try {
+        var tempJSON = JSON.stringify(jsonObj);
+        tempJSON = _replaceCtx(tempJSON, ctx)
+        tempJSON = JSON.parse(tempJSON);
+
+        return tempJSON;
+    } catch(e) {
+        return jsonObj;
+    }
+  },
+
   _replace: function(text, data, strict = false) {
     return _replace(text, data, strict);
+  },
+
+  _replaceCtx: function(text, ctx, strict = false) {
+    return _replaceCtx(text, ctx, strict);
   }
+}
+
+global._replaceCtx = function(text, ctx, strict = false) {
+  return _replace(text, _.extend({}, ctx?.params || {}, ctx?.meta || {}));
 }
 
 global._replace = function(text, data, strict = false) {

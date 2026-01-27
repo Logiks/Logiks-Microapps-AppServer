@@ -1489,6 +1489,12 @@
         "default": "frontend",
         "primary": false
       },
+      "privilege": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": "admin",
+        "primary": false
+      },
       "blocked": {
         "type": "enum('false','true')",
         "nullable": true,
@@ -2706,10 +2712,10 @@
         "default": "global",
         "primary": false
       },
-      "groupuid": {
+      "api_code": {
         "type": "varchar(55)",
         "nullable": false,
-        "default": "hq",
+        "default": null,
         "primary": false
       },
       "title": {
@@ -2796,6 +2802,12 @@
         "default": null,
         "primary": false
       },
+      "query_obj": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
       "body": {
         "type": "text",
         "nullable": true,
@@ -2858,7 +2870,8 @@
       }
     },
     "indexes": [
-      "PRIMARY"
+      "PRIMARY",
+      "api_code"
     ]
   },
   "sys_domrules": {
@@ -3350,7 +3363,7 @@
         "default": null,
         "primary": false
       },
-      "subpath": {
+      "endpointid": {
         "type": "varchar(155)",
         "nullable": false,
         "default": null,
@@ -3380,7 +3393,7 @@
         "default": null,
         "primary": false
       },
-      "validation": {
+      "validations": {
         "type": "text",
         "nullable": false,
         "default": null,
