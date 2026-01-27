@@ -54,6 +54,7 @@ module.exports = {
             //     link.url = "#";
             // }
             // link.url = _APPCONFIG.processLink(link.link, link.linktype, appID);
+            console.log("XXXXXXXX", link.to_check, link);
             if(link.to_check && link.to_check.length>0) {
                 const toCheck = link.to_check.split(",");
                 for(const checkItem of toCheck) {
@@ -63,7 +64,7 @@ module.exports = {
                         case "policy":
                             const response = await checkPolicy(ctx, checkArr[1]);
                             if(!response) {
-                                dbLinks.results[k].blocked = true;
+                                dbLinks.results[k].blocked = "true";
                             }
                             break;
                         case "module":
@@ -77,7 +78,7 @@ module.exports = {
             finalLinks.push(link);
         });
         
-        return finalLinks.filter(a=>!a.blocked);
+        return finalLinks.filter(a=>a.blocked!=="true");
     },
 
     //Importing and Manual Adding
