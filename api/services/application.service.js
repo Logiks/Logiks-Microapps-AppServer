@@ -35,6 +35,23 @@ module.exports = {
 			}
 		},
 
+		environment: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/env"
+			},
+			params: {
+				nature: { type: "string", optional: true, enum: ["backend", "frontend", "mobile"] }
+			},
+			async handler(ctx) {
+				const envInfo = await ENV.fetchEnvByNature(ctx.params.nature || "frontend");
+				
+				if(!envInfo) envInfo = {};
+
+				return envInfo;
+			}
+		},
+
 		settings: {
 			rest: {
 				method: "POST",

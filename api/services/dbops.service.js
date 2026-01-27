@@ -101,7 +101,7 @@ module.exports = {
                 // console.log(dataFields, MISC.generateDefaultDBRecord(ctx, false));
                 //Single Insert
 
-                var forcefillData = await QUERY.processMetaInfo(ctx.meta);
+                var forcefillData = await ENV.fetchEnvInfo(ctx.meta);
                 forcefillData = _.extend(forcefillData, ctx.params);
                 forcefill = QUERY.updateWhereFromEnv(forcefill, forcefillData);
                 if(forcefill && Object.keys(forcefill).length>0) dataFields = _.extend(dataFields, forcefill);
@@ -170,7 +170,7 @@ module.exports = {
                 const userInfo = jsonQuery.userInfo;
                 const validationRules = convertToValidatorRules(sqlFields);
                 
-                var forcefillData = await QUERY.processMetaInfo(ctx.meta);
+                var forcefillData = await ENV.fetchEnvInfo(ctx.meta);
                 forcefillData = _.extend(forcefillData, ctx.params);
                 forcefill = QUERY.updateWhereFromEnv(forcefill, forcefillData);
 
@@ -290,8 +290,8 @@ module.exports = {
 
                 if(!sqlFields || sqlFields.length<=0) sqlFields = "*";
 
-                // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await QUERY.processMetaInfo(ctx.meta));
-                var sqlWhereData = await QUERY.processMetaInfo(ctx.meta);
+                // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await ENV.fetchEnvInfo(ctx.meta));
+                var sqlWhereData = await ENV.fetchEnvInfo(ctx.meta);
                 sqlWhereData = _.extend(sqlWhereData, ctx.params);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
                 
@@ -377,8 +377,8 @@ module.exports = {
                     );
                 }
 
-                // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await QUERY.processMetaInfo(ctx.meta));
-                var sqlWhereData = await QUERY.processMetaInfo(ctx.meta);
+                // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await ENV.fetchEnvInfo(ctx.meta));
+                var sqlWhereData = await ENV.fetchEnvInfo(ctx.meta);
                 sqlWhereData = _.extend(sqlWhereData, ctx.params);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
                 
@@ -448,8 +448,8 @@ module.exports = {
                     );
                 }
                 
-                // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await QUERY.processMetaInfo(ctx.meta));
-                var sqlWhereData = await QUERY.processMetaInfo(ctx.meta);
+                // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await ENV.fetchEnvInfo(ctx.meta));
+                var sqlWhereData = await ENV.fetchEnvInfo(ctx.meta);
                 sqlWhereData = _.extend(sqlWhereData, ctx.params);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
 
