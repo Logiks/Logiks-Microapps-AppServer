@@ -41,7 +41,7 @@ module.exports = {
             "site": [["*", appID], "IN"],
         }), {}, " ORDER BY weight ASC");
 
-        const finalLinks = [];
+        var finalLinks = [];
         _.each(dbLinks?.results, async function(link, k) {
             // Process link URL
             // if(link.linktype == "internal") {

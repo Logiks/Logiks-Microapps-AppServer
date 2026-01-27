@@ -163,6 +163,7 @@ async function checkRBACControls(ctx) {
             // "policystr": [policyItems, "IN"]
         };
 
+        //whereLogic[roles.map(a=>`FIND_IN_SET('${a}',allowed_roles)`).join(" OR ")] = "RAW";
         whereLogic[roles.map(a=>`FIND_IN_SET('${a}',allowed_roles)`).join(" OR ")] = "RAW";
 
         const roleList = await _DB.db_selectQ("appdb", "lgks_rolemodel", "*", whereLogic);

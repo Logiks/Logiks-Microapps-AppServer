@@ -255,7 +255,7 @@ module.exports = {
  
 				var menuObj = await NAVIGATOR.getNavigation(appID, ctx.params.navid, ctx.params.deviceType, userInfo, {}, ctx);
 
-				if(!menuObj) menuObj = {};
+				if(!menuObj) menuObj = [];
 
 				return menuObj;
 			}
