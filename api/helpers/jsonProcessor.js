@@ -55,6 +55,15 @@ module.exports = {
                         for (var i = groupList.length - 1; i >= 0; i--) {
                             const k = groupList[i];
                             const v = tempObj.infoview.groups[k];
+
+                            if(v.policy && v.policy.length>0) {
+                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                if(!isAllowed) {
+                                    delete tempObj.infoview.groups[k];
+                                    continue;
+                                }
+                            }
+
                             if(v.config && v.config.table) {
                                 if(!tempObj.infoview.groups[k].config.columns && tempObj.infoview.groups[k].config.cols) {
                                     tempObj.infoview.groups[k].config.columns = tempObj.infoview.groups[k].config.cols;
@@ -110,6 +119,15 @@ module.exports = {
                     for (var i = cardList.length - 1; i >= 0; i--) {
                         const k = cardList[i];
                         const v = tempObj.cards[k];
+
+                        if(v.policy && v.policy.length>0) {
+                            var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                            if(!isAllowed) {
+                                delete tempObj.cards[k];
+                                continue;
+                            }
+                        }
+
                         if(v.source && v.source.type && v.source.type=="sql") {
                             tempObj.cards[k].source = {
                                 type: "sql",
@@ -188,6 +206,14 @@ module.exports = {
                     for (var i = datagridList.length - 1; i >= 0; i--) {
                         const k = datagridList[i];
                         const v = tempObj.datagrid[k];
+
+                        if(v.policy && v.policy.length>0) {
+                            var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                            if(!isAllowed) {
+                                delete tempObj.datagrid[k];
+                                continue;
+                            }
+                        }
                         
                         if(v.filter && v.filter.table) {
                             // 	tempObj.datagrid[k].filter = {
@@ -269,12 +295,20 @@ module.exports = {
             const k = fieldList[i];
             const v = formFields[k];
 
+            if(v.policy && v.policy.length>0) {
+                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                if(!isAllowed) {
+                    delete formFields[k];
+                    continue;
+                }
+            }
+
             switch(v.type) {
                 case 'dataMethod': case 'dataSelector': case 'dataSelectorFromUniques': case 'dataSelectorFromTable':
                 case 'dropdown': case 'select': case 'autosuggest'://case 'selectAJAX':
                     // v.table = 
                     // v.columns = 
-                    // v.where = 
+                    // v.columns = 
                     var selectorOptions = await JSONPROCESSOR.generateSelector(v, k, ctx);
                     if(!selectorOptions) selectorOptions = [];
                     

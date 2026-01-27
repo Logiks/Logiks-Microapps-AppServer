@@ -13,7 +13,7 @@ module.exports = {
         return true; //Public Controller
     },
 
-    getNavigation: async function(appID, navID, deviceType, userInfo, filter) {
+    getNavigation: async function(appID, navID, deviceType, userInfo, filter, ctx) {
         if(!NAVIGATOR_CACHE[appID]) NAVIGATOR_CACHE[appID] = {};
 
         if(!userInfo.privilege) userInfo.privilege = "";

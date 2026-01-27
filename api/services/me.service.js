@@ -32,6 +32,18 @@ module.exports = {
 				var response = await USERS.updateUserPassword(ctx.meta.user.guid, ctx.meta.user.userId, ctx.params.newPassword, ctx.params.oldPassword);
 				return response;
 			}
+		},
+
+		reloadPolicies: {
+			rest: {
+				method: "POST",
+				fullPath: "/api/me/reloadPolicies"
+			},
+			async handler(ctx) {
+				const response = await RBAC.reloadPolicies(ctx);
+				return response;
+			}
 		}
+		
     }
 }

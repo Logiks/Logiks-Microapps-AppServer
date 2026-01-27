@@ -253,7 +253,7 @@ module.exports = {
 				const appID = appInfo.appid;
 				//deviceType
  
-				const menuObj = await NAVIGATOR.getNavigation(appID, ctx.params.navid, ctx.params.deviceType, userInfo);
+				const menuObj = await NAVIGATOR.getNavigation(appID, ctx.params.navid, ctx.params.deviceType, userInfo, ctx);
 
 				if(!menuObj) menuObj = {};
 
