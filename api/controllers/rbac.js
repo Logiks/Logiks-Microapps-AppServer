@@ -99,7 +99,7 @@ module.exports = {
     },
 
     //policyStr = a.b.c format
-    checkPolicy: async function(ctx, policyStr, defaultValue = true) {
+    checkPolicy: async function(ctx, policyStr, defaultValue = false) {
         console.log("RBAC.checkPolicy", policyStr, defaultValue, ctx.meta.user, ctx.meta.appInfo, ctx.meta.appInfo.appid, ctx.meta.user.roles);
         if(!ctx || !ctx.meta.user || !ctx.meta.appInfo || !ctx.meta.appInfo.appid) return defaultValue;
 
@@ -146,14 +146,40 @@ async function checkRBACControls(ctx) {
     //appid, guid, userid
     const rbacRoleID = RBAC.getRoleId(ctx);
     const appid = ctx.meta.appInfo.appid;
+    const roles = ctx.meta.user.roles;
 
-    // RBAC_CACHE[appid][rbacRoleID]
+    if(roles.length<=0) return false;
+
+    if(!RBAC_CACHE[appid]) RBAC_CACHE[appid] = {};
+
     if(!RBAC_CACHE[appid] || !RBAC_CACHE[appid][rbacRoleID]) {
         //Load RBAC FROM lgks_roles
         //Load RBAC FROM lgks_rolemodel
+
+        var whereLogic = {
+            "guid": ctx.meta.user.guid,
+            "site": ctx.meta.appInfo.appid,
+            "blocked": "false",
+            // "policystr": [policyItems, "IN"]
+        };
+
+        whereLogic[roles.map(a=>`FIND_IN_SET('${a}',allowed_roles)`).join(" OR ")] = "RAW";
+
+        const roleList = await _DB.db_selectQ("appdb", "lgks_rolemodel", "*", whereLogic);
+        if(!roleList?.results) roleList.results = [];
+
+        var tempRoleList = {};
+        roleList.results.forEach(role=> {
+            if(role.policystr && role.policystr.length>0) {
+                tempRoleList[role.policystr.toLowerCase()] = role.allowed_roles.toLowerCase().split(",");
+            }
+        });
+        RBAC_CACHE[appid][rbacRoleID] = tempRoleList;
+
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 async function filterByPolicy(obj, checkPolicy) {
