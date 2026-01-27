@@ -1020,18 +1020,19 @@ module.exports = {
 			const servicesPath = path.resolve("./api/services");
 
 			if (fs.existsSync(servicesPath)) {
-				fs.readdirSync(servicesPath).forEach((file) => {
-					if (file.endsWith(".js")) {
-						const filePath = path.join(servicesPath, file);
-						try {
-							MAINBROKER.loadService(filePath);
-							LOGGER.get("server").info(`Loaded service ${file}`);
-						} catch (err) {
-							LOGGER.get("server").error(`Failed loading service ${file}`, { error: err });
-							process.exit(1);
-						}
-					}
-				});
+				MAINBROKER.loadServices(servicesPath, "**/*.service.js");
+				// fs.readdirSync(servicesPath).forEach((file) => {
+				// 	if (file.endsWith(".js")) {
+				// 		const filePath = path.join(servicesPath, file);
+				// 		try {
+				// 			MAINBROKER.loadService(filePath);
+				// 			LOGGER.get("server").info(`Loaded service ${file}`);
+				// 		} catch (err) {
+				// 			LOGGER.get("server").error(`Failed loading service ${file}`, { error: err });
+				// 			process.exit(1);
+				// 		}
+				// 	}
+				// });
 			} else {
 				LOGGER.get("server").warn("No services directory found at ./api/services");
 			}
