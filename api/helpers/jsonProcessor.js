@@ -271,7 +271,7 @@ module.exports = {
 
             switch(v.type) {
                 case 'dataMethod': case 'dataSelector': case 'dataSelectorFromUniques': case 'dataSelectorFromTable':
-                case 'dropdown': case 'select': //case 'selectAJAX':
+                case 'dropdown': case 'select': case 'autosuggest'://case 'selectAJAX':
                     var selectorOptions = await JSONPROCESSOR.generateSelector(v, k, ctx);
                     if(!selectorOptions) selectorOptions = [];
                     
@@ -281,8 +281,10 @@ module.exports = {
                     if(formFields[k].table) delete formFields[k].table;
                     if(formFields[k].columns) delete formFields[k].columns;
                     if(formFields[k].where) delete formFields[k].where;
-                case 'autosuggest':
-                    formFields[k].type = "autosuggest";
+                    
+                    if(v.type=="autosuggest") {
+                        // formFields[k].type = "autosuggest";
+                    }
                     break;
                 default:
                     if(v.table) {
