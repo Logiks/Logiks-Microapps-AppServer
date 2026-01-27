@@ -263,6 +263,7 @@ module.exports = {
     },
 
     processFormFields: async function(formFields, ctx, objId, moduleId) {
+        if(!formFields) return {};
         const fieldList = Object.keys(formFields);
         for (var i = fieldList.length - 1; i >= 0; i--) {
             const k = fieldList[i];
