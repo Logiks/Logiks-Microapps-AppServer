@@ -104,7 +104,7 @@ module.exports = {
         if(!ctx || !ctx.meta.user || !ctx.meta.appInfo || !ctx.meta.appInfo.appid) return defaultValue;
 
         // await checkRBACControls(ctx);
-        await this.reloadPolicies(ctx);
+        await RBAC.reloadPolicies(ctx);
 
         const rbacRoleID = RBAC.getRoleId(ctx);
         const appid = ctx.meta.appInfo.appid;
