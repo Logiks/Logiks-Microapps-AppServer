@@ -22,6 +22,11 @@ module.exports = {
 
     //Check and Load RBAC Controls into Memory for processing
     reloadPolicies: async function(ctx) {
+        if(ctx==null || !ctx.meta || !ctx.meta.user || !ctx.meta.appInfo) {
+            RBAC_CACHE = {};
+            await checkRBACControls(ctx);
+            return true;
+        }
         const rbacRoleID = RBAC.getRoleId(ctx);
         const appid = ctx.meta.appInfo.appid;
 
@@ -29,6 +34,7 @@ module.exports = {
             delete RBAC_CACHE[appid][rbacRoleID];
         }
         await checkRBACControls(ctx);
+        return true;
     },
 
     processJSONComponent: async function(ctx, jsonObject) {
@@ -39,7 +45,7 @@ module.exports = {
     },
 
     buildPolicyTable: async function(ctx) {
-        const policyCatalog = await ctx.call("system.policyCatalog");
+        const policyCatalog = await SERVER.getBroker().call("system.policyCatalog");
         //const policyItems = [...new Set(Object.values(policyCatalog).flatMap(innerObj => Object.keys(innerObj)))];
         const policyList = Object.values(policyCatalog).reduce((acc, innerObj) => {
                         Object.keys(innerObj).forEach(key => {

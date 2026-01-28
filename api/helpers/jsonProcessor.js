@@ -320,7 +320,7 @@ module.exports = {
                     if(formFields[k].where) delete formFields[k].where;
                     
                     if(v.type=="autosuggest") {
-                        // formFields[k].type = "autosuggest";
+                        formFields[k].type = "autosuggest";
                     }
                     break;
                 default:
