@@ -103,7 +103,8 @@ module.exports = {
         console.log("RBAC.checkPolicy", policyStr, defaultValue, ctx.meta.user, ctx.meta.appInfo, ctx.meta.appInfo.appid, ctx.meta.user.roles);
         if(!ctx || !ctx.meta.user || !ctx.meta.appInfo || !ctx.meta.appInfo.appid) return defaultValue;
 
-        await checkRBACControls(ctx);
+        // await checkRBACControls(ctx);
+        await this.reloadPolicies(ctx);
 
         const rbacRoleID = RBAC.getRoleId(ctx);
         const appid = ctx.meta.appInfo.appid;
