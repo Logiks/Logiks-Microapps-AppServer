@@ -4,7 +4,7 @@
  * */
 
 // const RBAC_CACHE = _CACHE.getCacheMap("RBACCACHE");
-const RBAC_CACHE = {};
+var RBAC_CACHE = {};
 
 module.exports = {
 
@@ -25,7 +25,7 @@ module.exports = {
         const rbacRoleID = RBAC.getRoleId(ctx);
         const appid = ctx.meta.appInfo.appid;
 
-        if(!RBAC_CACHE[appid] || !RBAC_CACHE[appid][rbacRoleID]) {
+        if(RBAC_CACHE[appid] && RBAC_CACHE[appid][rbacRoleID]) {
             delete RBAC_CACHE[appid][rbacRoleID];
         }
         await checkRBACControls(ctx);
