@@ -143,8 +143,8 @@ async function generateEnvObj(metaInfo) {
     var newMeta = _.cloneDeep(metaInfo);
 
     const newUser = await USERS.getUserData(newMeta.sessionId);
-
-    newMeta["SESS_LOGIN_TIME"] = newMeta.user.timestamp;
+    //newUser==false
+    newMeta["SESS_LOGIN_TIME"] = newMeta?.user?.timestamp || moment().format("Y-M-D HH:mm:ss");
 
     newMeta["SESS_GUID"] = newUser.guid;
     newMeta["SESS_USER_ID"] = newUser.userId;

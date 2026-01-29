@@ -63,7 +63,7 @@ module.exports = {
         var response  = {};
 
         if(webhookInfo.authkey && webhookInfo.authkey != "") {
-            const reqAuthKey = ctx.headers["x-webhook-auth"] || ctx.query.auth || ctx.params.auth || "";
+            const reqAuthKey = ctx.meta.headers["x-webhook-auth"] || ctx.query.auth || ctx.params.auth || "";
             if(reqAuthKey != webhookInfo.authkey) {
                 console.log("\x1b[31m%s\x1b[0m","WEBHOOK AUTH FAILED", endpoint);
 
@@ -118,10 +118,11 @@ module.exports = {
                     id: logRecord.insertId
                 });
                 
-                return {
-                    "status": "success",
-                    "message": response
-                }
+                if(!response) response = {"status": "failed", "data": response};
+
+                if(!response.status) response.status = "success"
+                
+                return response;
             } catch(err) {
                 console.log("\x1b[31m%s\x1b[0m","WEBHOOK FUNCTION EXECUTION FAILED", endpoint, err);
 
