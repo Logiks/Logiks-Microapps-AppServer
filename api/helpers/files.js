@@ -79,16 +79,16 @@ module.exports = {
                     "edited_on": dated,
                     "edited_by": ctx?ctx.meta.user.userId:"",
 				});
-        if(insertResponse) return `${CONFIG.base_url}api/public/files/${fileURI}`;
+        if(insertResponse) return `${CONFIG.base_url}api/public/files/${fileURI}?exp=${expiresOn}`;
         else return false;
     },
 
     getFilePublished: async function(fileURI, responseType = "stream", moreData = false) {
-        var sqlResult = await _DB.db_selectQ("appdb", "files_tbl", "*", {
+        var sqlResult = await _DB.db_selectQ("appdb", "files_published", "*", {
             "uri": fileURI,
             "blocked": "false"
         }, {});
-        if(!sqlResult || sqlResult?.results.length==0) return false;
+        if(!sqlResult || !sqlResult.results || sqlResult?.results.length==0) return false;
 
         const fileInfo = sqlResult.results[0];
         return FILES.getFileById(fileInfo.guid, fileInfo.file_id, responseType, moreData);
