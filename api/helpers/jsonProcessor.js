@@ -356,6 +356,9 @@ module.exports = {
                     queryid: await QUERY.storeQuery(v.autocomplete.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.autocomplete.0`}),
                 };
             }
+            if(v.default && v.default.length>0) {
+                v.default = _replaceCtx(v.default, ctx);
+            }
         }
 
         return formFields;

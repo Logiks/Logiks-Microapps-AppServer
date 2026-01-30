@@ -740,6 +740,12 @@
         "default": null,
         "primary": false
       },
+      "filename": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
       "expires": {
         "type": "datetime",
         "nullable": false,
