@@ -72,7 +72,7 @@ module.exports = {
 					"guid": guid,
 					"file_id": fileId,
                     "uri": fileURI,
-					"filename": file.filename,
+					"filename": sqlResult.results[0].filename,
 					"expires": expiresOn,
                     "created_on": dated,
                     "created_by": ctx?ctx.meta.user.userId:"",
