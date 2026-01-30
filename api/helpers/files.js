@@ -65,8 +65,11 @@ module.exports = {
         }, {});
         if(!sqlResult || sqlResult?.results.length==0) return false;
 
+        var ext = sqlResult.results[0].filename.split(".");
+        ext = ext[ext.length-1];
+
         var dated = moment().format("Y-MM-DD HH:mm:ss");
-        const fileURI = UNIQUEID.generate(8);
+        const fileURI = `${UNIQUEID.generate(8)}.${ext}`;
 
         const insertResponse = await _DB.db_insertQ1("appdb", "files_published", {
 					"guid": guid,
