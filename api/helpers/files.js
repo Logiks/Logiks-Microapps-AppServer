@@ -82,7 +82,7 @@ module.exports = {
                     "edited_on": dated,
                     "edited_by": ctx?ctx.meta.user.userId:"",
 				});
-        if(insertResponse) return `${CONFIG.base_url}api/public/files/${fileURI}?exp=${expiresOn}`;
+        if(insertResponse) return `${ctx.meta.serverHost}api/public/files/${fileURI}?exp=${expiresOn}`;
         else return false;
     },
 

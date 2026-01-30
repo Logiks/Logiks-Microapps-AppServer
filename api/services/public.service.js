@@ -3,6 +3,10 @@
 module.exports = {
 	name: "public",
 
+	settings: {
+        __file: __filename
+    },
+
 	actions: {
 		ping: {
 			rest: {

@@ -86,6 +86,16 @@ module.exports = {
     return moment().format("Y-M-D HH:mm:ss");
   },
 
+  isHTTPS: function(ctx) {
+    const isHttps =
+        ctx.meta.headers?.["x-forwarded-proto"] === "https" ||
+        ctx.meta.headers?.["x-forwarded-ssl"] === "on" ||
+        ctx.meta.headers?.["forwarded"]?.includes("proto=https") ||
+        ctx.meta.protocol === "https";
+
+    return isHttps;
+  },
+
   getClientIP : function(req) {
     const xfwd = req.headers["x-forwarded-for"];
     if (xfwd) return xfwd.split(",")[0].trim();

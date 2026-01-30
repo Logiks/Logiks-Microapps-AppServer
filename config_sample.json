@@ -14,8 +14,8 @@
         "navigator": false
     },
     "noauth": [
-        "auth.*",
         "public.*",
+        "developers.swagger.*",
         "/test",
         "/"
     ],

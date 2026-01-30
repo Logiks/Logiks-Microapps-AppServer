@@ -122,7 +122,7 @@ module.exports = {
 				}
 				// ctx.params.body.return_url
 
-				const returnURL = `${CONFIG.base_url}auth/logiksauth-login`;
+				const returnURL = `${ctx.meta.serverHost}auth/logiksauth-login`;
 				const authURL = `${CONFIG.logiksauth.url}authenticate?appid=${CONFIG.logiksauth.appid}&scope=${CONFIG.logiksauth.scope}&returnURL=${encodeURIComponent(returnURL)}`;
 				const logoutURL = `${CONFIG.logiksauth.url}logout?appid=${CONFIG.logiksauth.appid}&returnURL=${encodeURIComponent(returnURL)}`;
 
@@ -175,7 +175,7 @@ module.exports = {
 						"EX",
 						FEDERATED_LOGIN_TIMEOUT
 					);
-					var redirectURL = ctx.meta.appInfo.base_url;
+					var redirectURL = ctx.meta.serverHost;
 					if(!redirectURL) {
 						redirectURL = "";
 					}
@@ -213,7 +213,7 @@ module.exports = {
 						"EX",
 						FEDERATED_LOGIN_TIMEOUT
 					);
-					var redirectURL = ctx.meta.appInfo.base_url;
+					var redirectURL = ctx.meta.serverHost;
 					if(!redirectURL) {
 						redirectURL = "";
 					}
