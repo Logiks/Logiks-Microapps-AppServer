@@ -259,6 +259,116 @@ module.exports = {
 
 					routes: [
 						{
+							path: "/auth",
+							authentication: false,
+							authorization: false,
+							opts: {
+								authRequired: false
+							},
+							whitelist: [
+								"auth.*"
+							],
+							bodyParsers: {
+								json: true,
+								urlencoded: { extended: true }
+							},
+							// Attach Express-compatible middlewares
+							use: [
+								// Attach IP/UA on every request
+								(req, res, next) => {
+									console.log("AUTH_PARAMS", req.params, req.query, req.body, req.method);
+									req.clientIp = MISC.getClientIP(req);
+									req.clientUa = req.headers["user-agent"] || "unknown";
+									next();
+								}
+							],
+							// Enable GZIP/Brotli compression
+							compression: {
+								enabled: true,
+								options: {
+									threshold: 1024 // only compress files > 1KB
+								}
+							},
+							mappingPolicy: "restrict",
+							autoAliases: true,
+							// aliases: {
+							//	"POST /webhook/:webhookid": "webhook.runWebhook",
+							// },
+
+							onAfterCall(ctx, route, req, res, data) {
+								try {
+									const start = ctx.meta.__start || Date.now();
+									const duration = Date.now() - start;
+
+									ctx.broker.emit("system.request_completed", {
+										method: req.method,
+										path: req.url,
+										status: res?.statusCode,
+										duration
+									});
+								} catch (err) {
+									this.logger.error("onAfterCall error:", err);
+								}
+
+								return data;
+							},
+
+							onBeforeCall: async function (ctx, route, req, res) {
+								ctx.meta.headers = req.headers; 
+								ctx.meta.method = req.method; 
+								ctx.meta.__start = Date.now();
+
+								const serverIP = req.socket.localAddress || req.connection.localAddress;
+								const serverHost = req.headers.host;
+								const remoteIP = MISC.getClientIP(req);
+
+								// console.log("REQUEST_AUTH", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
+								
+								// Security headers
+								res.setHeader("X-Content-Type-Options", "nosniff");
+								res.setHeader("X-Frame-Options", "DENY");
+								res.setHeader("X-XSS-Protection", "1; mode=block");
+								res.setHeader("X-Powered-By", "Logiks Microapps AppServer");
+								// res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
+
+								// IP
+								const domainApp = await BASEAPP.getAppForDomain(serverHost);
+								if(!domainApp) {
+									throw new LogiksError(
+										"The no application found for current domain/url",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+								
+								const appInfo = await BASEAPP.getAppInfo(domainApp.appid);
+								if(!appInfo) {
+									throw new LogiksError(
+										"Application not defined or not found on server",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+
+								const ipAllowed = await AUTHKEY.checkClientIP(remoteIP, appInfo.appid, true);
+								if(!ipAllowed) {
+									throw new LogiksError(
+										"Client Request IP is required pre-approval",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+								
+								ctx.meta.appInfo = appInfo || {};
+								ctx.meta.serverHost = serverHost || "";
+
+								ctx.meta.serverIP = serverIP;
+								ctx.meta.serverHost = serverHost;
+								ctx.meta.remoteIP = remoteIP;
+							}
+						},
+
+						{
 							path: "/webhooks",
 							authentication: false,
 							authorization: false,

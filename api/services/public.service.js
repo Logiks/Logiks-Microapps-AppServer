@@ -36,7 +36,7 @@ module.exports = {
 				fullPath: "/api/public/files/:fileUri"
 			},
 			params: {
-				"fileId": "string"
+				"fileUri": "string"
 			},
 			async handler(ctx) {
 				const fileResponse = await FILES.getFilePublished(ctx.params.fileUri,  "stream");
