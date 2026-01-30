@@ -29,5 +29,19 @@ module.exports = {
         }
 
         return tenantInfo;
-    }
+    },
+
+    resolveSSOTenant: async function(ssoId, ssoSource) {
+        const GUID = await ENCRYPTER.generateHash(`${ssoSource}:${ssoId}`);
+        var whereLogic = {
+            "blocked": "false",
+        };
+        whereLogic[`FIND_IN_SET('${GUID}', sso_codes)`] = "RAW";
+        
+        var data = await _DB.db_selectQ("appdb", "lgks_tenants", "*", whereLogic, {});
+
+        if(!data || !data.results || data.results.length<=0) return false;
+
+        return data.results[0].guid;
+    },
 }

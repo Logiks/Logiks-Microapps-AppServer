@@ -103,10 +103,11 @@ module.exports = {
                 "errors": vStatus.errors
             }
         }
+        //params
         
         if(webhookInfo.func_name && webhookInfo.func_name != "") {
             try {
-                const funcResponse = await MISC.executeFunctionByName(webhookInfo.func_name, _.extend({}, webhookInfo.params || {}, ctx.params), ctx);
+                const funcResponse = await MISC.executeFunctionByName(webhookInfo.func_name, _.extend({}, ctx.params || webhookInfo.params || {}), ctx);
                 response = funcResponse;
 
                 _DB.db_updateQ("logdb", "log_webhooks", {

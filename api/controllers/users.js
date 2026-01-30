@@ -16,6 +16,67 @@ module.exports = {
         return userInfo?.results;
     },
 
+    findOrCreateFederatedUser: async function(federatedData, federatedSource) {
+        const guid = await TENANT.resolveSSOTenant(federatedData.tenantid, federatedSource);
+        return USERS.getUserInfo(federatedData.userid, {guid: guid}).then(async (userInfo)=>{
+            if(userInfo) {
+                //User Exists, just return the info
+                return userInfo;
+            } else {
+                //Create New User
+                var newUserData = {
+                    "guid": guid,
+                    "userid": federatedData.userid,
+                    "pwd": "",
+                    "name": federatedData.displayname || federatedData.userid,
+                    "email": federatedData.email || "",
+                    "mobile": federatedData.mobile || "",
+                    "privilegeid": federatedData.privilegeid || 10, //Default to normal user
+                    "accessid": federatedData.accessid || 1, //Default to normal access
+                    "groupid": federatedData.groupid || 1,
+                    "roles": federatedData.roles ? federatedData.roles.join(",") : "",
+                    
+                    "reporting_to": federatedData.reporting_to || "",
+                    "dob": federatedData.dob || "0000-00-00",
+                    "gender": federatedData.gender || "male",
+
+                    "address": federatedData.address || "",
+                    "region": federatedData.region || "",
+                    "country": federatedData.country || "IN",
+                    "zipcode": federatedData.zipcode || "",
+                    
+                    "avatar_type": federatedData.avatar_type || "gravatar",
+                    "avatar": federatedData.email || "",
+
+                    "remarks": "",
+                    "vcode": "",
+                    "mauth": "",
+                    "refid": "",
+
+                    "expires": moment().add(6, 'months').format("YYYY-MM-DD HH:mm:ss"),
+
+                    "tags": "azuread_user",
+                    "privacy": "protected",
+                    "security_policy": "closed",
+                    "registered_site": "default",
+
+                    "blocked": "false",
+                    "created_on": moment().format("Y-M-D HH:mm:ss"),
+                    "created_by": "system",
+                    "edited_on": moment().format("Y-M-D HH:mm:ss"),
+                    "edited_by": "system",
+                };
+
+                var insertResult = await _DB.db_insertQ1("appdb", "lgks_users", newUserData);
+                if(insertResult && insertResult.insertId) {
+                    return USERS.getUserInfo(federatedData.userid, {guid: guid});
+                } else {
+                    return false;
+                }
+            }
+        });
+    },
+
     getUserInfo: async function(userid, where = {}, more = false, callback) {
         if(!where) where = {};
         where.userid = userid;
@@ -28,7 +89,7 @@ module.exports = {
             
             var userInfo = await _DB.db_selectQ("appdb", 
                 "lgks_users JOIN lgks_privileges ON lgks_privileges.id = lgks_users.privilegeid JOIN lgks_access ON lgks_access.id = lgks_users.accessid LEFT JOIN lgks_users_group ON lgks_users_group.id = lgks_users.groupid", 
-                "lgks_users.*,lgks_privileges.name as privilege_name, lgks_access.name as access_name, lgks_access.sites as scope_sites, lgks_users_group.*", 
+                "lgks_privileges.name as privilege_name, lgks_access.name as access_name, lgks_access.sites as scope_sites, lgks_users_group.*, lgks_users.*, lgks_users.userid as userId",
                 where, {});
             if(!userInfo || !userInfo?.results || userInfo.results.length<=0) return false;
 

@@ -14,6 +14,7 @@ const authRedis = _CACHE.getRedisInstance();
 const S2STOKENS_MAX = 10;
 const TLTOKENS_MAX = 10;
 const GEO_DISTANCE_MAX = 10000;
+const FEDERATED_LOGIN_TIMEOUT = 2 * 60; // 5 minutes
 
 const DEVICE_LOCK_ENABLED = false;
 const GEOFENCES_ENABLED = false;
@@ -34,6 +35,7 @@ module.exports = {
 		 * Short Lived Tokens that give temporary access to limited part of system
 		 * Used for opening application first page, etc
 		 * POST /api/public/auth/tltoken
+		 * POST /auth/tltoken
 		 */
 		tltoken: {
 			rest: {
@@ -61,6 +63,7 @@ module.exports = {
 		 * This used for IOT systems or S2S communications
 		 * 
 		 * POST /api/public/auth/s2stoken
+		 * POST /auth/s2stoken
 		 */
 		s2stoken: {
 			rest: {
@@ -99,17 +102,19 @@ module.exports = {
 			}
 		},
 
-		//for magic link login
-
+		//For magic link login related system
 		/**
 		 * Generate Auth Link
 		 * POST /api/public/auth/authlink
+		 * POST /auth/authlink
 		 */
 		authlink: {
 			rest: {
 				method: "POST",
 				path: "/authlink",
-				geolocation: { type: "string", optional: true, default: "0,0" },
+			},
+			params: {
+				geolocation: { type: "string", optional: true, default: "0,0" }
 			},
 			async handler(ctx) {
 				if(!CONFIG.logiksauth.enable) {
@@ -132,6 +137,7 @@ module.exports = {
 		/**
 		 * Called while returning from LogiksAuth Pages
 		 * POST /api/public/auth/logiksauth-login
+		 * POST /auth/logiksauth-login
 		 */
 		logiksAuthLogin: {
 			rest: {
@@ -148,86 +154,153 @@ module.exports = {
 			}
 		},
 
-		/**
-		 * LogiksAuth Redirect Login Key Verification.
-		 * POST /api/public/auth/authtoken
-		 * To Be removed in future
-		 * @todo remove
-		 */
-		// authtoken: {
-		// 	rest: {
-		// 		method: "POST",
-		// 		path: "/authtoken"
-		// 	},
-		// 	params: {
-		// 		appid: "string",
-		// 		client_key: "string",
-		// 		deviceType: { type: "string", optional: true, default: "web" },
-		// 		geolocation: { type: "string", optional: true, default: "0,0" },
-		// 	},
-		// 	async handler(ctx) {
-				
-		// 		const { deviceType } = ctx.params;
-		// 		const username = "";
-		// 		const password = ""; 
-		// 		const privilage= "admin";
-		// 		const roles= ["admin"];
-		// 		const scopes= [
-		// 			"tenant-1:orders:read",
-		// 			"tenant-1:orders:write",
-		// 			"tenant-1:docs:read"
-		// 		];
-
-		// 		const userData = {
-		// 			id: username,
-		// 			username: username,
-		// 			tenantId: username,
-
-		// 			guid: ctx.params.appid,
-		// 			userId: "ATKN",
-		// 			geolocation: ctx.params.geolocation?ctx.params.geolocation:"0,0",
-
-		// 			privilage: privilage,
-		// 			roles: roles,
-		// 			scopes: scopes
-		// 		};
-
-		// 		// if (username !== fakeUserFromDB.username) {
-		// 		// 	throw new LogiksError("Invalid credentials", 401);
-		// 		// }
-
-		// 		// const valid = await bcrypt.compare(password, fakeUserFromDB.passwordHash);
-		// 		// if (!valid) {
-		// 		// 	throw new LogiksError("Invalid credentials", 401);
-		// 		// }
-
-		// 		const token = this.issueTokensForUser(userData, ctx.meta.remoteIP, deviceType, ctx);
-		// 		await log_login(userData, "AUTHTOKEN-GENERATED", "/authtoken", ctx);
-		// 		return token;
-		// 	}
-		// },
-
-		//To allow 3rd party federated login (Google, Facebook, Apple, etc), called while returning to application
-		federatedLogin: {
+		//Starting of Federated Login section To allow 3rd party federated login (Google, Facebook, Apple, etc), called while returning to application
+		federatedLoginGet: {
 			rest: {
 				method: "GET",
-				path: "/federated-login/:source?"
+				fullPath: "/auth/federated-login/:source?"
 			},
 			async handler(ctx) {
-				console.log("FEDERATED_LOGIN", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
-				return {
-					"status": "success",
-					"message": "Federated login is not yet implemented"
+				// console.log("FEDERATED_LOGIN_GET", { "params": ctx.params, "headers": ctx.headers });
+				const result = await AUTHLOGIN.doFederatedLogin(ctx);
+
+				if(result.status=="success") {
+					const userInfo = result.user;
+					const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
+					const retokenId = UNIQUEID.generate(10);
+
+					await authRedis.set(
+						retokenId,
+						JSON.stringify({ token, deviceType: "web", user: userInfo, ip: ctx.meta.remoteIP }),
+						"EX",
+						FEDERATED_LOGIN_TIMEOUT
+					);
+					var redirectURL = ctx.meta.appInfo.base_url;
+					if(!redirectURL) {
+						redirectURL = "";
+					}
+					redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "retoken=" + retokenId;
+					console.log("X1", userInfo, token, redirectURL);
+
+					ctx.meta.$statusCode = 302;
+					ctx.meta.$responseHeaders = {
+						Location: redirectURL
+					};
+					return redirectURL;
+				} else {
+					return result;
 				}
 			}
 		},
 
+		federatedLoginPost: {
+			rest: {
+				method: "POST",
+				fullPath: "/auth/federated-login/:source?"
+			},
+			async handler(ctx) {
+				// console.log("FEDERATED_LOGIN_POST", { "params": ctx.params, "headers": ctx.headers });
+				const result = await AUTHLOGIN.doFederatedLogin(ctx);
+
+				if(result.status=="success") {
+					const userInfo = result.user;
+					const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
+					const retokenId = UNIQUEID.generate(10);
+
+					await authRedis.set(
+						retokenId,
+						JSON.stringify({ token, deviceType: "web", user: userInfo, ip: ctx.meta.remoteIP }),
+						"EX",
+						FEDERATED_LOGIN_TIMEOUT
+					);
+					var redirectURL = ctx.meta.appInfo.base_url;
+					if(!redirectURL) {
+						redirectURL = "";
+					}
+					redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "retoken=" + retokenId;
+					console.log("X2", userInfo, token, redirectURL);
+
+					ctx.meta.$statusCode = 302;
+					ctx.meta.$responseHeaders = {
+						Location: redirectURL
+					};
+					return redirectURL;
+				} else {
+					return result;
+				}
+			}
+		},
+
+		doTokenLogin: {
+			rest: {
+				method: "POST",
+				path: "/fedtoken"
+			},
+			params: {
+				retoken: "string",
+				deviceid: { type: "string", optional: true, default: "" },
+				deviceType: { type: "string", optional: true, default: "web" },
+				geolocation: { type: "string", optional: true, default: "0,0" },
+			},
+			async handler(ctx) {
+				// console.log("FEDERATED_LOGIN_POST", { "params": ctx.params, "headers": ctx.headers });
+				var { deviceType, geolocation, retoken } = ctx.params;
+				const stored = await authRedis.get(retoken);
+
+				if (!stored) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "VERIFY-RETOKEN", "/retoken", "Invalid or expired Token (1)", ctx);
+					throw new LogiksError("Invalid or expired Token", 401);
+				}
+
+				const parsed = JSON.parse(stored);
+				if(!parsed) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "VERIFY-RETOKEN", "/retoken", "Invalid or expired Token (2)", ctx);
+					throw new LogiksError("Invalid or expired Token", 401);
+				}
+
+				if(ctx.meta.remoteIP != parsed.ip) {
+					await log_login_error({
+						"guid": parsed.user.guid,
+						"userId": parsed.user.userid,
+						"geolocation": geolocation
+					}, "VERIFY-RETOKEN", "/retoken", "IP mismatch", ctx);
+					throw new LogiksError("Invalid or expired Token (IP mismatch)", 401);
+				}
+
+				if(deviceType && deviceType != parsed.deviceType) {
+					await log_login_error({
+						"guid": parsed.user.guid,
+						"userId": parsed.user.userid,
+						"geolocation": geolocation
+					}, "VERIFY-RETOKEN", "/retoken", "Device type mismatch", ctx);
+					throw new LogiksError("Invalid or expired Token (Device type mismatch)", 401);
+				}
+
+				await log_login(parsed.user, "USER-LOGIN", "/retoken", ctx);
+				return parsed.token;
+			}
+		},
+		//Ending of Federated Login section
+
 		/**
 		 * Username/password login → access + refresh token.
 		 * POST /api/public/auth/login
+		 * POST /auth/login
 		 */
 		login: {
-			rest: "POST /login",
+			// rest: "POST /login",
+			rest: {
+				method: "POST",
+				path: "/login",
+			},
 			params: {
 				username: "string",
 				password: "string",
@@ -327,6 +400,7 @@ module.exports = {
 		/**
 		 * Request OTP.
 		 * POST /api/public/auth/request-otp
+		 * POST /auth/request-otp
 		 */
 		requestOtp: {
 			rest: {
@@ -375,6 +449,7 @@ module.exports = {
 		/**
 		 * Verify OTP → access + refresh token.
 		 * POST /api/public/auth/verify-otp
+		 * POST /auth/verify-otp
 		 */
 		verifyOtp: {
 			rest: {
@@ -426,6 +501,7 @@ module.exports = {
 		/**
 		 * Refresh token (rotating).
 		 * POST /api/public/auth/refresh
+		 * POST /auth/refresh
 		 */
 		refresh: {
 			rest: {
@@ -731,6 +807,7 @@ module.exports = {
 				return stored;
 			}
 		},
+
 		//Verify Generated TL Token for TLTOKENS_MAX time use and IP match
 		verifyTLToken: {
 			params: {
@@ -814,7 +891,21 @@ module.exports = {
 					console.error("Error finding UserInfo");
 				}
 
-				return userInfo;
+				return {
+					"userId": userInfo["userId"],
+					"tenantId": userInfo["tenantId"],
+					"guid": userInfo["guid"],
+					"name": userInfo["name"],
+					"reporting_to": userInfo["reporting_to"],
+					"dob": userInfo["dob"],
+					"gender": userInfo["gender"],
+					"mobile": userInfo["mobile"],
+					"email": userInfo["email"],
+					"address": userInfo["address"],
+					"region": userInfo["region"],
+					"country": userInfo["country"],
+					"zipcode": userInfo["zipcode"],
+				};
 			},
 		}
 	},

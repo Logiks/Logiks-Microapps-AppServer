@@ -258,8 +258,9 @@ module.exports = {
 					},
 
 					routes: [
+						//Auth Login for authentication related APIs
 						{
-							path: "/auth",
+							path: "/",//auth 
 							authentication: false,
 							authorization: false,
 							opts: {
@@ -276,7 +277,6 @@ module.exports = {
 							use: [
 								// Attach IP/UA on every request
 								(req, res, next) => {
-									console.log("AUTH_PARAMS", req.params, req.query, req.body, req.method);
 									req.clientIp = MISC.getClientIP(req);
 									req.clientUa = req.headers["user-agent"] || "unknown";
 									next();
@@ -368,6 +368,7 @@ module.exports = {
 							}
 						},
 
+						// WEBHOOK routes (auth not required, but can be secured inside action)
 						{
 							path: "/webhooks",
 							authentication: false,
@@ -483,6 +484,7 @@ module.exports = {
 								ctx.meta.remoteIP = remoteIP;
 							}
 						},
+
 						// PUBLIC routes (no auth required)
 						{
 							path: "/api/public",

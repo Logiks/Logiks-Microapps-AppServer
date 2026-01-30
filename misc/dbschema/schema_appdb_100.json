@@ -2281,6 +2281,12 @@
         "default": null,
         "primary": false
       },
+      "sso_codes": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
       "allowed_apps": {
         "type": "varchar(255)",
         "nullable": true,
