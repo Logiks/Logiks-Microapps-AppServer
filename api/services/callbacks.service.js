@@ -1,13 +1,14 @@
 "use strict";
 
 module.exports = {
-	name: "webhooks",
+	name: "callbacks",
 
 	actions: {
 		runWebhook: {
             rest: {
 				method: "POST",
-				fullPath: "/webhooks/:webhookid"
+				// fullPath: "/callbacks/:webhookid"
+                path: "/:webhookid"
 			},
             params: {
                 // cmd: "string"
