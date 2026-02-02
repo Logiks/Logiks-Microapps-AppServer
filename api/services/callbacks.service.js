@@ -7,14 +7,14 @@ module.exports = {
 		runWebhook: {
             rest: {
 				method: "POST",
-				// fullPath: "/callbacks/:webhookid"
-                path: "/:webhookid"
+				fullPath: "/callbacks/:callbackid"
+                // path: "/:callbackid"
 			},
             params: {
                 // cmd: "string"
             },
 			async handler(ctx) {
-                const response = await WEBHOOKS.receiveRequest(ctx.params.webhookid, ctx);
+                const response = await WEBHOOKS.receiveRequest(ctx.params.callbackid, ctx);
                 return response;
             }
         }
