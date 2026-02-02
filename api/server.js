@@ -370,14 +370,14 @@ module.exports = {
 
 						// WEBHOOK routes (auth not required, but can be secured inside action)
 						{
-							path: "/callbacks",
+							path: "/webhooks",
 							authentication: false,
 							authorization: false,
 							opts: {
 								authRequired: false
 							},
 							whitelist: [
-								"callbacks.*"
+								"webhooks.*"
 							],
 							bodyParsers: {
 								json: true,
