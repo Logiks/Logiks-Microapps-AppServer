@@ -36,7 +36,7 @@ module.exports = {
         const webhookData = await _DB.db_selectQ("appdb", "sys_webhooks", "*", { 
                 endpointid: endpoint, 
                 method: ctx.meta.method, 
-                site: ctx.meta.appInfo.appid || "default",
+                site: [[ctx.meta.appInfo.appid || "default", "*"], "IN"],
                 blocked: "false" 
             });
         if(!webhookData || webhookData?.results.length == 0) {
