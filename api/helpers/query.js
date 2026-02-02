@@ -246,14 +246,14 @@ module.exports = {
 
                 switch(sqlSingleObj.type) {
                     case "INNER":
-                        sql += ` INNER JOIN (${query}) ${as} ON ${condition}`;
+                        sql += ` INNER JOIN ${query} ${as} ON ${condition}`;
                         break;
                     case "RIGHT":
-                        sql += ` RIGHT JOIN (${query}) ${as} ON ${condition}`;
+                        sql += ` RIGHT JOIN ${query} ${as} ON ${condition}`;
                         break;
                     case "LEFT":
                     default:
-                        sql += ` LEFT JOIN (${query}) ${as} ON ${condition}`;
+                        sql += ` LEFT JOIN ${query} ${as} ON ${condition}`;
                         break;
                 }
             });
