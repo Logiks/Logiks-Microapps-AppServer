@@ -215,10 +215,10 @@ module.exports = {
 					);
 					var redirectURL = "//"+ctx.meta.serverHost;
 					if(!redirectURL) {
-						redirectURL = "";
+						redirectURL = "//";
 					}
 					redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "retoken=" + retokenId;
-					console.log("X2", userInfo, token, redirectURL);
+					// console.log("X2", userInfo, token, redirectURL);
 
 					ctx.meta.$statusCode = 302;
 					ctx.meta.$responseHeaders = {
@@ -226,7 +226,17 @@ module.exports = {
 					};
 					return redirectURL;
 				} else {
-					return result;
+					var redirectURL = "//"+ctx.meta.serverHost;
+					if(!redirectURL) {
+						redirectURL = "//";
+					}
+					redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "message=" + result.message;
+					
+					ctx.meta.$statusCode = 302;
+					ctx.meta.$responseHeaders = {
+						Location: redirectURL
+					};
+					return redirectURL;
 				}
 			}
 		},
