@@ -213,7 +213,7 @@ module.exports = {
 						"EX",
 						FEDERATED_LOGIN_TIMEOUT
 					);
-					var redirectURL = ctx.meta.serverHost;
+					var redirectURL = "//"+ctx.meta.serverHost;
 					if(!redirectURL) {
 						redirectURL = "";
 					}

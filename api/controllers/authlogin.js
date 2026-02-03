@@ -35,7 +35,6 @@ module.exports = {
                         mobile: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/mobile")[0]?.AttributeValue,
                     };
 
-                    const guid = await TENANT.resolveSSOTenant(userData.tenantid, ctx.params.source);
                     // console.log("ctx.meta.appInfo", ctx.meta.appInfo, guid);
 
                     const allowFederatedRegistration = ctx.meta.appInfo?.settings?.allow_federated_registration || false;
@@ -53,6 +52,7 @@ module.exports = {
                             "user": userInfo
                         }
                     } else {
+                        const guid = await TENANT.resolveSSOTenant(userData.tenantid, ctx.params.source);
                         const userInfo = await USERS.getUserInfo(userData.userid, {guid: guid})
                         if(!userInfo) {
                             return {
