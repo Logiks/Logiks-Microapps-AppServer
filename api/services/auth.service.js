@@ -203,7 +203,9 @@ module.exports = {
 				const result = await AUTHLOGIN.doFederatedLogin(ctx);
 
 				if(result.status=="success") {
-					const userInfo = result.user;
+					var userInfo = result.user;
+					userInfo.userId = userInfo.userid;
+					
 					const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
 					const retokenId = UNIQUEID.generate(10);
 
@@ -1203,7 +1205,7 @@ async function log_login(userInfo, loginType, loginURI, ctx) {
 	var createData = {
 		"appid": ctx.meta.appInfo.appid, 
 		"guid": userInfo.guid,
-		"loginid": userInfo.userId, 
+		"loginid": userInfo.userId || userInfo.userid, 
 		"event_type": loginType, 
 		"geolocation": userInfo.geolocation, 
 		"uri": loginURI, 
