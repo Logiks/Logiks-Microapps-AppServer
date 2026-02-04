@@ -34,7 +34,7 @@ module.exports = {
                         email: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")[0]?.AttributeValue,
                         mobile: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/mobile")[0]?.AttributeValue,
                     };
-
+                    if(userData.userid) userData.userid = userData.userid.toLowerCase();
                     // console.log("ctx.meta.appInfo", ctx.meta.appInfo, guid);
 
                     const allowFederatedRegistration = ctx.meta.appInfo?.settings?.allow_federated_registration || false;
