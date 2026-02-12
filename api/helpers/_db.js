@@ -534,7 +534,7 @@ module.exports = {
 		var sql = "DELETE FROM "+table+" WHERE "+sqlWhere.join(" AND ");
 
 		if(CONFIG.log_sql) {
-			console.log("SQL", sql, vals);
+			console.log("SQL", sql);
 		}
 
 		const results = await new Promise((resolve, reject) => {
