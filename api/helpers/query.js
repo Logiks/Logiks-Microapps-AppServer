@@ -241,8 +241,10 @@ module.exports = {
         if(sqlObj.join && Array.isArray(sqlObj.join)) {
             _.each(sqlObj.join, function(sqlSingleObj, k) {
                 const query = sqlSingleObj.query;
-                const condition = sqlSingleObj.condition;
+                var condition = sqlSingleObj.condition;
                 const as = sqlSingleObj.as?sqlSingleObj.as:"";
+
+                condition = QUERY.updateWhereFromEnv(condition, metaInfo);
 
                 switch(sqlSingleObj.type) {
                     case "INNER":
