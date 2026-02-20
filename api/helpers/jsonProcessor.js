@@ -351,10 +351,13 @@ module.exports = {
                     };
             }
             if(v.autocomplete) {
-                v.autocomplete.src = {
-                    "type": "sql",
-                    queryid: await QUERY.storeQuery(v.autocomplete.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.autocomplete.0`}),
-                };
+                if(!v.autocomplete.src.type) v.autocomplete.src.type = "sql";
+                if(v.autocomplete.src.type=="sql") {
+                    v.autocomplete.src = {
+                        "type": "sql",
+                        queryid: await QUERY.storeQuery(v.autocomplete.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.autocomplete.0`}),
+                    };
+                }
             }
             if(v.default && v.default.length>0) {
                 v.default = _replaceCtx(v.default, ctx);
