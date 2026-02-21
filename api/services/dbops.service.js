@@ -406,6 +406,11 @@ module.exports = {
                     );
                 }
                 dataFields = _.extend(dataFields, MISC.generateDefaultDBRecord(ctx, true));
+
+                var forcefillData = await ENV.fetchEnvInfo(ctx.meta);
+                forcefillData = _.extend(forcefillData, ctx.params);
+                forcefill = QUERY.updateWhereFromEnv(forcefill, forcefillData);
+                if(forcefill && Object.keys(forcefill).length>0) dataFields = _.extend(dataFields, forcefill);
                 
                 //Single Update
                 if(!sqlWhere || Array.isArray(sqlWhere)) sqlWhere = {};
