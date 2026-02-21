@@ -80,6 +80,13 @@ module.exports = {
                 //         jsonQuery.operation
                 //     );
                 // }
+
+                if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
+                    _.each(jsonQuery.hooks.presubmit, async function(func, k) {
+                        var a1 = await _call(func, {"data": dataFields, "operation": "insert"});
+                        if(a1) dataFields = a1;
+                    });
+                }
                 
                 const sqlTable = jsonQuery.source.table;
                 const sqlFields = filterNoDbNoSave(jsonQuery.fields);
@@ -163,6 +170,13 @@ module.exports = {
                 //         jsonQuery.operation
                 //     );
                 // }
+
+                if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
+                    _.each(jsonQuery.hooks.presubmit, async function(func, k) {
+                        var a1 = await _call(func, {"data": dataFields, "operation": "bulk"});
+                        if(a1) dataFields = a1;
+                    });
+                }
                 
                 const sqlTable = jsonQuery.source.table;
                 const sqlFields = filterNoDbNoSave(jsonQuery.fields);
@@ -336,6 +350,13 @@ module.exports = {
                 //     );
                 // }
 
+                if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
+                    _.each(jsonQuery.hooks.presubmit, async function(func, k) {
+                        var a1 = await _call(func, {"data": dataFields, "operation": "update"});
+                        if(a1) dataFields = a1;
+                    });
+                }
+
                 const sqlTable = jsonQuery.source.table;
                 var sqlWhere = jsonQuery.source.where;
                 const sqlFields = filterNoDbNoSave(jsonQuery.fields);
@@ -428,6 +449,13 @@ module.exports = {
                 //         jsonQuery.operation
                 //     );
                 // }
+
+                if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
+                    _.each(jsonQuery.hooks.presubmit, async function(func, k) {
+                        var a1 = await _call(func, {"data": dataFields, "operation": "delete"});
+                        if(a1) dataFields = a1;
+                    });
+                }
 
                 const sqlTable = jsonQuery.source.table;
                 var sqlWhere = jsonQuery.source.where;
