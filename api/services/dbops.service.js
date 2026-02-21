@@ -129,7 +129,7 @@ module.exports = {
                         _call(func, {"id": insertId, "data": dataFields, "operation": "insert"});
                     });
                 }
-                ctx.emit("dbops.create", {"id": insertId, "data": dataFields, "operation": "insert", "json": jsonQuery});
+                ctx.emit("dbops.create", {"id": insertId, "data": dataFields, "operation": "insert", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user});
                 
                 return {
                     "status": "success",
@@ -223,7 +223,7 @@ module.exports = {
                         });
                     }
 
-                    ctx.emit("dbops.bulk", {"response": dbResponse, "data": dataFields, "operation": "bulk", "json": jsonQuery});
+                    ctx.emit("dbops.bulk", {"response": dbResponse, "data": dataFields, "operation": "bulk", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user});
 
                     return dbResponse;
                 } else {
@@ -414,7 +414,7 @@ module.exports = {
                     });
                 }
 
-                ctx.emit("dbops.update", {"where": sqlWhere, "data": dataFields, "operation": "update", "json": jsonQuery});
+                ctx.emit("dbops.update", {"where": sqlWhere, "data": dataFields, "operation": "update", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user});
                 
                 return dbResponse;
             }
@@ -494,7 +494,7 @@ module.exports = {
                     });
                 }
 
-                ctx.emit("dbops.delete", {"where": sqlWhere, "data": dataFields, "operation": "delete", "json": jsonQuery});
+                ctx.emit("dbops.delete", {"where": sqlWhere, "data": dataFields, "operation": "delete", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user});
 
                 return dbResponse;
             }
