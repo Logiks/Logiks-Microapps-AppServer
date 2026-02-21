@@ -82,7 +82,7 @@ module.exports = {
                 // }
                 
                 const sqlTable = jsonQuery.source.table;
-                const sqlFields = jsonQuery.fields;
+                const sqlFields = filterNoDbNoSave(jsonQuery.fields);
                 var forcefill = jsonQuery.forcefill;
                 const userInfo = jsonQuery.userInfo;
                 const validationRules = convertToValidatorRules(sqlFields, "create");
@@ -165,7 +165,7 @@ module.exports = {
                 // }
                 
                 const sqlTable = jsonQuery.source.table;
-                const sqlFields = jsonQuery.fields;
+                const sqlFields = filterNoDbNoSave(jsonQuery.fields);
                 var forcefill = jsonQuery.forcefill;
                 const userInfo = jsonQuery.userInfo;
                 const validationRules = convertToValidatorRules(sqlFields);
@@ -255,7 +255,7 @@ module.exports = {
                 const sqlTable = jsonQuery.source.table;
                 var sqlWhere = jsonQuery.source.where;
                 const sqlRefid = jsonQuery.source.refid;
-                var sqlFields = jsonQuery.fields;
+                var sqlFields = filterNoDbNoSave(jsonQuery.fields);
 
                 if(!sqlWhere || Array.isArray(sqlWhere)) sqlWhere = {};
                 if(sqlRefid) {
@@ -338,7 +338,7 @@ module.exports = {
 
                 const sqlTable = jsonQuery.source.table;
                 var sqlWhere = jsonQuery.source.where;
-                const sqlFields = jsonQuery.fields;
+                const sqlFields = filterNoDbNoSave(jsonQuery.fields);
                 var forcefill = jsonQuery.forcefill;
                 const userInfo = jsonQuery.userInfo;
                 var sqlRefid = jsonQuery.source.refid;
@@ -470,4 +470,13 @@ module.exports = {
             return ctx.meta.user.secure_hash?ctx.meta.user.secure_hash:UNIQUEID.generate(16);
         }
     }
+}
+
+
+function filterNoDbNoSave(obj) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([key, field]) => {
+      return field.nodb !== true && field.nosave !== true;
+    })
+  );
 }

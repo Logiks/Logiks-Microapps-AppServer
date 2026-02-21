@@ -1,4 +1,6 @@
 //MySQL Database Helper Functions
+// SELECT @@global.time_zone, @@session.time_zone, @@system_time_zone;
+// If system_time_zone = IST, then in config mysql - add timezone: "-05:30";
 
 const mysql = require('mysql2');
 
@@ -15,7 +17,7 @@ module.exports = {
 				delete conf.keyid;
 
 				//conf["nestTables"] = ".";//nestTables: true = for tree
-
+				// conf["timezone"] = "-05:30";
 				conf["dateStrings"] = true;
 
 				conf["typeCast"] = function (field, next) {
