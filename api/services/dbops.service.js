@@ -84,7 +84,14 @@ module.exports = {
                 if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
                     _.each(jsonQuery.hooks.presubmit, async function(func, k) {
                         var a1 = await _call(func, {"data": dataFields, "operation": "insert"});
-                        if(a1) dataFields = a1;
+                        if(a1===false) {
+                            throw new LogiksError(
+                                "Invalid data or wrong record submited",
+                                400,
+                                "INVALID_REQUEST"
+                            );
+                        }
+                        if(!a1) dataFields = a1;
                     });
                 }
                 
@@ -175,7 +182,14 @@ module.exports = {
                 if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
                     _.each(jsonQuery.hooks.presubmit, async function(func, k) {
                         var a1 = await _call(func, {"data": dataFields, "operation": "bulk"});
-                        if(a1) dataFields = a1;
+                        if(a1===false) {
+                            throw new LogiksError(
+                                "Invalid data or wrong record submited",
+                                400,
+                                "INVALID_REQUEST"
+                            );
+                        }
+                        if(!a1) dataFields = a1;
                     });
                 }
                 
@@ -356,7 +370,14 @@ module.exports = {
                 if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
                     _.each(jsonQuery.hooks.presubmit, async function(func, k) {
                         var a1 = await _call(func, {"data": dataFields, "operation": "update"});
-                        if(a1) dataFields = a1;
+                        if(a1===false) {
+                            throw new LogiksError(
+                                "Invalid data or wrong record submited",
+                                400,
+                                "INVALID_REQUEST"
+                            );
+                        }
+                        if(!a1) dataFields = a1;
                     });
                 }
 
@@ -458,7 +479,14 @@ module.exports = {
                 if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
                     _.each(jsonQuery.hooks.presubmit, async function(func, k) {
                         var a1 = await _call(func, {"data": dataFields, "operation": "delete"});
-                        if(a1) dataFields = a1;
+                        if(a1===false) {
+                            throw new LogiksError(
+                                "Invalid data or wrong record submited",
+                                400,
+                                "INVALID_REQUEST"
+                            );
+                        }
+                        if(!a1) dataFields = a1;
                     });
                 }
 
