@@ -129,6 +129,7 @@ module.exports = {
                         _call(func, {"id": insertId, "data": dataFields, "operation": "insert"});
                     });
                 }
+                ctx.emit("dbops.create", {"id": insertId, "data": dataFields, "operation": "insert", "json": jsonQuery});
                 
                 return {
                     "status": "success",
@@ -221,6 +222,8 @@ module.exports = {
                             _call(func, {"response": dbResponse, "operation": "insert_bulk"});
                         });
                     }
+
+                    ctx.emit("dbops.bulk", {"response": dbResponse, "data": dataFields, "operation": "bulk", "json": jsonQuery});
 
                     return dbResponse;
                 } else {
@@ -410,6 +413,8 @@ module.exports = {
                         _call(func, {"where": sqlWhere, "data": dataFields, "operation": "update"});
                     });
                 }
+
+                ctx.emit("dbops.update", {"where": sqlWhere, "data": dataFields, "operation": "update", "json": jsonQuery});
                 
                 return dbResponse;
             }
@@ -488,6 +493,8 @@ module.exports = {
                         _call(func, {"where": sqlWhere, "data": {}, "operation": "delete"});
                     });
                 }
+
+                ctx.emit("dbops.delete", {"where": sqlWhere, "data": dataFields, "operation": "delete", "json": jsonQuery});
 
                 return dbResponse;
             }
