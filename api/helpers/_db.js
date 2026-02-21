@@ -16,6 +16,16 @@ module.exports = {
 
 				//conf["nestTables"] = ".";//nestTables: true = for tree
 
+				conf["dateStrings"] = true;
+
+				conf["typeCast"] = function (field, next) {
+				    if (field.type === 'DATE') {
+				      const val = field.string();
+				      return (val === '0000-00-00' || val == null || val == "") ? null : new Date(val);
+				    }
+				    return next();
+			  	}
+
 				//.filter(a=>["host","port","user","password","database","insecureAuth","connectionLimit","debug"].indexOf(a)>=0)
 				_MYSQL[keyid] = mysql.createPool(conf);
 
