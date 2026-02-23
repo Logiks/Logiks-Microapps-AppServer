@@ -339,7 +339,7 @@ module.exports = {
                     for (let k1 = 0; k1 < v.ajaxchain.length; k1++) {
                         const obj = v.ajaxchain[k1];
                         
-                        if(obj.type=="sql") {
+                        if(obj.src.type=="sql") {
                             v.ajaxchain[k1].src = {
                                 "type": "sql",
                                 queryid: await QUERY.storeQuery(v.ajaxchain[k1].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.${k1}`}),
@@ -347,7 +347,7 @@ module.exports = {
                         }
                     }
                 else {
-                    if(v.ajaxchain.type=="sql") {
+                    if(v.ajaxchain.src.type=="sql") {
                         v.ajaxchain.src = {
                             "type": "sql",
                             queryid: await QUERY.storeQuery(v.ajaxchain.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.0`}),
