@@ -1154,7 +1154,7 @@ async function generateUserMap(userInfo, geolocation, geoIP, appid) {
 		guid: userInfo.guid,
 		name: userInfo.name,
 		reporting_to: userInfo.reporting_to,
-		dob: userInfo.dob.split("T")[0],
+		dob: userInfo.dob?.split("T")[0],
 		gender: userInfo.gender,
 		mobile: userInfo.mobile,
 		email: userInfo.email,
