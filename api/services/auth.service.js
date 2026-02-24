@@ -551,7 +551,7 @@ module.exports = {
 
 				const jti = payload.jti;
 				const key = `refresh:${jti}`;
-				const stored = await authRedis.get(key);
+				var stored = await authRedis.get(key);
 
 				if (!stored) {
 					await log_login_error({
@@ -560,6 +560,17 @@ module.exports = {
 						"geolocation": geolocation
 					}, "USER-REFRESH-LOGIN", "/refresh", "Refresh token revoked", ctx);
 					throw new LogiksError("Refresh token revoked", 401);
+				}
+
+				try {
+					if(typeof stored == "string") stored = JSON.parse(stored);
+				} catch(e) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "USER-REFRESH-LOGIN", "/refresh", "Refresh token revoked", ctx);
+					throw new LogiksError("Refresh token revoked (2)", 401);
 				}
 
 				// Rotate: delete old
