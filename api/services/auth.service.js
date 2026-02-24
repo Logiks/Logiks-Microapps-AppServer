@@ -576,7 +576,7 @@ module.exports = {
 				// Rotate: delete old
 				await authRedis.del(key);
 
-				var userInfo = await authRedis.get(`user:${ctx.meta.sessionId}`);
+				var userInfo = await authRedis.get(`user:${stored.sessionId}`);
 				try {
 					userInfo = JSON.parse(userInfo);
 				} catch(e) {
