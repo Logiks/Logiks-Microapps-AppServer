@@ -129,5 +129,11 @@ module.exports = {
                 return {"status": "success"};
             }
         }
+    },
+    events: {
+        async "messaging.dispatch"(payload, nodeId) {
+            if(!payload.channel) return;
+            return await MESSAGING.sendMessage(payload.channel, payload);
+        }
     }
 }
