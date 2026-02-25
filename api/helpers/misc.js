@@ -135,9 +135,9 @@ module.exports = {
       return {
         "guid": ctx?.meta?.user?.guid || "-",
         "created_on": dated,
-        "created_by": ctx.meta?.user?.userId || "-",
+        "created_by": ctx?.meta?.user?.userId || "-",
         "edited_on": dated,
-        "edited_by": ctx.meta?.user?.userId || "-",
+        "edited_by": ctx?.meta?.user?.userId || "-",
       };
     }
   },

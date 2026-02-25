@@ -94,7 +94,7 @@ module.exports = {
             params.body = templateContent.content;
             if(!params.subject || params.subject.length<2) params.subject = templateContent.subject;
         } else {
-            params.body = _replace(params.body, _.extend({}, ctx.params, ctx.meta));
+            params.body = _replace(params.body, _.extend({}, ctx?.params || {}, ctx?.meta || {}));
         }
 
         const transporter = nodemailer.createTransport(driverConfig);
@@ -107,7 +107,7 @@ module.exports = {
         };
         
         var logData = _.extend({
-            appid: ctx.meta.appInfo.appid,
+            appid: ctx?.meta?.appInfo.appid || "-",
             channel: "email",
             vendor: driverId, 
             template_id: params.template_code || "-", 
