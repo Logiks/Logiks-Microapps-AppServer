@@ -120,10 +120,10 @@ module.exports = {
             };
         }
 
-        if(responseType=="stream") {
+        if(responseContent.responseType=="stream") {
             return {
                 ...responseObj,
-                stream: responseContent,
+                stream: responseContent.response,
                 mime: fileMime,
                 filename: sqlResult.filename,
                 responseType: responseType
@@ -131,7 +131,7 @@ module.exports = {
         } else if(responseType=="buffer") {
             return {
                 ...responseObj,
-                buffer: responseContent,
+                buffer: responseContent.response,
                 mime: fileMime,
                 filename: sqlResult.filename,
                 responseType: responseType
@@ -139,7 +139,7 @@ module.exports = {
         } else if(responseType=="content") {
             return {
                 ...responseObj,
-                content: responseContent,
+                content: responseContent.response,
                 mime: fileMime,
                 filename: sqlResult.filename,
                 responseType: responseType

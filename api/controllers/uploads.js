@@ -162,6 +162,8 @@ module.exports = {
 
 async function get_from_store(fileObj, responseType = "stream") {
 	if(!fileObj.driver) fileObj.driver = CONFIG.storage.driver;
+
+	//CONFIG.storage.encrypt
 	
 	switch (fileObj.driver) {
 		case "local":
@@ -172,13 +174,25 @@ async function get_from_store(fileObj, responseType = "stream") {
 			}
 
 			if(responseType=="stream") {
-				return fs.createReadStream(filePath);
+				return {
+					response: fs.createReadStream(filePath),
+					responseType: responseType
+				};
 			} else if(responseType=="buffer") {
-				return fs.readFileSync(filePath);
+				return {
+					response: fs.readFileSync(filePath),
+					responseType: responseType
+				}
 			} else if(responseType=="content") {
-				return await fs.readFileSync(filePath, "utf8");
+				return {
+					response: await fs.readFileSync(filePath, "utf8"),
+					responseType: responseType
+				}
 			} else {
-				return await fs.readFileSync(filePath, "utf8");
+				return {
+					response: await fs.readFileSync(filePath, "utf8"),
+					responseType: responseType
+				}
 			}
 			break;
 	
@@ -203,6 +217,8 @@ async function get_from_store(fileObj, responseType = "stream") {
 
 async function move_to_store(tempFilePath, fileName, bucket) {
 	// console.log("XXXXXXX", CONFIG.storage, tempFilePath, fileName, bucket);
+
+	//CONFIG.storage.encrypt
 	
 	switch (CONFIG.storage.driver) {
 		case "local":
