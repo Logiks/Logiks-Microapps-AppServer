@@ -845,6 +845,12 @@
         "default": "0000",
         "primary": false
       },
+      "driver": {
+        "type": "varchar(25)",
+        "nullable": false,
+        "default": "local",
+        "primary": false
+      },
       "flags": {
         "type": "varchar(155)",
         "nullable": true,
@@ -853,12 +859,6 @@
       },
       "metadata": {
         "type": "longtext",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "extracted_data": {
-        "type": "longblob",
         "nullable": true,
         "default": null,
         "primary": false

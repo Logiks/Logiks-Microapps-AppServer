@@ -681,13 +681,14 @@ module.exports = {
 								(req, res, next) => {
 									if(req.method=="POST") {
 										const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
+										const TEMP_UPLOAD_ROOT = UPLOADS.tempUploadFolder();
 										
 										switch(req.url) {
 											case "/files/upload":
 												UPLOADS.getUploadHandler().single("file")(req, res, err => {
 													if (err) return next();
 
-													// UPLOADS.registerUploadedFile(req, [req.file]);
+													// UPLOADS.moveUploadedFile(req, [req.file]);
 													
 													// console.log("Uploaded fields:", req.file);
 
@@ -702,7 +703,7 @@ module.exports = {
 												UPLOADS.getUploadHandler().array("files", 50)(req, res, err => {
 													if (err) return next();
 
-													// UPLOADS.registerUploadedFile(req, req.files);
+													// UPLOADS.moveUploadedFile(req, req.files);
 													
 													// console.log("Uploaded fields:", req.files);
 
@@ -720,12 +721,12 @@ module.exports = {
 													try {
 														const fileFields = [...new Set(req.files.map(f => f.fieldname))];
 
-														// UPLOADS.registerUploadedFile(req, req.files);
+														// UPLOADS.moveUploadedFile(req, req.files);
 
 														// console.log("Uploaded fields:", fileFields);
 
 														_.each(fileFields, function(field, k) {
-															req.$ctx.meta[field] = req[field]?.path.replace(BASE_UPLOAD_ROOT, "")
+															req.$ctx.meta[field] = req[field]?.path.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, "");
 														});
 
 														req.$ctx.meta.fields = req.body || {};

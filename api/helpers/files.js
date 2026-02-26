@@ -107,13 +107,10 @@ module.exports = {
         
         sqlResult = sqlResult.results[0];
 
-        const filePath = path.join(UPLOADS.baseUploadFolder(), sqlResult.path_uri);
         const fileMime = sqlResult.file_mime;
 
-        if(!filePath || !fs.existsSync(filePath)) {
-            return null;
-        }
-
+        const responseContent = await UPLOADS.resolveFileObj(sqlResult, responseType);
+        
         var responseObj = {};
         if(moreData) {
             responseObj = {
@@ -124,28 +121,28 @@ module.exports = {
         }
 
         if(responseType=="stream") {
-            const fileStream = fs.createReadStream(filePath);
             return {
                 ...responseObj,
-                stream: fileStream,
+                stream: responseContent,
                 mime: fileMime,
                 filename: sqlResult.filename,
+                responseType: responseType
             };
         } else if(responseType=="buffer") {
-            const fileBuffer = fs.readFileSync(filePath);
             return {
                 ...responseObj,
-                buffer: fileBuffer,
+                buffer: responseContent,
                 mime: fileMime,
                 filename: sqlResult.filename,
+                responseType: responseType
             };
         } else if(responseType=="content") {
-            const content = await fs.readFileSync(filePath, "utf8");
             return {
                 ...responseObj,
-                content: content,
+                content: responseContent,
                 mime: fileMime,
                 filename: sqlResult.filename,
+                responseType: responseType
             };
         }
 

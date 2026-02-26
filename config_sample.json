@@ -47,8 +47,8 @@
         "default_from": "noreply@smartinfologiks.com"
     },
     "storage": {
-        "type": "local",
-        "bucket": "uploads"
+        "driver": "local",
+        "base_path": "uploads"
     },
     "dbmysql": {
         "appdb": {

@@ -347,7 +347,7 @@ module.exports = {
 
 				//Password expiry
 				if(userInfo.expires!=null && userInfo.expires.length>0) {
-					const isPast = new Date(userInfo.expires) < new Date();
+					const isPast = new Date(userInfo.expires) < new Date(moment().format("Y-M-D HH:mm:ss"));
 					if(isPast) {
 						await log_login_error({
 							"guid": userInfo.guid,

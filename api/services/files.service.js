@@ -17,23 +17,27 @@ module.exports = {
 			// 	scopes: ["files:list"]
 			// },
 			params: {
-				folder: { type: "string", optional: true }
+				folder: { type: "string", optional: true },
+				searchTerm: { type: "string", optional: true }
 			},
 			async handler(ctx) {
-				const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
-				const folder = ctx.params.folder || "";
-				const targetPath = UPLOADS.getTargetPath(folder);
-
-				const fsFiles = await listFolder(targetPath);
-				const error = fsFiles?null:"Given path is not a folder or does not exist";
-
-				var results = {
-					"path": targetPath.replace(BASE_UPLOAD_ROOT, ""),
-					"list": fsFiles,
+				var whereLogic = {
+					"guid": ctx.meta.user.guid,
+					"blocked": "false"
 				};
-				if(error) results.error = error;
+				if(ctx.params.folder) {
+					whereLogic['folder'] = [ctx.params.folder, "LIKE"];
+				}
+				if(ctx.params.searchTerm) {
+					whereLogic['filename'] = [ctx.params.searchTerm, "LIKE"];
+				}CONFIG.log_sql = true;
+				const sqlResult = await _DB.db_selectQ("appdb", "files_tbl", "*", whereLogic, {
+					"limit": ctx.params.limit || 10,
+					"order_by": "created_at DESC"
+				}, {});
+				if(!sqlResult || sqlResult?.results.length==0) return [];
 
-				return results;
+				return sqlResult;
 			}
 		},
 
@@ -66,7 +70,7 @@ module.exports = {
 		filesPreview: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/files/preview/:id?"///:id?
+				fullPath: "/api/files/preview/:fileid?"///:id?
 			},
 			params: {
 				// uri: "string"
@@ -76,10 +80,20 @@ module.exports = {
 			async handler(ctx) {
 				var fileURI = null;
 				if(ctx.params.fileid) {
-					const fileResponse = FILES.getFileById(ctx.meta.user.guid, ctx.params.fileid, "stream");
-					if(fileResponse && fileResponse.stream)
+					const fileResponse = await FILES.getFileById(ctx.meta.user.guid, ctx.params.fileid, "stream");
+
+					if(fileResponse && fileResponse.stream) {
+						
+						if(ctx.params.download && ctx.params.download===true) {
+							ctx.meta.$responseHeaders = {
+								"Content-Disposition": `attachment; filename="${fileName}"`
+							};
+						}
+
+						ctx.meta.$responseType = mime.lookup(fileResponse.filename) || "application/octet-stream";
+
 						return fileResponse.stream;
-					else
+					} else
 						return "File not found";
 				} else if(ctx.params.uri) {
 					fileURI = UPLOADS.getTargetPath(ctx.params.uri);
@@ -120,10 +134,12 @@ module.exports = {
 			// },
 			async handler(ctx) {
 				const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
+				const TEMP_UPLOAD_ROOT = UPLOADS.tempUploadFolder();
+
 				const file = ctx.meta.file;
 				if (!file) throw new Error("No file received");
 
-				const uploadArr = await UPLOADS.registerUploadedFile(ctx, file);
+				const uploadArr = await UPLOADS.moveUploadedFile(ctx, file);
 
 				// return {
 				// 	originalName: file.originalname,
@@ -138,7 +154,7 @@ module.exports = {
 					"name": file.originalname,
 					"mime": file.mimetype,
 					"size": file.size,
-					"path": file.path.replace(BASE_UPLOAD_ROOT, "")
+					"path": file.path.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, "")
 				}
 			}
 		},
@@ -157,7 +173,7 @@ module.exports = {
 				const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
 				const files = ctx.meta.files || [];
 
-				const uploadArr = await UPLOADS.registerUploadedFile(ctx, files);
+				const uploadArr = await UPLOADS.moveUploadedFile(ctx, files);
 
 				return {
 					"status": "success",
@@ -166,7 +182,7 @@ module.exports = {
 						"name": file.originalname,
 						"mime": file.mimetype,
 						"size": file.size,
-						"path": file.path.replace(BASE_UPLOAD_ROOT, "")
+						"path": file.path.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, "")
 					}))
 				};
 			}
