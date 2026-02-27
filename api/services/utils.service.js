@@ -43,7 +43,7 @@ module.exports = {
                 // "body": "object",
             },
 			async handler(ctx) {
-                const results = await APIHUB.runAPI(ctx.params.apiCode, {
+                const results = await APIBOX.runAPI(ctx.params.apiCode, {
                     query: ctx.params.query || {},
                     body: ctx.params.body || {}
                 }, ctx);
@@ -134,6 +134,9 @@ module.exports = {
         async "messaging.dispatch"(payload, nodeId) {
             if(!payload.channel) return;
             return await MESSAGING.sendMessage(payload.channel, payload);
-        }
+        },
+        async "messaging.vendor_added"(payload, nodeId) {
+            MESSAGING.loadDrivers();
+        },
     }
 }

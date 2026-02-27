@@ -129,15 +129,15 @@ module.exports = {
     if(forUpdate) {
       return {
         "edited_on": dated,
-        "edited_by": ctx.meta?.user?.userId || "-",
+        "edited_by": ctx.meta?.user?.userId || ctx.userId || "-",
       };
     } else {
       return {
-        "guid": ctx?.meta?.user?.guid || "-",
+        "guid": ctx?.meta?.user?.guid || ctx.guid || "-",
         "created_on": dated,
-        "created_by": ctx?.meta?.user?.userId || "-",
+        "created_by": ctx?.meta?.user?.userId || ctx.userId || "-",
         "edited_on": dated,
-        "edited_by": ctx?.meta?.user?.userId || "-",
+        "edited_by": ctx?.meta?.user?.userId || ctx.userId || "-",
       };
     }
   },

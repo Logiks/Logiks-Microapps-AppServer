@@ -1,5 +1,5 @@
 /*
- * APIHub Controller
+ * APIBox Controller
  * This controls all the API requests going out of the system
  * 
  * */
@@ -9,7 +9,7 @@ const qs = require('qs');
 module.exports = {
 
     initialize : function() {
-        console.log("\x1b[36m%s\x1b[0m","APIHub System Initialized");
+        console.log("\x1b[36m%s\x1b[0m","APIBox System Initialized");
 
         return true;
     },
@@ -70,7 +70,7 @@ async function sendRequest(apiCode, apiInfo, dataParams, ctx) {
         options.url += `?${qs.stringify(QUERY_OBJ)}`;
     }
 
-    //Update the apihub table for last run
+    //Update the apibox table for last run
     _DB.db_updateQ("appdb", "sys_apibox", {
             "last_run": _DB.db_now(),
         }, {
@@ -90,7 +90,7 @@ async function sendRequest(apiCode, apiInfo, dataParams, ctx) {
         const statusCode = response.status;
 
         //Create a log for the run
-        _DB.db_insertQ1("logdb", "log_apihub", _.extend({
+        _DB.db_insertQ1("logdb", "log_apibox", _.extend({
             appid: ctx.meta.user.guid, 
             api_code: apiCode, 
             method: method, 
@@ -107,7 +107,7 @@ async function sendRequest(apiCode, apiInfo, dataParams, ctx) {
 
         console.error(`Error sending request: ${error}`);
         //Create a log for the run
-        _DB.db_insertQ1("logdb", "log_apihub", _.extend({
+        _DB.db_insertQ1("logdb", "log_apibox", _.extend({
             appid: ctx.meta.user.guid, 
             api_code: apiCode, 
             method: method, 

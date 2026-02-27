@@ -15,7 +15,7 @@ module.exports = {
             MESSAGING.loadDrivers();
         });
 
-        //Load Messaging Vendors from DB
+        MESSAGING.loadDrivers();
 
         console.log("\x1b[36m%s\x1b[0m","Message and Notification System Initialized");
     },
@@ -33,6 +33,7 @@ module.exports = {
             "credentials": CONFIG.email || CONFIG.mail || false
         };
 
+        //Load Messaging Vendors from DB
         const tempObj = VENDORS.getAvailableVendors("messaging");
         if(tempObj) tempObj.forEach(a=> {
             MESSAGING_DRIVER[a.vendor_code] = a;
@@ -47,6 +48,12 @@ module.exports = {
 
     getParams: function(driverId) {
         return MESSAGING_DRIVER[driverId];
+    },
+
+    sendTopic: async function(topic, params, ctx) {
+        return this.sendMessage("email", _.extend({
+            topic: topic
+        }, params), ctx);
     },
 
     sendMessage: async function(driver, params, ctx) {
@@ -64,6 +71,52 @@ module.exports = {
                 vStatus.errors
             );
         }
+
+        const guid = ctx?.meta?.user?.guid || params.guid || "";
+        const data = params.data || {};
+
+        if(params.template_code && params.template_code.length>0) {
+            const templateCode = params.template_code;
+            const templateContent = await TEMPLATES.loadTemplate(templateCode, _.extend({}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}), ctx);
+            if(templateContent) {
+                params.body = templateContent.content;
+                if(!params.subject || params.subject.length<2) params.subject = templateContent.subject;
+            }
+        } else if(params.topic && params.topic.length>0) {
+            const topic = params.topic;
+
+            const notificationObj = await _DB.db_findOne("appdb", "sys_notifications", "*", {topic: topic, blocked: "false", guid: guid}, {});
+            if(notificationObj) {
+                var vStatus = VALIDATIONS.validateRule(params, notificationObj.validations_params || {});
+
+                if (!vStatus.status) {
+                    throw new LogiksError(
+                        "Input Validation Failed",
+                        400,
+                        "VALIDATION_ERROR",
+                        vStatus.errors
+                    );
+                }
+
+                const uniqueTo = [...new Set((params.send_to+","+notificationObj.notify_to).split(","))];
+
+                params.send_to = uniqueTo;
+                params.cc = notificationObj.notify_cc || "";
+                params.bcc = notificationObj.notify_bcc || ""; 
+
+                params.body = _replace(notificationObj.body_template, _.extend({}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
+                params.subject = _replace(notificationObj.subject, _.extend({}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
+
+                params.template_code = "TOPIC:"+params.topic;
+
+                driver = notificationObj.drivers;
+            } else {
+                return false;
+            }
+        } else {
+            params.body = _replace(params.body, _.extend({}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
+        }
+
         const methodArr = MESSAGING_DRIVER[driver].method.split(".");
         
         if(methodArr.length<=1) {
@@ -85,16 +138,18 @@ module.exports = {
         //         pass: 'your-password',
         //     },
         // }
-
-        if(params.template_code && params.template_code.length>0) {
-            const templateCode = params.template_code;
-            const data = params.data || {};
-            const templateContent = await TEMPLATES.loadTemplate(templateCode, data, ctx);
-
-            params.body = templateContent.content;
-            if(!params.subject || params.subject.length<2) params.subject = templateContent.subject;
-        } else {
-            params.body = _replace(params.body, _.extend({}, ctx?.params || {}, ctx?.meta || {}));
+        var vStatus = VALIDATIONS.validateRule(params, {
+            "body": "required",
+            "sendTo": "required",
+            "subject": "required"
+        });
+        if (!vStatus.status) {
+            throw new LogiksError(
+                "Message Validation Failed",
+                400,
+                "VALIDATION_ERROR",
+                vStatus.errors
+            );
         }
 
         const transporter = nodemailer.createTransport(driverConfig);
@@ -107,7 +162,7 @@ module.exports = {
         };
         
         var logData = _.extend({
-            appid: ctx?.meta?.appInfo.appid || "-",
+            appid: ctx?.meta?.appInfo.appid || params.appid || "-",
             channel: "email",
             vendor: driverId, 
             template_id: params.template_code || "-", 
