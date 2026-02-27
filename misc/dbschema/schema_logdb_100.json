@@ -120,7 +120,7 @@
       "PRIMARY"
     ]
   },
-  "log_apihub": {
+  "log_apibox": {
     "columns": {
       "id": {
         "type": "int",
@@ -1665,12 +1665,6 @@
         "default": null,
         "primary": false
       },
-      "groupuid": {
-        "type": "varchar(55)",
-        "nullable": false,
-        "default": "hq",
-        "primary": false
-      },
       "ref_src": {
         "type": "varchar(155)",
         "nullable": false,
@@ -1683,7 +1677,7 @@
         "default": null,
         "primary": false
       },
-      "date": {
+      "dated": {
         "type": "date",
         "nullable": false,
         "default": null,
@@ -1701,8 +1695,8 @@
         "default": null,
         "primary": false
       },
-      "msg": {
-        "type": "varchar(255)",
+      "message": {
+        "type": "tinytext",
         "nullable": true,
         "default": null,
         "primary": false
@@ -1720,21 +1714,15 @@
         "primary": false
       },
       "for_userid": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": "*",
-        "primary": false
-      },
-      "response_data": {
-        "type": "longtext",
+        "type": "tinytext",
         "nullable": true,
         "default": null,
         "primary": false
       },
-      "read_status": {
-        "type": "enum('false','true')",
-        "nullable": false,
-        "default": "false",
+      "seen_by": {
+        "type": "tinytext",
+        "nullable": true,
+        "default": null,
         "primary": false
       },
       "blocked": {
@@ -2170,65 +2158,6 @@
       "PRIMARY"
     ]
   },
-  "log_validationrules": {
-    "columns": {
-      "id": {
-        "type": "int",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "guid": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "rulecode": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "title": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "validation_rules": {
-        "type": "text",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "created_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "created_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "edited_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "edited_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      }
-    },
-    "indexes": []
-  },
   "log_webhooks": {
     "columns": {
       "id": {
@@ -2331,109 +2260,6 @@
         "type": "datetime",
         "nullable": true,
         "default": null,
-        "primary": false
-      }
-    },
-    "indexes": [
-      "PRIMARY"
-    ]
-  },
-  "sys_vendors": {
-    "columns": {
-      "id": {
-        "type": "int unsigned",
-        "nullable": false,
-        "default": null,
-        "primary": true
-      },
-      "guid": {
-        "type": "varchar(100)",
-        "nullable": false,
-        "default": "global",
-        "primary": false
-      },
-      "vendor_name": {
-        "type": "varchar(255)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "vendor_code": {
-        "type": "varchar(255)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "vendor_type": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "module": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "func_name": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": "",
-        "primary": false
-      },
-      "required_params": {
-        "type": "text",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "identity": {
-        "type": "text",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "keep_log": {
-        "type": "enum('true','false')",
-        "nullable": false,
-        "default": "true",
-        "primary": false
-      },
-      "debug": {
-        "type": "enum('true','false')",
-        "nullable": true,
-        "default": "false",
-        "primary": false
-      },
-      "blocked": {
-        "type": "enum('true','false')",
-        "nullable": true,
-        "default": "false",
-        "primary": false
-      },
-      "created_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "created_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "edited_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "edited_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": "CURRENT_TIMESTAMP",
         "primary": false
       }
     },

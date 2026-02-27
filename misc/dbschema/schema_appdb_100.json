@@ -2710,7 +2710,7 @@
       "PRIMARY"
     ]
   },
-  "sys_apihub": {
+  "sys_apibox": {
     "columns": {
       "id": {
         "type": "int",
@@ -3076,7 +3076,7 @@
       "rulecode"
     ]
   },
-  "sys_notification": {
+  "sys_notifications": {
     "columns": {
       "id": {
         "type": "int",
@@ -3126,6 +3126,12 @@
         "default": null,
         "primary": false
       },
+      "drivers": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": "email",
+        "primary": false
+      },
       "subject": {
         "type": "varchar(250)",
         "nullable": false,
@@ -3133,6 +3139,12 @@
         "primary": false
       },
       "body_template": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "validations_params": {
         "type": "text",
         "nullable": true,
         "default": null,
@@ -3170,7 +3182,8 @@
       }
     },
     "indexes": [
-      "PRIMARY"
+      "PRIMARY",
+      "topic"
     ]
   },
   "sys_settings": {
