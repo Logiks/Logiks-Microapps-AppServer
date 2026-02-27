@@ -17,7 +17,7 @@ module.exports = {
     runAPI: async function(apiCode, params = {}, ctx = null) {
         if(!apiCode) return false;
 
-        const apiData = _DB.db_selectQ("appdb", "sys_apihub", "*", {
+        const apiData = _DB.db_selectQ("appdb", "sys_apibox", "*", {
             blocked: "false",
             api_code: apiCode,
             guid: ctx?.meta?.user?.guid || "global"
@@ -71,7 +71,7 @@ async function sendRequest(apiCode, apiInfo, dataParams, ctx) {
     }
 
     //Update the apihub table for last run
-    _DB.db_updateQ("appdb", "sys_apihub", {
+    _DB.db_updateQ("appdb", "sys_apibox", {
             "last_run": _DB.db_now(),
         }, {
             api_code: apiCode
