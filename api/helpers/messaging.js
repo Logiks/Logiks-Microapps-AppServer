@@ -15,8 +15,6 @@ module.exports = {
             MESSAGING.loadDrivers();
         });
 
-        MESSAGING.loadDrivers();
-
         console.log("\x1b[36m%s\x1b[0m","Message and Notification System Initialized");
     },
 
