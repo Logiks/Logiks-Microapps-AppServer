@@ -105,6 +105,10 @@ module.exports = {
 				const file = fileArray[i];
 
 				const fileURI = await move_to_store(file.path, file.filename, bucket);
+				if(!fileURI) {
+					result[file.path] = 0;
+					continuel
+				}
 
 				const sqlResult = await _DB.db_insertQ1("appdb", "files_tbl", _.extend({
 					"guid": ctx.meta.user.guid,
@@ -130,26 +134,29 @@ module.exports = {
 			const file = fileArray;
 
 			const fileURI = await move_to_store(file.path, file.filename, bucket);
+			if(!fileURI) {
+				result[file.path] = 0;
+			} else {
+				const sqlResult = await _DB.db_insertQ1("appdb", "files_tbl", _.extend({
+					"guid": ctx.meta.user.guid,
+					"appid": ctx.meta.appInfo.appid,
 
-			const sqlResult = await _DB.db_insertQ1("appdb", "files_tbl", _.extend({
-                "guid": ctx.meta.user.guid,
-                "appid": ctx.meta.appInfo.appid,
+					"filename": file.filename,
+					"folder": bucket,
+					"path_uri": fileURI.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, ""),
+					"file_mime": file.mimetype,
+					"file_size": file.size,
+					"file_year": new moment().format("Y"),
+					"metadata": JSON.stringify(ctx.params.meta),
+					"driver": CONFIG.storage.driver,
+					"processed": "false",
+					"flags": "",
+				}, MISC.generateDefaultDBRecord(ctx, false)));
 
-				"filename": file.filename,
-				"folder": bucket,
-				"path_uri": fileURI.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, ""),
-				"file_mime": file.mimetype,
-				"file_size": file.size,
-				"file_year": new moment().format("Y"),
-				"metadata": JSON.stringify(ctx.params.meta),
-				"driver": CONFIG.storage.driver,
-				"processed": "false",
-				"flags": "",
-            }, MISC.generateDefaultDBRecord(ctx, false)));
+				//console.log("XXXXX", sqlResult.insertId);
 
-			//console.log("XXXXX", sqlResult.insertId);
-
-			result[file.path] = sqlResult.insertId?sqlResult.insertId:0;
+				result[file.path] = sqlResult.insertId?sqlResult.insertId:0;
+			}
 		}
 
 		return result;
