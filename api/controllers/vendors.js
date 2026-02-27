@@ -32,6 +32,11 @@ module.exports = {
         
     },
 
+    reloadVendors: async function() {
+        VENDORS = {};
+        this.loadVendors();
+    },
+
     getAvailableVendors: function(vendorType) {
         return VENDORS.filter(a=>a.vendor_type.includes(vendorType));
     },

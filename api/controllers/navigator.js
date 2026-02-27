@@ -3,8 +3,7 @@
  * 
  * */
 
-const NAVIGATOR_CACHE = {};//_CACHE.getCacheMap("NAVIGATORCACHE");
-//_CACHE.saveCacheMap("NAVIGATORCACHE", NAVIGATOR_CACHE);
+const NAVIGATOR_CACHE = {};
 //if(CONFIG.disable_cache.navigator) ctx.params.recache = true;
 
 module.exports = {

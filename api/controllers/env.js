@@ -10,9 +10,13 @@ module.exports = {
         console.log("\x1b[36m%s\x1b[0m","Environment Variables Loaded");
         return true;
     },
+    
+    reloadEnvironment: async function() {
+        ENVIRONMENTS = {};
+        this.loadEnvironment();
+    },
 
     loadEnvironment: async function() {
-        ENVIRONMENTS = {};
         var envData = await _DB.db_selectQ("appdb", "lgks_environment", "*", {
                 blocked: "false"
             },{});

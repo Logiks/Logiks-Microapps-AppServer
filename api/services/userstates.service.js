@@ -1,6 +1,5 @@
+//uset state management
 "use strict";
-
-const USER_STATE_MAP = _CACHE.getCacheMap("USER_STATE_MAP");
 
 module.exports = {
 	name: "userstates",
@@ -18,15 +17,15 @@ module.exports = {
 			async handler(ctx) {
                 var STATE_KEY = `${ctx.meta.user.tenantId}_${ctx.meta.user.userId}_${ctx.params.module}`;
 
-                if(!USER_STATE_MAP[ctx.meta.user.tenantId]) USER_STATE_MAP[ctx.meta.user.tenantId] = {};
-                if(!USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId]) USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId] = {};
-                
+                var stateObj = CACHEMAP.get("USER_STATE_MAP", STATE_KEY);
+
                 if(ctx.params.state) {
-                    USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY] = ctx.params.state;
+                    stateObj = ctx.params.state;
+                    CACHEMAP.set("USER_STATE_MAP", STATE_KEY, stateObj);
                 }
 
-                if(USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY]) {
-                    return USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY];
+                if(stateObj) {
+                    return stateObj;
                 } else {
                     return {};
                 }
@@ -44,17 +43,17 @@ module.exports = {
 			async handler(ctx) {
                 var STATE_KEY = `${ctx.meta.user.tenantId}_${ctx.meta.user.userId}_${ctx.params.module}`;
                 
-                if(!USER_STATE_MAP[ctx.meta.user.tenantId]) USER_STATE_MAP[ctx.meta.user.tenantId] = {};
-                if(!USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId]) USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId] = {};
+                var stateObj = CACHEMAP.get("USER_STATE_MAP", STATE_KEY);
 
-                USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY] = ctx.params.state;
+                stateObj = ctx.params.state;
                 
-                _CACHE.saveCacheMap("USER_STATE_MAP", USER_STATE_MAP);
+                CACHEMAP.set("USER_STATE_MAP", STATE_KEY, stateObj);
 
                 return {
                     "status": "okay",
-                    "state": USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY],
-                    "timestamp": Date.now()
+                    "state": stateObj,
+                    "module": ctx.params.module,
+                    "timestamp": new moment(str).format("YYYY-MM-DD HH:mm:ss")
                 };
             }
         },
@@ -69,38 +68,13 @@ module.exports = {
 			async handler(ctx) {
                 var STATE_KEY = `${ctx.meta.user.tenantId}_${ctx.meta.user.userId}_${ctx.params.module}`;
                 
-                if(!USER_STATE_MAP[ctx.meta.user.tenantId]) USER_STATE_MAP[ctx.meta.user.tenantId] = {};
-                if(!USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId]) USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId] = {};
-                
-                if(USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY]) delete USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY];
-                
-                _CACHE.saveCacheMap("USER_STATE_MAP", USER_STATE_MAP);
+                CACHEMAP.set("USER_STATE_MAP", STATE_KEY, {});
 
                 return {
                     "status": "okay",
-                    "state": USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId][STATE_KEY],
-                    "timestamp": Date.now()
-                };
-            }
-        },
-        resetUser: {
-            rest: {
-				method: "POST",
-				path: "/resetUser"
-			},
-			async handler(ctx) {
-                //var STATE_KEY = `${ctx.meta.user.tenantId}_${ctx.meta.user.userId}_${ctx.params.module}`;
-                
-                if(!USER_STATE_MAP[ctx.meta.user.tenantId]) USER_STATE_MAP[ctx.meta.user.tenantId] = {};
-                if(USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId]) {
-                    delete USER_STATE_MAP[ctx.meta.user.tenantId][ctx.meta.user.userId];
-                }
-
-                _CACHE.saveCacheMap("USER_STATE_MAP", USER_STATE_MAP);
-                
-                return {
-                    "status": "okay",
-                    "timestamp": Date.now()
+                    "state": {},
+                    "module": ctx.params.module,
+                    "timestamp": new moment(str).format("YYYY-MM-DD HH:mm:ss")
                 };
             }
         }
