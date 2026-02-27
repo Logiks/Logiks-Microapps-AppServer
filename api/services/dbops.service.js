@@ -427,20 +427,22 @@ module.exports = {
                     );
                 }
 
+                const newDataFields = dataFields;
+
                 // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await ENV.fetchEnvInfo(ctx.meta));
                 var sqlWhereData = await ENV.fetchEnvInfo(ctx.meta);
                 sqlWhereData = _.extend(sqlWhereData, ctx.params);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
                 
-                const dbResponse = await _DB.db_updateQ("appdb", sqlTable, dataFields, sqlWhere);
+                const dbResponse = await _DB.db_updateQ("appdb", sqlTable, newDataFields, sqlWhere);
 
                 if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
                     _.each(jsonQuery.hooks.postsubmit, function(func, k) {
-                        _call(func, {"where": sqlWhere, "data": dataFields, "operation": "update"});
+                        _call(func, {"where": sqlWhere, "data": newDataFields, "operation": "update"});
                     });
                 }
 
-                ctx.emit("dbops.update", {"where": sqlWhere, "data": dataFields, "operation": "update", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user});
+                ctx.emit("dbops.update", {"where": sqlWhere, "data": newDataFields, "operation": "update", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user});
                 
                 return dbResponse;
             }
