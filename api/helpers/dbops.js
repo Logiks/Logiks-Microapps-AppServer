@@ -3,8 +3,6 @@
  * 
  * */
 
-const dbOpsMap = _CACHE.getCacheMap("DBOPSMAP");
-
 module.exports = {
 
     initialize: function() {
@@ -15,14 +13,17 @@ module.exports = {
         //jsonQuery = table, where, fields
         const dbOpsID = params? encodeURIComponent(`${params.moduleId}@${params.objId}@${params.refid || ''}`): UNIQUEID.generate(12);
         
-        dbOpsMap[dbOpsID] = {"operation": operation, "source": jsonQuery, "fields": fields, "forcefill": forcefill, "userInfo": userInfo, "hooks": hooks};
-        _CACHE.saveCacheMap("DBOPSMAP", dbOpsMap);
+        const dbOPSObj = {"operation": operation, "source": jsonQuery, "fields": fields, "forcefill": forcefill, "userInfo": userInfo, "hooks": hooks};
+        
+        CACHEMAP.set("DBOPSMAP", dbOpsID, dbOPSObj);
 
         return dbOpsID;
     },
 
     getDBOpsQuery: async function(dbOpsID, userInfo, ctx) {
-        if(dbOpsMap[dbOpsID]) return _.cloneDeep(dbOpsMap[dbOpsID]);
+        const dbOPSObj = CACHEMAP.get("DBOPSMAP", dbOpsID);
+
+        if(dbOPSObj) return _.cloneDeep(dbOPSObj);
         // console.log("getDBOpsQuery", dbOpsID);
 
         var queryIDTemp = decodeURIComponent(`${dbOpsID}`).split("@");
@@ -32,11 +33,12 @@ module.exports = {
         if(queryIDTemp[2]) params.operation = queryIDTemp[2];
         if(queryIDTemp[3]) params.refid = queryIDTemp[3];
 
+        //This generates the dbOpsID using storeDBOpsQuery
         await ctx.call("modules.fetchModule", params);
 
-        // DBOPS.storeDBOpsQuery(dbOpsMap[dbOpsID], userObj, queryID, {});
+        const dbOPSObjNew = CACHEMAP.set("DBOPSMAP", dbOpsID);
 
-        return dbOpsMap[dbOpsID];
+        return dbOPSObjNew;
     },
 
     //formObj = source, fields, forcefill

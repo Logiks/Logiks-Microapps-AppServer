@@ -83,7 +83,7 @@ module.exports = {
         } else if(params.topic && params.topic.length>0) {
             const topic = params.topic;
 
-            const notificationObj = await _DB.db_findOne("appdb", "sys_notifications", "*", {topic: topic, blocked: "false", guid: guid}, {});
+            const notificationObj = await _DB.db_findOne("appdb", "sys_notifications", "*", {topic: topic, blocked: "false", guid: guid}, 'id DESC', true);
             if(notificationObj) {
                 var vStatus = VALIDATIONS.validateRule(params, notificationObj.validations_params || {});
 

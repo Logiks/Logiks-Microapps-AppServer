@@ -132,7 +132,7 @@ module.exports = {
     },
     events: {
         async "messaging.dispatch"(payload, nodeId) {
-            if(!payload.channel) return;
+            if(!payload.channel) payload.channel = "email";
             return await MESSAGING.sendMessage(payload.channel, payload);
         },
         async "messaging.vendor_added"(payload, nodeId) {

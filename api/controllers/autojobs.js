@@ -9,6 +9,10 @@ const LOADED_JOBS = {};
 const ACTIVE_JOBS = [];
 const LOADED_PLUGINS = {};
 
+var ENABLED = true;
+
+//Make it singleton
+
 module.exports = {
 
     initialize : async function() {
@@ -22,13 +26,16 @@ module.exports = {
 
     //Delay the job loading to allow system to stabilize
     startJobs: async function() {
-        // setTimeout(async function() {
+        SINGLETONMANAGER.initiateSingleton("AUTOJOBS", async function(params) {
+            //On Elected to Start
+
+            console.log("\x1b[31m%s\x1b[0m", `\nAutoJobs Activation Started`);
+            // await AUTOJOBS.loadJobs();
+            await AUTOJOBS.reloadAllJobs();
             
-        // }, 5000);
-
-        await this.loadJobs();
-
-        console.log("\x1b[34m%s\x1b[0m", `\nAutoJobs Initialized With-${Object.keys(ACTIVE_JOBS).length}/${Object.keys(LOADED_JOBS).length} Active/Loaded Jobs`);
+        }, function(params) {
+            //On Stoping of service
+        });
     },
 
     reloadAllJobs: async function() {
@@ -50,7 +57,7 @@ module.exports = {
         //Reload Jobs
         await this.loadJobs();
 
-        console.log("\x1b[31m%s\x1b[0m", `\nAutoJobs Reloaded With-${Object.keys(ACTIVE_JOBS).length}/${Object.keys(LOADED_JOBS).length} Active/Loaded Jobs`);
+        console.log("\x1b[31m%s\x1b[0m", `\nAutoJobs Loaded With-${Object.keys(ACTIVE_JOBS).length}/${Object.keys(LOADED_JOBS).length} Active/Loaded Jobs`);
     },
 
     loadJobs: async function() {
@@ -112,6 +119,8 @@ module.exports = {
         // console.log("LOADED_PLUGINS", LOADED_PLUGINS);
         // console.log("LOADED_JOBS", LOADED_JOBS);
         // console.log("ACTIVE_JOBS", ACTIVE_JOBS);
+
+        // console.log("\x1b[31m%s\x1b[0m", `\nAutoJobs Initialized With-${Object.keys(ACTIVE_JOBS).length}/${Object.keys(LOADED_JOBS).length} Active/Loaded Jobs`);
     },
 
     getActiveJobs: async function() {

@@ -224,7 +224,7 @@ module.exports = {
 				const fileId = ctx.params.fileId;
 				if (!fileId) throw new Error("File ID is required");
 
-				const fileRecord = await _DB.db_findOne("appdb", "files_tbl", "*", { id: fileId }, {});
+				const fileRecord = await _DB.db_findOne("appdb", "files_tbl", "*", { id: fileId }, 'id DESC', true);
 				if (!fileRecord) throw new Error("File not found");
 
 				if(fileRecord.blocked == "true") {

@@ -6,12 +6,9 @@
 var DB_DRIVERS = {};
 const BASE_DRIVER_DIR = __dirname+'/drivers/';
 
-var QUERYMAP = {};//_CACHE.getCacheMap("QUERYMAP");
-
 module.exports = {
 
     initialize : async function() {
-        QUERYMAP = await _CACHE.getCacheMap("QUERYMAP");
         //Load all drivers
         // fs.readdirSync(BASE_DRIVER_DIR).forEach(function(file) {
         //     if ((file.indexOf(".js") > 0 && (file.indexOf(".js") + 3 == file.length))) {
@@ -145,15 +142,14 @@ module.exports = {
     storeQuery: async function(queryObj, userObj, queryID = false, params) {
         if(!queryID) queryID = encodeURIComponent(`${params.moduleId}@${params.objId}@${params.refid}`);//UNIQUEID.generate(12);
 
-        QUERYMAP[queryID] = queryObj;
-        _CACHE.saveCacheMap("QUERYMAP", QUERYMAP);
+        CACHEMAP.set("QUERYMAP", queryID, queryObj);
 
         return queryID;
     },
 
     getQueryByID: async function(queryID, userObj, ctx) {
-        // delete QUERYMAP[queryID];
-        if(!QUERYMAP[queryID]) {
+        const queryObj = CACHEMAP.get("QUERYMAP", queryID);
+        if(!queryObj) {
             var queryIDTemp = decodeURIComponent(`${queryID}`).split("@");
             
             var params = {};
@@ -164,11 +160,11 @@ module.exports = {
             
             await ctx.call("modules.fetchModule", params);
 
-            // QUERY.storeQuery(QUERYMAP[queryID], userObj, queryID, {});
+            const queryObjNew = CACHEMAP.get("QUERYMAP", queryID);
 
-            return QUERYMAP[queryID];
+            return queryObjNew;
         }
-        return QUERYMAP[queryID];
+        return queryObj;
     },
 
     parseQuery : async function(sqlObj, filter = {}, metaInfo = {}) {

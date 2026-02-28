@@ -60,6 +60,7 @@ module.exports = {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
                 var dataFields = ctx.params.fields;
+                const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
 
                 ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
@@ -137,6 +138,23 @@ module.exports = {
                     });
                 }
                 ctx.emit("dbops.create", {"id": insertId, "data": dataFields, "operation": "insert", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user});
+                ctx.emit("messaging.dispatch", {
+                    "topic": `create@${moduleRefID[0]}@${moduleRefID[1]}`,
+                    "data": {"id": insertId, "data": dataFields, "operation": "insert", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user}
+                });
+                ctx.emit("messaging.dispatch", {
+                    "topic": `create_record`,
+                    "data": {"id": insertId, "data": dataFields, "operation": "insert", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user}
+                });
+                ctx.emit("logs.activity", {
+                    "nature": `record_created`,
+                    "ref_id": insertId,
+                    "ref_src": decodeURIComponent(dbOpsID),
+                    "userid": ctx.meta.user.userId,
+                    "guid": ctx.meta.user.guid,
+                    "appid": ctx.meta.appInfo.appid,
+                    "data": dataFields
+                });
                 
                 return {
                     "status": "success",
@@ -158,6 +176,7 @@ module.exports = {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
                 var dataFields = ctx.params.fields;
+                const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
 
                 ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
@@ -238,6 +257,17 @@ module.exports = {
                     }
 
                     ctx.emit("dbops.bulk", {"response": dbResponse, "data": dataFields, "operation": "bulk", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user});
+
+                    //For each records etc
+                    ctx.emit("logs.activity", {
+                        "nature": `record_created_bulk`,
+                        "ref_id": 0,
+                        "ref_src": decodeURIComponent(dbOpsID),
+                        "userid": ctx.meta.user.userId,
+                        "guid": ctx.meta.user.guid,
+                        "appid": ctx.meta.appInfo.appid,
+                        "data": dataFields
+                    });
 
                     return dbResponse;
                 } else {
@@ -346,6 +376,7 @@ module.exports = {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
                 var dataFields = ctx.params.fields;
+                const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
 
                 ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
@@ -433,6 +464,8 @@ module.exports = {
                 var sqlWhereData = await ENV.fetchEnvInfo(ctx.meta);
                 sqlWhereData = _.extend(sqlWhereData, ctx.params);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
+
+                const preData = await _DB.db_findOne("appdb", sqlTable, Object.keys(newDataFields), sqlWhere, 'id DESC', true);
                 
                 const dbResponse = await _DB.db_updateQ("appdb", sqlTable, newDataFields, sqlWhere);
 
@@ -443,7 +476,25 @@ module.exports = {
                 }
 
                 ctx.emit("dbops.update", {"where": sqlWhere, "data": newDataFields, "operation": "update", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user});
-                
+                ctx.emit("messaging.dispatch", {
+                    "topic": `update@${moduleRefID[0]}@${moduleRefID[1]}`,
+                    "data": {"id": sqlRefid, "data": newDataFields, "operation": "insert", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user}
+                });
+                ctx.emit("messaging.dispatch", {
+                    "topic": `update_record`,
+                    "data": {"id": sqlRefid, "data": newDataFields, "operation": "insert", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user}
+                });
+                ctx.emit("logs.activity", {
+                    "nature": `record_updated`,
+                    "ref_id": sqlRefid,
+                    "ref_src": decodeURIComponent(dbOpsID),
+                    "userid": ctx.meta.user.userId,
+                    "guid": ctx.meta.user.guid,
+                    "appid": ctx.meta.appInfo.appid,
+                    "pre_data": preData || {},
+                    "data": newDataFields
+                });
+
                 return dbResponse;
             }
         },
@@ -461,6 +512,7 @@ module.exports = {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
                 var dataFields = ctx.params.fields;
+                const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
 
                 ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
@@ -520,8 +572,11 @@ module.exports = {
                 var sqlWhereData = await ENV.fetchEnvInfo(ctx.meta);
                 sqlWhereData = _.extend(sqlWhereData, ctx.params);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
+                const dataToUpdate = _.extend( {"blocked": "true"}, MISC.generateDefaultDBRecord(ctx, true));
 
-                const dbResponse = await _DB.db_updateQ("appdb", sqlTable, _.extend( {"blocked": "true"}, MISC.generateDefaultDBRecord(ctx, true)), sqlWhere);
+                const preData = await _DB.db_findOne("appdb", sqlTable, "blocked, created_on, edited_on, created_by, edited_by", sqlWhere, 'id DESC', true);
+
+                const dbResponse = await _DB.db_updateQ("appdb", sqlTable, dataToUpdate, sqlWhere);
 
                 if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
                     _.each(jsonQuery.hooks.postsubmit, function(func, k) {
@@ -530,6 +585,24 @@ module.exports = {
                 }
 
                 ctx.emit("dbops.delete", {"where": sqlWhere, "data": dataFields, "operation": "delete", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user});
+                ctx.emit("messaging.dispatch", {
+                    "topic": `delete@${moduleRefID[0]}@${moduleRefID[1]}`,
+                    "data": {"id": sqlRefid, "data": dataFields, "operation": "insert", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user}
+                });
+                ctx.emit("messaging.dispatch", {
+                    "topic": `delete_record`,
+                    "data": {"id": sqlRefid, "data": dataFields, "operation": "insert", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user}
+                });
+                ctx.emit("logs.activity", {
+                    "nature": `record_deleted`,
+                    "ref_id": sqlRefid,
+                    "ref_src": decodeURIComponent(dbOpsID),
+                    "userid": ctx.meta.user.userId,
+                    "guid": ctx.meta.user.guid,
+                    "appid": ctx.meta.appInfo.appid,
+                    "pre_data": preData,
+                    "data": dataToUpdate,
+                });
 
                 return dbResponse;
             }

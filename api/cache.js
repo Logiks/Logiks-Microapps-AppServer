@@ -63,13 +63,15 @@ module.exports = {
         return data;
     },
 
-    storeDataEx : function(cacheKey, data, expires) {
+    storeDataEx : async function(cacheKey, data, expires, notExists = false) {
         if (redis.status != "ready") return data;
 
         if (typeof data == "object") data = JSON.stringify(data);
         
-        redis.set(cacheKey, data, "EX", expires);//In Seconds
-        return data;
+        if(notExists)
+            return await redis.set(cacheKey, data, "NX", "EX", expires);//In Seconds
+        else
+            return await redis.set(cacheKey, data, "EX", expires);//In Seconds
     },
 
     fetchData : function(cacheKey, callback, defaultData = false) {
@@ -128,7 +130,11 @@ module.exports = {
         return result
     },
 
-    deleteKey : async function(cacheKey) {
+    extendKey: async function(cacheKey, expires) {
+        return redis.expire(cacheKey, expires);
+    }, 
+
+    deleteKey: async function(cacheKey) {
         // clearCache(cacheKey);
         return await redis.del(cacheKey);
     },

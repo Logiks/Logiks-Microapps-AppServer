@@ -15,7 +15,7 @@ const { Readable } = require('stream');
 // Components
 // /api/modules/components/docs.main
 
-const COMPONENT_CACHE = _CACHE.getCacheMap("MODULES_COMPONENT_CACHE");
+const COMPONENT_CACHE = {};
 
 module.exports = {
 	name: "modules",
@@ -66,7 +66,6 @@ module.exports = {
 							version: Date.now(),
 							updatedAt: Date.now()
 						};
-					_CACHE.saveCacheMap("MODULES_COMPONENT_CACHE", COMPONENT_CACHE);
 					
 					return {
 						"component": modname,
@@ -95,7 +94,6 @@ module.exports = {
 							version: Date.now(),
 							updatedAt: Date.now()
 						};
-					_CACHE.saveCacheMap("MODULES_COMPONENT_CACHE", COMPONENT_CACHE);
 
 					return {
 						"component": "page",
@@ -138,7 +136,6 @@ module.exports = {
 						version: Date.now(),
 						updatedAt: Date.now()
 					};
-				_CACHE.saveCacheMap("MODULES_COMPONENT_CACHE", COMPONENT_CACHE);
 
 				return Readable.from(fileContent);
 				// return fileContent;

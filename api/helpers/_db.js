@@ -117,7 +117,7 @@ module.exports = {
 		return dbResponse;
 	},
 
-	db_findOne : async function(dbkey, table, columns, where, orderBy = "id DESC") {
+	db_findOne : async function(dbkey, table, columns, where, orderBy = "id DESC", flatObj = false) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
@@ -166,7 +166,8 @@ module.exports = {
 						if(!err) err = {"code":"NOT_FOUND","sqlMessage":"No records found"};
 						if(CONFIG.log_sql) console.log(err);
 						// reject(false, err.code, err.sqlMessage);
-						resolve({
+						if(flatObj) resolve(false);
+						else resolve({
 							"status": "error", 
 							"err_code": err.code,
 							"err_message": err.sqlMessage
@@ -179,7 +180,8 @@ module.exports = {
 							else
 								results[0][col] = await field_decrypter(`${table}.${col}`, val);
 						});
-						resolve({
+						if(flatObj) resolve(results[0]);
+						else resolve({
 							"status": "success", 
 							"results": results[0],//results.length>0?results[0]:null
 						});

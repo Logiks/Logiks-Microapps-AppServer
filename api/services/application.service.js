@@ -2,10 +2,9 @@
 
 const mime = require("mime-types");
 
-const themeCache = _CACHE.getCacheMap("THEMECACHE");
-const settingsCache = _CACHE.getCacheMap("SETTINGSCACHE");
-const pageCache = _CACHE.getCacheMap("APPLICATION_PAGECACHE");
-const componentCache = _CACHE.getCacheMap("APPLICATION_COMPONENTCACHE");
+const themeCache = {};//_CACHE.getCacheMap("THEMECACHE");
+const pageCache = {};//_CACHE.getCacheMap("APPLICATION_PAGECACHE");
+const componentCache = {};//_CACHE.getCacheMap("APPLICATION_COMPONENTCACHE");
 
 module.exports = {
     name: "application",
@@ -45,11 +44,15 @@ module.exports = {
 				// recache: "boolean"
 			},
 			async handler(ctx) {
+				const SETTINGS_KEY = `${ctx.meta.user.tenantId}_${ctx.meta.user.userId}_${ctx.params.module || "-"}`;
+
+				let settingsCache = CACHEMAP.get("SETTINGSCACHE", STATE_KEY);
+
 				if(ctx.params.recache===true) {
-					if(settingsCache[ctx.meta.user.userId]) delete settingsCache[ctx.meta.user.userId];
+					settingsCache = {};
 				}
 
-				if(settingsCache[ctx.meta.user.userId]) return settingsCache[ctx.meta.user.userId];
+				if(settingsCache) return settingsCache;
 
 				var whereCond = {
 					"blocked": "false",
@@ -66,10 +69,11 @@ module.exports = {
 				if(!data1 || !data1?.results || data1.results.length<=0) data1 = data1.results;
 				if(!data2 || !data2?.results || data2.results.length<=0) data2 = data2.results;
 
-				settingsCache[ctx.meta.user.userId] = _.extend({}, data1, data2);
-				_CACHE.saveCacheMap("SETTINGSCACHE", settingsCache);
+				settingsCache = _.extend({}, data1, data2);
+				
+				CACHEMAP.set("SETTINGSCACHE", SETTINGS_KEY, settingsCache);
 
-				return settingsCache[ctx.meta.user.userId]
+				return settingsCache
 			}
 		},
 
@@ -298,7 +302,6 @@ module.exports = {
 							version: Date.now(),
 							updatedAt: Date.now()
 						};
-					_CACHE.saveCacheMap("PAGECACHE", pageCache);
 
 					return pageFileData;
 				} else {
@@ -406,8 +409,6 @@ async function loadTheme(themeId) {
 			version,
 			updatedAt: Date.now()
 		};
-
-		_CACHE.saveCacheMap("THEMECACHE", themeCache);
 
 		return themeCache[themeId];
 	} catch (err) {
