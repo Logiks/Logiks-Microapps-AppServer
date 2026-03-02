@@ -15,13 +15,13 @@ module.exports = {
         
         const dbOPSObj = {"operation": operation, "source": jsonQuery, "fields": fields, "forcefill": forcefill, "userInfo": userInfo, "hooks": hooks};
         
-        CACHEMAP.set("DBOPSMAP", dbOpsID, dbOPSObj, ctx);
+        await CACHEMAP.set("DBOPSMAP", dbOpsID, dbOPSObj, ctx);
 
         return dbOpsID;
     },
 
     getDBOpsQuery: async function(dbOpsID, userInfo, ctx) {
-        const dbOPSObj = CACHEMAP.get("DBOPSMAP", dbOpsID, false, ctx);
+        const dbOPSObj = await CACHEMAP.get("DBOPSMAP", dbOpsID, false, ctx);
 
         if(dbOPSObj) return _.cloneDeep(dbOPSObj);
         // console.log("getDBOpsQuery", dbOpsID);
@@ -36,7 +36,7 @@ module.exports = {
         //This generates the dbOpsID using storeDBOpsQuery
         await ctx.call("modules.fetchModule", params);
 
-        const dbOPSObjNew = CACHEMAP.get("DBOPSMAP", dbOpsID, false, ctx);
+        const dbOPSObjNew = await CACHEMAP.get("DBOPSMAP", dbOpsID, false, ctx);
 
         return dbOPSObjNew;
     },
