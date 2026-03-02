@@ -88,12 +88,7 @@ module.exports = {
                 var vStatus = VALIDATIONS.validateRule(params, notificationObj.validations_params || {});
 
                 if (!vStatus.status) {
-                    throw new LogiksError(
-                        "Input Validation Failed",
-                        400,
-                        "VALIDATION_ERROR",
-                        vStatus.errors
-                    );
+                    return false;
                 }
 
                 const uniqueTo = [...new Set((params.send_to+","+notificationObj.notify_to).split(","))];
