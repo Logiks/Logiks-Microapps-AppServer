@@ -8,8 +8,8 @@ module.exports = {
         console.log("\x1b[36m%s\x1b[0m","CacheMap Initialized");
     },
 
-    get: async function(mapKey, dataKey, defaultValue = false) {
-        const cacheKey = `CACHESTORE:${mapKey}`.toUpperCase();
+    get: async function(mapKey, dataKey, defaultValue = false, ctx) {
+        const cacheKey = `CACHESTORE:${ctx?.meta?.user?.userId}:${mapKey}`.toUpperCase();
         let cacheMap = await _CACHE.fetchDataSync(cacheKey, {});//"DBOPSMAP"
         
         try {
@@ -22,9 +22,9 @@ module.exports = {
         return cacheMap[dataKey] || defaultValue;
     },
 
-    set: async function(mapKey, dataKey, dataValue) {
-        const cacheKey = `CACHESTORE:${mapKey}`.toUpperCase();
-        let cacheMap = await getCacheMapJSON(mapKey);
+    set: async function(mapKey, dataKey, dataValue, ctx) {
+        const cacheKey = `CACHESTORE:${ctx?.meta?.user?.userId}:${mapKey}`.toUpperCase();
+        let cacheMap = await getCacheMapJSON(cacheKey);
 
         cacheMap[dataKey] = dataValue;
 
@@ -34,8 +34,7 @@ module.exports = {
     },
 }
 
-async function getCacheMapJSON(mapKey) {
-    const cacheKey = `CACHESTORE:${mapKey}`.toUpperCase();
+async function getCacheMapJSON(cacheKey) {
     let cacheMap = await _CACHE.fetchDataSync(cacheKey, {});//"DBOPSMAP"
     
     try {

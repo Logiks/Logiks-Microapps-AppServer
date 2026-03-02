@@ -142,13 +142,13 @@ module.exports = {
     storeQuery: async function(queryObj, userObj, queryID = false, params) {
         if(!queryID) queryID = encodeURIComponent(`${params.moduleId}@${params.objId}@${params.refid}`);//UNIQUEID.generate(12);
 
-        CACHEMAP.set("QUERYMAP", queryID, queryObj);
+        CACHEMAP.set("QUERYMAP", queryID, queryObj, ctx);
 
         return queryID;
     },
 
     getQueryByID: async function(queryID, userObj, ctx) {
-        const queryObj = CACHEMAP.get("QUERYMAP", queryID);
+        const queryObj = CACHEMAP.get("QUERYMAP", queryID, false, ctx);
         if(!queryObj) {
             var queryIDTemp = decodeURIComponent(`${queryID}`).split("@");
             
@@ -160,7 +160,7 @@ module.exports = {
             
             await ctx.call("modules.fetchModule", params);
 
-            const queryObjNew = CACHEMAP.get("QUERYMAP", queryID);
+            const queryObjNew = CACHEMAP.get("QUERYMAP", queryID, false, ctx);
 
             return queryObjNew;
         }

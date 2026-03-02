@@ -17,11 +17,11 @@ module.exports = {
 			async handler(ctx) {
                 var STATE_KEY = `${ctx.meta.user.tenantId}_${ctx.meta.user.userId}_${ctx.params.module}`;
 
-                var stateObj = CACHEMAP.get("USER_STATE_MAP", STATE_KEY);
+                var stateObj = CACHEMAP.get("USER_STATE_MAP", STATE_KEY, false, ctx);
 
                 if(ctx.params.state) {
                     stateObj = ctx.params.state;
-                    CACHEMAP.set("USER_STATE_MAP", STATE_KEY, stateObj);
+                    CACHEMAP.set("USER_STATE_MAP", STATE_KEY, stateObj, ctx);
                 }
 
                 if(stateObj) {
@@ -43,11 +43,11 @@ module.exports = {
 			async handler(ctx) {
                 var STATE_KEY = `${ctx.meta.user.tenantId}_${ctx.meta.user.userId}_${ctx.params.module}`;
                 
-                var stateObj = CACHEMAP.get("USER_STATE_MAP", STATE_KEY);
+                var stateObj = CACHEMAP.get("USER_STATE_MAP", STATE_KEY, false, ctx);
 
                 stateObj = ctx.params.state;
                 
-                CACHEMAP.set("USER_STATE_MAP", STATE_KEY, stateObj);
+                CACHEMAP.set("USER_STATE_MAP", STATE_KEY, stateObj, ctx);
 
                 return {
                     "status": "okay",
@@ -68,7 +68,7 @@ module.exports = {
 			async handler(ctx) {
                 var STATE_KEY = `${ctx.meta.user.tenantId}_${ctx.meta.user.userId}_${ctx.params.module}`;
                 
-                CACHEMAP.set("USER_STATE_MAP", STATE_KEY, {});
+                CACHEMAP.set("USER_STATE_MAP", STATE_KEY, {}, ctx);
 
                 return {
                     "status": "okay",

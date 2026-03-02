@@ -38,7 +38,7 @@ module.exports = {
 					);
 				}
                 
-                const dbOpsID = await DBOPS.storeDBOpsQuery(ctx.params.source, ctx.params.fields, ctx.params.operation, ctx.params.forcefill, ctx.meta.user, false);
+                const dbOpsID = await DBOPS.storeDBOpsQuery(ctx.params.source, ctx.params.fields, ctx.params.operation, ctx.params.forcefill, ctx.meta.user, {}, {}, ctx);
 
                 return {
                     "status": "success",
