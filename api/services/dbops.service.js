@@ -315,7 +315,7 @@ module.exports = {
 
                 const sqlTable = jsonQuery.source.table;
                 var sqlWhere = jsonQuery.source.where;
-                const sqlRefid = jsonQuery.source.refid;
+                const sqlRefid = ctx.params.refid1 ?? jsonQuery.source.refid;
                 var sqlFields = filterNoDbNoSave(jsonQuery.fields);
 
                 if(!sqlWhere || Array.isArray(sqlWhere)) sqlWhere = {};
@@ -417,9 +417,7 @@ module.exports = {
                 const sqlFields = filterNoDbNoSave(jsonQuery.fields);
                 var forcefill = jsonQuery.forcefill;
                 const userInfo = jsonQuery.userInfo;
-                var sqlRefid = jsonQuery.source.refid;
-
-                sqlRefid = ctx.params.refid1 ?? jsonQuery.source.refid;
+                const sqlRefid = ctx.params.refid1 ?? jsonQuery.source.refid;
 
                 _.each(sqlFields, function(conf, field) {
                     if(!dataFields[field]) delete sqlFields[field];
