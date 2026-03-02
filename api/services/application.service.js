@@ -46,7 +46,7 @@ module.exports = {
 			async handler(ctx) {
 				const SETTINGS_KEY = `${ctx.meta.user.tenantId}_${ctx.meta.user.userId}_${ctx.params.module || "-"}`;
 
-				let settingsCache = CACHEMAP.get("SETTINGSCACHE", STATE_KEY, ctx);
+				let settingsCache = CACHEMAP.get("SETTINGSCACHE", STATE_KEY, false, ctx);
 
 				if(ctx.params.recache===true) {
 					settingsCache = {};

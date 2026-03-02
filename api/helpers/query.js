@@ -139,7 +139,7 @@ module.exports = {
         }
     },
 
-    storeQuery: async function(queryObj, userObj, queryID = false, params) {
+    storeQuery: async function(queryObj, userObj, queryID = false, params, ctx) {
         if(!queryID) queryID = encodeURIComponent(`${params.moduleId}@${params.objId}@${params.refid}`);//UNIQUEID.generate(12);
 
         CACHEMAP.set("QUERYMAP", queryID, queryObj, ctx);

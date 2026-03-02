@@ -72,7 +72,7 @@ module.exports = {
                                 const newRefID1 = `${objId}.infoviewTable.${k}`;
                                 tempObj.infoview.groups[k].config = {
                                     ...v.config,
-                                    queryid: await QUERY.storeQuery(v.config, ctx.meta.user, false, {objId: newRefID1, moduleId, "refid": `infoview.groups.${k}`}),
+                                    queryid: await QUERY.storeQuery(v.config, ctx.meta.user, false, {objId: newRefID1, moduleId, "refid": `infoview.groups.${k}`}, ctx),
                                 };
 
                                 if(tempObj.infoview.groups[k].config.table) delete tempObj.infoview.groups[k].config.table;
@@ -131,7 +131,7 @@ module.exports = {
                         if(v.source && v.source.type && v.source.type=="sql") {
                             tempObj.cards[k].source = {
                                 type: "sql",
-                                queryid: await QUERY.storeQuery(v.source, ctx.meta.user, false, {objId, moduleId, "refid": `cards.${k}`}),
+                                queryid: await QUERY.storeQuery(v.source, ctx.meta.user, false, {objId, moduleId, "refid": `cards.${k}`}, ctx),
                             };
                         }
                     }
@@ -143,7 +143,7 @@ module.exports = {
                             if(v.table) {
                                 tempObj.filters[k] = {
                                     ...v,
-                                    queryid: await QUERY.storeQuery(v.filter, ctx.meta.user, false, {objId, moduleId, "refid": `filters.${k}`}),
+                                    queryid: await QUERY.storeQuery(v.filter, ctx.meta.user, false, {objId, moduleId, "refid": `filters.${k}`}, ctx),
                                 };
                                 if(tempObj.filters[k].table) delete tempObj.filters[k].table;
                                 if(tempObj.filters[k].columns) delete tempObj.filters[k].columns;
@@ -161,7 +161,7 @@ module.exports = {
                             delete tempObj.source.cols;
                         }
                         
-                        const queryID = await QUERY.storeQuery(tempObj.source, ctx.meta.user, false, {objId, moduleId, "refid": "source"});
+                        const queryID = await QUERY.storeQuery(tempObj.source, ctx.meta.user, false, {objId, moduleId, "refid": "source"}, ctx);
                         tempObj.source = {
                             "type": "sql",
                             "queryid": queryID
@@ -176,7 +176,7 @@ module.exports = {
                             if(v.table) {
                                 tempObj.filters[k] = {
                                     ...v,
-                                    queryid: await QUERY.storeQuery(v.filter, ctx.meta.user, false, {objId, moduleId, "refid": `filters.${k}`}),
+                                    queryid: await QUERY.storeQuery(v.filter, ctx.meta.user, false, {objId, moduleId, "refid": `filters.${k}`}, ctx),
                                 };
                                 if(tempObj.filters[k].table) delete tempObj.filters[k].table;
                                 if(tempObj.filters[k].columns) delete tempObj.filters[k].columns;
@@ -194,7 +194,7 @@ module.exports = {
                             delete tempObj.source.cols;
                         }
                         
-                        const queryID = await QUERY.storeQuery(tempObj.source, ctx.meta.user, false, {objId, moduleId, "refid": "source"});
+                        const queryID = await QUERY.storeQuery(tempObj.source, ctx.meta.user, false, {objId, moduleId, "refid": "source"}, ctx);
                         tempObj.source = {
                             "type": "sql",
                             "queryid": queryID
@@ -218,7 +218,7 @@ module.exports = {
                         if(v.filter && v.filter.table) {
                             // 	tempObj.datagrid[k].filter = {
                             // 		type: v.filter.type,
-                            // 		queryid: await QUERY.storeQuery(v.filter, ctx.meta.user, false, {objId, moduleId, "refid": `datagrid.${k}`}),
+                            // 		queryid: await QUERY.storeQuery(v.filter, ctx.meta.user, false, {objId, moduleId, "refid": `datagrid.${k}`}, ctx),
                             // 	};
                             switch(v.filter.type) {
                                 case 'dataMethod': case 'dataSelector': case 'dataSelectorFromUniques': case 'dataSelectorFromTable':
@@ -238,7 +238,7 @@ module.exports = {
                         if(v.editor && v.editor.table) {
                             // tempObj.datagrid[k].editor = {
                             // 	type: v.editor.type,
-                            // 	queryid: await QUERY.storeQuery(v.editor, ctx.meta.user, false, {objId, moduleId, "refid": `datagrid.${k}`}),
+                            // 	queryid: await QUERY.storeQuery(v.editor, ctx.meta.user, false, {objId, moduleId, "refid": `datagrid.${k}`}, ctx),
                             // };
 
                             switch(v.editor.type) {
@@ -268,7 +268,7 @@ module.exports = {
                             delete tempObj.source.cols;
                         }
                         
-                        const queryID = await QUERY.storeQuery(tempObj.source, ctx.meta.user, false, {objId, moduleId, "refid": "source"});
+                        const queryID = await QUERY.storeQuery(tempObj.source, ctx.meta.user, false, {objId, moduleId, "refid": "source"}, ctx);
                         tempObj.source = {
                             "type": "sql",
                             "queryid": queryID
@@ -327,7 +327,7 @@ module.exports = {
                     if(v.table) {
                         formFields[k] = {
                             ...v,
-                            queryid: await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId}),
+                            queryid: await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId}, ctx),
                         };
                         if(formFields[k].table) delete formFields[k].table;
                         if(formFields[k].columns) delete formFields[k].columns;
@@ -346,7 +346,7 @@ module.exports = {
                         if(obj.src.type=="sql") {
                             v.ajaxchain[k1].src = {
                                 "type": "sql",
-                                queryid: await QUERY.storeQuery(v.ajaxchain[k1].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.${k1}`}),
+                                queryid: await QUERY.storeQuery(v.ajaxchain[k1].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.${k1}`}, ctx),
                             }
                         }
                     }
@@ -356,7 +356,7 @@ module.exports = {
                         if(v.ajaxchain.src.type=="sql") {
                             v.ajaxchain.src = {
                                 "type": "sql",
-                                queryid: await QUERY.storeQuery(v.ajaxchain.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.0`}),
+                                queryid: await QUERY.storeQuery(v.ajaxchain.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.0`}, ctx),
                             };
                         }
                     }
@@ -367,7 +367,7 @@ module.exports = {
                 if(v.autocomplete.src.type=="sql") {
                     v.autocomplete.src = {
                         "type": "sql",
-                        queryid: await QUERY.storeQuery(v.autocomplete.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.autocomplete.0`}),
+                        queryid: await QUERY.storeQuery(v.autocomplete.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.autocomplete.0`}, ctx),
                     };
                 }
             }
