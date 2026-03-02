@@ -16,6 +16,7 @@ module.exports = {
         });
 
         MESSAGING.loadDrivers();
+
         console.log("\x1b[36m%s\x1b[0m","Message and Notification System Initialized");
     },
 
@@ -33,7 +34,7 @@ module.exports = {
         };
 
         //Load Messaging Vendors from DB
-        if(VENDORS && typeof VENDORS.getAvailableVendors == "function") {
+        if(global["VENDORS"] && typeof VENDORS.getAvailableVendors == "function") {
             const tempObj = VENDORS.getAvailableVendors("messaging");
             if(tempObj) tempObj.forEach(a=> {
                 MESSAGING_DRIVER[a.vendor_code] = a;
