@@ -273,6 +273,10 @@ module.exports = {
 								json: true,
 								urlencoded: { extended: true }
 							},
+							rateLimit: {
+								window: 60 * 1000,
+								limit: 10
+							},
 							// Attach Express-compatible middlewares
 							use: [
 								// Attach IP/UA on every request
@@ -617,6 +621,10 @@ module.exports = {
 							bodyParsers: {
 								json: true,
 								urlencoded: { extended: true }
+							},
+							rateLimit: {
+								window: 60 * 1000,
+								limit: 10
 							},
 							// Attach Express-compatible middlewares
 							use: [

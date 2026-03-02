@@ -1,0 +1,14 @@
+{
+	"routes": {
+        "/": {
+			"method": "POST",
+			"data": "DEMO.test1",
+			"format": "json"
+		}
+    },
+	"events": {
+		"event1.test1": {
+			"data": "DEMO.test1"
+		}
+	}
+}
