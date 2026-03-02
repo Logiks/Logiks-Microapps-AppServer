@@ -451,7 +451,7 @@ module.exports = {
 					}
 				} else {
 					a = clean(a);
-					sqlWhere.push(b+"='"+a+"'");
+					sqlWhere.push(b+"="+a+"");
 				}
 			});
 		} else {
