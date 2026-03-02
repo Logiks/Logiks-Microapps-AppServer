@@ -215,14 +215,14 @@ module.exports = {
 						sqlWhere.push(b);
 					} else if(Array.isArray(a) && a.length==2) {
 						if(Array.isArray(a[0])) {
-							sqlWhere.push(`${b} ${a[1]} (${a[0].map(a=>`'${clean(a)}'`).join(",")})`);
+							sqlWhere.push(`${b} ${a[1]} (${a[0].map(a=>`${clean(a)}`).join(",")})`);
 						} else {
 							a[0] = clean(a[0]);
 							sqlWhere.push(`${b} ${a[1]} '${a[0]}'`);
 						}
 					} else {
 						a = clean(a);
-						sqlWhere.push(b+"='"+a+"'");
+						sqlWhere.push(b+"="+a+"");
 					}
 				});
 			} else {
@@ -444,10 +444,10 @@ module.exports = {
 					sqlWhere.push(b);
 				} else if(Array.isArray(a) && a.length==2) {
 					if(Array.isArray(a[0])) {
-						sqlWhere.push(`${b} ${a[1]} (${a[0].map(a=>`'${clean(a)}'`).join(",")})`);
+						sqlWhere.push(`${b} ${a[1]} (${a[0].map(a=>`${clean(a)}`).join(",")})`);
 					} else {
 						a[0] = clean(a[0]);
-						sqlWhere.push(`${b} ${a[1]} '${a[0]}'`);
+						sqlWhere.push(`${b} ${a[1]} ${a[0]}`);
 					}
 				} else {
 					a = clean(a);
