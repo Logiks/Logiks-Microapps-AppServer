@@ -215,11 +215,13 @@ module.exports = {
 						sqlWhere.push(b);
 					} else if(Array.isArray(a) && a.length==2) {
 						if(Array.isArray(a[0])) {
-							sqlWhere.push(`${b} ${a[1]} (${a[0].map(a=>`'${a}'`).join(",")})`);
+							sqlWhere.push(`${b} ${a[1]} (${a[0].map(a=>`'${clean(a)}'`).join(",")})`);
 						} else {
+							a[0] = clean(a[0]);
 							sqlWhere.push(`${b} ${a[1]} '${a[0]}'`);
 						}
 					} else {
+						a = clean(a);
 						sqlWhere.push(b+"='"+a+"'");
 					}
 				});
@@ -442,11 +444,13 @@ module.exports = {
 					sqlWhere.push(b);
 				} else if(Array.isArray(a) && a.length==2) {
 					if(Array.isArray(a[0])) {
-						sqlWhere.push(`${b} ${a[1]} (${a[0].map(a=>`'${a}'`).join(",")})`);
+						sqlWhere.push(`${b} ${a[1]} (${a[0].map(a=>`'${clean(a)}'`).join(",")})`);
 					} else {
+						a[0] = clean(a[0]);
 						sqlWhere.push(`${b} ${a[1]} '${a[0]}'`);
 					}
 				} else {
+					a = clean(a);
 					sqlWhere.push(b+"='"+a+"'");
 				}
 			});
@@ -587,4 +591,16 @@ async function field_decrypter(fieldId, data) {
 	// console.log("field_decrypter", fieldId, data);
 	var colArr = fieldId.split(".");
 	return await DATAMODELS.processField(colArr[0], colArr[1], data);
+}
+
+function clean(value) {
+  if (Array.isArray(value)) {
+    return value.map(v => clean(v));
+  }
+
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  return mysql.escape(value);
 }
