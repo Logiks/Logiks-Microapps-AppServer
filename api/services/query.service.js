@@ -211,7 +211,7 @@ module.exports = {
 				var queryObjOne = await QUERY.getQueryByID(ctx.params.queryid, ctx.meta.user, ctx);
 
 				if(!queryObjOne) {
-					const queryObj = QUERY.getSavedQuery(ctx.params.queryid, ctx);
+					const queryObj = await QUERY.getSavedQuery(ctx.params.queryid, ctx);
 					if(!queryObj) {
 						throw new LogiksError(
 							"QueryID Not Found",
