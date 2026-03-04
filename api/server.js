@@ -179,6 +179,15 @@ module.exports = {
 				logLevel: process.env.SERVER_CONSOLE_LOG_LEVEL || (isProd ? "error" : "debug"),//info, debug, trace, error, warn
 			});
 
+			const CORS_CONFIG = CONFIG.cors || {
+				origin: "*",//["https://localhost", "https://app.example.com"], ["*", "null"],
+				methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+				// methods: ["GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE", "CONNECT", "TRACE"],
+				credentials: false,
+				allowedHeaders: "*",
+				exposedHeaders: "*",
+			};
+
 			// -------------------------
 			// API GATEWAY SERVICE
 			// -------------------------
@@ -225,14 +234,7 @@ module.exports = {
 					ip: process.env.HOST || "0.0.0.0",
 					httpServerTimeout: 30 * 1000,
 
-					cors: {
-						origin: "*",//origin: ["https://app.example.com"], ["*", "null"],
-						methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-						// methods: ["GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE", "CONNECT", "TRACE"],
-						credentials: false,
-						allowedHeaders: "*",
-						exposedHeaders: "*",
-					},
+					cors: CORS_CONFIG,
 
 					// SERVE STATIC FILES
 					assets: {
