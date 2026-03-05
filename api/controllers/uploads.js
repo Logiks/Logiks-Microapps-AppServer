@@ -107,7 +107,7 @@ module.exports = {
 				const fileURI = await move_to_store(file.path, file.filename, bucket);
 				if(!fileURI) {
 					result[file.path] = 0;
-					continuel
+					continue;
 				}
 
 				const sqlResult = await _DB.db_insertQ1("appdb", "files_tbl", _.extend({
