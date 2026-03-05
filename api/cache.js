@@ -80,8 +80,8 @@ module.exports = {
             callback(defaultData, "error");
             return;
         }
-        cacheObj = this;
-        result = false;
+        var cacheObj = this;
+        var result = false;
 
         redis.get(cacheKey).then(function (result) {
             if (result == null) {
@@ -90,7 +90,7 @@ module.exports = {
 
             if (typeof result == "string") {
                 try {
-                    resultJSON = JSON.parse(result);
+                    var resultJSON = JSON.parse(result);
                     if (resultJSON != null) {
                         result = resultJSON;
                     }
@@ -107,8 +107,7 @@ module.exports = {
         if (redis.status != "ready") {
             return defaultData;
         }
-        cacheObj = this;
-        result = false;
+        var cacheObj = this;
 
         var result = await redis.get(cacheKey);
 
@@ -142,7 +141,7 @@ module.exports = {
     listCacheKeys : function(pattern, callback) {
         if(pattern==null) pattern = "*";
 
-        keysArr = [];
+        var keysArr = [];
         redis.keys(pattern).then(function (keys) {
             keys.forEach(function (key) {
               keysArr.push(key);
@@ -171,7 +170,7 @@ module.exports = {
 		else return {};
 	},
 
-    listCacheKeys: function() {
+    listCacheMapKeys: function() {
         return Object.keys(CACHESTORE_MAP);
     },
 

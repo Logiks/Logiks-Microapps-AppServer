@@ -38,7 +38,7 @@ module.exports = {
             case "IMPORT":
                 var responses = {};
                 const dbkeyList = Object.keys(schemaFile);
-                for(i=0;i<dbkeyList.length;i++) {
+                for(var i=0;i<dbkeyList.length;i++) {
                     const dbkey = dbkeyList[i];
                     const schema = schemaFile[dbkey];
 

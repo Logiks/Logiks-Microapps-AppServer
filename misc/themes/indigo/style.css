@@ -8,7 +8,7 @@
 
 /* Optional global tweaks */
 body {
-  background-color: #f9fafb; /* bg-slate-50 */
+  /*background-color: #f9fafb;  bg-slate-50 */
   color: #0f172a; /* text-slate-900 */
   background-color: var(--body);
 }

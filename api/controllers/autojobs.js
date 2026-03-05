@@ -158,7 +158,7 @@ module.exports = {
             ACTIVE_JOBS.splice(idx, 1);
             return true;
         } else {
-            return true;
+            return false;
         }
     },
 

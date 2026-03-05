@@ -202,8 +202,9 @@ module.exports = {
 		if(!table) return false;
 		if(!columns) columns = "*";
 
-		if(Array.isArray(columns)) columnsStr = columns.join(",");
-		else columnsStr = columns;
+		var columnsStr = columns;
+
+		if(Array.isArray(columnsStr)) columnsStr = columnsStr.join(",");
 
 		var sql = "SELECT "+columnsStr+" FROM "+table+" ";
 
@@ -291,7 +292,7 @@ module.exports = {
 		var quest = [];
 		var vals = [];
 		const colKeys = Object.keys(data);
-		for(i=0;i<colKeys.length;i++) {
+		for(var i=0;i<colKeys.length;i++) {
 			var b = colKeys[i];
 			var a = data[b];
 
@@ -362,10 +363,10 @@ module.exports = {
 
 		let cols = Object.keys(data[0]);
 
-		for(i=0;i<data.length;i++) {
+		for(var i=0;i<data.length;i++) {
 			const obj = data[i];
 
-			for(j=0;j<cols.length;j++) {
+			for(var j=0;j<cols.length;j++) {
 				var key = cols[j];
 				
 				if(!obj[key]) continue;
@@ -471,7 +472,7 @@ module.exports = {
 			var fData = [];
 			var vals = [];
 			const colKeys = Object.keys(data);
-			for(i=0;i<colKeys.length;i++) {
+			for(var i=0;i<colKeys.length;i++) {
 				var b = colKeys[i];
 				var a = data[b];
 
