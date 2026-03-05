@@ -36,13 +36,6 @@ global.isStaging = process.env.NODE_ENV === "uat" || process.env.NODE_ENV === "s
 
 console.log("\x1b[34m%s\x1b[0m","\nAppServer Initialization Started\n");
 
-//Loading Moleculer Errors for all
-// const { Errors } = require("moleculer");
-// global.Errors = Errors;
-
-// const { promisify } = require("util");
-// global.promisify = promisify;
-
 //Load Core Modules
 require('./api/commons');
 
@@ -70,7 +63,7 @@ async function main() {
             break;
         case "REMOTE":
             try {
-                var tempData = await axios.get(process.env.CONFIG_FILE);
+                let tempData = await axios.get(process.env.CONFIG_FILE);
                 tempConfig = tempData.data;
             } catch(e) {
                 console.error("\n\nConfig File Not Found, Shuting Down Server @ "+moment().format(), e.message);
