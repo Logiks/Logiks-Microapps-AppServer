@@ -271,9 +271,15 @@ module.exports = {
 							whitelist: [
 								"auth.*"
 							],
-							bodyParsers: {
-								json: true,
-								urlencoded: { extended: true }
+							bodyParsers:{
+								json: {
+									strict: false,
+									limit: "20MB"
+								},
+								urlencoded: {
+									extended: true,
+									limit: "20MB"
+								}
 							},
 							rateLimit: {
 								window: 60 * 1000,
@@ -385,9 +391,15 @@ module.exports = {
 							whitelist: [
 								"webhooks.*"
 							],
-							bodyParsers: {
-								json: true,
-								urlencoded: { extended: true }
+							bodyParsers:{
+								json: {
+									strict: false,
+									limit: "20MB"
+								},
+								urlencoded: {
+									extended: true,
+									limit: "20MB"
+								}
 							},
 							// Attach Express-compatible middlewares
 							use: [
@@ -502,9 +514,15 @@ module.exports = {
 							whitelist: [
 								"pages.*"
 							],
-							bodyParsers: {
-								json: true,
-								urlencoded: { extended: true }
+							bodyParsers:{
+								json: {
+									strict: false,
+									limit: "20MB"
+								},
+								urlencoded: {
+									extended: true,
+									limit: "20MB"
+								}
 							},
 							// Attach Express-compatible middlewares
 							use: [
@@ -620,9 +638,15 @@ module.exports = {
 								authRequired: false
 							},
 							whitelist: CONFIG.noauth,
-							bodyParsers: {
-								json: true,
-								urlencoded: { extended: true }
+							bodyParsers:{
+								json: {
+									strict: false,
+									limit: "20MB"
+								},
+								urlencoded: {
+									extended: true,
+									limit: "20MB"
+								}
 							},
 							rateLimit: {
 								window: 60 * 1000,
@@ -779,9 +803,15 @@ module.exports = {
 							whitelist: [
 								"**",
 							],
-							bodyParsers: {
-								json: true,
-								urlencoded: { extended: true }
+							bodyParsers:{
+								json: {
+									strict: false,
+									limit: "20MB"
+								},
+								urlencoded: {
+									extended: true,
+									limit: "20MB"
+								}
 							},
 							// aliases: {
 							// 	"POST files/upload": upload.single("file"),

@@ -159,7 +159,7 @@ module.exports = {
         };
         
         var logData = _.extend({
-            appid: ctx?.meta?.appInfo.appid || params.appid || "-",
+            appid: ctx?.meta?.appInfo?.appid || params?.appid || "-",
             channel: "email",
             vendor: driverId, 
             template_id: params.template_code || "-", 

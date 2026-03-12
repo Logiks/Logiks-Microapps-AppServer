@@ -1630,6 +1630,97 @@
       "location_spatial"
     ]
   },
+  "lgks_mfa": {
+    "columns": {
+      "id": {
+        "type": "int unsigned",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": "global",
+        "primary": false
+      },
+      "userid": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "mfa_type": {
+        "type": "varchar(15)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "mfa_code": {
+        "type": "text",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "mfa_expires": {
+        "type": "int",
+        "nullable": false,
+        "default": "0",
+        "primary": false
+      },
+      "mfa_xtras_1": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": "",
+        "primary": false
+      },
+      "mfa_xtras_2": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": "",
+        "primary": false
+      },
+      "mfa_xtras_3": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": "",
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('true','false')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY"
+    ]
+  },
   "lgks_orgs": {
     "columns": {
       "id": {
@@ -2533,6 +2624,12 @@
         "type": "varchar(65)",
         "nullable": true,
         "default": null,
+        "primary": false
+      },
+      "mfa_strategy": {
+        "type": "varchar(65)",
+        "nullable": true,
+        "default": "none",
         "primary": false
       },
       "refid": {

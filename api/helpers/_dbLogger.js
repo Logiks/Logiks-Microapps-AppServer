@@ -14,7 +14,7 @@ module.exports = {
         
         DBLOGGER_TABLES = dbList.map(item => item.Tables_in_microapp_logsdb);//.replace('log_', '')
         dbList.forEach(item => {
-            if(item.Tables_in_microapp_logsdb.toLowerCase().includes("frontend") 
+            if(item?.Tables_in_microapp_logsdb && item.Tables_in_microapp_logsdb.toLowerCase().includes("frontend") 
                     && item.Tables_in_microapp_logsdb.toLowerCase().includes("frontend") 
                     && ALLOWED_LOGS.indexOf(item.Tables_in_microapp_logsdb)<0) {
                 ALLOWED_LOGS.push(item.Tables_in_microapp_logsdb);

@@ -43,15 +43,20 @@ module.exports = {
                 "edited_on": dated,
                 "edited_by": payload.userId || "-",
             });
+
+            _DB.db_query("logdb", "UPDATE log_audit SET before_hash = sha1(before_state), after_hash = sha1(after_state) where before_hash IS NULL OR length(before_hash)<=0;", {});
         },
 
         async "logs.activity"(payload, nodeId) {
             // console.log("LOGS_ACTIVITY", payload);
             var dated = moment().format("Y-MM-DD HH:mm:ss");
-            _DB.db_insertQ1("logdb", "log_audit", {
+            var ref_src = payload.ref_src || "-";
+            if(ref_src.indexOf("@")>=0) ref_src = ref_src.split("@").splice(0,2).join("@");
+
+            _DB.db_insertQ1("logdb", "log_activities", {
                 "appid": payload.appid || "-",
                 "guid": payload.guid || "-",
-                "ref_src": payload.ref_src || "-",
+                "ref_src": ref_src,
                 "ref_id": payload.ref_id || "-",
 
                 "subject": payload.subject || "-",
@@ -71,12 +76,14 @@ module.exports = {
                 "edited_on": dated,
                 "edited_by": payload.userId || "-",
             });
+
+            _DB.db_query("logdb", "UPDATE log_activities SET pre_hash = sha1(pre_data), post_hash = sha1(post_data) where pre_hash IS NULL OR length(pre_hash)<=0;", {});
         },
 
         async "logs.trace"(payload, nodeId) {
             // console.log("LOGS_TRACE_TEMP", payload);
             var dated = moment().format("Y-MM-DD HH:mm:ss");
-            _DB.db_insertQ1("logdb", "log_audit", {
+            _DB.db_insertQ1("logdb", "log_temp", {
                 "appid": payload.appid || "-",
                 "guid": payload.guid || "-",
                 
@@ -96,7 +103,7 @@ module.exports = {
         async "logs.error"(payload, nodeId) {
             // console.log("LOGS_TRACE_TEMP", payload);
             var dated = moment().format("Y-MM-DD HH:mm:ss");
-            _DB.db_insertQ1("logdb", "log_audit", {
+            _DB.db_insertQ1("logdb", "log_errors", {
                 "appid": payload.appid || "-",
                 "guid": payload.guid || "-",
                 

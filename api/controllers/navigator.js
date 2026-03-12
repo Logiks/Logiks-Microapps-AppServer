@@ -21,6 +21,8 @@ module.exports = {
         
         if(!filter) filter = {};
 
+        if(!Array.isArray(userInfo.roles) && `${userInfo.roles}`.length>0) userInfo.roles = [userInfo.roles];
+
         filter = {
             ...filter,
             "onmenu": "true",

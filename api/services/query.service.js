@@ -101,7 +101,7 @@ module.exports = {
 				};
 			}
 		},
-		viewquery: {
+		viewQuery: {
 			rest: {
 				method: "POST",
 				path: "/view"
@@ -189,7 +189,7 @@ module.exports = {
 		},
 
 		//Run Query
-		queryid: {
+		runQuery: {
 			rest: {
 				method: "POST",
 				path: "/run"
@@ -250,12 +250,8 @@ module.exports = {
 
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
-				var dbkey = queryObj.dbkey;
-
-				if(ctx.params.dbkey && ctx.params.dbkey.length>0) {
-					dbkey = ctx.params.dbkey;
-				}
-				if(!dbkey) dbkey = "appdb";
+				
+				const dbkey = queryObj.dbkey?queryObj.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
 
 				const dbResponse = await _DB.db_query(dbkey, sqlQuery, {});
 				const dbData = dbResponse?.results || [];

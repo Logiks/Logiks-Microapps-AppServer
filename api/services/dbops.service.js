@@ -121,7 +121,9 @@ module.exports = {
                 forcefill = QUERY.updateWhereFromEnv(forcefill, forcefillData);
                 if(forcefill && Object.keys(forcefill).length>0) dataFields = _.extend(dataFields, forcefill);
 
-                const dbResponse = await _DB.db_insertQ1("appdb", sqlTable, dataFields);
+                const dbkey = jsonQuery.dbkey?jsonQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
+
+                const dbResponse = await _DB.db_insertQ1(dbkey, sqlTable, dataFields);
                 const insertId = dbResponse.insertId;
 
                 if(!insertId) {
@@ -247,8 +249,10 @@ module.exports = {
                         if(forcefill && Object.keys(forcefill).length>0) dataFields[k] = _.extend(dataFields[k], forcefill);
                     });
 
+                    const dbkey = jsonQuery.dbkey?jsonQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
+
                     //Bulk Insert
-                    const dbResponse = await _DB.db_insert_batchQ("appdb", sqlTable, dataFields);
+                    const dbResponse = await _DB.db_insert_batchQ(dbkey, sqlTable, dataFields);
 
                     if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
                         _.each(jsonQuery.hooks.postsubmit, function(func, k) {
@@ -355,8 +359,10 @@ module.exports = {
                 var sqlWhereData = await ENV.fetchEnvInfo(ctx.meta);
                 sqlWhereData = _.extend(sqlWhereData, ctx.params);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
+
+                const dbkey = jsonQuery.dbkey?jsonQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
                 
-                const dbResponse = await _DB.db_selectQ("appdb", sqlTable, sqlFields, sqlWhere, {}, " LIMIT 1");
+                const dbResponse = await _DB.db_selectQ(dbkey, sqlTable, sqlFields, sqlWhere, {}, " LIMIT 1");
                 
                 if(!dbResponse.results) return dbResponse;
                 else return dbResponse.results[0];
@@ -463,9 +469,11 @@ module.exports = {
                 sqlWhereData = _.extend(sqlWhereData, ctx.params);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
 
-                const preData = await _DB.db_findOne("appdb", sqlTable, Object.keys(newDataFields), sqlWhere, 'id DESC', true);
+                const dbkey = jsonQuery.dbkey?jsonQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
+
+                const preData = await _DB.db_findOne(dbkey, sqlTable, Object.keys(newDataFields), sqlWhere, 'id DESC', true);
                 
-                const dbResponse = await _DB.db_updateQ("appdb", sqlTable, newDataFields, sqlWhere);
+                const dbResponse = await _DB.db_updateQ(dbkey, sqlTable, newDataFields, sqlWhere);
 
                 if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
                     _.each(jsonQuery.hooks.postsubmit, function(func, k) {
@@ -572,9 +580,11 @@ module.exports = {
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
                 const dataToUpdate = _.extend( {"blocked": "true"}, MISC.generateDefaultDBRecord(ctx, true));
 
-                const preData = await _DB.db_findOne("appdb", sqlTable, "blocked, created_on, edited_on, created_by, edited_by", sqlWhere, 'id DESC', true);
+                const dbkey = jsonQuery.dbkey?jsonQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
 
-                const dbResponse = await _DB.db_updateQ("appdb", sqlTable, dataToUpdate, sqlWhere);
+                const preData = await _DB.db_findOne(dbkey, sqlTable, "blocked, created_on, edited_on, created_by, edited_by", sqlWhere, 'id DESC', true);
+
+                const dbResponse = await _DB.db_updateQ(dbkey, sqlTable, dataToUpdate, sqlWhere);
 
                 if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
                     _.each(jsonQuery.hooks.postsubmit, function(func, k) {

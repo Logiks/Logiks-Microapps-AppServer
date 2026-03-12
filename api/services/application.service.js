@@ -27,9 +27,13 @@ module.exports = {
 					);
 				}
 
-				delete applicationInfo.domain;
-				delete applicationInfo.logins;
+				if(applicationInfo.logins && Object.keys(applicationInfo.logins).length>0) {
+					applicationInfo.login = Object.keys(applicationInfo.logins).join(",");
+					delete applicationInfo.logins;
+				}
 
+				delete applicationInfo.domain;
+				
 				return applicationInfo;
 			}
 		},
