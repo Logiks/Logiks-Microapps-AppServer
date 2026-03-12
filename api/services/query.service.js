@@ -248,6 +248,13 @@ module.exports = {
 
 				queryObjCount.offset = 0;
 
+				if(ctx.params.stxt && ctx.params.cols) {
+					_.each(ctx.params.cols, function(col){
+						ctx.params.filter[col] = [ctx.params.stxt, "like"];
+						// searchQuery.push(`${col} like '%${ctx.params.stxt}%'`);
+					});
+				}
+
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				
