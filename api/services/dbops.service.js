@@ -155,7 +155,7 @@ module.exports = {
                     "userid": ctx.meta.user.userId,
                     "guid": ctx.meta.user.guid,
                     "appid": ctx.meta.appInfo.appid,
-                    "data": dataFields
+                    "post_data": dataFields
                 });
                 
                 return {
@@ -270,7 +270,7 @@ module.exports = {
                         "userid": ctx.meta.user.userId,
                         "guid": ctx.meta.user.guid,
                         "appid": ctx.meta.appInfo.appid,
-                        "data": dataFields
+                        "post_data": dataFields
                     });
 
                     return dbResponse;
@@ -498,7 +498,7 @@ module.exports = {
                     "guid": ctx.meta.user.guid,
                     "appid": ctx.meta.appInfo.appid,
                     "pre_data": preData || {},
-                    "data": newDataFields
+                    "post_data": newDataFields
                 });
 
                 return dbResponse;

@@ -28,7 +28,7 @@ module.exports = {
         async "logs.audit"(payload, nodeId) {
             // console.log("LOGS_AUDIT", payload);
             var dated = moment().format("Y-MM-DD HH:mm:ss");
-            _DB.db_insertQ1("logdb", "log_audit", {
+            await _DB.db_insertQ1("logdb", "log_audit", {
                 "appid": payload.appid || "-",
                 "guid": payload.guid || "-",
                 "nature": payload.nature || "-",
@@ -53,7 +53,7 @@ module.exports = {
             var ref_src = payload.ref_src || "-";
             if(ref_src.indexOf("@")>=0) ref_src = ref_src.split("@").splice(0,2).join("@");
 
-            _DB.db_insertQ1("logdb", "log_activities", {
+            await _DB.db_insertQ1("logdb", "log_activities", {
                 "appid": payload.appid || "-",
                 "guid": payload.guid || "-",
                 "ref_src": ref_src,
@@ -68,7 +68,7 @@ module.exports = {
                 "status": payload.status || "new",
                 
                 "pre_data": JSON.stringify(payload.pre_data || {}), 
-                "post_data": JSON.stringify(payload.post_data || {}), 
+                "post_data": JSON.stringify(payload.post_data || payload.data || {}), 
                 "trace_id": payload.trace_id || "0",
 
                 "created_on": dated,
