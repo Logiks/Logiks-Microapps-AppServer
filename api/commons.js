@@ -66,8 +66,16 @@ global._call = async function(serviceString, ...args) {
         } else {
             log_error(err);
         }
+
+        if(!(err.message.includes("Service") && err.message.includes("is not found."))) {
+          log_error(err);
+          return {
+            "status": false,
+            "err": err
+          };
+        }
         
-        return null;
+        return false;
     }
 }
 

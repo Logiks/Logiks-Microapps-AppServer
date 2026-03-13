@@ -82,18 +82,34 @@ module.exports = {
                 //     );
                 // }
 
+                var IS_HOOK_ERROR = false;
                 if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
-                    _.each(jsonQuery.hooks.presubmit, async function(func, k) {
-                        var a1 = await _call(func, {"data": dataFields, "operation": "insert"});
+                    for(var i=0;i<jsonQuery.hooks.presubmit.length;i++) {
+                        var func = jsonQuery.hooks.presubmit[i];
+
+                        var a1 = await _call(func, {"data": dataFields, "operation": "update"});
+
                         if(a1===false) {
+                            IS_HOOK_ERROR = true;
+                        }
+                        if(a1.err) {
+                            IS_HOOK_ERROR = true;
                             throw new LogiksError(
-                                "Invalid data or wrong record submited",
+                                a1.err.message,
                                 400,
                                 "INVALID_REQUEST"
                             );
                         }
                         if(!a1) dataFields = a1;
-                    });
+                    }
+                }
+                if(IS_HOOK_ERROR) {
+                    throw new LogiksError(
+                        "Invalid data or wrong record submited",
+                        400,
+                        "INVALID_REQUEST"
+                    );
+                    return;
                 }
                 
                 const sqlTable = jsonQuery.source.table;
@@ -121,7 +137,7 @@ module.exports = {
                 forcefill = QUERY.updateWhereFromEnv(forcefill, forcefillData);
                 if(forcefill && Object.keys(forcefill).length>0) dataFields = _.extend(dataFields, forcefill);
 
-                const dbkey = jsonQuery.dbkey?jsonQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
+                const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || ctx.params?.dbkey || "appdb";
 
                 const dbResponse = await _DB.db_insertQ1(dbkey, sqlTable, dataFields);
                 const insertId = dbResponse.insertId;
@@ -149,7 +165,8 @@ module.exports = {
                     "data": {"id": insertId, "data": dataFields, "operation": "insert", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user}
                 });
                 ctx.emit("logs.activity", {
-                    "nature": `record_created`,
+                    "subject": `record_created`,
+                    "category": `record_created_${sqlTable}`,
                     "ref_id": insertId,
                     "ref_src": decodeURIComponent(dbOpsID),
                     "userid": ctx.meta.user.userId,
@@ -200,18 +217,34 @@ module.exports = {
                 //     );
                 // }
 
+                var IS_HOOK_ERROR = false;
                 if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
-                    _.each(jsonQuery.hooks.presubmit, async function(func, k) {
-                        var a1 = await _call(func, {"data": dataFields, "operation": "bulk"});
+                    for(var i=0;i<jsonQuery.hooks.presubmit.length;i++) {
+                        var func = jsonQuery.hooks.presubmit[i];
+
+                        var a1 = await _call(func, {"data": dataFields, "operation": "update"});
+
                         if(a1===false) {
+                            IS_HOOK_ERROR = true;
+                        }
+                        if(a1.err) {
+                            IS_HOOK_ERROR = true;
                             throw new LogiksError(
-                                "Invalid data or wrong record submited",
+                                a1.err.message,
                                 400,
                                 "INVALID_REQUEST"
                             );
                         }
                         if(!a1) dataFields = a1;
-                    });
+                    }
+                }
+                if(IS_HOOK_ERROR) {
+                    throw new LogiksError(
+                        "Invalid data or wrong record submited",
+                        400,
+                        "INVALID_REQUEST"
+                    );
+                    return;
                 }
                 
                 const sqlTable = jsonQuery.source.table;
@@ -249,7 +282,7 @@ module.exports = {
                         if(forcefill && Object.keys(forcefill).length>0) dataFields[k] = _.extend(dataFields[k], forcefill);
                     });
 
-                    const dbkey = jsonQuery.dbkey?jsonQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
+                    const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || ctx.params?.dbkey || "appdb";
 
                     //Bulk Insert
                     const dbResponse = await _DB.db_insert_batchQ(dbkey, sqlTable, dataFields);
@@ -360,7 +393,7 @@ module.exports = {
                 sqlWhereData = _.extend(sqlWhereData, ctx.params);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
 
-                const dbkey = jsonQuery.dbkey?jsonQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
+                const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || ctx.params?.dbkey || "appdb";
                 
                 const dbResponse = await _DB.db_selectQ(dbkey, sqlTable, sqlFields, sqlWhere, {}, " LIMIT 1");
                 
@@ -404,18 +437,34 @@ module.exports = {
                 //     );
                 // }
 
+                var IS_HOOK_ERROR = false;
                 if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
-                    _.each(jsonQuery.hooks.presubmit, async function(func, k) {
+                    for(var i=0;i<jsonQuery.hooks.presubmit.length;i++) {
+                        var func = jsonQuery.hooks.presubmit[i];
+
                         var a1 = await _call(func, {"data": dataFields, "operation": "update"});
+
                         if(a1===false) {
+                            IS_HOOK_ERROR = true;
+                        }
+                        if(a1.err) {
+                            IS_HOOK_ERROR = true;
                             throw new LogiksError(
-                                "Invalid data or wrong record submited",
+                                a1.err.message,
                                 400,
                                 "INVALID_REQUEST"
                             );
                         }
                         if(!a1) dataFields = a1;
-                    });
+                    }
+                }
+                if(IS_HOOK_ERROR) {
+                    throw new LogiksError(
+                        "Invalid data or wrong record submited",
+                        400,
+                        "INVALID_REQUEST"
+                    );
+                    return;
                 }
 
                 const sqlTable = jsonQuery.source.table;
@@ -469,7 +518,7 @@ module.exports = {
                 sqlWhereData = _.extend(sqlWhereData, ctx.params);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
 
-                const dbkey = jsonQuery.dbkey?jsonQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
+                const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || ctx.params?.dbkey || "appdb";
 
                 const preData = await _DB.db_findOne(dbkey, sqlTable, Object.keys(newDataFields), sqlWhere, 'id DESC', true);
                 
@@ -491,7 +540,8 @@ module.exports = {
                     "data": {"id": sqlRefid, "data": newDataFields, "operation": "insert", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user}
                 });
                 ctx.emit("logs.activity", {
-                    "nature": `record_updated`,
+                    "subject": `record_updated`,
+                    "category": `record_updated_${sqlTable}`,
                     "ref_id": sqlRefid,
                     "ref_src": decodeURIComponent(dbOpsID),
                     "userid": ctx.meta.user.userId,
@@ -580,7 +630,7 @@ module.exports = {
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
                 const dataToUpdate = _.extend( {"blocked": "true"}, MISC.generateDefaultDBRecord(ctx, true));
 
-                const dbkey = jsonQuery.dbkey?jsonQuery.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
+                const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || ctx.params?.dbkey || "appdb";
 
                 const preData = await _DB.db_findOne(dbkey, sqlTable, "blocked, created_on, edited_on, created_by, edited_by", sqlWhere, 'id DESC', true);
 
@@ -602,7 +652,8 @@ module.exports = {
                     "data": {"id": sqlRefid, "data": dataFields, "operation": "insert", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user}
                 });
                 ctx.emit("logs.activity", {
-                    "nature": `record_deleted`,
+                    "subject": `record_deleted`,
+                    "category": `record_deleted_${sqlTable}`,
                     "ref_id": sqlRefid,
                     "ref_src": decodeURIComponent(dbOpsID),
                     "userid": ctx.meta.user.userId,

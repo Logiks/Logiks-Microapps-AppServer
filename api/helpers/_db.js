@@ -60,6 +60,14 @@ module.exports = {
 	db_nowunix: function() {
 		return Math.floor(Date.now() / 1000);
 	},
+
+	db_clean: function(value) {
+		return clean(value);
+	},
+
+	db_clean_key: function(value) {
+		return clean(value).replace(/'/g,'');
+	},
 	
 	//Standard MySQL
 	db_query : async function(dbkey, sql, params) {
@@ -75,6 +83,9 @@ module.exports = {
 		else table = false;
 
 		if(table && table!="lgks_domains") sql = {sql: sql, nestTables: "."};
+
+		const RAW_SQL = (typeof sql == "object")?sql.sql:sql;
+		const IS_SELECT = (RAW_SQL.toLowerCase().trim().indexOf("select")===0)?true:false;
 		
 		const dbResponse = await new Promise((resolve, reject) => {
 			_MYSQL[dbkey].query(sql, params, function(err, results, fields) {
@@ -94,14 +105,16 @@ module.exports = {
 					} else {
 						results = JSON.parse(JSON.stringify(results));
 
-						_.each(results, async function(row, k) {
-							_.each(row, async function(val, col) {
-								if(col.indexOf(".")>0 || !table)
-									results[k][col] = await field_decrypter(`${col}`, val);
-								else
-									results[k][col] = await field_decrypter(`${table}.${col}`, val);
-							});
-						})
+						if(IS_SELECT) {
+							_.each(results, async function(row, k) {
+								_.each(row, async function(val, col) {
+									if(col.indexOf(".")>0 || !table)
+										results[k][col] = await field_decrypter(`${col}`, val);
+									else
+										results[k][col] = await field_decrypter(`${table}.${col}`, val);
+								});
+							})
+						}
 
 						resolve({
 							"status": "success", 

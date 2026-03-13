@@ -62,7 +62,7 @@ module.exports = {
                 "subject": payload.subject || "-",
                 "category": payload.category || "-",
                 "subcategory": payload.subcategory || "-",
-                "message": payload.message || "No Message Found",
+                "message": payload.message || `${payload.subject} - ${payload.category}`,
                 "unilink": payload.unilink || "",
                 "tags": payload.tags || "",
                 "status": payload.status || "new",

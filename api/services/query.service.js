@@ -247,12 +247,16 @@ module.exports = {
 				}
 
 				queryObjCount.offset = 0;
-
+				//ctx.params.filter[col] = [ctx.params.stxt, "like"];
 				if(ctx.params.stxt && ctx.params.cols) {
+					var searchQuery = [];
 					_.each(ctx.params.cols, function(col){
-						ctx.params.filter[col] = [ctx.params.stxt, "like"];
-						// searchQuery.push(`${col} like '%${ctx.params.stxt}%'`);
+						searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
 					});
+
+					if(searchQuery.length>0) {
+						ctx.params.filter[`(${searchQuery.join(" OR ")})`] = "RAW";
+					}
 				}
 
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));

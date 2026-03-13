@@ -44,4 +44,8 @@ module.exports = {
 
         return data.results[0].guid;
     },
+
+    generateSSOId: async function(ssoSource, ssoId) {
+        return await ENCRYPTER.generateHash(`${ssoSource}:${ssoId}`);
+    }
 }
