@@ -50,6 +50,26 @@ module.exports = {
                     }
                     tempObj.fields = await JSONPROCESSOR.processFormFields(tempObj.fields, ctx, objId, moduleId);
 
+                    const actionList1 = Object.keys(tempObj.actions);
+                    for (var i = actionList1.length - 1; i >= 0; i--) {
+                        const k = actionList1[i];
+                        const v = tempObj.actions[k];
+
+                        if(v.policy && v.policy.length>0) {
+                            var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                            if(!isAllowed) {
+                                delete tempObj.actions[k];
+                                continue;
+                            }
+                        }
+
+                        if(v.payload) {
+                            const payloadId = `${objId}.${moduleId}.actions.${k}`;
+                            _CACHE.storeDataEx(payloadId, v.payload, 60*60*24*7);//7 days
+                            tempObj.actions[k].payload = payloadId;
+                        }
+                    }
+
                     if(tempObj.infoview && tempObj.infoview.groups) {
                         const groupList = Object.keys(tempObj.infoview.groups);
                         for (var i = groupList.length - 1; i >= 0; i--) {
@@ -61,6 +81,25 @@ module.exports = {
                                 if(!isAllowed) {
                                     delete tempObj.infoview.groups[k];
                                     continue;
+                                }
+                            }
+
+                            const actionList = Object.keys(v.actions);
+                            for (var i = actionList.length - 1; i >= 0; i--) {
+                                const k = actionList[i];
+                                const v = v.actions[k];
+
+                                if(v.policy && v.policy.length>0) {
+                                    var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                    if(!isAllowed) {
+                                        delete tempObj.infoview.groups[k].actions[k];
+                                        continue;
+                                    }
+                                }
+                                if(v.payload) {
+                                    const payloadId = `${objId}.${moduleId}.actions.${k}`;
+                                    _CACHE.storeDataEx(payloadId, v.payload, 60*60*24*7);//7 days
+                                    tempObj.infoview.groups[k].actions[k].payload = payloadId;
                                 }
                             }
 
@@ -152,6 +191,25 @@ module.exports = {
                         }
                     }
 
+                    const actionList2 = Object.keys(tempObj.actions);
+                    for (var i = actionList2.length - 1; i >= 0; i--) {
+                        const k = actionList2[i];
+                        const v = v.actions[k];
+
+                        if(v.policy && v.policy.length>0) {
+                            var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                            if(!isAllowed) {
+                                delete tempObj.actions[k];
+                                continue;
+                            }
+                        }
+                        if(v.payload) {
+                            const payloadId = `${objId}.${moduleId}.actions.${k}`;
+                            _CACHE.storeDataEx(payloadId, v.payload, 60*60*24*7);//7 days
+                            tempObj.actions[k].payload = payloadId;
+                        }
+                    }
+
                     jsonObj = tempObj;
                     break;
                 case "charts":
@@ -199,6 +257,46 @@ module.exports = {
                             "type": "sql",
                             "queryid": queryID
                         };
+                    }
+
+                    const actionList = Object.keys(tempObj.actions);
+                    for (var i = actionList.length - 1; i >= 0; i--) {
+                        const k = actionList[i];
+                        const v = tempObj.actions[k];
+
+                        if(v.policy && v.policy.length>0) {
+                            var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                            if(!isAllowed) {
+                                delete tempObj.actions[k];
+                                continue;
+                            }
+                        }
+
+                        if(v.payload) {
+                            const payloadId = `${objId}.${moduleId}.actions.${k}`;
+                            _CACHE.storeDataEx(payloadId, v.payload, 60*60*24*7);//7 days
+                            tempObj.actions[k].payload = payloadId;
+                        }
+                    }
+
+                    const buttonList = Object.keys(tempObj.buttons);
+                    for (var i = buttonList.length - 1; i >= 0; i--) {
+                        const k = buttonList[i];
+                        const v = tempObj.buttons[k];
+
+                        if(v.policy && v.policy.length>0) {
+                            var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                            if(!isAllowed) {
+                                delete tempObj.buttons[k];
+                                continue;
+                            }
+                        }
+
+                        if(v.payload) {
+                            const payloadId = `${objId}.${moduleId}.buttons.${k}`;
+                            _CACHE.storeDataEx(payloadId, v.payload, 60*60*24*7);//7 days
+                            tempObj.buttons[k].payload = payloadId;
+                        }
                     }
 
                     // tempObj.datagrid.filter && type!= "dataMethod" && .table

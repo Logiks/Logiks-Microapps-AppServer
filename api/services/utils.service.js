@@ -4,6 +4,25 @@ module.exports = {
 	name: "utils",
 
 	actions: {
+        runPayload: {
+            rest: {
+                method: "POST",
+                fullPath: "/api/run/:payloadId"
+            },
+            params: {
+                cmd: "string",
+                data: "object"
+            },
+            async handler(ctx) {
+                const payloadID = ctx.params.payloadId;
+                const payloadData = ctx.params.data || {};
+                const cmd = ctx.params.cmd;
+                const payloadParams = _CACHE.fetchDataSync(payloadID);
+
+                const results = await ctx.call(cmd, {...payloadData, ...payloadParams}, {meta: ctx.meta});
+                return results;
+            }
+        },
         getDOMRule: {
             rest: {
 				method: "GET",
