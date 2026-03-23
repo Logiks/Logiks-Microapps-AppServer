@@ -726,7 +726,7 @@ module.exports = {
 				}
 				const sessionId = payload.jti.replace("acc:","").replace("ref:","");
 
-				payload = JSON.parse(ENCRYPTER.decrypt(payload.payload, JWT_SECRET));
+				payload = JSON.parse(await ENCRYPTER.decrypt(payload.payload, JWT_SECRET));
 
 				// console.log("XXXXX", payload, sessionId);
 				return {
@@ -1054,7 +1054,7 @@ module.exports = {
 				{
 					type: "access",
 					// ...payloadBase
-					payload: ENCRYPTER.encrypt(JSON.stringify(payloadBase), JWT_SECRET)
+					payload: await ENCRYPTER.encrypt(JSON.stringify(payloadBase), JWT_SECRET)
 				},
 				JWT_SECRET,
 				{
@@ -1068,7 +1068,7 @@ module.exports = {
 				{
 					type: "refresh",
 					// ...payloadBase
-					payload: ENCRYPTER.encrypt(JSON.stringify(payloadBase), JWT_SECRET)
+					payload: await ENCRYPTER.encrypt(JSON.stringify(payloadBase), JWT_SECRET)
 				},
 				JWT_SECRET,
 				{
