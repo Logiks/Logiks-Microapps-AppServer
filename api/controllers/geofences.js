@@ -9,11 +9,11 @@ module.exports = {
         return true; //Public Controller
     },
 
-    findGeofence: async function(guid, geolocation, groupid='general', fenceType = "polygon", limit = 10, geoTable = "lgks_geofences") {
+    findGeofence: async function(guid, geolocation, groupid='general', fenceType = "polygon", limit = 10, max_distance = 1, geoTable = "lgks_geofences") {
         var geoArr = geolocation.split(",");
         const lat = geoArr[0];
         const lng = geoArr[1];
-        const radius_in_meters = 10000*1000;//meters
+        const radius_in_meters = max_distance * 1000;//meters
         
         switch(fenceType) {
             case "polygon":
@@ -45,3 +45,4 @@ module.exports = {
         //UPDATE geofences SET geofence_center = ST_PointOnSurface(geofence_area);
     // }
 }
+
