@@ -158,6 +158,9 @@ module.exports = {
             html: params.body,
         };
         
+        if(params.cc) mailOptions.cc = params.cc;
+        if(params.bcc) mailOptions.bcc = params.bcc;
+
         var logData = _.extend({
             appid: ctx?.meta?.appInfo?.appid || params?.appid || "-",
             channel: "email",
