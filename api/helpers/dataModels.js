@@ -101,13 +101,13 @@ module.exports = {
     },
 
     //Prepare record before encryption
-    prepareData: function(table, singleRecord) {
-        _.each(singleRecord, function(val, col) {
+    prepareData: async function(table, singleRecord) {
+        _.each(singleRecord, async function(val, col) {
             var colArr = col.split(".");
             if(colArr.length>1)
-                singleRecord[col] = DATAMODELS.prepareField(colArr[0], colArr[1], val);
+                singleRecord[col] = await DATAMODELS.prepareField(colArr[0], colArr[1], val);
             else
-                singleRecord[col] = DATAMODELS.prepareField(table, col, val);
+                singleRecord[col] = await DATAMODELS.prepareField(table, col, val);
         });
     }
 }
