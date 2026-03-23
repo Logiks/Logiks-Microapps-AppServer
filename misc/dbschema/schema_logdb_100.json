@@ -85,6 +85,18 @@
         "default": null,
         "primary": false
       },
+      "pre_hash": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "post_hash": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
       "trace_id": {
         "type": "varchar(155)",
         "nullable": true,
@@ -281,6 +293,18 @@
         "default": null,
         "primary": false
       },
+      "before_hash": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "after_hash": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
       "trace_id": {
         "type": "varchar(64)",
         "nullable": true,
@@ -290,7 +314,7 @@
       "blocked": {
         "type": "enum('false','true')",
         "nullable": true,
-        "default": null,
+        "default": "false",
         "primary": false
       },
       "created_by": {

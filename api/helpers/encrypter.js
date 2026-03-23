@@ -28,12 +28,14 @@ module.exports = {
             MASTER_SALT = encryptionKey;
         }
 
-        console.log("\x1b[36m%s\x1b[0m","Encryption Engien Initialized");
+        console.log("\x1b[36m%s\x1b[0m","Encryption Engine Initialized");
     },
 
     encrypt : function(text, encryptionKey) {
         if (!text) return null;
         if(!encryptionKey) encryptionKey = CONFIG.SALT_KEY;
+
+        encryptionKey = KEYMANAGER.getKey(encryptionKey);
 
         const KEY = crypto.createHash('sha256').update(encryptionKey).digest(); // 32 bytes
 
@@ -49,6 +51,8 @@ module.exports = {
     decrypt : function(encryptedText, encryptionKey) {
         if (!encryptedText) return null;
         if(!encryptionKey) encryptionKey = CONFIG.SALT_KEY;
+        
+        encryptionKey = KEYMANAGER.getKey(encryptionKey);
 
         const KEY = crypto.createHash('sha256').update(encryptionKey).digest(); // 32 bytes
 

@@ -180,7 +180,7 @@ module.exports = {
 						redirectURL = "";
 					}
 					redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "retoken=" + retokenId;
-					console.log("X1", userInfo, token, redirectURL);
+					// console.log("X1", userInfo, token, redirectURL);
 
 					ctx.meta.$statusCode = 302;
 					ctx.meta.$responseHeaders = {
@@ -403,58 +403,45 @@ module.exports = {
 					throw new LogiksError("Geofencing Locked, you are not within any allowed premises", 401);
 				}
 
-				const token = this.issueTokensForUser(userDataUpdated, ctx.meta.remoteIP, deviceType, ctx);
-				await log_login(userDataUpdated, "USER-LOGIN", "/login", ctx);
-				return token;
-			}
-		},
+				//Check is OTP/MFA Required
+				const mfainfo = await USERS.hasMFA(userInfo.guid, username);
+				//if Yes
+				//If No
+				if(!mfainfo) {
+					//check if user has any MFA method enforced, if yes, then ask for OTP/MFA instead of giving access token
+					if(CONFIG?.mfa?.mfa_strategy=="enforce") {
+						USERS.generateMFASecret(userInfo.guid, username);
 
-		/**
-		 * Request OTP.
-		 * POST /api/public/auth/request-otp
-		 * POST /auth/request-otp
-		 */
-		requestOtp: {
-			rest: {
-				method: "POST",
-				path: "/request-otp"
-			},
-			params: {
-				username: "string",
-				password: "string",
-				deviceType: { type: "string", optional: true, default: "web" },
-				geolocation: { type: "string", optional: true, default: "0,0" },
-			},
-			async handler(ctx) {
-				var { username, password, deviceType, geolocation } = ctx.params;
-				if(!geolocation) geolocation = "0,0";
-
-				const userInfo = await USERS.verifyUser(username, password, ctx.meta.appInfo.appid);
-				if(!userInfo) {
-					await log_login_error({
-						"guid": "-",
-						"userId": username,
-						"geolocation": geolocation
-					}, "REQUEST-OTP", "/request-otp", "Invalid credentials", ctx);
-					throw new LogiksError("Invalid credentials", 401);
+						await log_login_error({
+							"guid": userInfo.guid,
+							"userId": username,
+							"geolocation": geolocation
+						}, "USER-LOGIN", "/login", "MFA Enabled, try again", ctx);
+						throw new LogiksError("MFA Enabled, try again", 401);
+					}
 				}
-				var userDataUpdated = await generateUserMap(userInfo, geolocation, ctx.meta.remoteIP, ctx.meta.appInfo.appid);
 
-				const identifier = MISC.generateUUID("",4);
-				const otp = (Math.floor(100000 + Math.random() * 900000)).toString();
-				const key = `otp:${identifier}`;
+				if(mfainfo) {
+					const otpCode = await USERS.generateTOTPCode(userInfo.guid, username, userDataUpdated, ctx.meta.remoteIP, deviceType, geolocation);
+					if(!otpCode) {
+						await log_login_error({
+							"guid": userInfo.guid,
+							"userId": username,
+							"geolocation": geolocation
+						}, "USER-LOGIN", "/login", "OTP/TOTO generation failed", ctx);
+						throw new LogiksError("OTP/TOTO generation failed", 401);
+					}
 
-				await authRedis.set(
-					key,
-					JSON.stringify({ otp, deviceType, user: userDataUpdated }),
-					"EX",
-					300 // 5 minutes
-				);
-
-				// TODO: integrate SMS/email provider
-				console.log("OTP generated", { identifier, otp, deviceType, user: userDataUpdated });
-
-				return { success: true, message: "OTP sent (stub)", ttl: 300 };
+					return {
+						status: "mfa_required",
+						identifier: otpCode.identifier,
+						expires: otpCode.expires
+					};
+				} else {
+					const token = this.issueTokensForUser(userDataUpdated, ctx.meta.remoteIP, deviceType, ctx);
+					await log_login(userDataUpdated, "USER-LOGIN", "/login", ctx);
+					return token;
+				}
 			}
 		},
 
@@ -475,34 +462,18 @@ module.exports = {
 				geolocation: { type: "string", optional: true, default: "0,0" },
 			},
 			async handler(ctx) {
-				const { identifier, otp, deviceType } = ctx.params;
+				const { identifier, otp, deviceType, geolocation } = ctx.params;
 
-				const key = `otp:${identifier}`;
-				const stored = await authRedis.get(key);
+				const user = await USERS.valiateOTPCode(identifier, otp);
 
-				if (!stored) {
+				if(!user) {
 					await log_login_error({
 						"guid": "-",
 						"userId": "-",
 						"geolocation": geolocation
-					}, "VERIFY-OTP", "/verify-otp", "Invalid or expired OTP (1)", ctx);
-					throw new LogiksError("Invalid or expired OTP", 401);
+					}, "USER-OTP", "/verify-otp", "Invalid OTP", ctx);
+					throw new LogiksError("Invalid OTP", 401);
 				}
-
-				const parsed = JSON.parse(stored);
-				if (parsed.otp !== otp) {
-					await log_login_error({
-						"guid": "-",
-						"userId": "-",
-						"geolocation": geolocation
-					}, "VERIFY-OTP", "/verify-otp", "Invalid or expired OTP (2)", ctx);
-					throw new LogiksError("Invalid or expired OTP", 401);
-				}
-
-				await authRedis.del(key);
-
-				// TODO: map identifier → real user
-				const user = parsed.user;
 
 				const token = this.issueTokensForUser(user, ctx.meta.remoteIP, deviceType, ctx);
 				await log_login(user, "USER-LOGIN-OTP", "/verify-otp", ctx);
@@ -761,7 +732,7 @@ module.exports = {
 				return {
 					userId: payload.userId,
 					username: payload.username,
-					tenantId: payload.tenantId,
+					tenantId: payload.tenantId || payload.guid,
 					privilege: payload.privilege,
 					roles: payload.roles || [],
 					scopes: payload.scopes || [],

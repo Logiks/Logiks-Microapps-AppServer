@@ -8,6 +8,11 @@
     "intercept_axios_response": false,
     "default_lang": "en-gb",
     "base_url": "http://localhost:9999/",
+    "mfa": {
+        "mfa_length": 6,
+        "strategy": "none",
+        "mfa_default_type": "totp"
+    },
     "disable_cache": {
         "application": false,
         "modules": false,
@@ -18,7 +23,7 @@
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "credentials": false,
         "allowedHeaders": "*",
-        "exposedHeaders": "*",
+        "exposedHeaders": "*"
     },
     "noauth": [
         "public.*",

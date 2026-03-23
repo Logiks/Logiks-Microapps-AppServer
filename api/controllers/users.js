@@ -3,6 +3,8 @@
  * 
  * */
 
+const { TOTP } = require("totp-generator");
+
 module.exports = {
 
     initialize: function() {
@@ -49,13 +51,13 @@ module.exports = {
                     "avatar": federatedData.email || "",
 
                     "remarks": "",
-                    "vcode": "",
+                    "vcode": "",//Verification code for email or mobile verification
                     "mauth": "",
-                    "refid": "",
+                    "refid": "",//Used during registration or for linking accounts
 
                     "expires": moment().add(6, 'months').format("YYYY-MM-DD HH:mm:ss"),
 
-                    "tags": "azuread_user",
+                    "tags": "federated,azuread_user",
                     "privacy": "protected",
                     "security_policy": "closed",
                     "registered_site": "default",
@@ -210,6 +212,134 @@ module.exports = {
             } catch(e) {
                 return false;
             }
+        }
+    },
+
+    hasMFA: async function(guid, userid) {
+        //mfa_type,mfa_code,mfa_expires,mfa_xtras_1,mfa_xtras_2,mfa_xtras_3
+        var mfaInfo = await _DB.db_selectQ("appdb", "lgks_mfa", "*", {
+            "guid": [["global", guid], "IN"],
+            "userid": userid,
+            "blocked": 'false',
+        }, {});
+        if(!mfaInfo || !mfaInfo?.results || mfaInfo.results.length<=0) return false;
+        
+        mfaInfo = mfaInfo.results[0];
+        return mfaInfo;
+    },
+
+    generateMFASecret: function(guid, userid, mfaType = false) {
+        _DB.db_insertQ1("appdb", "lgks_mfa", {
+            "guid": guid,
+            "userid": userid,
+            "mfa_type": mfaType || CONFIG.mfa.mfa_default_type || "totp",
+            "mfa_code": TOTP.generateSecret(), //You can also use any random string generator or OTP generator library
+            "mfa_expires": moment().add(1, 'year').format("Y-M-D HH:mm:ss"),
+            "mfa_xtras_1": "email", //mfa_xtras_1 can be used to store the preferred delivery method like email, sms, whatsapp etc.
+            "mfa_xtras_2": "", //mfa_xtras_2 can be used to store the destination address like email id or mobile number
+            "mfa_xtras_3": "",
+            "created_on": moment().format("Y-M-D HH:mm:ss"),
+            "created_by": userid,
+            "edited_on": moment().format("Y-M-D HH:mm:ss"),
+            "edited_by": userid,
+        });
+    },
+
+    generateTOTPCode: async function(guid, userid, userInfo, remoteIP, deviceType, geolocation) {
+        const mfainfo = await USERS.hasMFA(guid, userid);
+        if(!mfainfo) return false;
+        
+        const otpIdentifier = MISC.generateUUID("",4);
+        const otpKey = `otp:${otpIdentifier}`;
+
+        switch(mfainfo.mfa_type) {
+            case "totp":
+                var expires_in = 60; // Store OTP in cache with 5 minutes TTL
+                var mfa_expires = moment().add(expires_in, 'seconds').format("Y-M-D HH:mm:ss");
+                const mfa_code = mfainfo.mfa_code; //This is the secret key stored in the database for the user, eg. "JBSWY3DPEHPK3PXP"
+                const newOTP = await TOTP.generate(mfa_code, {
+                        digits: CONFIG.mfa.mfa_length || 6,
+                        algorithm: "SHA-512",
+                        period: expires_in,
+                        timestamp: moment().unix(),
+                    })
+                var otpCode = newOTP.otp;//newOTP.expires
+                // console.log(`Generated OTP: ${otp}`);
+                // console.log(`Expires at: ${new Date(expires * 1000)}`);
+                _CACHE.storeDataEx(otpKey, { otp: otpCode, deviceType, user: userInfo, remoteIP, mfainfo }, expires_in); // Store OTP in cache with expires_in seconds TTL
+
+                return {"identifier": otpIdentifier, "expires": mfa_expires};
+            break;
+
+            case "otp":
+                var expires_in = 300; // Store OTP in cache with 5 minutes TTL
+                var mfa_expires = moment().add(expires_in, 'seconds').format("Y-M-D HH:mm:ss");
+                var otpCode = MISC.generateUUID("",CONFIG.mfa.mfa_length);//(Math.floor(100000 + Math.random() * 900000)).toString();
+                _CACHE.storeDataEx(otpKey, { otp: otpCode, deviceType, user: userInfo, remoteIP, mfainfo }, expires_in); // Store OTP in cache with expires_in seconds TTL
+
+                //mfa_xtras_1 can be used to store the preferred delivery method like email, sms, whatsapp etc.
+                //mfa_xtras_2 can be used to store the destination address like email id or mobile number
+                //mfa_xtras_3 can be used to store any additional info if needed
+                switch(mfainfo.mfa_xtras_1) {
+                    case "sms":
+                        //send sms with otpCode to userInfo.mobile
+                    break;
+
+                    case "whatsapp":
+                        //send whatsapp message with otpCode to userInfo.mobile
+                    break;
+
+                    case "email":
+                        //send email with otpCode to userInfo.email
+                    default:
+                        //Default to email
+                }
+                return {"identifier": otpIdentifier, "expires": mfa_expires};
+            break;
+
+            default:
+                return false;
+        }
+    },
+
+    valiateOTPCode: async function(otpIdentifier, otpCode) {
+        const otpKey = `otp:${otpIdentifier}`;
+        const otpData = _CACHE.fetchDataSync(otpKey);
+        // _CACHE.deleteKey(otpKey);
+
+        if(!otpData) return false;
+
+        const otpStored = otpData.otp;
+        const deviceType = otpData.deviceType;
+        const remoteIP = otpData.remoteIP;
+        const user = otpData.user;
+        const mfainfo = otpData.mfainfo;
+
+        if(!mfainfo) return false;
+
+        switch(mfainfo.mfa_type) {
+            case "totp":
+                // const totp = new OTPAuth.TOTP({
+                //     issuer: "MyApp",
+                //     label: userid,
+                //     secret: OTPAuth.Secret.fromBase32(mfainfo.mfa_code),
+                //     algorithm: 'SHA1',
+                //     digits: 6,
+                //     period: 30,
+                // });
+                // return totp.validate({token: code, window: 1}); //Allowing 1 step window for clock skew
+            break;
+
+            case "hotp":
+                //Implement HOTP validation logic here
+            break;
+
+            case "otp":
+                return otpStored == otpCode;
+            break;
+
+            default:
+                return false;
         }
     }
 }
