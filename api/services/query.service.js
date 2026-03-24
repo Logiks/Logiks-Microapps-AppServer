@@ -147,8 +147,11 @@ module.exports = {
 				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
 				if(ctx.params.groupby) queryObj.groupby = ctx.params.groupby;
 
+				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
+
 				return {
-					"query": queryObj
+					"query": queryObj,
+					"sql": sqlQuery
 				};
 			}
 		},
