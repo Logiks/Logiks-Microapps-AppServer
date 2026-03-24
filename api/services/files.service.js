@@ -214,7 +214,7 @@ module.exports = {
 
 		delete: {
 			rest: {
-				method: "DELETE",
+				method: "POST",
 				fullPath: "/api/files/delete"
 			},
 			params: {
