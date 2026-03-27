@@ -206,7 +206,7 @@ module.exports = {
         else {
             columnsStr = processTilde(sqlObj.column);
         }
-        if(columnsStr.length>2) columnsStr = QUERY.updateWhereFromEnv(columnsStr, metaInfo);
+        if(columnsStr.length>2) columnsStr = _replace(columnsStr, metaInfo);
 
         if (sqlObj.limit) {
             limit = sqlObj.limit;
