@@ -241,7 +241,10 @@ module.exports = {
 				if(ctx.params.page) queryObj.page = ctx.params.page;
 				if(ctx.params.limit) queryObj.limit = ctx.params.limit;
 				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
-				if(ctx.params.groupby) queryObj.groupby = ctx.params.groupby;
+				if(ctx.params.groupby) {
+					queryObj.groupby = ctx.params.groupby;
+					queryObjCount.groupby = ctx.params.groupby;
+				}
 
 				try {
 					queryObj.offset = parseInt(queryObj.page)*parseInt(ctx.params.limit);
@@ -259,6 +262,14 @@ module.exports = {
 
 					if(searchQuery.length>0) {
 						ctx.params.filter[`(${searchQuery.join(" OR ")})`] = "RAW";
+					}
+				}
+
+				if(typeof queryObj.column == "string") {
+					if(queryObj.column.toLowerCase().includes("distinct")) {
+						try {
+							queryObjCount.groupby = queryObj.column.toUpperCase().split("DISTINCT")[1].trim().split(" ");
+						} catch (error) {}
 					}
 				}
 
