@@ -29,6 +29,7 @@ module.exports = {
 				if(!ctx.params.filter) ctx.params.filter = {};
 
 				var queryObj = ctx.params.query;
+				var hasDistinct = false;
 
 				if(!ctx.params.query.page) ctx.params.query.page = 0;
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
@@ -36,6 +37,7 @@ module.exports = {
 				var queryObjCount = _.cloneDeep(queryObj);
 				queryObjCount.column = "count(*) as count";
 
+				if(!queryObj.column && queryObj.cols) queryObj.column = (typeof queryObj.cols === "string") ? queryObj.cols : queryObj.cols.join(", ");
 				if(ctx.params.page) queryObj.page = ctx.params.page;
 				if(ctx.params.limit) queryObj.limit = ctx.params.limit;
 				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
@@ -67,6 +69,7 @@ module.exports = {
 					if(queryObj.column.toLowerCase().includes("distinct")) {
 						try {
 							queryObjCount.groupby = queryObj.column.toUpperCase().split("DISTINCT")[1].trim().split(" ");
+							hasDistinct = true;
 						} catch (error) {}
 					}
 				}
@@ -82,7 +85,7 @@ module.exports = {
 				const dbResponseCount = await _DB.db_query(dbkey, sqlQueryCount, {});
 				var dbDataCount = dbResponseCount?.results || [{".count": 0}];
 
-				if(queryObj.groupby && queryObj.groupby.length>0) {
+				if((queryObj.groupby && queryObj.groupby.length>0) || hasDistinct) {
 					dbDataCount = [{".count": dbData?.length || 0}];
 				}
 
@@ -257,6 +260,7 @@ module.exports = {
 					if(!isPord) ctx.params.DEBUG = queryObj.debug;
 				}
 
+				var hasDistinct = false;
 				var queryObj = _.cloneDeep(queryObjOne);
 
 				if(!queryObj.page) queryObj.page = 0;
@@ -264,7 +268,9 @@ module.exports = {
 
 				var queryObjCount = _.cloneDeep(queryObj);
 				queryObjCount.column = "count(*) as count";
-
+				
+				if(!queryObj.column && queryObj.cols) queryObj.column = (typeof queryObj.cols === "string") ? queryObj.cols : queryObj.cols.join(", ");
+				
 				if(ctx.params.page) queryObj.page = ctx.params.page;
 				if(ctx.params.limit) queryObj.limit = ctx.params.limit;
 				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
@@ -296,6 +302,7 @@ module.exports = {
 					if(queryObj.column.toLowerCase().includes("distinct")) {
 						try {
 							queryObjCount.groupby = queryObj.column.toUpperCase().split("DISTINCT")[1].trim().split(" ");
+							hasDistinct = true;
 						} catch (error) {}
 					}
 				}
@@ -311,7 +318,7 @@ module.exports = {
 				const dbResponseCount = await _DB.db_query(dbkey, sqlQueryCount, {});
 				var dbDataCount = dbResponseCount?.results || [{".count": 0}];
 
-				if(queryObj.groupby && queryObj.groupby.length>0) {
+				if((queryObj.groupby && queryObj.groupby.length>0) || hasDistinct) {
 					dbDataCount = [{".count": dbData?.length || 0}];
 				}
 
