@@ -240,6 +240,14 @@ module.exports = {
                 const query = sqlSingleObj.query;
                 var condition = sqlSingleObj.condition;
                 const as = sqlSingleObj.as?sqlSingleObj.as:"";
+                var conditionWhere = sqlSingleObj.where || {};
+                conditionWhere = QUERY.updateWhereFromEnv(conditionWhere, metaInfo);
+
+                var conditionWhereSQL = processSQLWhere(conditionWhere, " ");
+
+                if(conditionWhereSQL.length>0) {
+                    condition += ` AND ${conditionWhereSQL}`;
+                }
 
                 condition = QUERY.updateWhereFromEnv(condition, metaInfo);
 

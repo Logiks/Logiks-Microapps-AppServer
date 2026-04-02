@@ -17,13 +17,13 @@ module.exports = {
             },
 			async handler(ctx) {
 				//Add additioanl restrictions for running the queries recieved through this channel
-				// if(isProd || isStaging) {
-				// 	throw new LogiksError(
-				// 		"Restricted, Only Development Environment has access to this API",
-				// 		404,
-				// 		"RESTRICTED_ENVIRONMENT"
-				// 	);
-				// }
+				if(isProd || isStaging) {
+					throw new LogiksError(
+						"Restricted, Only Development Environment has access to this API",
+						404,
+						"RESTRICTED_ENVIRONMENT"
+					);
+				}
 				
 				if(!ctx.params.dbkey) ctx.params.dbkey = "appdb";
 				if(!ctx.params.filter) ctx.params.filter = {};
@@ -100,6 +100,7 @@ module.exports = {
 				};
 			}
 		},
+		//View SQL Query without running, will need Restricted API Access
 		queryRaw: {
 			rest: {
 				method: "POST",
@@ -124,6 +125,35 @@ module.exports = {
 				if(!ctx.params.query.page) ctx.params.query.page = 0;
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
 
+				if(ctx.params.stxt && ctx.params.cols) {
+					var searchQuery = [];
+					if(typeof ctx.params.cols === "string") ctx.params.cols = ctx.params.cols.split(",");
+					_.each(ctx.params.cols, function(col){
+						if(col.includes("*")) return;
+						if(col.includes(" as ")) col = col.split(" as ")[0].trim();
+						const table = col.split(".")[0].trim();
+
+						if(ctx.params.query.table.includes(table))
+							searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
+						else if(ctx.params.query.join && Array.isArray(ctx.params.query.join)) {
+							ctx.params.query.join.forEach((joinObj, k) => {
+								if(joinObj.query.includes(table)) {
+									const newWhere = {};
+									newWhere[`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`] = "RAW";
+									
+									if(!ctx.params.query.join[k].where) ctx.params.query.join[k].where = {};
+									
+									ctx.params.query.join[k].where = {...ctx.params.query.join[k].where, ...newWhere};
+								}
+							});
+						}
+					});
+
+					if(searchQuery.length>0) {
+						ctx.params.filter[`(${searchQuery.join(" OR ")})`] = "RAW";
+					}
+				}
+
 				const sqlQuery = await QUERY.parseQuery(ctx.params.query, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 
 				return {
@@ -131,6 +161,7 @@ module.exports = {
 				};
 			}
 		},
+		//View SQL Query without running, will need Restricted API Access
 		viewQuery: {
 			rest: {
 				method: "POST",
@@ -176,6 +207,35 @@ module.exports = {
 				if(ctx.params.limit) queryObj.limit = ctx.params.limit;
 				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
 				if(ctx.params.groupby) queryObj.groupby = ctx.params.groupby;
+
+				if(ctx.params.stxt && ctx.params.cols) {
+					var searchQuery = [];
+					if(typeof ctx.params.cols === "string") ctx.params.cols = ctx.params.cols.split(",");
+					_.each(ctx.params.cols, function(col){
+						if(col.includes("*")) return;
+						if(col.includes(" as ")) col = col.split(" as ")[0].trim();
+						const table = col.split(".")[0].trim();
+
+						if(ctx.params.query.table.includes(table))
+							searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
+						else if(ctx.params.query.join && Array.isArray(ctx.params.query.join)) {
+							ctx.params.query.join.forEach((joinObj, k) => {
+								if(joinObj.query.includes(table)) {
+									const newWhere = {};
+									newWhere[`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`] = "RAW";
+									
+									if(!ctx.params.query.join[k].where) ctx.params.query.join[k].where = {};
+									
+									ctx.params.query.join[k].where = {...ctx.params.query.join[k].where, ...newWhere};
+								}
+							});
+						}
+					});
+
+					if(searchQuery.length>0) {
+						ctx.params.filter[`(${searchQuery.join(" OR ")})`] = "RAW";
+					}
+				}
 
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 
@@ -289,8 +349,26 @@ module.exports = {
 				//ctx.params.filter[col] = [ctx.params.stxt, "like"];
 				if(ctx.params.stxt && ctx.params.cols) {
 					var searchQuery = [];
+					if(typeof ctx.params.cols === "string") ctx.params.cols = ctx.params.cols.split(",");
 					_.each(ctx.params.cols, function(col){
-						searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
+						if(col.includes("*")) return;
+						if(col.includes(" as ")) col = col.split(" as ")[0].trim();
+						const table = col.split(".")[0].trim();
+
+						if(ctx.params.query.table.includes(table))
+							searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
+						else if(ctx.params.query.join && Array.isArray(ctx.params.query.join)) {
+							ctx.params.query.join.forEach((joinObj, k) => {
+								if(joinObj.query.includes(table)) {
+									const newWhere = {};
+									newWhere[`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`] = "RAW";
+									
+									if(!ctx.params.query.join[k].where) ctx.params.query.join[k].where = {};
+									
+									ctx.params.query.join[k].where = {...ctx.params.query.join[k].where, ...newWhere};
+								}
+							});
+						}
 					});
 
 					if(searchQuery.length>0) {
