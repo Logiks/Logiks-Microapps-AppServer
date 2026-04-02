@@ -85,7 +85,7 @@ module.exports = {
                     const clientId = federatedLogin.params.application_id;
                     const scope = federatedLogin.params.scope || "openid profile email offline_access User.Read";
                     
-                    const returnURL = `https://${ctx.meta.serverHost}/callback/auth/ad`;
+                    const returnURL = `https://${ctx.meta.serverHost}/callback/auth/${federatedLogin.unique_id}`;
                     const authURL = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${returnURL}&response_mode=query&scope=${scope}&state=secure_random`;
                     const logoutURL = `https://login.microsoftonline.com/${tenantId}/saml2`;
                     
@@ -98,7 +98,7 @@ module.exports = {
                     const appId = federatedLogin.params.appid;
                     const loginScope = federatedLogin.params.scope || "*";
 
-                    const returnURL1 = `https://${ctx.meta.serverHost}/callback/auth/logiksauth`;// `${ctx.meta.serverHost}auth/logiksauth-login`;
+                    const returnURL1 = `https://${ctx.meta.serverHost}/callback/auth/${federatedLogin.unique_id}`;// `${ctx.meta.serverHost}auth/logiksauth-login`;
                     const authURL1 = `${baseURL}authenticate?appid=${appId}&scope=${loginScope}&returnURL=${encodeURIComponent(returnURL1)}`;
                     const logoutURL1 = `${baseURL}logout?appid=${appId}&returnURL=${encodeURIComponent(returnURL1)}`;
 

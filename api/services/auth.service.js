@@ -165,11 +165,11 @@ module.exports = {
 		federatedLoginGet: {
 			rest: {
 				method: "GET",
-				fullPath: "/auth/federated-login/:source?"
+				fullPath: "/auth/federated-login/:uuid"
 			},
 			async handler(ctx) {
 				// console.log("FEDERATED_LOGIN_GET", { "params": ctx.params, "headers": ctx.headers });
-				const result = await AUTHLOGIN.doFederatedLogin(ctx);
+				const result = await AUTHLOGIN.doFederatedLogin(ctx.params.uuid, ctx);
 
 				if(result.status=="success") {
 					const userInfo = result.user;
@@ -203,11 +203,11 @@ module.exports = {
 		federatedLoginPost: {
 			rest: {
 				method: "POST",
-				fullPath: "/auth/federated-login/:source?"
+				fullPath: "/auth/federated-login/:uuid?"
 			},
 			async handler(ctx) {
 				// console.log("FEDERATED_LOGIN_POST", { "params": ctx.params, "headers": ctx.headers });
-				const result = await AUTHLOGIN.doFederatedLogin(ctx);
+				const result = await AUTHLOGIN.doFederatedLogin(ctx.params.uuid, ctx);
 
 				if(result.status=="success") {
 					var userInfo = result.user;
