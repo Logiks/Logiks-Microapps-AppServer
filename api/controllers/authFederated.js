@@ -117,6 +117,24 @@ module.exports = {
         }
     },
 
+    verifyFederatedLoginResponse: async function(appid, federatedLoginID, ctx) {
+        const federatedLogin = await this.getFederatedLogins(appid, federatedLoginID);
+        if(!federatedLogin) return false;
+
+        // Implement verification logic based on the engine and response parameters
+        // This is a placeholder and should be replaced with actual verification code
+        switch(federatedLogin.engine) {
+            case "azuread2":
+                // Verify SAML response using appropriate libraries and methods
+                return true; // Return true if verification is successful
+            case "logiksauth":
+                // Verify LogiksAuth response using appropriate libraries and methods
+                return true; // Return true if verification is successful
+            default:
+                return false; // Unsupported engine
+        }
+    },
+
     processFederatedLoginResponse: async function(appid, federatedLoginID, ctx) {
         const federatedLogin = await this.getFederatedLogins(appid, federatedLoginID);
         if(!federatedLogin) return false;

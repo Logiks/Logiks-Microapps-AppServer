@@ -162,151 +162,151 @@ module.exports = {
 		// },
 
 		// //Starting of Federated Login section To allow 3rd party federated login (Google, Facebook, Apple, etc), called while returning to application
-		// federatedLoginGet: {
-		// 	rest: {
-		// 		method: "GET",
-		// 		fullPath: "/auth/federated-login/:source?"
-		// 	},
-		// 	async handler(ctx) {
-		// 		// console.log("FEDERATED_LOGIN_GET", { "params": ctx.params, "headers": ctx.headers });
-		// 		const result = await AUTHLOGIN.doFederatedLogin(ctx);
+		federatedLoginGet: {
+			rest: {
+				method: "GET",
+				fullPath: "/auth/federated-login/:source?"
+			},
+			async handler(ctx) {
+				// console.log("FEDERATED_LOGIN_GET", { "params": ctx.params, "headers": ctx.headers });
+				const result = await AUTHLOGIN.doFederatedLogin(ctx);
 
-		// 		if(result.status=="success") {
-		// 			const userInfo = result.user;
-		// 			const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
-		// 			const retokenId = UNIQUEID.generate(10);
+				if(result.status=="success") {
+					const userInfo = result.user;
+					const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
+					const retokenId = UNIQUEID.generate(10);
 
-		// 			await authRedis.set(
-		// 				retokenId,
-		// 				JSON.stringify({ token, deviceType: "web", user: userInfo, ip: ctx.meta.remoteIP }),
-		// 				"EX",
-		// 				FEDERATED_LOGIN_TIMEOUT
-		// 			);
-		// 			var redirectURL = ctx.meta.serverHost;
-		// 			if(!redirectURL) {
-		// 				redirectURL = "";
-		// 			}
-		// 			redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "retoken=" + retokenId;
-		// 			// console.log("X1", userInfo, token, redirectURL);
+					await authRedis.set(
+						retokenId,
+						JSON.stringify({ token, deviceType: "web", user: userInfo, ip: ctx.meta.remoteIP }),
+						"EX",
+						FEDERATED_LOGIN_TIMEOUT
+					);
+					var redirectURL = ctx.meta.serverHost;
+					if(!redirectURL) {
+						redirectURL = "";
+					}
+					redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "retoken=" + retokenId;
+					// console.log("X1", userInfo, token, redirectURL);
 
-		// 			ctx.meta.$statusCode = 302;
-		// 			ctx.meta.$responseHeaders = {
-		// 				Location: redirectURL
-		// 			};
-		// 			return redirectURL;
-		// 		} else {
-		// 			return result;
-		// 		}
-		// 	}
-		// },
+					ctx.meta.$statusCode = 302;
+					ctx.meta.$responseHeaders = {
+						Location: redirectURL
+					};
+					return redirectURL;
+				} else {
+					return result;
+				}
+			}
+		},
 
-		// federatedLoginPost: {
-		// 	rest: {
-		// 		method: "POST",
-		// 		fullPath: "/auth/federated-login/:source?"
-		// 	},
-		// 	async handler(ctx) {
-		// 		// console.log("FEDERATED_LOGIN_POST", { "params": ctx.params, "headers": ctx.headers });
-		// 		const result = await AUTHLOGIN.doFederatedLogin(ctx);
+		federatedLoginPost: {
+			rest: {
+				method: "POST",
+				fullPath: "/auth/federated-login/:source?"
+			},
+			async handler(ctx) {
+				// console.log("FEDERATED_LOGIN_POST", { "params": ctx.params, "headers": ctx.headers });
+				const result = await AUTHLOGIN.doFederatedLogin(ctx);
 
-		// 		if(result.status=="success") {
-		// 			var userInfo = result.user;
-		// 			userInfo.userId = userInfo.userid;
+				if(result.status=="success") {
+					var userInfo = result.user;
+					userInfo.userId = userInfo.userid;
 					
-		// 			const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
-		// 			const retokenId = UNIQUEID.generate(10);
+					const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
+					const retokenId = UNIQUEID.generate(10);
 
-		// 			await authRedis.set(
-		// 				retokenId,
-		// 				JSON.stringify({ token, deviceType: "web", user: userInfo, ip: ctx.meta.remoteIP }),
-		// 				"EX",
-		// 				FEDERATED_LOGIN_TIMEOUT
-		// 			);
-		// 			var redirectURL = "//"+ctx.meta.serverHost;
-		// 			if(!redirectURL) {
-		// 				redirectURL = "//";
-		// 			}
-		// 			redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "retoken=" + retokenId;
-		// 			// console.log("X2", userInfo, token, redirectURL);
+					await authRedis.set(
+						retokenId,
+						JSON.stringify({ token, deviceType: "web", user: userInfo, ip: ctx.meta.remoteIP }),
+						"EX",
+						FEDERATED_LOGIN_TIMEOUT
+					);
+					var redirectURL = "//"+ctx.meta.serverHost;
+					if(!redirectURL) {
+						redirectURL = "//";
+					}
+					redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "retoken=" + retokenId;
+					// console.log("X2", userInfo, token, redirectURL);
 
-		// 			ctx.meta.$statusCode = 302;
-		// 			ctx.meta.$responseHeaders = {
-		// 				Location: redirectURL
-		// 			};
-		// 			return redirectURL;
-		// 		} else {
-		// 			var redirectURL = "//"+ctx.meta.serverHost;
-		// 			if(!redirectURL) {
-		// 				redirectURL = "//";
-		// 			}
-		// 			redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "message=" + result.message;
+					ctx.meta.$statusCode = 302;
+					ctx.meta.$responseHeaders = {
+						Location: redirectURL
+					};
+					return redirectURL;
+				} else {
+					var redirectURL = "//"+ctx.meta.serverHost;
+					if(!redirectURL) {
+						redirectURL = "//";
+					}
+					redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "message=" + result.message;
 					
-		// 			ctx.meta.$statusCode = 302;
-		// 			ctx.meta.$responseHeaders = {
-		// 				Location: redirectURL
-		// 			};
-		// 			return redirectURL;
-		// 		}
-		// 	}
-		// },
+					ctx.meta.$statusCode = 302;
+					ctx.meta.$responseHeaders = {
+						Location: redirectURL
+					};
+					return redirectURL;
+				}
+			}
+		},
 
-		// doTokenLogin: {
-		// 	rest: {
-		// 		method: "POST",
-		// 		path: "/fedtoken"
-		// 	},
-		// 	params: {
-		// 		retoken: "string",
-		// 		deviceid: { type: "string", optional: true, default: "" },
-		// 		deviceType: { type: "string", optional: true, default: "web" },
-		// 		geolocation: { type: "string", optional: true, default: "0,0" },
-		// 	},
-		// 	async handler(ctx) {
-		// 		// console.log("FEDERATED_LOGIN_POST", { "params": ctx.params, "headers": ctx.headers });
-		// 		var { deviceType, geolocation, retoken } = ctx.params;
-		// 		const stored = await authRedis.get(retoken);
+		doTokenLogin: {
+			rest: {
+				method: "POST",
+				path: "/fedtoken"
+			},
+			params: {
+				retoken: "string",
+				deviceid: { type: "string", optional: true, default: "" },
+				deviceType: { type: "string", optional: true, default: "web" },
+				geolocation: { type: "string", optional: true, default: "0,0" },
+			},
+			async handler(ctx) {
+				// console.log("FEDERATED_LOGIN_POST", { "params": ctx.params, "headers": ctx.headers });
+				var { deviceType, geolocation, retoken } = ctx.params;
+				const stored = await authRedis.get(retoken);
 
-		// 		if (!stored) {
-		// 			await log_login_error({
-		// 				"guid": "-",
-		// 				"userId": "-",
-		// 				"geolocation": geolocation
-		// 			}, "VERIFY-RETOKEN", "/retoken", "Invalid or expired Token (1)", ctx);
-		// 			throw new LogiksError("Invalid or expired Token", 401);
-		// 		}
+				if (!stored) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "VERIFY-RETOKEN", "/retoken", "Invalid or expired Token (1)", ctx);
+					throw new LogiksError("Invalid or expired Token", 401);
+				}
 
-		// 		const parsed = JSON.parse(stored);
-		// 		if(!parsed) {
-		// 			await log_login_error({
-		// 				"guid": "-",
-		// 				"userId": "-",
-		// 				"geolocation": geolocation
-		// 			}, "VERIFY-RETOKEN", "/retoken", "Invalid or expired Token (2)", ctx);
-		// 			throw new LogiksError("Invalid or expired Token", 401);
-		// 		}
+				const parsed = JSON.parse(stored);
+				if(!parsed) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "VERIFY-RETOKEN", "/retoken", "Invalid or expired Token (2)", ctx);
+					throw new LogiksError("Invalid or expired Token", 401);
+				}
 
-		// 		if(ctx.meta.remoteIP != parsed.ip) {
-		// 			await log_login_error({
-		// 				"guid": parsed.user.guid,
-		// 				"userId": parsed.user.userid,
-		// 				"geolocation": geolocation
-		// 			}, "VERIFY-RETOKEN", "/retoken", "IP mismatch", ctx);
-		// 			throw new LogiksError("Invalid or expired Token (IP mismatch)", 401);
-		// 		}
+				if(ctx.meta.remoteIP != parsed.ip) {
+					await log_login_error({
+						"guid": parsed.user.guid,
+						"userId": parsed.user.userid,
+						"geolocation": geolocation
+					}, "VERIFY-RETOKEN", "/retoken", "IP mismatch", ctx);
+					throw new LogiksError("Invalid or expired Token (IP mismatch)", 401);
+				}
 
-		// 		if(deviceType && deviceType != parsed.deviceType) {
-		// 			await log_login_error({
-		// 				"guid": parsed.user.guid,
-		// 				"userId": parsed.user.userid,
-		// 				"geolocation": geolocation
-		// 			}, "VERIFY-RETOKEN", "/retoken", "Device type mismatch", ctx);
-		// 			throw new LogiksError("Invalid or expired Token (Device type mismatch)", 401);
-		// 		}
+				if(deviceType && deviceType != parsed.deviceType) {
+					await log_login_error({
+						"guid": parsed.user.guid,
+						"userId": parsed.user.userid,
+						"geolocation": geolocation
+					}, "VERIFY-RETOKEN", "/retoken", "Device type mismatch", ctx);
+					throw new LogiksError("Invalid or expired Token (Device type mismatch)", 401);
+				}
 
-		// 		await log_login(parsed.user, "USER-LOGIN", "/retoken", ctx);
-		// 		return parsed.token;
-		// 	}
-		// },
+				await log_login(parsed.user, "USER-LOGIN", "/retoken", ctx);
+				return parsed.token;
+			}
+		},
 		//Ending of Federated Login section
 
 		/**
