@@ -36,12 +36,6 @@
             "*"
         ]
     },
-    "logiksauth": {
-        "enable": false,
-        "url": "https://demo.demo.com/",
-        "appid": "demo",
-        "scope": "*"
-    },
     "authjwt": {
         "algorithm": "HS256",
         "secret": "Zv7QFrJWhSz6j2kA",

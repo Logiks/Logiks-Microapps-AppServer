@@ -252,7 +252,7 @@ module.exports = {
 			sql += " "+ additionalQueryParams;
 		}
 
-		if(CONFIG.log_sql) {
+		if(CONFIG.log_sql) {// && table.indexOf("lgks_")<0
 			console.log("SQL", sql, whereParams);
 		}
 

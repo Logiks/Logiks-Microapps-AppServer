@@ -4,6 +4,7 @@
  * */
 
 const { TOTP } = require("totp-generator");
+const { diff } = require("deep-diff");
 
 module.exports = {
 
@@ -20,9 +21,24 @@ module.exports = {
 
     findOrCreateFederatedUser: async function(federatedData, federatedSource) {
         const guid = await TENANT.resolveSSOTenant(federatedData.tenantid, federatedSource);
+        
         return USERS.getUserInfo(federatedData.userid, {guid: guid}).then(async (userInfo)=>{
             if(userInfo) {
                 //User Exists, just return the info
+                //updateData.last_updated
+
+                const userInfoFiltered = Object.keys(federatedData).reduce((acc, key) => {
+                        if (key in userInfo) acc[key] = userInfo[key];
+                        return acc;
+                    }, {});
+                const differences = diff(userInfoFiltered, federatedData);
+                console.log("FEDERATED_USER_DIFFERENCES", differences);
+                
+                // await _DB.db_updateQ("appdb", "lgks_users", updateData, {
+                //     userid: userInfo.userid,
+                //     guid: userInfo.guid,
+                // });
+
                 return userInfo;
             } else {
                 //Create New User
@@ -39,8 +55,14 @@ module.exports = {
                     "roles": federatedData.roles ? federatedData.roles.join(",") : "",
                     
                     "reporting_to": federatedData.reporting_to || "",
+                    "hr_manager": federatedData.hr_manager || "",
                     "dob": federatedData.dob || "0000-00-00",
                     "gender": federatedData.gender || "male",
+
+                    "department": federatedData.department || "-",
+                    "designation": federatedData.designation || "-",
+                    "office": federatedData.office || "",
+                    "company": federatedData.company || guid || "",
 
                     "address": federatedData.address || "",
                     "region": federatedData.region || "",
@@ -60,7 +82,6 @@ module.exports = {
                     "tags": "federated,azuread_user",
                     "privacy": "protected",
                     "security_policy": "closed",
-                    "registered_site": "default",
 
                     "blocked": "false",
                     "created_on": moment().format("Y-M-D HH:mm:ss"),
@@ -91,7 +112,7 @@ module.exports = {
             
             var userInfo = await _DB.db_selectQ("appdb", 
                 "lgks_users JOIN lgks_privileges ON lgks_privileges.id = lgks_users.privilegeid JOIN lgks_access ON lgks_access.id = lgks_users.accessid LEFT JOIN lgks_users_group ON lgks_users_group.id = lgks_users.groupid", 
-                "lgks_privileges.name as privilege_name, lgks_access.name as access_name, lgks_access.sites as scope_sites, lgks_users_group.*, lgks_users.*, lgks_users.userid as userId",
+                "lgks_privileges.name as privilege_name, lgks_access.name as access_name, lgks_access.sites as scope_sites, lgks_users_group.*, lgks_users.*, lgks_users.userid as userId, lgks_users.edited_on as last_updated",
                 where, {});
             if(!userInfo || !userInfo?.results || userInfo.results.length<=0) return false;
 
@@ -100,7 +121,7 @@ module.exports = {
 
             return userInfo;
         } else {
-            var userInfo = await _DB.db_selectQ("appdb", "lgks_users", "*", where,{});
+            var userInfo = await _DB.db_selectQ("appdb", "lgks_users", "*, edited_on as last_updated", where,{});
             if(!userInfo || !userInfo?.results || userInfo.results.length<=0) return false;
 
             userInfo = userInfo.results[0];

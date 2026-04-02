@@ -1537,6 +1537,89 @@
       "var_code"
     ]
   },
+  "lgks_federatedlogins": {
+    "columns": {
+      "id": {
+        "type": "int unsigned",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "appid": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": "global",
+        "primary": false
+      },
+      "guid": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "title": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "engine": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": "logiksauth",
+        "primary": false
+      },
+      "unique_id": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "params": {
+        "type": "json",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('true','false')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "unique_id_1",
+      "appid",
+      "unique_id",
+      "engine"
+    ]
+  },
   "lgks_geofences": {
     "columns": {
       "id": {
@@ -1719,128 +1802,6 @@
     },
     "indexes": [
       "PRIMARY"
-    ]
-  },
-  "lgks_orgs": {
-    "columns": {
-      "id": {
-        "type": "int",
-        "nullable": false,
-        "default": null,
-        "primary": true
-      },
-      "guid": {
-        "type": "varchar(100)",
-        "nullable": false,
-        "default": "global",
-        "primary": false
-      },
-      "org_name": {
-        "type": "varchar(255)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "org_email": {
-        "type": "varchar(255)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "org_mobile": {
-        "type": "varchar(20)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "org_address": {
-        "type": "varchar(255)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "org_region": {
-        "type": "varchar(255)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "org_country": {
-        "type": "varchar(150)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "org_zipcode": {
-        "type": "varchar(15)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "org_logo": {
-        "type": "varchar(255)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "tags": {
-        "type": "varchar(255)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "blocked": {
-        "type": "enum('true','false')",
-        "nullable": true,
-        "default": "false",
-        "primary": false
-      },
-      "account_expires": {
-        "type": "date",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "account_planid": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "remarks": {
-        "type": "varchar(250)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "created_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "created_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": "CURRENT_TIMESTAMP",
-        "primary": false
-      },
-      "edited_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "edited_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": "CURRENT_TIMESTAMP",
-        "primary": false
-      }
-    },
-    "indexes": [
-      "PRIMARY",
-      "guid"
     ]
   },
   "lgks_privileges": {
@@ -2506,6 +2467,12 @@
         "default": null,
         "primary": false
       },
+      "hr_manager": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
       "dob": {
         "type": "date",
         "nullable": true,
@@ -2526,6 +2493,30 @@
       },
       "mobile": {
         "type": "varchar(20)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "department": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "designation": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "office": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "company": {
+        "type": "varchar(155)",
         "nullable": true,
         "default": null,
         "primary": false

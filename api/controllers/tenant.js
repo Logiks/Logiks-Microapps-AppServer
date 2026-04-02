@@ -31,6 +31,7 @@ module.exports = {
         return tenantInfo;
     },
 
+    //Old Code will be removerd in future
     resolveSSOTenant: async function(ssoId, ssoSource) {
         const GUID = await ENCRYPTER.generateHash(`${ssoSource}:${ssoId}`);
         var whereLogic = {
