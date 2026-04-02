@@ -324,12 +324,6 @@ module.exports = {
                                 }
                             }
 
-                            if(v.payload) {
-                                const payloadId = `${objId}.${moduleId}.sidebar.source.${k}`;
-                                _CACHE.storeDataEx(payloadId, v.payload, 60*60*24*7);//7 days
-                                tempObj.sidebar.source[k].payload = payloadId;
-                            }
-
                             if(v.type=="sql") {
                                 if(!v.columns && v.cols) {
                                     v.columns = v.cols;
@@ -337,10 +331,16 @@ module.exports = {
                                 }
                                 
                                 const queryID = await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId, "refid": "sidebar.source"}, ctx);
-                                v = {
+                                tempObj.sidebar.source[k] = {
                                     "type": "sql",
                                     "queryid": queryID
-                                };
+                                };  
+                            }
+
+                            if(v.payload) {
+                                const payloadId = `${objId}.${moduleId}.sidebar.source.${k}`;
+                                _CACHE.storeDataEx(payloadId, v.payload, 60*60*24*7);//7 days
+                                tempObj.sidebar.source[k].payload = payloadId;
                             }
                         }
                     }
