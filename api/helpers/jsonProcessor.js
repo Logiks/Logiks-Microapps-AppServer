@@ -330,7 +330,7 @@ module.exports = {
                                     delete v.cols;
                                 }
                                 
-                                const queryID = await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId, "refid": "sidebar.source"}, ctx);
+                                const queryID = await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId, "refid": `sidebar.source.${k}`}, ctx);
                                 tempObj.sidebar.source[k] = {
                                     "type": "sql",
                                     "queryid": queryID
