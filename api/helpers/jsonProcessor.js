@@ -217,6 +217,41 @@ module.exports = {
                         }
                     }
 
+                    if(tempObj.sidebar && tempObj.sidebar.source) {
+                        const sidebarList = Object.keys(tempObj.sidebar.source);
+                        for (var i = sidebarList.length - 1; i >= 0; i--) {
+                            const k = sidebarList[i];
+                            const v = tempObj.sidebar.source[k];
+
+                            if(v.policy && v.policy.length>0) {
+                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                if(!isAllowed) {
+                                    delete tempObj.sidebar.source[k];
+                                    continue;
+                                }
+                            }
+
+                            if(v.type=="sql") {
+                                if(!v.columns && v.cols) {
+                                    v.columns = v.cols;
+                                    delete v.cols;
+                                }
+                                
+                                const queryID = await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId, "refid": `sidebar.source.${k}`}, ctx);
+                                tempObj.sidebar.source[k] = {
+                                    "type": "sql",
+                                    "queryid": queryID
+                                };  
+                            }
+
+                            if(v.payload) {
+                                const payloadId = `${objId}.${moduleId}.sidebar.source.${k}`;
+                                _CACHE.storeDataEx(payloadId, v.payload, 60*60*24*7);//7 days
+                                tempObj.sidebar.source[k].payload = payloadId;
+                            }
+                        }
+                    }
+
                     jsonObj = tempObj;
                     break;
                 case "charts":
@@ -290,6 +325,41 @@ module.exports = {
                                 const payloadId = `${objId}.${moduleId}.buttons.${k}`;
                                 _CACHE.storeDataEx(payloadId, v.payload, 60*60*24*7);//7 days
                                 tempObj.buttons[k].payload = payloadId;
+                            }
+                        }
+                    }
+
+                    if(tempObj.sidebar && tempObj.sidebar.source) {
+                        const sidebarList = Object.keys(tempObj.sidebar.source);
+                        for (var i = sidebarList.length - 1; i >= 0; i--) {
+                            const k = sidebarList[i];
+                            const v = tempObj.sidebar.source[k];
+
+                            if(v.policy && v.policy.length>0) {
+                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                if(!isAllowed) {
+                                    delete tempObj.sidebar.source[k];
+                                    continue;
+                                }
+                            }
+
+                            if(v.type=="sql") {
+                                if(!v.columns && v.cols) {
+                                    v.columns = v.cols;
+                                    delete v.cols;
+                                }
+                                
+                                const queryID = await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId, "refid": `sidebar.source.${k}`}, ctx);
+                                tempObj.sidebar.source[k] = {
+                                    "type": "sql",
+                                    "queryid": queryID
+                                };  
+                            }
+
+                            if(v.payload) {
+                                const payloadId = `${objId}.${moduleId}.sidebar.source.${k}`;
+                                _CACHE.storeDataEx(payloadId, v.payload, 60*60*24*7);//7 days
+                                tempObj.sidebar.source[k].payload = payloadId;
                             }
                         }
                     }
