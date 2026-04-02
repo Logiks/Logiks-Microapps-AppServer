@@ -55,31 +55,9 @@ module.exports = {
 				queryObjCount.offset = 0;
 				//ctx.params.filter[col] = [ctx.params.stxt, "like"];
 				if(ctx.params.stxt && ctx.params.cols) {
-					var searchQuery = [];
-					_.each(ctx.params.cols, function(col){
-						if(col.includes("*")) return;
-						if(col.includes(" as ")) col = col.split(" as ")[0].trim();
-						const table = col.split(".")[0].trim();
-
-						if(ctx.params.query.table.includes(table))
-							searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
-						else if(ctx.params.query.join && Array.isArray(ctx.params.query.join)) {
-							searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
-							// ctx.params.query.join.forEach((joinObj, k) => {
-							// 	if(joinObj.query.includes(table)) {
-							// 		const newWhere = {};
-							// 		newWhere[`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`] = "RAW";
-									
-							// 		if(!ctx.params.query.join[k].where) ctx.params.query.join[k].where = {};
-									
-							// 		ctx.params.query.join[k].where = {...ctx.params.query.join[k].where, ...newWhere};
-							// 	}
-							// });
-						}
-					});
-
-					if(searchQuery.length>0) {
-						ctx.params.filter[`(${searchQuery.join(" OR ")})`] = "RAW";
+					const stxtWhere = processStxt(ctx.params.stxt, queryObj, ctx.params.cols);
+					if(stxtWhere.length>0) {
+						ctx.params.filter[stxtWhere] = "RAW";
 					}
 				}
 
@@ -144,32 +122,9 @@ module.exports = {
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
 
 				if(ctx.params.stxt && ctx.params.cols) {
-					var searchQuery = [];
-					if(typeof ctx.params.cols === "string") ctx.params.cols = ctx.params.cols.split(",");
-					_.each(ctx.params.cols, function(col){
-						if(col.includes("*")) return;
-						if(col.includes(" as ")) col = col.split(" as ")[0].trim();
-						const table = col.split(".")[0].trim();
-
-						if(ctx.params.query.table.includes(table))
-							searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
-						else if(ctx.params.query.join && Array.isArray(ctx.params.query.join)) {
-							searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
-							// ctx.params.query.join.forEach((joinObj, k) => {
-							// 	if(joinObj.query.includes(table)) {
-							// 		const newWhere = {};
-							// 		newWhere[`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`] = "RAW";
-									
-							// 		if(!ctx.params.query.join[k].where) ctx.params.query.join[k].where = {};
-									
-							// 		ctx.params.query.join[k].where = {...ctx.params.query.join[k].where, ...newWhere};
-							// 	}
-							// });
-						}
-					});
-
-					if(searchQuery.length>0) {
-						ctx.params.filter[`(${searchQuery.join(" OR ")})`] = "RAW";
+					const stxtWhere = processStxt(ctx.params.stxt, ctx.params.query, ctx.params.cols);
+					if(stxtWhere.length>0) {
+						ctx.params.filter[stxtWhere] = "RAW";
 					}
 				}
 
@@ -228,32 +183,9 @@ module.exports = {
 				if(ctx.params.groupby) queryObj.groupby = ctx.params.groupby;
 
 				if(ctx.params.stxt && ctx.params.cols) {
-					var searchQuery = [];
-					if(typeof ctx.params.cols === "string") ctx.params.cols = ctx.params.cols.split(",");
-					_.each(ctx.params.cols, function(col){
-						if(col.includes("*")) return;
-						if(col.includes(" as ")) col = col.split(" as ")[0].trim();
-						const table = col.split(".")[0].trim();
-
-						if(ctx.params.query.table.includes(table))
-							searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
-						else if(ctx.params.query.join && Array.isArray(ctx.params.query.join)) {
-							searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
-							// ctx.params.query.join.forEach((joinObj, k) => {
-							// 	if(joinObj.query.includes(table)) {
-							// 		const newWhere = {};
-							// 		newWhere[`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`] = "RAW";
-									
-							// 		if(!ctx.params.query.join[k].where) ctx.params.query.join[k].where = {};
-									
-							// 		ctx.params.query.join[k].where = {...ctx.params.query.join[k].where, ...newWhere};
-							// 	}
-							// });
-						}
-					});
-
-					if(searchQuery.length>0) {
-						ctx.params.filter[`(${searchQuery.join(" OR ")})`] = "RAW";
+					const stxtWhere = processStxt(ctx.params.stxt, queryObj, ctx.params.cols);
+					if(stxtWhere.length>0) {
+						ctx.params.filter[stxtWhere] = "RAW";
 					}
 				}
 
@@ -368,32 +300,9 @@ module.exports = {
 				queryObjCount.offset = 0;
 				//ctx.params.filter[col] = [ctx.params.stxt, "like"];
 				if(ctx.params.stxt && ctx.params.cols) {
-					var searchQuery = [];
-					if(typeof ctx.params.cols === "string") ctx.params.cols = ctx.params.cols.split(",");
-					_.each(ctx.params.cols, function(col){
-						if(col.includes("*")) return;
-						if(col.includes(" as ")) col = col.split(" as ")[0].trim();
-						const table = col.split(".")[0].trim();
-
-						if(queryObj.table.includes(table))
-							searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
-						else if(queryObj.join && Array.isArray(queryObj.join)) {
-							searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
-							// queryObj.join.forEach((joinObj, k) => {
-							// 	if(joinObj.query.includes(table)) {
-							// 		const newWhere = {};
-							// 		newWhere[`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`] = "RAW";
-									
-							// 		if(!queryObj.join[k].where) queryObj.join[k].where = {};
-									
-							// 		queryObj.join[k].where = {...queryObj.join[k].where, ...newWhere};
-							// 	}
-							// });
-						}
-					});
-
-					if(searchQuery.length>0) {
-						ctx.params.filter[`(${searchQuery.join(" OR ")})`] = "RAW";
+					const stxtWhere = processStxt(ctx.params.stxt, queryObj, ctx.params.cols);
+					if(stxtWhere.length>0) {
+						ctx.params.filter[stxtWhere] = "RAW";
 					}
 				}
 
@@ -433,3 +342,37 @@ module.exports = {
 		}
 	}
 };
+
+function processStxt(stx, queryObj, cols) {
+	if(stx && cols) {
+		var searchQuery = [];
+		if(typeof cols === "string") cols = cols.split(",");
+		_.each(cols, function(col){
+			if(col.includes("*")) return;
+			if(col.includes(" as ")) col = col.split(" as ")[0].trim();
+			const table = col.split(".")[0].trim();
+
+			if(queryObj.table.includes(table))
+				searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(stx)}%'`);
+			else if(queryObj.join && Array.isArray(queryObj.join)) {
+				searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(stx)}%'`);
+				// queryObj.join.forEach((joinObj, k) => {
+				// 	if(joinObj.query.includes(table)) {
+				// 		const newWhere = {};
+				// 		newWhere[`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(stx)}%'`] = "RAW";
+						
+				// 		if(!queryObj.join[k].where) queryObj.join[k].where = {};
+						
+				// 		queryObj.join[k].where = {...queryObj.join[k].where, ...newWhere};
+				// 	}
+				// });
+			}
+		});
+
+		if(searchQuery.length>0) {
+			return `(${searchQuery.join(" OR ")})`;
+		}
+	}
+
+	return "";
+}
