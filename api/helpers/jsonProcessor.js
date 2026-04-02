@@ -13,6 +13,7 @@ module.exports = {
         try {
             if(typeof jsonObj == "string") jsonObj = JSON.parse(jsonObj);
         } catch(e) {}
+        
         if(!jsonObj) return false;
 
         

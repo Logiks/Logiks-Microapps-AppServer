@@ -194,31 +194,23 @@ async function checkRBACControls(ctx) {
 async function filterByPolicy(obj, checkPolicy) {
   if (typeof obj !== "object" || obj === null) return obj;
 
-  // If it's an array, process each element and remove invalid ones
+  // Handle arrays
   if (Array.isArray(obj)) {
-    for (let index = 0; index < obj.length; index++) {
-        const item = obj[index];
-        var response = await filterByPolicy(item, checkPolicy);
-        if(!response) delete obj[index];
+    const result = [];
+    for (const item of obj) {
+      const filtered = await filterByPolicy(item, checkPolicy);
+      if (filtered !== null) result.push(filtered);
     }
-    return Object.values(obj);
-    // return obj
-    //   .map(async (item) => {
-    //     var result = await filterByPolicy(item, checkPolicy);
-    //     return result;
-    //   })
-    //   .filter(item => item !== null);
+    return result.length ? result : null;
   }
 
-  // If this object itself contains "policy"
+  // Check policy at current node
   if ("policy" in obj) {
     const isAllowed = await checkPolicy(obj.policy);
-    if (!isAllowed) {
-      return null; // Remove this entire parent object
-    }
+    if (!isAllowed) return null;
   }
 
-  // Otherwise, recursively process children
+  // Process object
   const result = {};
   for (const key in obj) {
     const filteredChild = await filterByPolicy(obj[key], checkPolicy);
@@ -228,5 +220,46 @@ async function filterByPolicy(obj, checkPolicy) {
     }
   }
 
-  return result;
+  // Remove empty objects
+  return Object.keys(result).length ? result : null;
 }
+
+// async function filterByPolicy(obj, checkPolicy) {
+//   if (typeof obj !== "object" || obj === null) return obj;
+
+//   // If it's an array, process each element and remove invalid ones
+//   if (Array.isArray(obj)) {
+//     for (let index = 0; index < obj.length; index++) {
+//         const item = obj[index];
+//         var response = await filterByPolicy(item, checkPolicy);
+//         if(!response) delete obj[index];
+//     }
+//     return Object.values(obj);
+//     // return obj
+//     //   .map(async (item) => {
+//     //     var result = await filterByPolicy(item, checkPolicy);
+//     //     return result;
+//     //   })
+//     //   .filter(item => item !== null);
+//   }
+
+//   // If this object itself contains "policy"
+//   if ("policy" in obj) {
+//     const isAllowed = await checkPolicy(obj.policy);
+//     if (!isAllowed) {
+//       return null; // Remove this entire parent object
+//     }
+//   }
+
+//   // Otherwise, recursively process children
+//   const result = {};
+//   for (const key in obj) {
+//     const filteredChild = await filterByPolicy(obj[key], checkPolicy);
+
+//     if (filteredChild !== null) {
+//       result[key] = filteredChild;
+//     }
+//   }
+
+//   return result;
+// }
