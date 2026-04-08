@@ -351,7 +351,9 @@ module.exports = {
 							"err_message": err.sqlMessage
 						});
 					} else {
-						DATAMODELS.checkHook(table, "insert", dbkey, results.insertId);
+						DATAMODELS.checkHook(table, "insert", dbkey, {
+							id: results.insertId
+						});
 						resolve({
 							"status": "success", 
 							"insertId": results.insertId
@@ -429,7 +431,7 @@ module.exports = {
 							"err_message": err.sqlMessage
 						});
 					} else {
-						DATAMODELS.checkHook(table, "insert", dbkey, results);
+						DATAMODELS.checkHook(table, "batchq", dbkey, results);
 						resolve({
 							"status": "success", 
 							"results": results

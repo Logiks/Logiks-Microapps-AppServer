@@ -53,14 +53,16 @@ module.exports = {
             const dataModel = await DATAMODELS.getModel(tbl);
             if(dataModel && dataModel.hooks && dataModel.hooks[operation]) {
                 _.each(dataModel.hooks[operation], async function(runType, query) {
-                    switch(query) {
-                        case "sql":
-                            await _DB.db_query(dbkey, query, {});
-                            break;
-                        case "method":
-                            _call(query, {tables, operation, dbkey, param});
-                            break;
-                    }
+                    try {
+                        switch(query) {
+                            case "sql":
+                                await _DB.db_query(dbkey, query, {});
+                                break;
+                            case "method":
+                                _call(query, {tables, operation, dbkey, param});
+                                break;
+                        }
+                    } catch(e) {}
                 });
             }
         })
@@ -71,9 +73,11 @@ module.exports = {
         const dataModel = await DATAMODELS.getModel(table)
         if(!dataModel) return data;
 
-        if(dataModel.fields[field].encrypted) {
-            return ENCRYPTER.encrypt(data, `${table}.${field}.${CONFIG.SALT_KEY}`);
-        }
+        try {
+            if(dataModel.fields[field].encrypted) {
+                return ENCRYPTER.encrypt(data, `${table}.${field}.${CONFIG.SALT_KEY}`);
+            }
+        } catch(e) {}
 
         return data;
     },
@@ -83,9 +87,11 @@ module.exports = {
         const dataModel = await DATAMODELS.getModel(table)
         if(!dataModel) return data;
 
-        if(dataModel.fields[field].encrypted) {
-            return ENCRYPTER.decrypt(data, `${table}.${field}.${CONFIG.SALT_KEY}`);
-        }
+        try {
+            if(dataModel.fields[field].encrypted) {
+                return ENCRYPTER.decrypt(data, `${table}.${field}.${CONFIG.SALT_KEY}`);
+            }
+        } catch(e) {}
 
         return data;
     },

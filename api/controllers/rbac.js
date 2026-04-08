@@ -17,7 +17,7 @@ module.exports = {
         // ctx.meta.user
         // ctx.meta.appInfo
         // ctx.meta.appInfo.appid
-        return `${ctx.meta.userguid}:${ctx.meta.useruserid}`;
+        return `${ctx.meta.user.guid}:${ctx.meta.user.userid}:${ctx.meta.sessionId || "nosession"}`;
     },
 
     //Check and Load RBAC Controls into Memory for processing
@@ -109,9 +109,9 @@ module.exports = {
         // console.log("RBAC.checkPolicy", policyStr, defaultValue, ctx.meta.user, ctx.meta.appInfo, ctx.meta.appInfo.appid, ctx.meta.user.roles);
         if(!ctx || !ctx.meta.user || !ctx.meta.appInfo || !ctx.meta.appInfo.appid) return defaultValue;
 
-        if(isProd)
+        if(isProd) {
             await checkRBACControls(ctx);
-        else
+        } else
             await RBAC.reloadPolicies(ctx);
 
         const rbacRoleID = RBAC.getRoleId(ctx);
@@ -140,13 +140,53 @@ module.exports = {
         return defaultValue;
     },
 
-    registerPolicies: async function(appid, guid, policyArr, roles = false) {
+    registerPolicies: async function(appid, guid, policyObj, ctx) {
         if(!roles) {
             //Load from lgks_roles
         }
+        const policyItems = Object.keys(policyObj);
 
         //batch insert into lgks_rolemodel
         //then load into the RBAC_CACHE
+
+        const roleList = await _DB.db_selectQ("appdb", "lgks_rolemodel", "*", {
+            "guid": guid,
+            "site": appid,
+            "blocked": "false",
+            "policystr": [policyItems, "IN"]
+        })
+        if(!roleList.results) roleList.results = [];
+
+        const existingPolicies = roleList.results.map(obj => obj.policystr);
+        const newPolicies = policyItems.filter(a=>!existingPolicies.includes(a.toLowerCase()));
+
+        var bulkInsert = [];
+        for (let index = 0; index < newPolicies.length; index++) {
+            const policyStr = newPolicies[index];
+            const policyArr = policyStr.split(".");
+            const policyRemarks = policyStr.replaceAll('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            bulkInsert.push(_.extend({
+                site: appid, 
+                category: "Imported",
+                policystr: policyStr.toLowerCase(),
+                module: policyArr[0],
+                activity: policyArr[1],
+                action: policyArr[2],
+                remarks: policyRemarks,
+                allowed_roles: policyObj[policyStr] || "",
+                role_type: "auto",
+                rolehash: await ENCRYPTER.generateHash(`${ctx.meta.appInfo.appid}${ctx.meta.user.guid}${policyStr}`),
+            }, MISC.generateDefaultDBRecord(ctx, false)));
+        }
+        
+        const dbResponse = await _DB.db_insert_batchQ("appdb", "lgks_rolemodel", bulkInsert);
+        // console.log("newPolicies", newPolicies, bulkInsert, dbResponse);
+        return {
+            status: "success",
+            created: newPolicies.length,
+            total: (newPolicies.length+existingPolicies.length)
+        };
     },
 }
 
@@ -159,6 +199,17 @@ async function checkRBACControls(ctx) {
     if(roles.length<=0) return false;
 
     if(!RBAC_CACHE[appid]) RBAC_CACHE[appid] = {};
+
+    if(!RBAC_CACHE[appid][rbacRoleID]['sessionid'] || RBAC_CACHE[appid][rbacRoleID]['sessionid']!=ctx.meta.sessionId) {
+        delete RBAC_CACHE[appid][rbacRoleID];
+    }
+
+    if(RBAC_CACHE[appid][rbacRoleID]) {
+        if(!RBAC_CACHE[appid][rbacRoleID]['timestamp']) delete RBAC_CACHE[appid][rbacRoleID];
+        else if((new Date().getTime() - RBAC_CACHE[appid][rbacRoleID]['timestamp']) > (60*60*1000)) {
+            delete RBAC_CACHE[appid][rbacRoleID];
+        }
+    }
 
     if(!RBAC_CACHE[appid] || !RBAC_CACHE[appid][rbacRoleID]) {
         //Load RBAC FROM lgks_roles
@@ -183,6 +234,9 @@ async function checkRBACControls(ctx) {
                 tempRoleList[role.policystr.toLowerCase()] = role.allowed_roles.toLowerCase().split(",");
             }
         });
+        tempRoleList['timestamp'] = new Date().getTime();
+        tempRoleList['sessionid'] = ctx.meta.sessionId;
+
         RBAC_CACHE[appid][rbacRoleID] = tempRoleList;
 
         return true;

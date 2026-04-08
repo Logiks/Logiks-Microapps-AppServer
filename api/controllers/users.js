@@ -117,7 +117,45 @@ module.exports = {
             if(!userInfo || !userInfo?.results || userInfo.results.length<=0) return false;
 
             userInfo = userInfo.results[0];
+
+            try {
+                if(userInfo.roles.substr(0,1)=="{") userInfo.roles = JSON.parse(userInfo.roles);
+                else {
+                    userInfo.roles = userInfo.roles.split(",");
+                }
+
+                const userRoles = await _DB.db_selectQ("appdb", "lgks_roles", "*", {
+                    "blocked": "false",
+                    "guid": [["global", userInfo.guid], "IN"],
+                    "id": [userInfo.roles, "IN"]
+                }, {});
+                if(!userRoles.results) userRoles.results = [];
+
+                userInfo.roles_list = userRoles.results.map(a=>a.name);
+            } catch(e) {
+                userInfo.roles = [];
+                userInfo.roles_list = [];
+            }
+
+            try {
+                const userScopes = await _DB.db_selectQ("appdb", "lgks_scopes", "*", {
+                    "blocked": "false",
+                    "guid": [["global", userInfo.guid], "IN"],
+                    "id": userInfo.userid
+                }, {});
+                if(!userScopes.results) userScopes.results = [];
+                
+                userInfo.scopes = [];
+
+                _.each(userScopes.results, function(row, k) {
+                    userInfo.scopes = _.extend(userInfo.scopes, JSON.parse(row.scopes));
+                })
+            } catch(e) {
+                userInfo.scopes = [];
+            }
+
             delete userInfo.pwd;
+            delete userInfo.pwd_salt;
 
             return userInfo;
         } else {
@@ -126,6 +164,7 @@ module.exports = {
 
             userInfo = userInfo.results[0];
             delete userInfo.pwd;
+            delete userInfo.pwd_salt;
 
             return userInfo;
         }

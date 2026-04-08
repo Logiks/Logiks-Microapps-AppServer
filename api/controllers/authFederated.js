@@ -42,7 +42,7 @@ module.exports = {
 
     //federatedLoginID = ssoId
     resolveTenantByFederation: async function(appId, federatedLoginID, ssoSource) {
-        const federatedLogin = await this.getFederatedLogins(appid, federatedLoginID);
+        const federatedLogin = await this.getFederatedLogin(appid, federatedLoginID);
         if(!federatedLogin) return false;
 
         return federatedLogin["guid"];
@@ -53,19 +53,19 @@ module.exports = {
             "blocked": "false",
             "appid": appId
         };
-        var data = await _DB.db_selectQ("appdb", "lgks_federatedlogins", "title, engine, unique_id", whereCond, {});
+        var data = await _DB.db_selectQ("appdb", "lgks_federatedlogins", "title, engine, refid", whereCond, {});
 
         if(!data || !data.results || data.results.length<=0) data = { results: [] };
 
         return data.results;
     },
 
-    getFederatedLogins: async function(appId, federatedLoginID) {
+    getFederatedLogin: async function(appId, federatedLoginID) {
         var whereCond = {
             "blocked": "false",
             "appid": appId
         };
-        whereCond[`(unique_id='${federatedLoginID}' OR id='${federatedLoginID}')`] = "RAW";
+        whereCond[`(refid='${federatedLoginID}' OR id='${federatedLoginID}')`] = "RAW";
 
         var data = await _DB.db_selectQ("appdb", "lgks_federatedlogins", "*", whereCond, {});
 
@@ -75,7 +75,7 @@ module.exports = {
     },
 
     getFederatedLoginEndpoint: async function(appid, federatedLoginID, ctx) {
-        const federatedLogin = await this.getFederatedLogins(appid, federatedLoginID);
+        const federatedLogin = await this.getFederatedLogin(appid, federatedLoginID);
         if(!federatedLogin) return false;
 
         if(federatedLogin) {
@@ -85,7 +85,7 @@ module.exports = {
                     const clientId = federatedLogin.params.application_id;
                     const scope = federatedLogin.params.scope || "openid profile email offline_access User.Read";
                     
-                    const returnURL = `https://${ctx.meta.serverHost}/callback/auth/${federatedLogin.unique_id}`;
+                    const returnURL = `https://${ctx.meta.serverHost}/callback/auth/${federatedLogin.refid}`;
                     const authURL = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${returnURL}&response_mode=query&scope=${scope}&state=secure_random`;
                     const logoutURL = `https://login.microsoftonline.com/${tenantId}/saml2`;
                     
@@ -98,7 +98,7 @@ module.exports = {
                     const appId = federatedLogin.params.appid;
                     const loginScope = federatedLogin.params.scope || "*";
 
-                    const returnURL1 = `https://${ctx.meta.serverHost}/callback/auth/${federatedLogin.unique_id}`;// `${ctx.meta.serverHost}auth/logiksauth-login`;
+                    const returnURL1 = `https://${ctx.meta.serverHost}/callback/auth/${federatedLogin.refid}`;// `${ctx.meta.serverHost}auth/logiksauth-login`;
                     const authURL1 = `${baseURL}authenticate?appid=${appId}&scope=${loginScope}&returnURL=${encodeURIComponent(returnURL1)}`;
                     const logoutURL1 = `${baseURL}logout?appid=${appId}&returnURL=${encodeURIComponent(returnURL1)}`;
 
@@ -118,7 +118,7 @@ module.exports = {
     },
 
     verifyFederatedLoginResponse: async function(appid, federatedLoginID, ctx) {
-        const federatedLogin = await this.getFederatedLogins(appid, federatedLoginID);
+        const federatedLogin = await this.getFederatedLogin(appid, federatedLoginID);
         if(!federatedLogin) return false;
 
         // Implement verification logic based on the engine and response parameters
@@ -136,7 +136,7 @@ module.exports = {
     },
 
     processFederatedLoginResponse: async function(appid, federatedLoginID, ctx) {
-        const federatedLogin = await this.getFederatedLogins(appid, federatedLoginID);
+        const federatedLogin = await this.getFederatedLogin(appid, federatedLoginID);
         if(!federatedLogin) return false;
 
         // console.log("processFederatedLoginResponse_1", { "params": ctx.params, "headers": ctx.headers }, federatedLogin);

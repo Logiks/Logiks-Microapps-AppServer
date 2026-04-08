@@ -172,7 +172,12 @@ module.exports = {
 				const result = await AUTHLOGIN.doFederatedLogin(ctx.params.uuid, ctx);
 
 				if(result.status=="success") {
-					const userInfo = result.user;
+					var userInfo = result.user;
+
+					userInfo.userId = userInfo.userid;
+
+					userInfo = await generateUserMap(userInfo, "0,0", ctx.meta.remoteIP, ctx.meta.appInfo.appid);
+
 					const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
 					const retokenId = UNIQUEID.generate(10);
 
@@ -212,6 +217,8 @@ module.exports = {
 				if(result.status=="success") {
 					var userInfo = result.user;
 					userInfo.userId = userInfo.userid;
+
+					userInfo = await generateUserMap(userInfo, "0,0", ctx.meta.remoteIP, ctx.meta.appInfo.appid);
 					
 					const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
 					const retokenId = UNIQUEID.generate(10);

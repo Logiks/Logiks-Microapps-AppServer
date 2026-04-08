@@ -58,6 +58,11 @@ module.exports = {
         }, params), ctx);
     },
 
+    sendMessageByEvent: async function(driver, params, ctx) {
+        console.log("sendMessageByEvent", driver, params, ctx);
+        this.sendMessage(driver, _.extend({}, payload.data || {}, payload.user || {}, payload));
+    }, 
+
     sendMessage: async function(driver, params, ctx) {
         if(!MESSAGING_DRIVER[driver]) {
             log_error("Messaging Driver Not Supported -"+driver);
@@ -74,12 +79,12 @@ module.exports = {
             );
         }
 
-        const guid = ctx?.meta?.user?.guid || params.guid || "";
+        const guid = ctx?.meta?.user?.guid || params.user.guid || params.guid || "";
         const data = params.data || {};
 
         if(params.template_code && params.template_code.length>0) {
             const templateCode = params.template_code;
-            const templateContent = await TEMPLATES.loadTemplate(templateCode, _.extend({}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}), ctx);
+            const templateContent = await TEMPLATES.loadTemplate(templateCode, _.extend({}, data || {}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}), ctx);
             if(templateContent) {
                 params.body = templateContent.content;
                 if(!params.subject || params.subject.length<2) params.subject = templateContent.subject;
@@ -101,8 +106,8 @@ module.exports = {
                 params.cc = notificationObj.notify_cc || "";
                 params.bcc = notificationObj.notify_bcc || ""; 
 
-                params.body = _replace(notificationObj.body_template, _.extend({}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
-                params.subject = _replace(notificationObj.subject, _.extend({}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
+                params.body = _replace(notificationObj.body_template, _.extend({}, data || {}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
+                params.subject = _replace(notificationObj.subject, _.extend({}, data || {}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
 
                 params.template_code = "TOPIC:"+params.topic;
 
@@ -111,7 +116,8 @@ module.exports = {
                 return false;
             }
         } else {
-            params.body = _replace(params.body, _.extend({}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
+            params.body = _replace(params.body, _.extend({}, data || {}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
+            params.subject = _replace(params.subject, _.extend({}, data || {}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
         }
 
         const methodArr = MESSAGING_DRIVER[driver].method.split(".");

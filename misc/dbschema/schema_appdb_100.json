@@ -1569,7 +1569,7 @@
         "default": "logiksauth",
         "primary": false
       },
-      "unique_id": {
+      "refid": {
         "type": "varchar(100)",
         "nullable": false,
         "default": null,
@@ -1614,9 +1614,8 @@
     },
     "indexes": [
       "PRIMARY",
-      "unique_id_1",
+      "refid",
       "appid",
-      "unique_id",
       "engine"
     ]
   },
@@ -3233,6 +3232,12 @@
         "primary": false
       },
       "validations_params": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "notify_query": {
         "type": "text",
         "nullable": true,
         "default": null,

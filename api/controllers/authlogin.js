@@ -16,21 +16,21 @@ module.exports = {
 
             const allowFederatedRegistration = ctx.meta.appInfo?.settings?.allow_federated_registration || false;
             if(allowFederatedRegistration) {
-                const userInfo = await USERS.findOrCreateFederatedUser(userData, ctx.params.source);
-                if(!userInfo) {
+                const userInfo1 = await USERS.findOrCreateFederatedUser(userData, ctx.params.source);
+                if(!userInfo1) {
                     return {
                         "status": "error",
                         "message": "Error in creating/finding federated user, contact admin"
                     }
                 }
-
+                const userInfo = await USERS.getUserInfo(userInfo1.userid, {'lgks_users.guid': userInfo1.guid}, true);
                 return {
                     "status": "success",
                     "user": userInfo
                 }
             } else {
                 const guid = await TENANT.resolveSSOTenant(userData.tenantid, ctx.params.source);
-                const userInfo = await USERS.getUserInfo(userData.userid, {guid: guid})
+                const userInfo = await USERS.getUserInfo(userData.userid, {'lgks_users.guid': guid}, true)
                 if(!userInfo) {
                     return {
                         "status": "error",
