@@ -206,7 +206,30 @@ module.exports = {
 }
 
 global._replaceCtx = function(text, ctx, strict = true) {
-  return _replace(text, _.extend({}, ctx?.params || {}, ctx?.meta || {}));
+  var newMeta = {};
+  try {
+    if(ctx?.meta?.user) {
+      newMeta = {
+        "SESS_USERID": ctx.meta.user.userId,
+        "SESS_USERNAME": ctx.meta.user.username,
+        "SESS_USERGUID": ctx.meta.user.guid,
+        "SESS_PRIVILEGE_NAME": ctx.meta.user.role,
+        "sessionId": ctx.meta.user.sessionId,
+
+        "SESS_CURRENT_DATE": moment().format("Y-M-D"),
+        "SESS_CURRENT_DATE_DMY": moment().format("D-M-Y"),
+        "SESS_CURRENT_DATETIME": moment().format("Y-M-D HH:mm:ss"),
+        "SESS_CURRENT_DAY": moment().format("D"),
+        "SESS_CURRENT_DAYNAME": moment().format("dddd"),
+        "SESS_CURRENT_MONTH": moment().format("M"),
+        "SESS_CURRENT_MONTH_NAME": moment().format("MMMM"),
+        "SESS_CURRENT_TIME": moment().format("HH:mm:ss"),
+        "SESS_CURRENT_YEAR": moment().format("Y"),
+        "SESS_DATE_YESTERDAY": moment().subtract(1, 'days').format("Y-M-D"),
+      }
+    }
+  } catch(e) {}
+  return _replace(text, _.extend({}, ctx?.params || {}, ctx?.meta || {}, newMeta), strict);
 }
 
 global._replace = function(text, data, strict = true) {

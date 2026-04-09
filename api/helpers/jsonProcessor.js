@@ -569,10 +569,11 @@ module.exports = {
                     // v.columns = 
                     // v.columns = 
                     v.where = v.where || {};
-                    
+                    var newWhere = {};
                     for (const [key, value] of Object.entries(v.where)) {
-                        v.where[_replaceCtx(key, ctx)] = _replaceCtx(value, ctx);
+                        newWhere[_replaceCtx(key, ctx)] = _replaceCtx(value, ctx);
                     }
+                    v.where = newWhere;
 
                     var selectorOptions = await JSONPROCESSOR.generateSelector(v, k, ctx);
                     if(!selectorOptions) selectorOptions = [];
