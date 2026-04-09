@@ -87,7 +87,7 @@ module.exports = {
                     for(var i=0;i<jsonQuery.hooks.presubmit.length;i++) {
                         var func = jsonQuery.hooks.presubmit[i];
 
-                        var a1 = await _call(func, {"data": dataFields, "operation": "update"});
+                        var a1 = await _call(func, {"data": dataFields, "operation": "update", "meta": ctx.meta});
 
                         if(a1===false) {
                             IS_HOOK_ERROR = true;
@@ -152,7 +152,7 @@ module.exports = {
 
                 if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
                     _.each(jsonQuery.hooks.postsubmit, function(func, k) {
-                        _call(func, {"id": insertId, "data": dataFields, "operation": "insert"});
+                        _call(func, {"id": insertId, "data": dataFields, "operation": "insert", "meta": ctx.meta});
                     });
                 }
                 ctx.emit("dbops.create", {"id": insertId, "data": dataFields, "operation": "insert", "json": jsonQuery, dbOpsID: dbOpsID, "user": ctx.meta.user});
@@ -222,7 +222,7 @@ module.exports = {
                     for(var i=0;i<jsonQuery.hooks.presubmit.length;i++) {
                         var func = jsonQuery.hooks.presubmit[i];
 
-                        var a1 = await _call(func, {"data": dataFields, "operation": "update"});
+                        var a1 = await _call(func, {"data": dataFields, "operation": "update", "meta": ctx.meta});
 
                         if(a1===false) {
                             IS_HOOK_ERROR = true;
@@ -289,7 +289,7 @@ module.exports = {
 
                     if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
                         _.each(jsonQuery.hooks.postsubmit, function(func, k) {
-                            _call(func, {"response": dbResponse, "operation": "insert_bulk"});
+                            _call(func, {"response": dbResponse, "operation": "insert_bulk", "meta": ctx.meta});
                         });
                     }
 
@@ -442,7 +442,7 @@ module.exports = {
                     for(var i=0;i<jsonQuery.hooks.presubmit.length;i++) {
                         var func = jsonQuery.hooks.presubmit[i];
 
-                        var a1 = await _call(func, {"data": dataFields, "operation": "update"});
+                        var a1 = await _call(func, {"data": dataFields, "operation": "update", "meta": ctx.meta});
 
                         if(a1===false) {
                             IS_HOOK_ERROR = true;
@@ -526,7 +526,7 @@ module.exports = {
 
                 if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
                     _.each(jsonQuery.hooks.postsubmit, function(func, k) {
-                        _call(func, {"where": sqlWhere, "data": newDataFields, "operation": "update"});
+                        _call(func, {"where": sqlWhere, "data": newDataFields, "operation": "update", "meta": ctx.meta});
                     });
                 }
 
@@ -593,7 +593,7 @@ module.exports = {
 
                 if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
                     _.each(jsonQuery.hooks.presubmit, async function(func, k) {
-                        var a1 = await _call(func, {"data": dataFields, "operation": "delete"});
+                        var a1 = await _call(func, {"data": dataFields, "operation": "delete", "meta": ctx.meta});
                         if(a1===false) {
                             throw new LogiksError(
                                 "Invalid data or wrong record submited",
@@ -638,7 +638,7 @@ module.exports = {
 
                 if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
                     _.each(jsonQuery.hooks.postsubmit, function(func, k) {
-                        _call(func, {"where": sqlWhere, "data": {}, "operation": "delete"});
+                        _call(func, {"where": sqlWhere, "data": {}, "operation": "delete", "meta": ctx.meta});
                     });
                 }
 
