@@ -107,7 +107,8 @@ module.exports = {
     //policyStr = a.b.c format
     checkPolicy: async function(ctx, policyStr, defaultValue = false) {
         // console.log("RBAC.checkPolicy", policyStr, defaultValue, ctx.meta.user, ctx.meta.appInfo, ctx.meta.appInfo.appid, ctx.meta.user.roles);
-        if(!ctx || !ctx.meta.user || !ctx.meta.appInfo || !ctx.meta.appInfo.appid) return defaultValue;
+        // if(!ctx || !ctx.meta.user || !ctx.meta.appInfo || !ctx.meta.appInfo.appid) return defaultValue;
+        if(!(ctx && ctx.meta.user && ctx.meta.appInfo && ctx.meta.appInfo.appid)) return defaultValue;
 
         if(isProd) {
             await checkRBACControls(ctx);
@@ -141,9 +142,6 @@ module.exports = {
     },
 
     registerPolicies: async function(appid, guid, policyObj, ctx) {
-        if(!roles) {
-            //Load from lgks_roles
-        }
         const policyItems = Object.keys(policyObj);
 
         //batch insert into lgks_rolemodel
@@ -157,7 +155,7 @@ module.exports = {
         })
         if(!roleList.results) roleList.results = [];
 
-        const existingPolicies = roleList.results.map(obj => obj.policystr);
+        const existingPolicies = roleList.results.map(obj => obj.policystr.toLowerCase());
         const newPolicies = policyItems.filter(a=>!existingPolicies.includes(a.toLowerCase()));
 
         var bulkInsert = [];
@@ -182,6 +180,9 @@ module.exports = {
         
         const dbResponse = await _DB.db_insert_batchQ("appdb", "lgks_rolemodel", bulkInsert);
         // console.log("newPolicies", newPolicies, bulkInsert, dbResponse);
+
+        await RBAC.reloadPolicies(ctx);
+
         return {
             status: "success",
             created: newPolicies.length,
