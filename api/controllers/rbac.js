@@ -157,6 +157,7 @@ module.exports = {
 
         const existingPolicies = roleList.results.map(obj => obj.policystr.toLowerCase());
         const newPolicies = policyItems.filter(a=>!existingPolicies.includes(a.toLowerCase()));
+        var dated = moment().format("Y-MM-DD HH:mm:ss");
 
         var bulkInsert = [];
         for (let index = 0; index < newPolicies.length; index++) {
@@ -174,8 +175,13 @@ module.exports = {
                 remarks: policyRemarks,
                 allowed_roles: policyObj[policyStr] || "",
                 role_type: "auto",
-                rolehash: await ENCRYPTER.generateHash(`${ctx.meta.appInfo.appid}${ctx.meta.user.guid}${policyStr}`),
-            }, MISC.generateDefaultDBRecord(ctx, false)));
+                rolehash: await ENCRYPTER.generateHash(`${appid}${guid}${policyStr}`),
+            }, {
+                created_by: "-",
+                created_on: dated,
+                edited_by: "-",
+                edited_on: dated,
+            }));
         }
         
         const dbResponse = await _DB.db_insert_batchQ("appdb", "lgks_rolemodel", bulkInsert);

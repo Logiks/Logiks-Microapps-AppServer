@@ -180,7 +180,7 @@ async function runJobNow(jobConfig, userId = "system") {
     switch (jobConfig.job_type) {
         case "method":
             try {
-                var response = await ctx.call(jobConfig.job_script, jobConfig.params);
+                var response = await _call(jobConfig.job_script, jobConfig.params);
                 if(!response) {
                     log_jobrun(jobConfig, jobConfig.params, response, "FAILED", `JOB Failed at Running`, userId);
                     return false;

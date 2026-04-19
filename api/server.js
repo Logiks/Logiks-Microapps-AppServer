@@ -26,6 +26,15 @@ const { MoleculerError } = require("moleculer").Errors;
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 300);
 
+// -------------------------
+// Redis for distributed rate limiting
+// -------------------------
+const rateRedis = _CACHE.getRedisInstance();
+
+rateRedis.on("error", (err) => {
+	console.error("❌ Rate-limit Redis error:", err);
+});
+
 // const v = new FastestValidator();
 
 // v.add("json", value => {
@@ -65,15 +74,6 @@ module.exports = {
 
 	start: async function startServer() {
 		try {
-			// -------------------------
-			// Redis for distributed rate limiting
-			// -------------------------
-			const rateRedis = _CACHE.getRedisInstance();
-
-			rateRedis.on("error", (err) => {
-				console.error("❌ Rate-limit Redis error:", err);
-			});
-
 			// const nodeID = (process.env.SERVER_ID || os.hostname())+`_${UNIQUEID.generate(8)}`;
 			// console.log("NODEID", nodeID);
 
