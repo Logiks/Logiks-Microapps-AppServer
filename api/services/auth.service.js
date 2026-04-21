@@ -971,7 +971,7 @@ module.exports = {
 				"status": "success",
 				"token_type": "TL",
 				"token": tltoken,
-				"accessToken": accessToken,
+				// "accessToken": accessToken,
 				"expiresIn": ACCESS_TOKEN_TTL,
 				"appid": ctx.params.appid
 			}
