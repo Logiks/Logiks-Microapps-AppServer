@@ -195,6 +195,7 @@ module.exports = {
 
         if(!sqlObj.column && sqlObj.cols) sqlObj.column = sqlObj.cols;
         if(!sqlObj.column && sqlObj.columns) sqlObj.column = sqlObj.columns;
+        if(!sqlObj.alias) sqlObj.alias = {};
 
         if (Array.isArray(sqlObj.column)) {
             columnsStr = sqlObj.column
@@ -287,6 +288,19 @@ module.exports = {
 
         
         sqlObj.where = _.extend(sqlObj.where, filter);
+
+        _.each(sqlObj.filter, function(v, k) {
+            if(sqlObj.alias[k]) {
+                delete sqlObj.filter[k];
+                sqlObj.filter[sqlObj.alias[k]] = v;
+            }
+        });
+        _.each(sqlObj.where, function(v, k) {
+            if(sqlObj.alias[k]) {
+                delete sqlObj.where[k];
+                sqlObj.where[sqlObj.alias[k]] = v;
+            }
+        });
 
         var sqlWhere = processSQLWhere(sqlObj.where, " ");
         // console.log("sqlWhere", sqlWhere);
