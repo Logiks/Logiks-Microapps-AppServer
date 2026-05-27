@@ -183,11 +183,11 @@ module.exports = {
     return R * c;
   },
 
-  _replaceObj: function(jsonObj, ctx) {
+  _replaceObj: function(jsonObj, ctx, strict = false) {
     if(!jsonObj) return {};
     try {
         var tempJSON = JSON.stringify(jsonObj);
-        tempJSON = _replaceCtx(tempJSON, ctx)
+        tempJSON = _replaceCtx(tempJSON, ctx, strict)
         tempJSON = JSON.parse(tempJSON);
 
         return tempJSON;
@@ -196,20 +196,43 @@ module.exports = {
     }
   },
 
-  _replace: function(text, data, strict = false) {
+  _replace: function(text, data, strict = true) {
     return _replace(text, data, strict);
   },
 
-  _replaceCtx: function(text, ctx, strict = false) {
+  _replaceCtx: function(text, ctx, strict = true) {
     return _replaceCtx(text, ctx, strict);
   }
 }
 
-global._replaceCtx = function(text, ctx, strict = false) {
-  return _replace(text, _.extend({}, ctx?.params || {}, ctx?.meta || {}));
+global._replaceCtx = function(text, ctx, strict = true) {
+  var newMeta = {};
+  try {
+    if(ctx?.meta?.user) {
+      newMeta = {
+        "SESS_USERID": ctx.meta.user.userId,
+        "SESS_USERNAME": ctx.meta.user.username,
+        "SESS_USERGUID": ctx.meta.user.guid,
+        "SESS_PRIVILEGE_NAME": ctx.meta.user.role,
+        "sessionId": ctx.meta.user.sessionId,
+
+        "SESS_CURRENT_DATE": moment().format("Y-M-D"),
+        "SESS_CURRENT_DATE_DMY": moment().format("D-M-Y"),
+        "SESS_CURRENT_DATETIME": moment().format("Y-M-D HH:mm:ss"),
+        "SESS_CURRENT_DAY": moment().format("D"),
+        "SESS_CURRENT_DAYNAME": moment().format("dddd"),
+        "SESS_CURRENT_MONTH": moment().format("M"),
+        "SESS_CURRENT_MONTH_NAME": moment().format("MMMM"),
+        "SESS_CURRENT_TIME": moment().format("HH:mm:ss"),
+        "SESS_CURRENT_YEAR": moment().format("Y"),
+        "SESS_DATE_YESTERDAY": moment().subtract(1, 'days').format("Y-M-D"),
+      }
+    }
+  } catch(e) {}
+  return _replace(text, _.extend({}, ctx?.params || {}, ctx?.meta || {}, newMeta), strict);
 }
 
-global._replace = function(text, data, strict = false) {
+global._replace = function(text, data, strict = true) {
   if(data==null) data = {};
   
   return text
@@ -239,6 +262,18 @@ global._replace = function(text, data, strict = false) {
     })
     //For variables with ##
     .replace(/#([^#]+)#/g, (match, key) => {//#([^}]+)#
+        if(key.substr(0,1)=="$") {//for json path
+            var result = JSONPath({path: key.substr(2), json: data});
+            if(Array.isArray(result)) result = result.join(",");
+            //console.log("JSON_PATH", key, key.substr(2), result);
+            return result;
+        }
+        if(!data.data) data.data = {};
+        if(strict) return data[key] || data?.data[key] || "";
+        else return data[key] || data?.data[key] || match;
+    })
+    //For variables with %%
+    .replace(/%([^%]+)%/g, (match, key) => {
         if(key.substr(0,1)=="$") {//for json path
             var result = JSONPath({path: key.substr(2), json: data});
             if(Array.isArray(result)) result = result.join(",");

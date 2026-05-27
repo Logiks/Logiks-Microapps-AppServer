@@ -114,23 +114,30 @@ module.exports = {
 				path: "/authlink",
 			},
 			params: {
+				loginId: "string",
 				geolocation: { type: "string", optional: true, default: "0,0" }
 			},
 			async handler(ctx) {
-				if(!CONFIG.logiksauth.enable) {
-					throw new LogiksError("LogiksAuth not configured", 401);
+				const appId = ctx.meta.appInfo.appid;
+				const loginId = ctx.params.loginId;
+				const geolocation = ctx.params.geolocation;
+				const linkToken = UNIQUEID.generate(20);
+
+				const fedLogin = await AUTHFEDERATED.getFederatedLoginEndpoint(appId, loginId, ctx);
+				if(!fedLogin) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "FEDERATED-AUTHLINK", "/authlink", "Invalid Federated Login Attempt", ctx);
+					throw new LogiksError("Invalid Federated Login Attempt", 401);
 				}
-				// ctx.params.body.return_url
 
-				const returnURL = `${ctx.meta.serverHost}auth/logiksauth-login`;
-				const authURL = `${CONFIG.logiksauth.url}authenticate?appid=${CONFIG.logiksauth.appid}&scope=${CONFIG.logiksauth.scope}&returnURL=${encodeURIComponent(returnURL)}`;
-				const logoutURL = `${CONFIG.logiksauth.url}logout?appid=${CONFIG.logiksauth.appid}&returnURL=${encodeURIComponent(returnURL)}`;
-
-				return {
+				return _.extend({
 					"status": "success",
-					"authlink": authURL,
-					"logout": logoutURL
-				}
+					"authlink": false,//`${ctx.meta.serverHost}/auth/federated-login/${loginId}?linktoken=${linkToken}`,
+					"logout": `${ctx.meta.serverHost}/auth/logout?linktoken=${linkToken}`,
+				}, fedLogin);
 			}
 		},
 
@@ -139,33 +146,38 @@ module.exports = {
 		 * POST /api/public/auth/logiksauth-login
 		 * POST /auth/logiksauth-login
 		 */
-		logiksAuthLogin: {
-			rest: {
-				method: "GET",
-				path: "/logiksauth-login"
-			},
-			async handler(ctx) {
-				console.log("FEDERATED_LOGIN_logiksAuthLogin", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
-				//http://192.168.0.27:6008/?client_id=demo&client_key=BO-uTCu4VF0-XhffsBjCefBSrWorVfcFH_8x7m0dWVU&client_method=logiksauth
-				return {
-					"status": "success",
-					"message": "LogiksAuth login is not yet implemented"
-				}
-			}
-		},
+		// logiksAuthLogin: {
+		// 	rest: {
+		// 		method: "GET",
+		// 		path: "/logiksauth-login"
+		// 	},
+		// 	async handler(ctx) {
+		// 		console.log("FEDERATED_LOGIN_logiksAuthLogin", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
+		// 		//http://192.168.0.27:6008/?client_id=demo&client_key=BO-uTCu4VF0-XhffsBjCefBSrWorVfcFH_8x7m0dWVU&client_method=logiksauth
+		// 		return {
+		// 			"status": "success",
+		// 			"message": "LogiksAuth login is not yet implemented"
+		// 		}
+		// 	}
+		// },
 
-		//Starting of Federated Login section To allow 3rd party federated login (Google, Facebook, Apple, etc), called while returning to application
+		// //Starting of Federated Login section To allow 3rd party federated login (Google, Facebook, Apple, etc), called while returning to application
 		federatedLoginGet: {
 			rest: {
 				method: "GET",
-				fullPath: "/auth/federated-login/:source?"
+				fullPath: "/auth/federated-login/:uuid"
 			},
 			async handler(ctx) {
 				// console.log("FEDERATED_LOGIN_GET", { "params": ctx.params, "headers": ctx.headers });
-				const result = await AUTHLOGIN.doFederatedLogin(ctx);
+				const result = await AUTHLOGIN.doFederatedLogin(ctx.params.uuid, ctx);
 
 				if(result.status=="success") {
-					const userInfo = result.user;
+					var userInfo = result.user;
+
+					userInfo.userId = userInfo.userid;
+
+					userInfo = await generateUserMap(userInfo, "0,0", ctx.meta.remoteIP, ctx.meta.appInfo.appid);
+
 					const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
 					const retokenId = UNIQUEID.generate(10);
 
@@ -196,15 +208,17 @@ module.exports = {
 		federatedLoginPost: {
 			rest: {
 				method: "POST",
-				fullPath: "/auth/federated-login/:source?"
+				fullPath: "/auth/federated-login/:uuid?"
 			},
 			async handler(ctx) {
 				// console.log("FEDERATED_LOGIN_POST", { "params": ctx.params, "headers": ctx.headers });
-				const result = await AUTHLOGIN.doFederatedLogin(ctx);
+				const result = await AUTHLOGIN.doFederatedLogin(ctx.params.uuid, ctx);
 
 				if(result.status=="success") {
 					var userInfo = result.user;
 					userInfo.userId = userInfo.userid;
+
+					userInfo = await generateUserMap(userInfo, "0,0", ctx.meta.remoteIP, ctx.meta.appInfo.appid);
 					
 					const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
 					const retokenId = UNIQUEID.generate(10);
@@ -957,7 +971,7 @@ module.exports = {
 				"status": "success",
 				"token_type": "TL",
 				"token": tltoken,
-				"accessToken": accessToken,
+				// "accessToken": accessToken,
 				"expiresIn": ACCESS_TOKEN_TTL,
 				"appid": ctx.params.appid
 			}

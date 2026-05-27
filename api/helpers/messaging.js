@@ -58,7 +58,12 @@ module.exports = {
         }, params), ctx);
     },
 
-    sendMessage: async function(driver, params, ctx) {
+    sendMessageByEvent: async function(driver, params, ctx) {
+        console.log("sendMessageByEvent", driver, params, ctx);
+        this.sendMessage(driver, _.extend({}, payload.data || {}, payload.user || {}, payload));
+    }, 
+
+   sendMessage: async function(driver, params, ctx) {
         if(!MESSAGING_DRIVER[driver]) {
             log_error("Messaging Driver Not Supported -"+driver);
             return false;
@@ -74,12 +79,12 @@ module.exports = {
             );
         }
 
-        const guid = ctx?.meta?.user?.guid || params.guid || "";
+        const guid = ctx?.meta?.user?.guid || params?.user?.guid || params?.guid || "";
         const data = params.data || {};
 
         if(params.template_code && params.template_code.length>0) {
             const templateCode = params.template_code;
-            const templateContent = await TEMPLATES.loadTemplate(templateCode, _.extend({}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}), ctx);
+            const templateContent = await TEMPLATES.loadTemplate(templateCode, _.extend({}, data || {}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}), ctx);
             if(templateContent) {
                 params.body = templateContent.content;
                 if(!params.subject || params.subject.length<2) params.subject = templateContent.subject;
@@ -87,7 +92,7 @@ module.exports = {
         } else if(params.topic && params.topic.length>0) {
             const topic = params.topic;
 
-            const notificationObj = await _DB.db_findOne("appdb", "sys_notifications", "*", {topic: topic, blocked: "false", guid: guid}, 'id DESC', true);
+            const notificationObj = await _DB.db_findOne("appdb", "sys_notifications", "*", {topic: topic, blocked: "false"}, 'id DESC', true);//, guid: guid
             if(notificationObj) {
                 var vStatus = VALIDATIONS.validateRule(params, notificationObj.validations_params || {});
 
@@ -95,14 +100,20 @@ module.exports = {
                     return false;
                 }
 
+                const dataObj = _.extend({}, data || {}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {});
+
                 const uniqueTo = [...new Set((params.send_to+","+notificationObj.notify_to).split(","))];
 
                 params.send_to = uniqueTo;
-                params.cc = notificationObj.notify_cc || "";
-                params.bcc = notificationObj.notify_bcc || ""; 
+                params.cc = [...new Set((params.cc+","+notificationObj.notify_cc).split(","))];
+                params.bcc = [...new Set((params.bcc+","+notificationObj.notify_bcc).split(","))];
 
-                params.body = _replace(notificationObj.body_template, _.extend({}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
-                params.subject = _replace(notificationObj.subject, _.extend({}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
+                params.send_to = _replace(params.send_to.join(","), dataObj).split(",").filter(a=>(a!="" && a!="undefined")).join(",");
+                params.cc = _replace(params.cc.join(","), dataObj).split(",").filter(a=>(a!="" && a!="undefined")).join(",");
+                params.bcc = _replace(params.bcc.join(","), dataObj).split(",").filter(a=>(a!="" && a!="undefined")).join(",");
+
+                params.body = _replace(notificationObj.body_template, dataObj);
+                params.subject = _replace(notificationObj.subject, dataObj);
 
                 params.template_code = "TOPIC:"+params.topic;
 
@@ -111,7 +122,8 @@ module.exports = {
                 return false;
             }
         } else {
-            params.body = _replace(params.body, _.extend({}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
+            params.body = _replace(params.body, _.extend({}, data || {}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
+            params.subject = _replace(params.subject, _.extend({}, data || {}, ctx?.params || {}, ctx?.data || {}, ctx?.meta || {}));
         }
 
         const methodArr = MESSAGING_DRIVER[driver].method.split(".");

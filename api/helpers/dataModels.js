@@ -14,7 +14,9 @@
         },
         "fields": {
             "lgks_users.email": {
-                "encrypted": true
+                "encrypted": true,
+                "key": "asdasdasd123"//optional
+                "cast": "DECIMAL(12,2)"
             }
         }
     }
@@ -30,18 +32,21 @@ module.exports = {
 
     getModel: async function(table) {
         if(MODEL_MAP[table]) return MODEL_MAP[table];
-        const pluginID = table.split("_")[0];
+        var pluginID = table.split("_")[0];
 
         if(["tables", "lgks", "do", "sys", "cache", "log", "logs", "data", "mapps", "my"].indexOf(pluginID.toLowerCase())>=0 || pluginID.length<=2) return false;
-
+        
         const tableModel = await _call(`${pluginID}.source`, {folder: "dataModels", file: `${table}.json`, silent: true, params: {}});
         // console.log("tableModel", table, pluginID, tableModel);
 
-        if(!tableModel) return false;
+        if(!tableModel) {
+            // MODEL_MAP[table] = false;
+            return false;
+        }
 
         MODEL_MAP[table] = tableModel;
 
-        return false;
+        return MODEL_MAP[table];
     },
 
     //insert -> param -> insertId or array of insertId
@@ -71,9 +76,12 @@ module.exports = {
         const dataModel = await DATAMODELS.getModel(table)
         if(!dataModel) return data;
 
-        if(dataModel.fields[field].encrypted) {
-            return ENCRYPTER.encrypt(data, `${table}.${field}.${CONFIG.SALT_KEY}`);
-        }
+        try {
+            if(dataModel.fields[field].encrypted) {
+                if(!dataModel.fields[field].key) dataModel.fields[field].key = `${table.toLowerCase()}.${field}.${CONFIG.SALT_KEY}`;
+                return ENCRYPTER.encrypt(data, dataModel.fields[field].key);
+            }
+        } catch(e) {}
 
         return data;
     },
@@ -83,9 +91,12 @@ module.exports = {
         const dataModel = await DATAMODELS.getModel(table)
         if(!dataModel) return data;
 
-        if(dataModel.fields[field].encrypted) {
-            return ENCRYPTER.decrypt(data, `${table}.${field}.${CONFIG.SALT_KEY}`);
-        }
+        try {
+            if(dataModel.fields[field].encrypted) {
+                if(!dataModel.fields[field].key) dataModel.fields[field].key = `${table.toLowerCase()}.${field}.${CONFIG.SALT_KEY}`;
+                return ENCRYPTER.decrypt(data, dataModel.fields[field].key);
+            }
+        } catch(e) {}
 
         return data;
     },
@@ -109,5 +120,167 @@ module.exports = {
             else
                 singleRecord[col] = await DATAMODELS.prepareField(table, col, val);
         });
+    },
+
+    processQuery: async function(table, sql) {
+        const tableArr = table.split(",");
+
+        for (var i = tableArr.length - 1; i >= 0; i--) {
+            const tbl = tableArr[i];
+
+            const dataModel = await DATAMODELS.getModel(tbl);
+            if(!dataModel || !dataModel.fields) continue;
+
+            if(dataModel.fields && Object.keys(dataModel.fields).length>0) {
+                const tempSQL = transformSQLForEncryption(sql, dataModel.fields);
+                if(tempSQL) sql = tempSQL;
+            }
+        }
+
+        return sql;
     }
+}
+
+
+function transformSQLForEncryption(sql, columnsConfig = {}) {
+    const escapeRegex = (str) =>
+        str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    // Build SQL expression
+    const buildExpression = (column, config, standalone = false) => {
+
+        let expr = column;
+        let table = column;
+        if(column.indexOf(".")>0) {
+            table = column.split(".")[0].toLowerCase();
+        }
+
+        // AES decrypt
+        if (config.encrypted) {
+            // if(!config.key) config.key = Buffer.from(String(column).replace(/[^a-zA-Z0-9]/g, "")).toString("base64");
+            if(!config.key) config.key = `${table}.${column}.${CONFIG.SALT_KEY}`;
+            expr = `AES_DECRYPT(${column}, '${config.key}')`;
+        }
+
+        // CAST
+        if (config.cast) {
+            expr = `CAST(${expr} AS ${config.cast})`;
+        }
+
+        // Standalone SELECT column aliasing
+        if (standalone) {
+            return `${expr} AS ${column}`;
+        }
+
+        return expr;
+    };
+
+    // Replace configured columns inside any SQL block
+    const replaceColumns = (text, standaloneMode = false) => {
+
+        Object.entries(columnsConfig).forEach(([rawColumn, config]) => {
+
+            const column = rawColumn.split(".").pop();
+
+            // Skip if already transformed
+            if (
+                text.includes(`AES_DECRYPT(${column}`) ||
+                text.includes(`CAST(${column}`)
+            ) {
+                return;
+            }
+
+            // Standalone SELECT field
+            if (standaloneMode) {
+
+                const standaloneRegex = new RegExp(
+                    `^(?:[\\w]+\\.)?${escapeRegex(column)}$`,
+                    "i"
+                );
+
+                if (standaloneRegex.test(text.trim())) {
+
+                    text = buildExpression(
+                        column,
+                        config,
+                        true
+                    );
+
+                    return;
+                }
+            }
+
+            // General replacement
+            const regex = new RegExp(
+                `(?<![\\w.])${escapeRegex(column)}(?![\\w])`,
+                "g"
+            );
+
+            text = text.replace(
+                regex,
+                buildExpression(column, config, false)
+            );
+
+        });
+
+        return text;
+    };
+
+    // -------------------------
+    // SELECT PART
+    // -------------------------
+
+    const selectMatch = sql.match(/SELECT\s+([\s\S]*?)\s+FROM\s/i);
+
+    if (!selectMatch) {
+        return sql;
+    }
+
+    const selectSection = selectMatch[1];
+
+    // Safe comma splitter
+    const fields = [];
+    let depth = 0;
+    let current = "";
+
+    for (let i = 0; i < selectSection.length; i++) {
+
+        const ch = selectSection[i];
+
+        if (ch === "(") depth++;
+        if (ch === ")") depth--;
+
+        if (ch === "," && depth === 0) {
+            fields.push(current.trim());
+            current = "";
+        } else {
+            current += ch;
+        }
+    }
+
+    if (current.trim()) {
+        fields.push(current.trim());
+    }
+
+    // Process SELECT fields
+    const processedFields = fields.map(field => {
+
+        const isFormula =
+            /[\+\-\*\/()]|CASE\s+WHEN|ROUND\s*\(/i.test(field);
+
+        return replaceColumns(field, !isFormula);
+    });
+
+    sql = sql.replace(
+        selectSection,
+        processedFields.join(", ")
+    );
+
+    // -------------------------
+    // WHERE / HAVING / ORDER BY
+    // -------------------------
+
+    sql = replaceColumns(sql, false);
+
+    return sql;
 }

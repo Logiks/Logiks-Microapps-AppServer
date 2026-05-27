@@ -75,6 +75,11 @@ module.exports = {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
 		}
+
+		try {
+			sql = await DATAMODELS.processQuery(table, sql);
+		} catch(err) {}
+
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql, params);
 		}
@@ -165,6 +170,10 @@ module.exports = {
 
 		sql += " LIMIT 1 ";
 
+		try {
+			sql = await DATAMODELS.processQuery(table, sql);
+		} catch(err) {}
+
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql);
 		}
@@ -252,7 +261,11 @@ module.exports = {
 			sql += " "+ additionalQueryParams;
 		}
 
-		if(CONFIG.log_sql) {
+		try {
+			sql = await DATAMODELS.processQuery(table, sql);
+		} catch(err) {}
+
+		if(CONFIG.log_sql && table.indexOf("lgks_")<0) {
 			console.log("SQL", sql, whereParams);
 		}
 
@@ -351,7 +364,9 @@ module.exports = {
 							"err_message": err.sqlMessage
 						});
 					} else {
-						DATAMODELS.checkHook(table, "insert", dbkey, results.insertId);
+						DATAMODELS.checkHook(table, "insert", dbkey, {
+							id: results.insertId
+						});
 						resolve({
 							"status": "success", 
 							"insertId": results.insertId
@@ -429,7 +444,7 @@ module.exports = {
 							"err_message": err.sqlMessage
 						});
 					} else {
-						DATAMODELS.checkHook(table, "insert", dbkey, results);
+						DATAMODELS.checkHook(table, "batchq", dbkey, results);
 						resolve({
 							"status": "success", 
 							"results": results

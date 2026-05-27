@@ -1,6 +1,11 @@
 //Files Related API for Handling File Operations
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const { pipeline } = require('stream/promises');
+const { Readable, Transform } = require('stream');
+const { fileTypeFromBuffer } = require('file-type');
+const mime = require('mime-types');
 
 /**
  * Reads a file and returns its content.
@@ -72,17 +77,17 @@ module.exports = {
         const fileURI = `${UNIQUEID.generate(8)}.${ext}`;
 
         const insertResponse = await _DB.db_insertQ1("appdb", "files_published", {
-					"guid": guid,
-					"file_id": fileId,
+                    "guid": guid,
+                    "file_id": fileId,
                     "uri": fileURI,
-					"filename": sqlResult.results[0].filename,
-					"expires": expiresOn,
+                    "filename": sqlResult.results[0].filename,
+                    "expires": expiresOn,
                     "created_on": dated,
                     "created_by": ctx?ctx.meta.user.userId:"",
                     "edited_on": dated,
                     "edited_by": ctx?ctx.meta.user.userId:"",
-				});
-        if(insertResponse) return `${ctx.meta.serverHost}api/public/files/${fileURI}?exp=${expiresOn}`;
+                });
+        if(insertResponse) return `${CONFIG.base_url || ctx.meta.serverHost}api/public/files/${fileURI}?exp=${expiresOn}`;
         else return false;
     },
 
@@ -152,6 +157,7 @@ module.exports = {
     getFileByPath: async function(guid, fileUri, responseType = "stream") {
         const filePath = path.join(UPLOADS.baseUploadFolder(), fileUri);
         const fileMime = sqlResult[0].file_mime;
+        // const fileMime = mime.lookup(filePath);
 
         if(!filePath || !fs.existsSync(filePath)) {
             return null;
@@ -196,6 +202,451 @@ module.exports = {
     },
 
     saveFile: async function(ctx, folder, content) {
-        
+        const uploadDir = await UPLOADS.getDestinyPath(folder, "", true);
+        const uploadDir1 = await UPLOADS.getDestinyPath(folder, "", false);
+
+        const tempPath = await universalFileSave(uploadDir, content, {});
+        var ext = tempPath.split(".");
+        ext = ext[ext.length-1];
+        const mimetype = mime.lookup(tempPath);
+        const fileName = path.basename(tempPath);//ctx?.params?.filename || "file_"+moment().format("YMD_Hms")+"."+ext;
+
+        const fileInfo = await UPLOADS.moveUploadedFile(ctx, {
+            "path": tempPath,
+            "bucket": folder,
+            "filename": fileName,
+            "mimetype": mimetype || "application/octet-stream",
+            "size": fs.statSync(tempPath).size,
+        });
+        fs.rm(tempPath);
+        fileInfo.path = tempPath.replace(uploadDir, uploadDir1);
+        return fileInfo;
     }
+}
+
+
+
+/**
+ * Production Grade Universal File Saver
+ *
+ * Supports:
+ *  - Plain text
+ *  - Base64
+ *  - Data URI base64
+ *  - Buffers
+ *  - Binary data
+ *  - Readable streams
+ *  - multer
+ *  - formidable
+ *  - express-fileupload
+ *  - arbitrary uploaded file objects
+ *  - huge files using streams
+ *
+ * @param {Object} ctx
+ * @param {String} folder
+ * @param {*} content
+ * @param {Object} options
+ *
+ * @returns {Promise<Object>}
+ * Returns:
+ *   final absolute file path
+ */
+async function universalFileSave(folder, content, options = {}) {
+
+    const config = {
+        filename: null,
+        extension: null,
+        maxSize: 1024 * 1024 * 1024 * 10, // 10GB
+        detectMime: true,
+        allowOverwrite: false,
+        defaultExtension: 'bin',
+        tempExtension: '.tmp',
+        ...options
+    };
+
+    if (!folder) {
+        throw new Error('Folder is required');
+    }
+
+    await fs.promises.mkdir(folder, { recursive: true });
+
+    const id = crypto.randomUUID();
+
+    let mime = 'application/octet-stream';
+    let ext = config.defaultExtension;
+
+    let filename =
+        config.filename ||
+        `${id}.${ext}`;
+
+    let filepath = path.resolve(
+        path.join(folder, filename)
+    );
+
+    // ---------------------------------------------------------
+    // HELPERS
+    // ---------------------------------------------------------
+
+    function sanitizeFilename(name) {
+        return name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+    }
+
+    function isReadableStream(obj) {
+        return obj &&
+            typeof obj.pipe === 'function' &&
+            typeof obj.on === 'function';
+    }
+
+    function isBase64(str) {
+
+        if (!str || typeof str !== 'string') {
+            return false;
+        }
+
+        const cleaned = str.replace(/\s/g, '');
+
+        return (
+            cleaned.length % 4 === 0 &&
+            /^[A-Za-z0-9+/]+=*$/.test(cleaned)
+        );
+    }
+
+    async function finalizeFile(tempPath) {
+
+        const stats = await fs.promises.stat(tempPath);
+
+        if (stats.size > config.maxSize) {
+            await fs.promises.unlink(tempPath);
+            throw new Error('File exceeds maximum size');
+        }
+
+        // Detect actual mime/ext
+        if (config.detectMime) {
+
+            try {
+
+                const fd = await fs.promises.open(tempPath, 'r');
+
+                const buffer = Buffer.alloc(4100);
+
+                await fd.read(buffer, 0, 4100, 0);
+
+                await fd.close();
+
+                const detected = await fileTypeFromBuffer(buffer);
+
+                if (detected) {
+                    mime = detected.mime;
+                    ext = detected.ext;
+                }
+
+            } catch (e) {
+                // ignore detection failure
+            }
+        }
+
+        // Override extension if manually provided
+        if (config.extension) {
+            ext = config.extension.replace('.', '');
+        }
+
+        // Preserve original filename if given
+        if (config.filename) {
+
+            const originalExt =
+                path.extname(config.filename);
+
+            if (originalExt) {
+
+                filename = sanitizeFilename(
+                    config.filename
+                );
+
+            } else {
+
+                filename = sanitizeFilename(
+                    `${config.filename}.${ext}`
+                );
+            }
+
+        } else {
+
+            filename = `${id}.${ext}`;
+        }
+
+        filepath = path.resolve(
+            path.join(folder, filename)
+        );
+
+        if (
+            !config.allowOverwrite &&
+            fs.existsSync(filepath)
+        ) {
+            throw new Error(
+                `File already exists: ${filepath}`
+            );
+        }
+
+        await fs.promises.rename(
+            tempPath,
+            filepath
+        );
+
+        return filepath;
+    }
+
+    async function saveBuffer(buffer) {
+
+        const tempPath = path.join(
+            folder,
+            `${id}${config.tempExtension}`
+        );
+
+        await fs.promises.writeFile(
+            tempPath,
+            buffer
+        );
+
+        return finalizeFile(tempPath);
+    }
+
+    async function saveStream(stream) {
+
+        const tempPath = path.join(
+            folder,
+            `${id}${config.tempExtension}`
+        );
+
+        let total = 0;
+
+        const limiter = new Transform({
+
+            transform(chunk, encoding, callback) {
+
+                total += chunk.length;
+
+                if (total > config.maxSize) {
+                    callback(
+                        new Error(
+                            'File exceeds maximum size'
+                        )
+                    );
+                    return;
+                }
+
+                callback(null, chunk);
+            }
+        });
+
+        await pipeline(
+            stream,
+            limiter,
+            fs.createWriteStream(tempPath)
+        );
+
+        return finalizeFile(tempPath);
+    }
+
+    async function saveBase64(base64String) {
+
+        const cleaned = base64String.replace(/\s/g, '');
+
+        // Small/medium base64
+        if (cleaned.length < 50 * 1024 * 1024) {
+
+            const buffer = Buffer.from(
+                cleaned,
+                'base64'
+            );
+
+            return saveBuffer(buffer);
+        }
+
+        // Huge base64 -> stream decode
+        const tempPath = path.join(
+            folder,
+            `${id}${config.tempExtension}`
+        );
+
+        const decode = new Transform({
+
+            transform(chunk, encoding, callback) {
+
+                try {
+
+                    const decoded = Buffer.from(
+                        chunk.toString(),
+                        'base64'
+                    );
+
+                    callback(null, decoded);
+
+                } catch (e) {
+                    callback(e);
+                }
+            }
+        });
+
+        await pipeline(
+            Readable.from([cleaned]),
+            decode,
+            fs.createWriteStream(tempPath)
+        );
+
+        return finalizeFile(tempPath);
+    }
+
+    // ---------------------------------------------------------
+    // BUFFER
+    // ---------------------------------------------------------
+
+    if (Buffer.isBuffer(content)) {
+        return saveBuffer(content);
+    }
+
+    // ---------------------------------------------------------
+    // STREAM
+    // ---------------------------------------------------------
+
+    if (isReadableStream(content)) {
+        return saveStream(content);
+    }
+
+    // ---------------------------------------------------------
+    // FILE OBJECTS
+    // ---------------------------------------------------------
+
+    if (content && typeof content === 'object') {
+
+        // multer
+        if (content.buffer) {
+
+            mime = content.mimetype || mime;
+
+            if (content.originalname) {
+                config.filename =
+                    content.originalname;
+            }
+
+            return saveBuffer(content.buffer);
+        }
+
+        // formidable / temp file
+        if (content.filepath || content.path) {
+
+            const sourcePath =
+                content.filepath ||
+                content.path;
+
+            mime =
+                content.mimetype ||
+                content.type ||
+                mime;
+
+            if (
+                content.originalFilename ||
+                content.name
+            ) {
+                config.filename =
+                    content.originalFilename ||
+                    content.name;
+            }
+
+            return saveStream(
+                fs.createReadStream(sourcePath)
+            );
+        }
+
+        // express-fileupload
+        if (typeof content.mv === 'function') {
+
+            const tempPath = path.join(
+                folder,
+                `${id}${config.tempExtension}`
+            );
+
+            await content.mv(tempPath);
+
+            mime =
+                content.mimetype ||
+                mime;
+
+            if (content.name) {
+                config.filename =
+                    content.name;
+            }
+
+            return finalizeFile(tempPath);
+        }
+
+        // generic stream wrapper
+        if (content.stream) {
+
+            mime =
+                content.mimetype ||
+                content.type ||
+                mime;
+
+            if (
+                content.filename ||
+                content.name
+            ) {
+                config.filename =
+                    content.filename ||
+                    content.name;
+            }
+
+            return saveStream(
+                content.stream
+            );
+        }
+    }
+
+    // ---------------------------------------------------------
+    // STRING
+    // ---------------------------------------------------------
+
+    if (typeof content === 'string') {
+
+        // Data URI
+        const dataUri = content.match(
+            /^data:(.+?);base64,(.+)$/s
+        );
+
+        if (dataUri) {
+
+            mime = dataUri[1];
+
+            return saveBase64(
+                dataUri[2]
+            );
+        }
+
+        // Raw base64
+        if (isBase64(content)) {
+            return saveBase64(content);
+        }
+
+        // Plain text
+        mime = 'text/plain';
+
+        if (!config.extension) {
+            ext = 'txt';
+        }
+
+        return saveBuffer(
+            Buffer.from(
+                content,
+                'utf8'
+            )
+        );
+    }
+
+    // ---------------------------------------------------------
+    // UNSUPPORTED
+    // ---------------------------------------------------------
+
+    throw new Error(
+        'Unsupported content type'
+    );
 }

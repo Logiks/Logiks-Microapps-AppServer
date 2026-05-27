@@ -152,7 +152,7 @@ module.exports = {
     events: {
         async "messaging.dispatch"(payload, nodeId) {
             if(!payload.channel) payload.channel = "email";
-            return await MESSAGING.sendMessage(payload.channel, payload);
+            return await MESSAGING.sendMessageByEvent(payload.channel, payload);
         },
         async "messaging.vendor_added"(payload, nodeId) {
             MESSAGING.loadDrivers();

@@ -17,13 +17,13 @@ module.exports = {
             },
 			async handler(ctx) {
 				//Add additioanl restrictions for running the queries recieved through this channel
-				// if(isProd || isStaging) {
-				// 	throw new LogiksError(
-				// 		"Restricted, Only Development Environment has access to this API",
-				// 		404,
-				// 		"RESTRICTED_ENVIRONMENT"
-				// 	);
-				// }
+				if(isProd || isStaging) {
+					throw new LogiksError(
+						"Restricted, Only Development Environment has access to this API",
+						404,
+						"RESTRICTED_ENVIRONMENT"
+					);
+				}
 				
 				if(!ctx.params.dbkey) ctx.params.dbkey = "appdb";
 				if(!ctx.params.filter) ctx.params.filter = {};
@@ -35,7 +35,11 @@ module.exports = {
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
 
 				var queryObjCount = _.cloneDeep(queryObj);
-				queryObjCount.column = "count(*) as count";
+				if(queryObj.cols_count && queryObj.cols_count.length>0) {
+					queryObjCount.column = (typeof queryObj.cols_count === "string") ? queryObj.cols_count : queryObj.cols_count.join(", ");
+				} else {
+					queryObjCount.column = "count(*) as count";
+				}
 
 				if(!queryObj.column && queryObj.cols) queryObj.column = (typeof queryObj.cols === "string") ? queryObj.cols : queryObj.cols.join(", ");
 				if(ctx.params.page) queryObj.page = ctx.params.page;
@@ -55,13 +59,9 @@ module.exports = {
 				queryObjCount.offset = 0;
 				//ctx.params.filter[col] = [ctx.params.stxt, "like"];
 				if(ctx.params.stxt && ctx.params.cols) {
-					var searchQuery = [];
-					_.each(ctx.params.cols, function(col){
-						searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
-					});
-
-					if(searchQuery.length>0) {
-						ctx.params.filter[`(${searchQuery.join(" OR ")})`] = "RAW";
+					const stxtWhere = processStxt(ctx.params.stxt, queryObj, ctx.params.cols);
+					if(stxtWhere.length>0) {
+						ctx.params.filter[stxtWhere] = "RAW";
 					}
 				}
 
@@ -72,6 +72,9 @@ module.exports = {
 							hasDistinct = true;
 						} catch (error) {}
 					}
+				}
+				if(queryObj.groupby_count && queryObj.groupby_count.length>0) {
+					queryObjCount.groupby = queryObj.groupby_count;
 				}
 
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
@@ -100,6 +103,7 @@ module.exports = {
 				};
 			}
 		},
+		//View SQL Query without running, will need Restricted API Access
 		queryRaw: {
 			rest: {
 				method: "POST",
@@ -124,6 +128,13 @@ module.exports = {
 				if(!ctx.params.query.page) ctx.params.query.page = 0;
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
 
+				if(ctx.params.stxt && ctx.params.cols) {
+					const stxtWhere = processStxt(ctx.params.stxt, ctx.params.query, ctx.params.cols);
+					if(stxtWhere.length>0) {
+						ctx.params.filter[stxtWhere] = "RAW";
+					}
+				}
+
 				const sqlQuery = await QUERY.parseQuery(ctx.params.query, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 
 				return {
@@ -131,6 +142,7 @@ module.exports = {
 				};
 			}
 		},
+		//View SQL Query without running, will need Restricted API Access
 		viewQuery: {
 			rest: {
 				method: "POST",
@@ -176,6 +188,13 @@ module.exports = {
 				if(ctx.params.limit) queryObj.limit = ctx.params.limit;
 				if(ctx.params.orderby) queryObj.orderby = ctx.params.orderby;
 				if(ctx.params.groupby) queryObj.groupby = ctx.params.groupby;
+
+				if(ctx.params.stxt && ctx.params.cols) {
+					const stxtWhere = processStxt(ctx.params.stxt, queryObj, ctx.params.cols);
+					if(stxtWhere.length>0) {
+						ctx.params.filter[stxtWhere] = "RAW";
+					}
+				}
 
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 
@@ -267,7 +286,11 @@ module.exports = {
 				if(!queryObj.limit) queryObj.limit = 0;
 
 				var queryObjCount = _.cloneDeep(queryObj);
-				queryObjCount.column = "count(*) as count";
+				if(queryObj.cols_count && queryObj.cols_count.length>0) {
+					queryObjCount.column = (typeof queryObj.cols_count === "string") ? queryObj.cols_count : queryObj.cols_count.join(", ");
+				} else {
+					queryObjCount.column = "count(*) as count";
+				}
 				
 				if(!queryObj.column && queryObj.cols) queryObj.column = (typeof queryObj.cols === "string") ? queryObj.cols : queryObj.cols.join(", ");
 				
@@ -288,13 +311,9 @@ module.exports = {
 				queryObjCount.offset = 0;
 				//ctx.params.filter[col] = [ctx.params.stxt, "like"];
 				if(ctx.params.stxt && ctx.params.cols) {
-					var searchQuery = [];
-					_.each(ctx.params.cols, function(col){
-						searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(ctx.params.stxt)}%'`);
-					});
-
-					if(searchQuery.length>0) {
-						ctx.params.filter[`(${searchQuery.join(" OR ")})`] = "RAW";
+					const stxtWhere = processStxt(ctx.params.stxt, queryObj, ctx.params.cols);
+					if(stxtWhere.length>0) {
+						ctx.params.filter[stxtWhere] = "RAW";
 					}
 				}
 
@@ -306,6 +325,9 @@ module.exports = {
 						} catch (error) {}
 					}
 				}
+				// if(queryObj.groupby_count) {
+				// 	queryObjCount.groupby = queryObj.groupby_count;
+				// }
 
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
@@ -334,3 +356,40 @@ module.exports = {
 		}
 	}
 };
+
+function processStxt(stx, queryObj, cols) {
+	if(!queryObj.alias) queryObj.alias = {};
+	if(stx && cols) {
+		var searchQuery = [];
+		if(typeof cols === "string") cols = cols.split(",");
+		_.each(cols, function(col){
+			if(col.includes("*")) return;
+			if(col.includes(" as ")) col = col.split(" as ")[0].trim();
+			const table = col.split(".")[0].trim();
+			
+			if(queryObj.alias[col]) col = queryObj.alias[col];
+
+			if(queryObj.table.includes(table))
+				searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(stx)}%'`);
+			else if(queryObj.join && Array.isArray(queryObj.join)) {
+				searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(stx)}%'`);
+				// queryObj.join.forEach((joinObj, k) => {
+				// 	if(joinObj.query.includes(table)) {
+				// 		const newWhere = {};
+				// 		newWhere[`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(stx)}%'`] = "RAW";
+						
+				// 		if(!queryObj.join[k].where) queryObj.join[k].where = {};
+						
+				// 		queryObj.join[k].where = {...queryObj.join[k].where, ...newWhere};
+				// 	}
+				// });
+			}
+		});
+
+		if(searchQuery.length>0) {
+			return `(${searchQuery.join(" OR ")})`;
+		}
+	}
+
+	return "";
+}

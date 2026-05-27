@@ -184,7 +184,7 @@ module.exports = {
 								"errors": ["Mtehod not found"]
 							};
 						}
-						const data = await global[cmd[0].toUpperCase()][cmd[1]](...params);
+						const data = await global[cmd[0].toUpperCase()][cmd[1]](...params, ctx);
 
 						// console.log(cmd, params);
 						return {
@@ -224,7 +224,7 @@ module.exports = {
 								"errors": ["Mtehod not found"]
 							};
 						}
-						const data = await global[cmd[0].toUpperCase()][cmd[1]](...params);
+						const data = await global[cmd[0].toUpperCase()][cmd[1]](...params, ctx);
 
 						// console.log(cmd, params);
 						return {

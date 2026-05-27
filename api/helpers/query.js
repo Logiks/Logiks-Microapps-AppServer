@@ -195,6 +195,7 @@ module.exports = {
 
         if(!sqlObj.column && sqlObj.cols) sqlObj.column = sqlObj.cols;
         if(!sqlObj.column && sqlObj.columns) sqlObj.column = sqlObj.columns;
+        if(!sqlObj.alias) sqlObj.alias = {};
 
         if (Array.isArray(sqlObj.column)) {
             columnsStr = sqlObj.column
@@ -267,6 +268,23 @@ module.exports = {
         sqlObj.where = QUERY.updateWhereFromEnv(sqlObj.where, metaInfo);
         sqlObj.filter = QUERY.updateWhereFromEnv(sqlObj.filter, metaInfo);
 
+        
+        sqlObj.filter = _.extend(sqlObj?.filter || {}, filter);
+        
+        _.each(sqlObj.filter, function(v, k) {
+            if(sqlObj.alias[k]) {
+                delete sqlObj.filter[k];
+                sqlObj.filter[sqlObj.alias[k]] = v;
+            }
+        });
+        _.each(sqlObj.where, function(v, k) {
+            if(sqlObj.alias[k]) {
+                delete sqlObj.where[k];
+                sqlObj.where[sqlObj.alias[k]] = v;
+            }
+        });
+
+
         if(typeof sqlObj.where == "string") {
             sqlObj.where = processTilde(sqlObj.where);
         } else {
@@ -276,9 +294,6 @@ module.exports = {
             });
             sqlObj.where = temp;
         }
-
-        
-        sqlObj.where = _.extend(sqlObj.where, filter);
 
         var sqlWhere = processSQLWhere(sqlObj.where, " ");
         // console.log("sqlWhere", sqlWhere);
@@ -293,7 +308,8 @@ module.exports = {
         } else {
             var temp = {};
             _.each(sqlObj.filter, function(k,v) {
-                temp[processTilde(v)] = processTilde(k);
+                const v1 = processTilde(v);
+                if(!sqlObj.where[v1]) temp[v1] = processTilde(k);
             });
             sqlObj.filter = temp;
         }
