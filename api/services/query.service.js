@@ -35,7 +35,11 @@ module.exports = {
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
 
 				var queryObjCount = _.cloneDeep(queryObj);
-				queryObjCount.column = "count(*) as count";
+				if(queryObj.cols_count && queryObj.cols_count.length>0) {
+					queryObjCount.column = (typeof queryObj.cols_count === "string") ? queryObj.cols_count : queryObj.cols_count.join(", ");
+				} else {
+					queryObjCount.column = "count(*) as count";
+				}
 
 				if(!queryObj.column && queryObj.cols) queryObj.column = (typeof queryObj.cols === "string") ? queryObj.cols : queryObj.cols.join(", ");
 				if(ctx.params.page) queryObj.page = ctx.params.page;
@@ -68,6 +72,9 @@ module.exports = {
 							hasDistinct = true;
 						} catch (error) {}
 					}
+				}
+				if(queryObj.groupby_count && queryObj.groupby_count.length>0) {
+					queryObjCount.groupby = queryObj.groupby_count;
 				}
 
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
@@ -279,7 +286,11 @@ module.exports = {
 				if(!queryObj.limit) queryObj.limit = 0;
 
 				var queryObjCount = _.cloneDeep(queryObj);
-				queryObjCount.column = "count(*) as count";
+				if(queryObj.cols_count && queryObj.cols_count.length>0) {
+					queryObjCount.column = (typeof queryObj.cols_count === "string") ? queryObj.cols_count : queryObj.cols_count.join(", ");
+				} else {
+					queryObjCount.column = "count(*) as count";
+				}
 				
 				if(!queryObj.column && queryObj.cols) queryObj.column = (typeof queryObj.cols === "string") ? queryObj.cols : queryObj.cols.join(", ");
 				
@@ -314,6 +325,9 @@ module.exports = {
 						} catch (error) {}
 					}
 				}
+				// if(queryObj.groupby_count) {
+				// 	queryObjCount.groupby = queryObj.groupby_count;
+				// }
 
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
 				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
@@ -344,6 +358,7 @@ module.exports = {
 };
 
 function processStxt(stx, queryObj, cols) {
+	if(!queryObj.alias) queryObj.alias = {};
 	if(stx && cols) {
 		var searchQuery = [];
 		if(typeof cols === "string") cols = cols.split(",");
@@ -351,6 +366,8 @@ function processStxt(stx, queryObj, cols) {
 			if(col.includes("*")) return;
 			if(col.includes(" as ")) col = col.split(" as ")[0].trim();
 			const table = col.split(".")[0].trim();
+			
+			if(queryObj.alias[col]) col = queryObj.alias[col];
 
 			if(queryObj.table.includes(table))
 				searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(stx)}%'`);

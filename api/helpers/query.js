@@ -241,14 +241,6 @@ module.exports = {
                 const query = sqlSingleObj.query;
                 var condition = sqlSingleObj.condition;
                 const as = sqlSingleObj.as?sqlSingleObj.as:"";
-                var conditionWhere = sqlSingleObj.where || {};
-                conditionWhere = QUERY.updateWhereFromEnv(conditionWhere, metaInfo);
-
-                var conditionWhereSQL = processSQLWhere(conditionWhere, " ");
-
-                if(conditionWhereSQL.length>0) {
-                    condition += ` AND ${conditionWhereSQL}`;
-                }
 
                 condition = QUERY.updateWhereFromEnv(condition, metaInfo);
 
@@ -276,19 +268,9 @@ module.exports = {
         sqlObj.where = QUERY.updateWhereFromEnv(sqlObj.where, metaInfo);
         sqlObj.filter = QUERY.updateWhereFromEnv(sqlObj.filter, metaInfo);
 
-        if(typeof sqlObj.where == "string") {
-            sqlObj.where = processTilde(sqlObj.where);
-        } else {
-            var temp = {};
-            _.each(sqlObj.where, function(k,v) {
-                temp[processTilde(v)] = processTilde(k);
-            });
-            sqlObj.where = temp;
-        }
-
         
-        sqlObj.where = _.extend(sqlObj.where, filter);
-
+        sqlObj.filter = _.extend(sqlObj?.filter || {}, filter);
+        
         _.each(sqlObj.filter, function(v, k) {
             if(sqlObj.alias[k]) {
                 delete sqlObj.filter[k];
@@ -301,6 +283,17 @@ module.exports = {
                 sqlObj.where[sqlObj.alias[k]] = v;
             }
         });
+
+
+        if(typeof sqlObj.where == "string") {
+            sqlObj.where = processTilde(sqlObj.where);
+        } else {
+            var temp = {};
+            _.each(sqlObj.where, function(k,v) {
+                temp[processTilde(v)] = processTilde(k);
+            });
+            sqlObj.where = temp;
+        }
 
         var sqlWhere = processSQLWhere(sqlObj.where, " ");
         // console.log("sqlWhere", sqlWhere);
@@ -315,7 +308,8 @@ module.exports = {
         } else {
             var temp = {};
             _.each(sqlObj.filter, function(k,v) {
-                temp[processTilde(v)] = processTilde(k);
+                const v1 = processTilde(v);
+                if(!sqlObj.where[v1]) temp[v1] = processTilde(k);
             });
             sqlObj.filter = temp;
         }

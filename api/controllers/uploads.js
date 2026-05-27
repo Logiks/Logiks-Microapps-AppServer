@@ -10,6 +10,7 @@ const TEMP_UPLOAD_ROOT = process.env.UPLOAD_TEMP || path.resolve(ROOT_PATH+`/${C
 const BASE_UPLOAD_ROOT = process.env.UPLOAD_ROOT || path.resolve(ROOT_PATH+`/${CONFIG.storage.base_path || "uploads"}/`);
 
 fs.ensureDir(TEMP_UPLOAD_ROOT);
+fs.ensureDir(BASE_UPLOAD_ROOT);
 
 /* ---------------- STORAGE ENGINE ---------------- */
 
@@ -19,23 +20,11 @@ const storage = multer.diskStorage({
 			// user selected base folder
 			const userFolder = req.query.folder || "default";
 
-			const now = moment().format("Y-M-D HH:mm:ss");
-			const year = moment().format("Y");
-			const month = moment().format("M").padStart(2, "0");
-
 			// keep original folder structure
 			const relativePath = file.webkitRelativePath || file.originalname;
-			const safeRelative = relativePath.replace(/\.\./g, "");
+			
+			const uploadDir = await UPLOADS.getDestinyPath(userFolder, relativePath, true);
 
-			const uploadDir = path.join(
-				TEMP_UPLOAD_ROOT,//BASE_UPLOAD_ROOT
-				userFolder,
-				year.toString(),
-				month,
-				path.dirname(safeRelative)
-			);
-
-			await fs.ensureDir(uploadDir);
 			cb(null, uploadDir);
 		} catch (err) {
 			cb(err);
@@ -81,6 +70,26 @@ module.exports = {
         return uploadHandler;
     },
 
+    getDestinyPath: async function(userFolder, relativePathWithFileName, isTemp = false) {
+    	const now = moment().format("Y-M-D HH:mm:ss");
+		const year = moment().format("Y");
+		const month = moment().format("M").padStart(2, "0");
+
+		const safeRelative = relativePathWithFileName.replace(/\.\./g, "");
+
+		const uploadDir = path.join(
+			isTemp?TEMP_UPLOAD_ROOT:BASE_UPLOAD_ROOT,
+			userFolder,
+			year.toString(),
+			month,
+			path.dirname(safeRelative)
+		);
+
+		await fs.ensureDir(uploadDir);
+
+		return uploadDir;
+    },
+
 	//Log all uploaded files into files_tbl
     moveUploadedFile: async function(ctx, fileArray) {
 		// const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
@@ -104,7 +113,7 @@ module.exports = {
 			for(var i=0;i<fileArray.length-1;i++) {
 				const file = fileArray[i];
 
-				const fileURI = await move_to_store(file.path, file.filename, bucket);
+				const fileURI = await move_to_store(file.path, file.filename, file.bucket || bucket);
 				if(!fileURI) {
 					result[file.path] = 0;
 					continue;
@@ -126,9 +135,10 @@ module.exports = {
 					"flags": "",
 				}, MISC.generateDefaultDBRecord(ctx, false)));
 
-				//console.log("XXXXX", sqlResult.insertId);
+				// console.log("XXXXX", sqlResult.insertId);
 				
 				result[file.path] = sqlResult.insertId?sqlResult.insertId:0;
+				//result[fileURI.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, "")] = sqlResult.insertId?sqlResult.insertId:0;
 			}
 		} else {
 			const file = fileArray;
@@ -153,9 +163,10 @@ module.exports = {
 					"flags": "",
 				}, MISC.generateDefaultDBRecord(ctx, false)));
 
-				//console.log("XXXXX", sqlResult.insertId);
+				// console.log("XXXXX", sqlResult.insertId);
 
 				result[file.path] = sqlResult.insertId?sqlResult.insertId:0;
+				// result[fileURI.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, "")] = sqlResult.insertId?sqlResult.insertId:0;
 			}
 		}
 

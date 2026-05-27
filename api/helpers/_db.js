@@ -75,6 +75,11 @@ module.exports = {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
 		}
+
+		try {
+			sql = await DATAMODELS.processQuery(table, sql);
+		} catch(err) {}
+
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql, params);
 		}
@@ -165,6 +170,10 @@ module.exports = {
 
 		sql += " LIMIT 1 ";
 
+		try {
+			sql = await DATAMODELS.processQuery(table, sql);
+		} catch(err) {}
+
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql);
 		}
@@ -251,6 +260,10 @@ module.exports = {
 		if(additionalQueryParams!=null && additionalQueryParams.length>0) {
 			sql += " "+ additionalQueryParams;
 		}
+
+		try {
+			sql = await DATAMODELS.processQuery(table, sql);
+		} catch(err) {}
 
 		if(CONFIG.log_sql && table.indexOf("lgks_")<0) {
 			console.log("SQL", sql, whereParams);
