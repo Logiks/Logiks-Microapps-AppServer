@@ -48,7 +48,7 @@ module.exports = {
 				// deviceid: "string",//{ type: "string", optional: true, default: "" },
 			},
 			params: {
-				appid: "string",
+				// appid: "string",
 				geolocation: { type: "string", optional: true, default: "0,0" },
 			},
 			async handler(ctx) {
@@ -1035,7 +1035,7 @@ module.exports = {
 				"status": "success",
 				"token_type": "S2S",
 				"token": s2stoken,
-				"accessToken": accessToken,
+				// "accessToken": accessToken,
 				"expiresIn": ACCESS_TOKEN_TTL,
 				"appid": ctx.params.appid
 			}
