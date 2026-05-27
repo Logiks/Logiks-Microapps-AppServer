@@ -37,7 +37,15 @@ module.exports = {
         if(global["VENDORS"] && typeof VENDORS.getAvailableVendors == "function") {
             const tempObj = VENDORS.getAvailableVendors("messaging");
             if(tempObj) tempObj.forEach(a=> {
-                MESSAGING_DRIVER[a.vendor_code] = a;
+                try {
+                    a.credentials = JSON.parse(a.identity);
+                    a.params = JSON.parse(a.required_params);
+                    a.method = a.func_name;
+
+                    MESSAGING_DRIVER[a.vendor_code] = a;
+                } catch(err) {
+                    console.error("MESSAEG_VENDOR_LOADING", err);
+                }
             })
         }
         
@@ -137,6 +145,69 @@ module.exports = {
         }
     },
 
+    sendAPI: async function(driverConfig, driverId, params, ctx) {
+        var vStatus = VALIDATIONS.validateRule(driverConfig, {
+            "method": "required",
+            "url": "required",
+        });
+        if (!vStatus.status) {
+            throw new LogiksError(
+                "Message Validation Failed",
+                400,
+                "VALIDATION_ERROR",
+                vStatus.errors
+            );
+        }
+console.log("MESSAGING_AXIOS_OPTIONS", driverId, driverConfig, params);
+        var logData = _.extend({
+            appid: ctx?.meta?.appInfo?.appid || params?.appid || "-",
+            channel: "api",
+            vendor: driverId, 
+            template_id: params.template_code || "-", 
+            sent_to: params.sendTo, 
+            req_body: params.body, 
+            // status: "",
+            // provider_response: JSON.stringify({}), 
+            retry_count: 0, 
+            xtras_1: "", 
+            xtras_2: "", 
+            xtras_3: "", 
+        }, MISC.generateDefaultDBRecord(ctx));
+
+        try {
+            const response = await axios(_.extend({}, {
+                // Validate status manually
+                validateStatus(status) {
+                    return status >= 200 && status < 500;
+                }
+            }, driverConfig));
+
+            console.log('API Call Sent:', response.status, response.headers, response.data);
+            
+            logData.status = "success";
+            logData.provider_response = JSON.stringify({
+                "status": response.status,
+                "headers": response.headers,
+                "response": response.data
+            });
+            _DB.db_insertQ1("logdb", "log_messages", logData);
+
+            return info.response;
+
+        } catch (error) {
+            console.error("Message Sending Error:", err.message);
+
+            if (err.response) {
+                console.error("Message Sending Response:", err.response.data);
+            }
+
+            logData.status = "error";
+            logData.provider_response = error.message;
+            _DB.db_insertQ1("logdb", "log_messages", logData);
+            return false;
+        }
+    },
+
     sendEmail: async function(driverConfig, driverId, params, ctx) {
         // driverConfig = {
         //     host: 'smtp.gmail.com',
@@ -172,7 +243,7 @@ module.exports = {
         
         if(params.cc) mailOptions.cc = params.cc;
         if(params.bcc) mailOptions.bcc = params.bcc;
-
+console.log("EMAIL_OPTIONS", driverId, mailOptions, params);
         var logData = _.extend({
             appid: ctx?.meta?.appInfo?.appid || params?.appid || "-",
             channel: "email",

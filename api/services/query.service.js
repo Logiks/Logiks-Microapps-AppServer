@@ -340,8 +340,13 @@ module.exports = {
 				const dbResponseCount = await _DB.db_query(dbkey, sqlQueryCount, {});
 				var dbDataCount = dbResponseCount?.results || [{".count": 0}];
 
-				if((queryObj.groupby && queryObj.groupby.length>0) || hasDistinct) {
+				if(dbResponseCount?.results.length>1) {
+					dbDataCount = dbResponseCount?.results.length;
+				} else if((queryObj.groupby && queryObj.groupby.length>0) || hasDistinct) {
 					dbDataCount = [{".count": dbData?.length || 0}];
+					dbDataCount = (dbDataCount && dbDataCount[0])?(dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0):0;
+				} else {
+					dbDataCount = (dbDataCount && dbDataCount[0])?(dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0):0;
 				}
 
 				return {
@@ -350,7 +355,7 @@ module.exports = {
 					"err_message": dbResponse.err_message,
 					"page": queryObj.page,
 					"limit": queryObj.limit,
-					"max": (dbDataCount && dbDataCount[0])?(dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0):0
+					"max": dbDataCount
 				};
 			}
 		}

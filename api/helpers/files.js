@@ -220,7 +220,14 @@ module.exports = {
         });
         fs.rm(tempPath);
         fileInfo.path = tempPath.replace(uploadDir, uploadDir1);
-        return fileInfo;
+        return {
+            "status": "success",
+            "fileId": fileInfo[tempPath],
+            "name": fileName,
+            "mime": mimetype, 
+            "size": 0, 
+            "path": tempPath.replace(uploadDir, uploadDir1).replace(UPLOADS.baseUploadFolder(), "")
+        };
     }
 }
 
