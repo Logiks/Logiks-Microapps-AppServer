@@ -111,7 +111,7 @@ module.exports = {
 		authlink: {
 			rest: {
 				method: "POST",
-				path: "/auth/authlink",
+				fullPath: "/auth/authlink",
 			},
 			params: {
 				loginId: "string",
