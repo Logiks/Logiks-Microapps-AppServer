@@ -218,8 +218,8 @@ module.exports = {
             "mimetype": mimetype || "application/octet-stream",
             "size": fs.statSync(tempPath).size,
         });
-        fs.rm(tempPath);
-        fileInfo.path = tempPath.replace(uploadDir, uploadDir1);
+        fs.promises.rm(tempPath);
+        //fileInfo.path = tempPath.replace(uploadDir, uploadDir1);
         return {
             "status": "success",
             "fileId": fileInfo[tempPath],
