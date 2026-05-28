@@ -56,6 +56,14 @@
         "driver": "local",
         "base_path": "uploads"
     },
+    "aicore": {
+        "engine": "logiksai",
+        "config": {
+            "url": "",
+            "apikey": "",
+            "appid": ""
+        }
+    },
     "dbmysql": {
         "appdb": {
             "enable": false,

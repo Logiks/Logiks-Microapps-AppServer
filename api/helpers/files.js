@@ -4,7 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { pipeline } = require('stream/promises');
 const { Readable, Transform } = require('stream');
-const { fileTypeFromBuffer } = require('file-type');
+// const { fileTypeFromBuffer } = require('file-type');
 const mime = require('mime-types');
 
 /**
@@ -319,6 +319,7 @@ async function universalFileSave(folder, content, options = {}) {
     }
 
     async function finalizeFile(tempPath) {
+        const { fileTypeFromBuffer } = await import('file-type');
 
         const stats = await fs.promises.stat(tempPath);
 

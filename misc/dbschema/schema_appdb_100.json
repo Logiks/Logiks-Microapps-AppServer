@@ -828,7 +828,7 @@
         "primary": false
       },
       "file_mime": {
-        "type": "varchar(20)",
+        "type": "varchar(75)",
         "nullable": true,
         "default": null,
         "primary": false
@@ -1381,7 +1381,8 @@
       }
     },
     "indexes": [
-      "PRIMARY"
+      "PRIMARY",
+      "var_code"
     ]
   },
   "lgks_domains": {
@@ -3458,7 +3459,8 @@
       }
     },
     "indexes": [
-      "PRIMARY"
+      "PRIMARY",
+      "vendor_code"
     ]
   },
   "sys_webhooks": {
