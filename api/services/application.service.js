@@ -146,7 +146,8 @@ module.exports = {
 		layout: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/layout/:layoutid?"
+				// fullPath: "/api/layout/:layoutid?"
+				fullPath: "/api/layout{/:layoutid}"
 			},
 			async handler(ctx) {
 
@@ -254,7 +255,8 @@ module.exports = {
 		navigator: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/navigator/:navid?/:deviceType?"
+				// fullPath: "/api/navigator/:navid?/:deviceType?"
+				fullPath: "/api/navigator{/:navid}{/:deviceType}"
 			},
 			async handler(ctx) {
 				const appInfo = ctx.meta.appInfo;

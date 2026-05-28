@@ -70,7 +70,8 @@ module.exports = {
 		filesPreview: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/files/preview/:fileid?"///:id?
+				// fullPath: "/api/files/preview/:fileid?"///:id?
+				fullPath: "/api/files/preview{/:fileid}"
 			},
 			params: {
 				// uri: "string"

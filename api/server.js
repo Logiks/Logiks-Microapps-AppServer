@@ -543,7 +543,8 @@ module.exports = {
 							mappingPolicy: "restrict",
 							// autoAliases: true,
 							aliases: {
-								"GET /:file1?/:file2?/:file3?/:file4?/:file5?/:file6?/:file7?/:file8?/:file9?/:file10?/:file11?/:file12?": "pages.render",
+								// "GET /:file1?/:file2?/:file3?/:file4?/:file5?/:file6?/:file7?/:file8?/:file9?/:file10?/:file11?/:file12?": "pages.render",
+								"GET /*path": "pages.render",
 							},
 
 							onAfterCall(ctx, route, req, res, data) {

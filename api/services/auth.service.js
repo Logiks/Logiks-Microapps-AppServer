@@ -208,7 +208,8 @@ module.exports = {
 		federatedLoginPost: {
 			rest: {
 				method: "POST",
-				fullPath: "/auth/federated-login/:uuid?"
+				// fullPath: "/auth/federated-login/:uuid?"
+				fullPath: "/auth/federated-login{/:uuid}"
 			},
 			async handler(ctx) {
 				// console.log("FEDERATED_LOGIN_POST", { "params": ctx.params, "headers": ctx.headers });

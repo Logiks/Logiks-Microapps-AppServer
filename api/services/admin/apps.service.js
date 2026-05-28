@@ -8,7 +8,8 @@ module.exports = {
         apps: {
             rest: {
                 method: "POST",
-                path: "/:task?/:appid?"
+                // path: "/:task?/:appid?"
+                path: "{/:task}{/:appid}"
             },
             params: {},
             async handler(ctx) {

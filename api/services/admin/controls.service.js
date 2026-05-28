@@ -12,7 +12,8 @@ module.exports = {
 		ctrls: {
 			rest: {
 				method: "POST",
-				path: "/:task?/:refid?"
+				// path: "/:task?/:refid?"
+                path: "{/:task}{/:refid}"
 			},
 			params: {},
 			async handler(ctx) {

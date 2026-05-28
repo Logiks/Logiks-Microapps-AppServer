@@ -112,7 +112,8 @@ module.exports = {
         ctrlcenterGet: {
             rest: {
 				method: "GET",
-				fullPath: "/api/ctrlcenter/:module/:ctrlId?"
+				// fullPath: "/api/ctrlcenter/:module/:ctrlId?"
+                fullPath: "/api/ctrlcenter/:module{/:ctrlId}"
 			},
 			async handler(ctx) {
                 const whereLogic = {
@@ -141,7 +142,8 @@ module.exports = {
         clearCache: {
             rest: {
 				method: "GET",
-				fullPath: "/api/cacheMap/clear/:cacheId?"
+				// fullPath: "/api/cacheMap/clear/:cacheId?"
+                fullPath: "/api/cacheMap/clear{/:cacheId}"
 			},
             async handler(ctx) {
                 _CACHE.deleteCacheMap(ctx.params.cacheId);

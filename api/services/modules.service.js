@@ -27,7 +27,8 @@ module.exports = {
 		fetchModule: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/modules/:module/:item?/:operation?/:refid?"///:action/:item?
+				// fullPath: "/api/modules/:module/:item?/:operation?/:refid?"///:action/:item?
+				fullPath: "/api/modules/:module{/:item}{/:operation}{/:refid}"
 			},
 			async handler(ctx) {
 				if(CONFIG.disable_cache.modules) ctx.params.recache = true;
@@ -105,7 +106,8 @@ module.exports = {
 		fetchComponent: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/modules/:module/component/:item?"
+				// fullPath: "/api/modules/:module/component/:item?"
+				fullPath: "/api/modules/:module/component{/:item}"
 			},
 			async handler(ctx) {
 				if(CONFIG.disable_cache.modules) ctx.params.recache = true;
@@ -144,7 +146,8 @@ module.exports = {
 		fetchService: {
 			rest: {
 				method: "POST",
-				fullPath: "/api/requests/:moduleId/:actionId?"
+				// fullPath: "/api/requests/:moduleId/:actionId?"
+				fullPath: "/api/requests/:moduleId{/:actionId}"
 			},
 			async handler(ctx) {
 				const moduleName = ctx.params.moduleId;
@@ -161,7 +164,8 @@ module.exports = {
 		fetchUI: {
 			rest: {
 				method: "GET",
-				fullPath: "/api/ui/:module/:asset1?/:asset2?"
+				// fullPath: "/api/ui/:module/:asset1?/:asset2?"
+				fullPath: "/api/ui/:module{/:asset1}{/:asset2}"
 			},
 			async handler(ctx) {
 				const moduleName = ctx.params.module;

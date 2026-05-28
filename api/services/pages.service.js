@@ -2,8 +2,10 @@
 
 const fs1 = require("fs-extra");
 const ejs = require("ejs");
+const { LRUCache } = require("lru-cache");
 
-ejs.cache = new (require("lru-cache"))({ max: 100 });
+ejs.cache = new LRUCache({ max: 100 });
+//ejs.cache = new (require("lru-cache"))({ max: 100 });
 
 module.exports = {
 	name: "pages",
