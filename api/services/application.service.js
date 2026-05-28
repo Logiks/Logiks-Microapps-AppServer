@@ -27,12 +27,8 @@ module.exports = {
 					);
 				}
 				if(applicationInfo.logins) delete applicationInfo.logins;
+				//Shivraj Depdencdency
 				// if(applicationInfo.login) delete applicationInfo.login;
-
-				// if(applicationInfo.logins && Object.keys(applicationInfo.logins).length>0) {
-				// 	applicationInfo.login = Object.keys(applicationInfo.logins).join(",");
-				// 	delete applicationInfo.logins;
-				// }
 
 				const logins = await AUTHFEDERATED.listFederatedLogins(ctx.meta.appInfo.appid);
 				applicationInfo.logins = logins;
