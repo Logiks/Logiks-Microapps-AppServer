@@ -1,0 +1,185 @@
+/* ─── Print ─────────────────────────────────────────────────────────────────
+   Vendored at docs/.vendor/print.css; build-docs appends this to styles.css.
+   Scoped entirely to @media print — zero on-screen impact.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@media print {
+
+  /* Page geometry — no body padding (that fights @page margin) */
+  @page          { margin: 20mm 18mm 20mm 18mm; }
+  @page :first   { margin-top: 28mm; }  /* extra breathing room on page 1 */
+
+  /* Force exact colors — we paint our own backgrounds */
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Base */
+  html, body {
+    background: #fff !important;
+    color: #111827 !important;        /* slightly warmer than pure black */
+  }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.65;
+    /* NO padding here — @page margin already handles it */
+  }
+
+  /* ── Hide all interactive chrome ───────────────────────────────────────── */
+  .appbar, #appbar, .sidebar, .toc, .scrim,
+  .footer, #footer, .prevnext, .burger,
+  .theme-btn, .filter, .tabs { display: none !important; }
+
+  /* ── Layout: single full-width column ──────────────────────────────────── */
+  .layout  { display: block !important; max-width: none !important; margin: 0 !important; }
+  .content { padding: 10mm 12mm !important; }   /* left/right breathing room inside the page margin */
+  .md      { max-width: none !important; }
+
+  /* ── Links ──────────────────────────────────────────────────────────────── */
+  a { color: #111827 !important; text-decoration: underline; text-decoration-color: #9ca3af; }
+
+  /* Spell out external URLs inline; skip anchor/relative links */
+  .md a[href^="http"]:not([href*="localhost"])::after {
+    content: " (" attr(href) ")";
+    font-size: 8.5pt;
+    color: #6b7280;
+    word-break: break-all;
+    font-style: italic;
+  }
+
+  /* ── Headings ───────────────────────────────────────────────────────────── */
+  .md h1, .md h2, .md h3, .md h4 {
+    color: #111827 !important;
+    break-after: avoid;
+    page-break-after: avoid;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* h1: accent bar on the left, generous bottom rule */
+  .md h1 {
+    font-size: 22pt;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    border-bottom: 2px solid #6366f1 !important;
+    padding-bottom: .35em;
+    margin-bottom: .6em;
+  }
+
+  /* h2: subtle top rule, indigo accent underline */
+  .md h2 {
+    font-size: 14.5pt;
+    font-weight: 700;
+    border-top: 0 !important;
+    border-bottom: 1.5px solid #c7d2fe !important; /* indigo-200 */
+    padding-bottom: .2em;
+    margin-top: 2em;
+  }
+
+  .md h3 { font-size: 12pt; font-weight: 600; }
+  .md h4 { font-size: 10.5pt; font-weight: 600; color: #374151 !important; }
+
+  /* ── Inline code ────────────────────────────────────────────────────────── */
+  .md code {
+    background: #f3f4f6 !important;
+    color: #1e1b4b !important;          /* indigo-950: readable, on-brand */
+    border: 1px solid #e5e7eb;
+    font-family: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+    font-size: 82%;
+    padding: .12em .38em;
+    border-radius: 4px;
+  }
+
+  /* ── Code blocks ────────────────────────────────────────────────────────── */
+  .md pre {
+    background: #f8f9fa !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
+    border-left: 3px solid #6366f1 !important; /* accent rail */
+    box-shadow: none !important;
+    border-radius: 6px;
+    padding: 14px 16px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow: visible !important;           /* avoid clipping in print layout */
+    break-inside: avoid;
+    page-break-inside: avoid;
+    font-size: 9pt;
+    line-height: 1.6;
+  }
+  .md pre code {
+    background: none !important;
+    color: #111827 !important;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  /* ── Tables ─────────────────────────────────────────────────────────────── */
+  .md table {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .md th, .md td {
+    border: 1px solid #d1d5db !important;
+    padding: 7px 12px;
+    text-align: left;
+  }
+  .md th {
+    background: #eef2ff !important; /* indigo-50 — on-brand, ink-light */
+    color: #1e1b4b !important;
+    font-weight: 600;
+    font-size: 9pt;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+  }
+  .md tr:nth-child(2n) td { background: #f9fafb !important; }
+  .md tr { break-inside: avoid; page-break-inside: avoid; }
+
+  /* ── Blockquotes ────────────────────────────────────────────────────────── */
+  .md blockquote {
+    background: #eef2ff !important;     /* indigo-50 */
+    color: #1e1b4b !important;
+    border: 0 !important;
+    border-left: 4px solid #6366f1 !important;
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    margin: 1.2em 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .md blockquote p { margin: .3em 0; }
+
+  /* ── Images & figures ───────────────────────────────────────────────────── */
+  .md img {
+    max-width: 100%;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .md figure {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin: 1.4em 0;
+  }
+  .md figcaption { font-size: 8.5pt; color: #6b7280; margin-top: 5px; }
+
+  /* ── HR ─────────────────────────────────────────────────────────────────── */
+  .md hr {
+    border: 0;
+    border-top: 1.5px solid #c7d2fe !important; /* indigo-200 */
+    margin: 2em 0;
+  }
+
+  /* ── Prevent widows & orphans ───────────────────────────────────────────── */
+  p, li { orphans: 3; widows: 3; }
+  .md ul, .md ol { padding-left: 1.4em; }
+  .md li { margin: .25em 0; }
+
+}

@@ -430,10 +430,13 @@ body.no-toc .layout{grid-template-columns:280px minmax(0,1fr)}
 // ---- vendor, then emit ----------------------------------------------------
 const alpineOk = await vendorAlpine();
 const fontFace = await vendorFonts();
+const printCssPath = path.join(VENDOR_DIR, "print.css");
+const printCss = exists(printCssPath) ? fs.readFileSync(printCssPath, "utf8") : "";
 
 fs.rmSync(OUT_DIR, { recursive: true, force: true });
 fs.mkdirSync(OUT_DIR, { recursive: true });
-fs.writeFileSync(path.join(OUT_DIR, "styles.css"), buildCss(fontFace));
+fs.writeFileSync(path.join(OUT_DIR, "styles.css"), buildCss(fontFace) + (printCss ? "\n\n/* ---- print ---- */\n" + printCss : ""));
+if (printCss) fs.copyFileSync(printCssPath, path.join(OUT_DIR, "print.css"));
 fs.writeFileSync(path.join(OUT_DIR, "app.js"), APPJS);
 fs.mkdirSync(path.join(OUT_DIR, "partials"), { recursive: true });
 fs.writeFileSync(path.join(OUT_DIR, "partials", "header.html"), headerPartial());
@@ -470,4 +473,4 @@ for (const f of assetFiles) {
 
 console.log(`✓ Built ${count} page(s) (${priv} private, not in menus) -> ${path.relative(REPO_ROOT, OUT_DIR)}/`);
 console.log(`  Tabs: ${grouped.map((g) => g.group).join(" · ")}`);
-console.log(`  Fonts: ${fontFace ? "vendored (offline)" : "system fallback"} · Alpine: ${alpineOk ? "vendored" : "missing"}`);
+console.log(`  Fonts: ${fontFace ? "vendored (offline)" : "system fallback"} · Alpine: ${alpineOk ? "vendored" : "missing"} · Print CSS: ${printCss ? "included" : "none"}`);
