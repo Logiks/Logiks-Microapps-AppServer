@@ -206,6 +206,7 @@ module.exports = {
 }
 
 global._replaceCtx = function(text, ctx, strict = true) {
+  if(!text) return text;
   var newMeta = {};
   try {
     if(ctx?.meta?.user) {
@@ -233,6 +234,7 @@ global._replaceCtx = function(text, ctx, strict = true) {
 }
 
 global._replace = function(text, data, strict = true) {
+  if(!text) return text;
   if(data==null) data = {};
   
   return text

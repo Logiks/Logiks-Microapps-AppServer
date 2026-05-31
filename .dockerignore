@@ -1,0 +1,38 @@
+# VCS
+.git
+.gitignore
+.github
+
+# Local config / secrets — must not be baked into the image
+.env
+.env.*
+config.json
+
+# Node
+node_modules
+npm-debug.log*
+yarn-debug.log*
+
+# Runtime artifacts (recreated as volumes)
+logs/
+uploads/
+temp/
+
+# Editor / OS
+.DS_Store
+.idea
+.vscode
+*.code-workspace
+
+# Docker self
+Dockerfile
+docker-compose*.yml
+.dockerignore
+docker/
+
+# Notes / scratch
+znotes/
+zold/
+temp_notes.md
+misc/dbschema/*.bak
+*.log

@@ -12,7 +12,7 @@ notes.txt
 uploads/
 usermedia/
 temp/
-docs/
+docs/private/
 
 # Runtime data
 pids
@@ -77,6 +77,8 @@ typings/
 todos.txt
 temp/
 tmp/
+public/docs/
 
 api/config.js
 *.code-workspace
+gap-analysis.txt

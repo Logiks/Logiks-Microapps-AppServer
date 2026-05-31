@@ -93,20 +93,22 @@ module.exports = {
                 "data": "object"
             },
 			async handler(ctx) {
-                if(!req.params.type || ["local", "db"].indexOf(req.params.type)<0)  req.params.type = "db";
-                if(!req.params.level)  req.params.level = "info";
+                if(!ctx.params.type || ["local", "db"].indexOf(ctx.params.type)<0)  ctx.params.type = "db";
+                if(!ctx.params.level)  ctx.params.level = "info";
 
-                const logID = req.params.logId;//"activities"
-                const appID = req.meta.appInfo.appid;
-                const guid = req.meta.user.tenantId;
+                const logID = ctx.params.logId;//"activities"
+                const appID = ctx.meta.appInfo.appid;
+                const guid = ctx.meta.user.tenantId;
                 
                 ctx.params.data.guid = guid;
                 ctx.params.data.appid = appID;
                 
-                if(req.params.type=="db")
-                    _DBLOGGER._log(logID, ctx.params.data, ctx);
+                //activities, analytics, errors
+
+                if(ctx.params.type=="db")
+                    _DBLOGGER._log(`frontend_${logID}`, ctx.params.data, ctx);
                 else
-                    LOGGER.log(ctx.params.data, logID, req.params.level);
+                    LOGGER.log(ctx.params.data, `frontend_${logID}`, ctx.params.level);
             }
         },
         ctrlcenterGet: {

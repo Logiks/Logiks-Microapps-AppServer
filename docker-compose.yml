@@ -1,0 +1,208 @@
+# Logiks Microapps AppServer — runtime composition
+#
+# Brings up the AppServer (this repo) plus its dependencies:
+#   · mysql    — persistent data (appdb + logdb)
+#   · redis    — cache, sessions, distributed rate limit, Moleculer transporter
+#   · qdrant   — vector store for the AI Layer (opt-in via the `ai` profile)
+#
+# Quickstart:
+#   1. cp config_sample.json config.json    # edit to match the service hostnames below
+#   2. cp .env.docker.sample .env.docker    # see below; set secrets
+#   3. docker compose up -d                 # starts mysql + redis + appserver
+#   4. docker compose run --rm \            # one-off DB migration
+#        -e MIGRATION_MODE=IMPORT appserver node index.js
+#
+#   To enable the AI Layer vector store:
+#      docker compose --profile ai up -d
+#
+# .env.docker (compose-level interpolation file) supported keys:
+#   APPSERVER_PORT, MYSQL_ROOT_PASSWORD, MYSQL_USER, MYSQL_PASSWORD,
+#   REDIS_PORT, QDRANT_PORT, QDRANT_GRPC_PORT, SERVER_ID, NAMESPACE,
+#   CLUSTER_TOKEN, SESSION_SECRET, ENC_SALT, IMAGE_TAG
+
+name: logiks
+
+services:
+  # ---------------------------------------------------------------------------
+  # MySQL — appdb (operational) + logdb (audit/security)
+  # ---------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: logiks-mysql
+    restart: unless-stopped
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max_allowed_packet=64M
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-root}
+      MYSQL_USER: ${MYSQL_USER:-logiks}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me-app}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-change-me-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - logiks
+
+  # ---------------------------------------------------------------------------
+  # Redis — cache, sessions, locks, rate-limit counters, Moleculer transporter
+  # AOF on so a restart doesn't wipe sessions / locks.
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: logiks-redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --save
+      - "60 1"
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - logiks
+
+  # ---------------------------------------------------------------------------
+  # Qdrant — vector store for the AI Layer (AICore). Opt-in via `--profile ai`.
+  # ---------------------------------------------------------------------------
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: logiks-qdrant
+    restart: unless-stopped
+    profiles: ["ai"]
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"          # REST
+      - "${QDRANT_GRPC_PORT:-6334}:6334"     # gRPC
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -qO- http://localhost:6333/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - logiks
+
+  # ---------------------------------------------------------------------------
+  # AppServer — the Gateway Worker in this repo
+  # ---------------------------------------------------------------------------
+  appserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: logiks-appserver:${IMAGE_TAG:-local}
+    container_name: logiks-appserver
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # ---- Runtime ----
+      NODE_ENV: ${NODE_ENV:-production}
+      SERVER_ID: ${SERVER_ID:-appserver-01}
+      HOST: 0.0.0.0
+      PORT: 9999
+
+      # ---- Moleculer cluster ----
+      TRANSPORTER: redis://redis:6379
+      NAMESPACE: ${NAMESPACE:-default}
+      CLUSTER_TOKEN: ${CLUSTER_TOKEN:-change-me-cluster-token}
+      CLUSTER_CACHE: "true"
+      CLUSTER_CACHE_TTL: "60"
+
+      # ---- Security / secrets ----
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-session-secret}
+      ENC_SALT: ${ENC_SALT:-change-me-enc-salt}
+
+      # ---- Rate limit ----
+      RATE_LIMIT_WINDOW_MS: "60000"
+      RATE_LIMIT_MAX: "300"
+
+      # ---- Config loader ----
+      CONFIG_TYPE: LOCAL
+      CONFIG_FILE: ./config.json
+
+      # ---- Logging ----
+      CORE_LOGGER_LEVEL: ${CORE_LOGGER_LEVEL:-error}
+      SERVER_CONSOLE_LOG_LEVEL: ${SERVER_CONSOLE_LOG_LEVEL:-info}
+    volumes:
+      # Per-deployment config — edit your local copy to point dbmysql.appdb / logdb
+      # at host=mysql, dbmysql.*.user=logiks, dbmysql.*.password=${MYSQL_PASSWORD},
+      # and cache.host=redis. See §3.2 for the schema.
+      - ./config.json:/app/config.json:ro
+
+      # The misc/ tree holds applications.json, dbschema/, apps/, themes/, automators/.
+      # Bind-mounted so microapps and theme edits don't require a rebuild.
+      - ./misc:/app/misc
+
+      # Stateful runtime dirs — named volumes so they survive container replacement.
+      - appserver_logs:/app/logs
+      - appserver_uploads:/app/uploads
+      - appserver_temp:/app/temp
+    ports:
+      - "${APPSERVER_PORT:-9999}:9999"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9999/api/public/public/ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    networks:
+      - logiks
+
+  # ---------------------------------------------------------------------------
+  # Example: additional Worker node (uncomment and clone the boilerplate first)
+  # ---------------------------------------------------------------------------
+  # worker-01:
+  #   build:
+  #     context: ../Microapps-Worker-NodeJS
+  #     dockerfile: Dockerfile
+  #   image: logiks-worker:${IMAGE_TAG:-local}
+  #   container_name: logiks-worker-01
+  #   restart: unless-stopped
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #     appserver:
+  #       condition: service_started
+  #   environment:
+  #     NODE_ENV: production
+  #     SERVER_ID: worker-01
+  #     TRANSPORTER: redis://redis:6379
+  #     NAMESPACE: ${NAMESPACE:-default}
+  #     CLUSTER_TOKEN: ${CLUSTER_TOKEN:-change-me-cluster-token}
+  #   networks:
+  #     - logiks
+
+volumes:
+  mysql_data:
+  redis_data:
+  qdrant_data:
+  appserver_logs:
+  appserver_uploads:
+  appserver_temp:
+
+networks:
+  logiks:
+    name: logiks
+    driver: bridge

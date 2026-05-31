@@ -4,7 +4,7 @@
 
 const DBLOGGER_KEY = "logdb";
 var DBLOGGER_TABLES = [];
-const ALLOWED_LOGS = ["log_activities_user", "log_errors_frontend"];//"errors_backend", "system_events", "api_requests", "custom_logs"
+const ALLOWED_LOGS = ["log_frontend_activities", "log_frontend_errors", "log_frontend_analytics"];//"errors_backend", "system_events", "api_requests", "custom_logs"
 
 module.exports = {
 
@@ -15,7 +15,6 @@ module.exports = {
         DBLOGGER_TABLES = dbList.map(item => item.Tables_in_microapp_logsdb);//.replace('log_', '')
         dbList.forEach(item => {
             if(item?.Tables_in_microapp_logsdb && item.Tables_in_microapp_logsdb.toLowerCase().includes("frontend") 
-                    && item.Tables_in_microapp_logsdb.toLowerCase().includes("frontend") 
                     && ALLOWED_LOGS.indexOf(item.Tables_in_microapp_logsdb)<0) {
                 ALLOWED_LOGS.push(item.Tables_in_microapp_logsdb);
             }

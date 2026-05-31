@@ -57,6 +57,7 @@
         "base_path": "uploads"
     },
     "aicore": {
+        "enabled": false,
         "engine": "logiksai",
         "config": {
             "url": "",

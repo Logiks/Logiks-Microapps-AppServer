@@ -207,11 +207,11 @@ async function checkRBACControls(ctx) {
 
     if(!RBAC_CACHE[appid]) RBAC_CACHE[appid] = {};
 
-    if(!RBAC_CACHE[appid][rbacRoleID]['sessionid'] || RBAC_CACHE[appid][rbacRoleID]['sessionid']!=ctx.meta.sessionId) {
-        delete RBAC_CACHE[appid][rbacRoleID];
-    }
-
     if(RBAC_CACHE[appid][rbacRoleID]) {
+        if(!RBAC_CACHE[appid][rbacRoleID]['sessionid'] || RBAC_CACHE[appid][rbacRoleID]['sessionid']!=ctx.meta.sessionId) {
+            delete RBAC_CACHE[appid][rbacRoleID];
+        }
+        
         if(!RBAC_CACHE[appid][rbacRoleID]['timestamp']) delete RBAC_CACHE[appid][rbacRoleID];
         else if((new Date().getTime() - RBAC_CACHE[appid][rbacRoleID]['timestamp']) > (60*60*1000)) {
             delete RBAC_CACHE[appid][rbacRoleID];
