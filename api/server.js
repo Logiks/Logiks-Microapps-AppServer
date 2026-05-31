@@ -246,6 +246,7 @@ module.exports = {
 							etag: true,          // enable etag validation
 							lastModified: true,  // enable Last-Modified
 							// index: true
+							index: ["index.html"] 
 						},
 						// Enable GZIP/Brotli compression
 						compression: {
@@ -256,7 +257,7 @@ module.exports = {
 						},
 						// route: "/static"
 						// Fallback index.html for SPA routing
-        				index: "index.html"
+        				// index: "index.html" // OLD ONE
 					},
 
 					routes: [

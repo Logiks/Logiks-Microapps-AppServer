@@ -139,6 +139,9 @@
             color: #718096;
             margin: 0;
         }
+        a {
+            text-decoration: none;
+        }
 
         @media (max-width: 600px) {
             .container {
@@ -191,7 +194,8 @@
         </div>
         <h1>Micro AppServer</h1>
         <p>A lightweight, modern single-page application server. Fast, simple, and elegant.</p>
-        <button class="button" onclick="handleGetStarted()">Get Started</button>
+        <a class="button" href="/docs" target="_blank">Get Started</a>
+        <a class="button" href="/explorer" target="_blank">API Explorer</a>
         
         <div class="features">
             <div class="feature">
@@ -216,11 +220,5 @@
             </div>
         </div>
     </div>
-
-    <script>
-        // function handleGetStarted() {
-        //     alert('Welcome to Micro AppServer! Ready to build something amazing?');
-        // }
-    </script>
 </body>
 </html>

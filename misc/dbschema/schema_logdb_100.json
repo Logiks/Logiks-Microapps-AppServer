@@ -138,7 +138,7 @@
       "PRIMARY"
     ]
   },
-  "log_apicalls": {
+  "log_apibox": {
     "columns": {
       "id": {
         "type": "int",
@@ -147,62 +147,68 @@
         "primary": true
       },
       "guid": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": "global",
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
         "primary": false
       },
-      "dbkey": {
-        "type": "varchar(255)",
+      "api_code": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "appid": {
+        "type": "varchar(50)",
         "nullable": false,
         "default": null,
         "primary": false
       },
       "method": {
-        "type": "varchar(20)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "base_url": {
-        "type": "varchar(200)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "params": {
-        "type": "text",
+        "type": "varchar(10)",
         "nullable": true,
         "default": null,
         "primary": false
       },
-      "payload": {
-        "type": "text",
+      "endpoint": {
+        "type": "varchar(255)",
         "nullable": true,
         "default": null,
         "primary": false
       },
-      "response": {
-        "type": "text",
+      "status_code": {
+        "type": "int",
         "nullable": true,
         "default": null,
         "primary": false
       },
-      "sitename": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": "*",
+      "latency_ms": {
+        "type": "int",
+        "nullable": true,
+        "default": null,
         "primary": false
       },
-      "status": {
-        "type": "varchar(25)",
-        "nullable": false,
-        "default": "failure",
+      "request_payload": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "response_payload": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": null,
         "primary": false
       },
       "created_by": {
         "type": "varchar(155)",
-        "nullable": false,
+        "nullable": true,
         "default": null,
         "primary": false
       },
@@ -214,13 +220,13 @@
       },
       "edited_by": {
         "type": "varchar(155)",
-        "nullable": false,
+        "nullable": true,
         "default": null,
         "primary": false
       },
       "edited_on": {
         "type": "datetime",
-        "nullable": false,
+        "nullable": true,
         "default": null,
         "primary": false
       }

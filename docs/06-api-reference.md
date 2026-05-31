@@ -143,7 +143,7 @@ The server generates an OpenAPI 3 document from its live action catalogue ([swag
   ```
   GET /api/developers.swagger/openapi.json
   ```
-- **Interactive explorer:** open **[api-explorer.html](api-explorer.html)** (served alongside this page). Paste a Bearer token or API key, load the spec, and call endpoints directly with "Try it out". It defaults to this origin's spec URL and lets you override it.
+- **Interactive explorer:** open **[/explorer](/explorer)** (served alongside this page). Paste a Bearer token or API key, load the spec, and call endpoints directly with "Try it out". It defaults to this origin's spec URL and lets you override it.
 
 Because the explorer is served from the same origin as the API, there are no cross-origin issues when trying endpoints.
 
