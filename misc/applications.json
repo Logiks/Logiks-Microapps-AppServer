@@ -1,7 +1,7 @@
 [
     {
         "name": "Default App1",
-        "vers": 12000,
+        "vers": 100,
         "env": "beta",
         "theme": "indigo",
         "appid": "demo",

@@ -1,102 +1,239 @@
 {
-  "layoutId": "master-shell",
-  "type": "page",
-  "platforms": ["web", "mobile", "kiosk"],
-
-  "breakpoints": {
-    "mobile": { "maxWidth": 767 },
-    "tablet": { "minWidth": 768, "maxWidth": 1023 },
-    "desktop": { "minWidth": 1024 },
-    "kiosk": { "minWidth": 1280, "orientation": "landscape" }
-  },
-
-  "children": [
-    {
-      "id": "app-header",
-      "role": "header",
-      "className": "",
-      "visibleOn": ["web", "mobile", "kiosk"],
-      "slots": [
-        { "name": "brand", "permissions": ["public"] },
-        { "name": "primary-nav", "permissions": ["user", "admin"] },
-        {
-          "name": "admin-tools",
-          "permissions": ["admin"],
-          "featureFlag": ["ADMIN_TOOLS"]
+    "layoutId": "master-shell",
+    "type": "page",
+    "platforms": [
+        "web",
+        "mobile",
+        "kiosk"
+    ],
+    "breakpoints": {
+        "mobile": {
+            "maxWidth": 767
         },
-        { "name": "user-profile", "permissions": ["user", "admin"] }
-      ]
-    },
-    {
-      "id": "app-sidebar",
-      "role": "navigation",
-      "visibleOn": ["web", "tablet"],
-      "slots": [
-        { 
-          "name": "main-menu", 
-          "permissions": ["user", "admin"], 
-          "featureFlags": ["ADMIN_MENU_V2", "EXPERIMENT_ADMIN_NAV"]
-        }
-      ]
-    },
-    {
-      "id": "app-content",
-      "role": "main",
-      "visibleOn": ["web", "mobile", "kiosk"],
-      "slots": [
-        {
-          "name": "page-body",
-          "permissions": ["public", "user", "admin"],
-          "featureFlag": "BILLING_DASHBOARD"
+        "tablet": {
+            "minWidth": 768,
+            "maxWidth": 1023
         },
-        { "name": "page-actions", "permissions": ["user", "admin"] }
-      ]
-    },
-    {
-      "id": "app-footer",
-      "role": "footer",
-      "visibleOn": ["web"],
-      "slots": [
-        { "name": "legal", "permissions": ["public"] },
-        { "name": "support-links", "permissions": ["user", "admin"] }
-      ]
-    }
-  ],
-  "slotBindings": {
-    "app-header.brand": "BrandLogo",
-    "app-header.primary-nav": {
-      "component": "UserMenu",
-      "params": {
-
-      }
-    },
-    "app-sidebar.main-menu": {
-      "component": "navigator",
-      "params": {
-        "ui_template": "list"
-      },
-      "source": {
-        "type": "api",
-        "method": "get",
-        "endpoint": "navigator/app"
-      },
-      "source1": {
-          "type": "sql",
-          "table": "docs_tbl,profiletbl",
-          "cols": "docs_tbl.id,docs_tbl.doctype,docs_tbl.doclink,docs_tbl.title,docs_tbl.docname,docs_tbl.category,(concat(docs_tbl.docyear,'-',docs_tbl.docyear+1)) as docyear,docs_tbl.issuedOn,docs_tbl.placeOfIssue,docs_tbl.expires,docs_tbl.verfied_on,docs_tbl.flags,profiletbl.full_name,docs_tbl.verfied_by,docs_tbl.verfied_on,docs_tbl.blocked,docs_tbl.created_by,docs_tbl.created_on",
-          "where": {
-            "docs_tbl.profile_id=profiletbl.id":"RAW",
-            "(DATE(docs_tbl.expires)< CURDATE())":"RAW"
-            
-          },
-          "limit": 10
+        "desktop": {
+            "minWidth": 1024
+        },
+        "kiosk": {
+            "minWidth": 1280,
+            "orientation": "landscape"
         }
     },
-    "app-content.page-body": {
-      "remote_component": "component/test1.jsx",
-      "params": {
-        
-      }
+    "children": [
+        {
+            "id": "app-header",
+            "role": "header",
+            "className": "",
+            "visibleOn": [
+                "web",
+                "mobile",
+                "kiosk"
+            ],
+            "slots": [
+              {
+                "name": "brand",
+                "permissions": ["public"]
+              },
+              {
+                "name": "home-nav",
+                "permissions": ["public"]
+              },
+              {
+                "name": "topbar-tools-left",
+                "permissions": ["public"]
+              },
+              {
+                "name": "admin-tools",
+                "permissions": ["public"]
+              },
+              {
+                "name": "user-profile",
+                "permissions": ["public"]
+              },
+              {
+                "name": "topbar-tools-right",
+                "permissions": ["public"]
+              }
+            ]
+        },
+        {
+            "id": "app-sidebar",
+            "role": "navigation",
+            "visibleOn": [
+                "web",
+                "tablet"
+            ],
+            "slots": [
+                {
+                    "name": "brand",
+                    "permissions": [
+                        "public"
+                    ]
+                },
+                {
+                    "name": "main-menu",
+                    "permissions": [
+                        "public"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "app-toolbar",
+            "role": "toolbar",
+            "className": "",
+            "visibleOn": [
+                "web",
+                "mobile",
+                "kiosk"
+            ],
+            "slots": [
+                {
+                    "name": "toolbar",
+                    "permissions": [
+                        "public"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "app-content",
+            "role": "main",
+            "visibleOn": [
+                "web",
+                "mobile",
+                "kiosk"
+            ],
+            "slots": [
+                {
+                    "name": "page-body",
+                    "permissions": [
+                        "public"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "app-footer",
+            "role": "footer",
+            "visibleOn": [
+                "web"
+            ],
+            "slots": [
+                {
+                    "name": "legal",
+                    "permissions": [
+                        "public"
+                    ]
+                }
+            ]
+        }
+    ],
+    "slotBindings": {
+        "app-header.brand": {
+            "remote_component": "modules/common/component/header-brand-logo.js",
+            "compiled_js": true,
+            "class": "bg-purple-500 p-1 rounded rounded-md"
+        },
+        "app-header.home-nav": "",
+
+        "app-header.admin-tools": "",
+
+        "app-header.topbar-tools-right": {
+            "remote_component": "modules/common/component/toolbox.js",
+            "compiled_js": true,
+            "params": {
+                "type": "buttons",
+                "children": [
+                    {
+                        "icon": "fa-brands fa-codepen",
+                        "label": "",
+                        "link": "#/page/admincp-main",
+                        "permissions": [
+                            "public"
+                        ]
+                    },
+                    {
+                        "tooltip":"Settings",
+                        "icon": "fa-solid fa-gear",
+                        "label": "",
+                        "link": "#/page/settings-main",
+                        "permissions": [
+                            "public"
+                        ]
+                    }
+                ]
+            }
+        },
+
+        "app-header.topbar-tools-left": {
+            "remote_component": "modules/common/component/toolbox.js",
+            "compiled_js": true,
+            "params": {
+                "type": "buttons",
+                "children": [
+                    {
+                        "script": "notifyMe",
+                        "icon": "fa-solid fa-bell",
+                        "permissions": [
+                            "public"
+                        ]
+                    },
+                    {
+                        "remote_component": "modules/common/component/search.js",
+                        "compiled_js": true
+                    }
+                ]
+            }
+        },
+
+        "app-header.user-profile": {
+            "remote_component": "modules/common/component/toolbox.js",
+            "compiled_js": true,
+            "params": {
+                "type": "dropdown",
+                "label": "{{user.user.name}}",
+                "icon": "fa fa-user",
+                "children": [
+                    {
+                        "name": "My Profile",
+                        "link": "#profile",
+                        "permissions": [
+                            "public"
+                        ]
+                    },
+                    {
+                        "name": "Support Link",
+                        "link": "https://support.smartinfologiks.com/",
+                        "permissions": [
+                            "public"
+                        ]
+                    },
+                    {
+                        "remote_component": "modules/common/component/divider.js",
+                        "compiled_js": true
+                    },
+                    {
+                        "remote_component": "modules/common/component/logout.js",
+                        "compiled_js": true
+                    }
+                ]
+            }
+        },
+
+        "app-sidebar.brand": "",
+        "app-sidebar.main-menu": "",
+        "app-toolbar.toolbar": "",
+        "app-content.page-body": {
+            "remote_component": "modules/common/component/dashboard_v2.js",
+            "compiled_js": true
+        },
+        "app-footer.legal": {
+            "remote_component": "modules/common/component/footer.js",
+            "compiled_js": true
+        }
     }
-  }
 }
