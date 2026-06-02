@@ -99,7 +99,7 @@ module.exports = {
 
 				serializer: "JSON",
 
-				requestTimeout: 10 * 1000,
+				requestTimeout: 30 * 1000,
 				retryPolicy: {
 					enabled: true,
 					retries: 3,

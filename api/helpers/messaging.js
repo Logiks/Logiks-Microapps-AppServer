@@ -26,9 +26,9 @@ module.exports = {
         MESSAGING_DRIVER['email'] = {
             "method": "sendEmail",
             "params": {
-                "sendTo": "required",
-                "subject": "required",
-                "body": "required"
+                // "sendTo": "required",
+                // "subject": "required",
+                // "body": "required"
             },
             "credentials": CONFIG.email || CONFIG.mail || false
         };
@@ -44,7 +44,7 @@ module.exports = {
 
                     MESSAGING_DRIVER[a.vendor_code] = a;
                 } catch(err) {
-                    console.error("MESSAEG_VENDOR_LOADING", err);
+                    console.error("MESSAGE_VENDOR_LOADING", err);
                 }
             })
         }
@@ -61,8 +61,9 @@ module.exports = {
     },
 
     sendTopic: async function(topic, params, ctx) {
-        return this.sendMessage("email", _.extend({
-            topic: topic
+        return this.sendMessage(params.driver || "email", _.extend({
+            topic: topic,
+            useTopicDriver: true
         }, params), ctx);
     },
 
@@ -125,7 +126,7 @@ module.exports = {
 
                 params.template_code = "TOPIC:"+params.topic;
 
-                driver = notificationObj.drivers;
+                if(params.useTopicDriver===true) driver = notificationObj.drivers;
             } else {
                 return false;
             }

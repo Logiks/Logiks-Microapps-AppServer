@@ -2,7 +2,9 @@
 
 > Audience: **app developers** primarily; **platform engineers** for §6.3.
 
-This chapter documents the service layer (how code is organised), the API system (what's exposed to clients), and the API gateway (how HTTP becomes a service call).
+This chapter documents the service layer (how code is organised), the API system (what's exposed to clients), and the API gateway (how HTTP becomes a service call). It also serves as the **API reference** — authentication, calling conventions, examples, and the live OpenAPI spec and explorer (§6.4).
+
+Base URL in development is `http://localhost:9999`; replace it with your deployment host throughout.
 
 ---
 
@@ -116,6 +118,10 @@ The five route groups defined in [api/server.js:262-996](../api/server.js#L262-L
 | `/api/public` | No | `CONFIG.noauth` | Public utility actions; rate-limited 10/min |
 | `/api` | **Yes** | `**` | Authenticated, RBAC-checked surface |
 
+The URL under a group follows `<group>/<service>/<action-path>` — e.g. the `public.ping` health check is reached at `GET /api/public/public/ping`.
+
+**Plugin endpoints.** A plugin's own routes are exposed under `/api/services/<plugin>/<path>` (each route declared in its `routes.json`; results are wrapped as `{ "status": "okay", "results": … }`). Every plugin also gets two auto-generated endpoints — `source` (its UI definitions/components) and `www` (its static assets) — which are excluded from the OpenAPI spec. See [§4.4](../04-microapps.md#44-how-a-microapp-runtime-service-works).
+
 REST conventions:
 
 - `GET /resource` — list
@@ -180,6 +186,17 @@ Authentication result is attached to `ctx.meta.user`:
     id, userId, sessionId, username, privilege,
     tenantId, roles: [], scopes: [], secure_hash
 }
+```
+
+**Getting a token.** Log in through the `auth` service to receive an access token (and a refresh token); `auth` also issues `tltoken` and `s2stoken`. Then present it on `/api`:
+
+```bash
+# log in — returns an access token
+curl -X POST http://localhost:9999/auth/login -H "Content-Type: application/json" \
+  -d '{ "username": "you@example.com", "password": "••••••" }'
+
+# call an authenticated endpoint with it
+curl http://localhost:9999/api/me/info -H "Authorization: Bearer <access_token>"
 ```
 
 ### Authorization
@@ -265,15 +282,34 @@ Uploaded paths are exposed on `ctx.meta.file`, `ctx.meta.files`, or `ctx.meta[fi
 
 ---
 
-## 6.4 API Reference (Swagger)
+## 6.4 API Reference, Examples & Explorer
 
-There's no hand-maintained endpoint list to drift out of date. The `developers.swagger` service ([api/services/developers/swagger.service.js](../api/services/developers/swagger.service.js)) builds an OpenAPI 3 document from the live action catalogue across every node — every `rest:`-annotated action, its params, and its scopes. That document is the API reference.
+The endpoint reference is generated, not hand-written, so it never drifts out of date. The `developers.swagger` service ([api/services/developers/swagger.service.js](../api/services/developers/swagger.service.js)) builds an OpenAPI 3 document from the live action catalogue across every node — every `rest:`-annotated action, its params, and its scopes. It includes a plugin's routes as soon as the Worker hosting them joins.
 
-- Fetch it through the `developers` service / its route to get the current spec for the cluster you're pointed at.
-- Load the JSON into Swagger UI, Postman, or an SDK generator for a browsable, always-current reference.
-- Because it's derived from the registry, a plugin's routes appear in it as soon as the Worker hosting them joins — there's nothing extra to publish.
+**Live spec** (development/staging — disabled in production):
 
-To make your actions read well here, give them a clear `name`, populated `params`, and a short `description`; AICore's tool catalogue draws on the same metadata.
+```
+GET /api/developers.swagger/openapi.json
+```
+
+Load that JSON into Swagger UI, Postman, or an SDK generator for a browsable, always-current reference.
+
+**Interactive explorer.** Open **[/explorer](/explorer)** — a same-origin tool that loads the spec, lets you paste a Bearer token or API key, and call endpoints with "Try it out". Being same-origin, there are no cross-origin issues. The spec is off in production (`isProd`/`isStaging`); point the explorer at a dev/staging host to use it.
+
+**Examples**
+
+```bash
+# Unauthenticated health check
+curl http://localhost:9999/api/public/public/ping
+
+# Authenticated call with an API key
+curl http://localhost:9999/api/me/info -H "X-API-Key: <your-key>"
+
+# A plugin route
+curl "http://localhost:9999/api/services/demo/" -H "Authorization: Bearer <token>"
+```
+
+To make your actions read well in the reference, give them a clear `name`, populated `params`, and a short `description`; AICore's tool catalogue draws on the same metadata.
 
 ---
 

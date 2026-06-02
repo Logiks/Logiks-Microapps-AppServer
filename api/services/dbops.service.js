@@ -87,7 +87,7 @@ module.exports = {
                     for(var i=0;i<jsonQuery.hooks.presubmit.length;i++) {
                         var func = jsonQuery.hooks.presubmit[i];
 
-                        var a1 = await _call(func, {"data": dataFields, "operation": "update", "meta": ctx.meta});
+                        var a1 = await _call(func, {"data": dataFields, "operation": "insert", "meta": ctx.meta});
 
                         if(a1===false) {
                             IS_HOOK_ERROR = true;
@@ -100,7 +100,9 @@ module.exports = {
                                 "INVALID_REQUEST"
                             );
                         }
-                        if(!a1) dataFields = a1;
+                        if(a1 && a1.data) {
+                            dataFields = a1.data;
+                        }
                     }
                 }
                 if(IS_HOOK_ERROR) {
@@ -222,7 +224,7 @@ module.exports = {
                     for(var i=0;i<jsonQuery.hooks.presubmit.length;i++) {
                         var func = jsonQuery.hooks.presubmit[i];
 
-                        var a1 = await _call(func, {"data": dataFields, "operation": "update", "meta": ctx.meta});
+                        var a1 = await _call(func, {"data": dataFields, "operation": "insert", "meta": ctx.meta});
 
                         if(a1===false) {
                             IS_HOOK_ERROR = true;
@@ -235,7 +237,9 @@ module.exports = {
                                 "INVALID_REQUEST"
                             );
                         }
-                        if(!a1) dataFields = a1;
+                        if(a1 && a1.data) {
+                            dataFields = a1.data;
+                        }
                     }
                 }
                 if(IS_HOOK_ERROR) {
@@ -455,7 +459,9 @@ module.exports = {
                                 "INVALID_REQUEST"
                             );
                         }
-                        if(!a1) dataFields = a1;
+                        if(a1 && a1.data) {
+                            dataFields = a1.data;
+                        }
                     }
                 }
                 if(IS_HOOK_ERROR) {
@@ -601,7 +607,9 @@ module.exports = {
                                 "INVALID_REQUEST"
                             );
                         }
-                        if(!a1) dataFields = a1;
+                        if(a1 && a1.data) {
+                            dataFields = a1.data;
+                        }
                     });
                 }
 
