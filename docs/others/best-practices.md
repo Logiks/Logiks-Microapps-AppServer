@@ -1,4 +1,4 @@
-# 2. Logiks Best Practices Guide
+# Logiks Best Practices Guide
 
 ---
 

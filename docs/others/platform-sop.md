@@ -1,4 +1,4 @@
-# 1. Logiks Platform SOP
+# Logiks Platform SOP
 
 ## Purpose
 
