@@ -2,7 +2,7 @@
 
 Most platforms make you translate a business requirement into code. Logiks shortens that journey: functionality decomposes into a small set of named building blocks, and most of a requirement maps onto them through configuration rather than custom development. This article walks the path from a stated need to a running capability, and shows how to keep the two traceable to each other.
 
-> Background reading: [§4 MicroApp / Plugin](../04-microapps.md), the building-block reference in [training §6](../training/6-building-blocks.md), the reusable modules in [§9 Common Modules](../09-common-modules.md), and the requirements/process thinking in [training §17–19](../training/4-advanced.md).
+> Background reading: [§4 MicroApp / Plugin](../04-microapps.md), the building-block reference in [training §6](../training/6-building-blocks.md), the reusable modules in [§10 Common Modules](../10-common-modules.md), and the requirements/process thinking in [training §17–19](../training/4-advanced.md).
 
 ---
 
@@ -44,14 +44,14 @@ Translate the requirement clause by clause. Most clauses land on one of these:
 | "list / search / filter X" | A **report** | `source` + `datagrid`, filters ([§6.2](../training/6-building-blocks.md#62-reports)) |
 | "totals / counts / trends" | Report aggregates or a **dashboard** | aggregate columns; chart cards ([§6.4](../training/6-building-blocks.md#64-dashboards--charts)) |
 | "approve / route / move through stages" | A **workflow** | status flow + `presubmit`/`postsubmit` hooks ([§6.5](../training/6-building-blocks.md#65-hooks--workflow-automation)) |
-| "notify someone when…" | **Notifications** | NotificationMatrix + messaging vendors ([§9.4](../09-common-modules.md#94-advanced)) |
+| "notify someone when…" | **Notifications** | NotificationMatrix + messaging vendors ([§10.4](../10-common-modules.md#104-advanced)) |
 | "who can see / do what" | **Access control** | `policies` in `logiks.json` + RBAC ([§4](../04-microapps.md)) |
 | "each customer/branch sees only theirs" | **Multi-tenancy** | tenant-scoped data (built in) |
-| "the standard list of departments/types" | **Master data** | `datalists` ([§9.2](../09-common-modules.md#92-masters)) |
+| "the standard list of departments/types" | **Master data** | `datalists` ([§10.2](../10-common-modules.md#102-masters)) |
 | "import the existing spreadsheet" | **Bulk import** | Excel import → DB ([§6.6](../training/6-building-blocks.md#66-data-processing)) |
-| "print / generate a document" | **Templates** | document templates ([§9.4](../09-common-modules.md#94-advanced)) |
+| "print / generate a document" | **Templates** | document templates ([§10.4](../10-common-modules.md#104-advanced)) |
 | "run nightly / on a schedule" | **Scheduled job** | `automator` (singleton-elected) |
-| "we must be able to see who changed what" | **Audit trail** | `logs.audit` / `logs.activity` ([§10](../10-audit-logs.md)) |
+| "we must be able to see who changed what" | **Audit trail** | `logs.audit` / `logs.activity` ([§11](../11-audit-logs.md)) |
 | "a screen the standard blocks can't express" | A **custom component** | React `.jsx` ([§6.7](../training/6-building-blocks.md#67-custom-react-components)) |
 | "talk to system Z" | **Integration** | a plugin action / webhook (often a developer task) |
 
@@ -81,7 +81,7 @@ Nothing on that list is custom code. It is a plugin with one form, one report, o
 
 When you build, climb down the ladder only as far as you must ([training §29](../training/4-advanced.md)):
 
-1. **Reuse** — is there a Setup module or an existing plugin action that already does this? ([§9](../09-common-modules.md))
+1. **Reuse** — is there a Setup module or an existing plugin action that already does this? ([§10](../10-common-modules.md))
 2. **Configure** — express it in `logiks.json` / `routes.json` and the form/report/dashboard definitions.
 3. **Extend** — add an `api.js` function in your plugin for logic configuration can't express.
 4. **Custom** — a React component or an integration, where nothing else fits.
@@ -97,7 +97,7 @@ Some functionality is asked for in a requirements document but is already part o
 - **Authentication and sessions** — login, tokens, MFA.
 - **Multi-tenancy** — every request carries a tenant; scope data by it.
 - **Access control** — declare policies; RBAC enforces them.
-- **Audit and activity history** — emit `logs.*`; the trail is recorded with tamper-evident hashing ([§10.4](../10-audit-logs.md#104-audit--activity-integrity)).
+- **Audit and activity history** — emit `logs.*`; the trail is recorded with tamper-evident hashing ([§11.4](../11-audit-logs.md#114-audit--activity-integrity)).
 - **Rate limiting, security headers, CORS** — handled by the gateway.
 
 Treat these as non-functional requirements the platform satisfies by default, and spend the requirement conversation on what's actually specific to the business.

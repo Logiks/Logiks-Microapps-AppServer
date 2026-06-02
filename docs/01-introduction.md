@@ -35,7 +35,7 @@ Hosted or local LLM service
 - **AIEngine** ([api/controllers/aicore/aiengine.js](../api/controllers/aicore/aiengine.js)) is the provider contract; concrete engines (LogiksAI today; Ollama/Claude/OpenAI planned) sit beside it.
 - **Microapps** consume AICore and add their own skills and tools; they don't rebuild the agentic stack.
 
-What runs today is the spine: a microapp calls `AICORE.sendMessage`, which dispatches to the configured engine. The registry, context engine, memory, vector store, and agent loops described above are the design AICore is being built toward. [§8 AI Layer](08-ai-layer.md) tracks what exists versus what's planned, piece by piece.
+What runs today is the spine: a microapp calls `AICORE.sendMessage`, which dispatches to the configured engine. The registry, context engine, memory, vector store, and agent loops described above are the design AICore is being built toward. [§9 AI Layer](09-ai-layer.md) tracks what exists versus what's planned, piece by piece.
 
 ### Distributed By Nature
 
@@ -187,7 +187,7 @@ Go frameworks compete on raw service throughput and operability; Logiks competes
 
 1. **Not a general-purpose web framework.** For a single Express app, reach for something lighter. Logiks pays off when you have many microapps sharing infrastructure.
 2. **Not a Kubernetes replacement.** It orchestrates microapps inside its own runtime; it doesn't aim to replace K8s for container orchestration.
-3. **Not a standalone agent toolkit.** AICore is part of the platform (Tier 4), but the deep agent tooling — vector stores, prompt pipelines, multi-agent control — lives behind AICore's interfaces, and much of it is still being built ([§8](08-ai-layer.md)). You consume AICore; you don't assemble an agent runtime yourself.
+3. **Not a standalone agent toolkit.** AICore is part of the platform (Tier 4), but the deep agent tooling — vector stores, prompt pipelines, multi-agent control — lives behind AICore's interfaces, and much of it is still being built ([§9](09-ai-layer.md)). You consume AICore; you don't assemble an agent runtime yourself.
 
 ---
 
@@ -243,11 +243,11 @@ The set of Workers in one namespace, connected through a single transporter, sha
 - **Tools** — sourced from broker actions (auto-discovered) and AICore helpers.
 - **Policy controls** — guardrails on what can be invoked, by whom.
 
-Below AICore is the **engine layer** (`AIEngine`) that adapts to providers — LogiksAI today; Ollama/Claude/OpenAI planned. Today the working path is `AICORE.sendMessage` → engine; the registry, context engine, memory, and agent loops are in progress. Microapps consume AICore's interfaces and extend the registry with their own skills and tools rather than chaining primitives themselves. Design and current state: [§8 AI Layer](08-ai-layer.md).
+Below AICore is the **engine layer** (`AIEngine`) that adapts to providers — LogiksAI today; Ollama/Claude/OpenAI planned. Today the working path is `AICORE.sendMessage` → engine; the registry, context engine, memory, and agent loops are in progress. Microapps consume AICore's interfaces and extend the registry with their own skills and tools rather than chaining primitives themselves. Design and current state: [§9 AI Layer](09-ai-layer.md).
 
 ### Event Bus
 
-The broker doubles as an event bus. Services emit named topics; subscribers on any node consume them. The transporter (Redis / NATS / MQTT / TCP) sets delivery semantics. Built-in topics include `system.request_completed`, `logs.audit`, and `logs.activity`. Emit with `ctx.emit("topic", payload)`. See [§7 Event System](07-event-system.md).
+The broker doubles as an event bus. Services emit named topics; subscribers on any node consume them. The transporter (Redis / NATS / MQTT / TCP) sets delivery semantics. Built-in topics include `system.request_completed`, `logs.audit`, and `logs.activity`. Emit with `ctx.emit("topic", payload)`. See [§8 Event System](08-event-system.md).
 
 ### Runtime
 
@@ -312,7 +312,7 @@ There's no classical DI container. Dependencies arrive three ways:
 
 ### Event-Driven Architecture
 
-Action calls handle request/response; events handle fan-out. The framework emits structured events for request completion, auth, errors, and webhook reception. Microapps subscribe by declaring `events: { "topic.name"(payload) { … } }` in a service. See [§7 Event System](07-event-system.md).
+Action calls handle request/response; events handle fan-out. The framework emits structured events for request completion, auth, errors, and webhook reception. Microapps subscribe by declaring `events: { "topic.name"(payload) { … } }` in a service. See [§8 Event System](08-event-system.md).
 
 ### AI Orchestration Layer
 
@@ -322,7 +322,7 @@ Orchestration is meant to happen inside AICore: a microapp sends a message or in
 2. RBAC scopes and audit apply when AICore runs tool calls on a microapp's behalf.
 3. Event topics let AICore track platform activity as context.
 
-[§8 AI Layer](08-ai-layer.md) has the loop's intended shape and the current state of each piece.
+[§9 AI Layer](09-ai-layer.md) has the loop's intended shape and the current state of each piece.
 
 ---
 

@@ -1,4 +1,4 @@
-# 9. Common Modules
+# 10. Common Modules
 
 > Audience: **app developers**. These are the ready-made modules the framework ships in the **Setup MicroApp**. Knowing them is not optional — reusing them is how you avoid rebuilding user management, dropdowns, settings, menus, vendors, scheduling, webhooks, and notifications by hand.
 
@@ -6,7 +6,7 @@ Each module is an **admin UI** (configured in the Setup MicroApp) backed by an A
 
 ---
 
-## 9.1 Security
+## 10.1 Security
 
 | Module | Purpose | Backing | Table(s) |
 |---|---|---|---|
@@ -20,7 +20,7 @@ RBAC is the enforcement layer behind all of these — a plugin declares access k
 
 ---
 
-## 9.2 Masters
+## 10.2 Masters
 
 | Module | Purpose | Backing | Table(s) |
 |---|---|---|---|
@@ -30,7 +30,7 @@ This is the source for form `dataSelector` fields: a field's `groupid` names a l
 
 ---
 
-## 9.3 Setup
+## 10.3 Setup
 
 | Module | Purpose | Backing | Table(s) |
 |---|---|---|---|
@@ -46,7 +46,7 @@ This is the source for form `dataSelector` fields: a field's `groupid` names a l
 
 ---
 
-## 9.4 Advanced
+## 10.4 Advanced
 
 | Module | Purpose | Backing | Table(s) |
 |---|---|---|---|

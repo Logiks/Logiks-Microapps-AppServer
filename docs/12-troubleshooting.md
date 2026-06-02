@@ -1,10 +1,10 @@
-# 11. Troubleshooting & FAQ
+# 12. Troubleshooting & FAQ
 
 > For app developers and platform engineers. Symptoms grouped by area, with the cause and the fix.
 
 ---
 
-## 11.1 Cluster & Workers
+## 12.1 Cluster & Workers
 
 **A Worker starts but never appears in the cluster.**
 The usual cause is a mismatch with the Gateway. A Worker only joins when its `TRANSPORTER` URL and `NAMESPACE` match the AppServer's, and registration only succeeds when `CLUSTER_TOKEN` matches. On a token mismatch the AppServer logs `CLUSTER_TOKEN_ERROR` and removes the node (`system.registerWorker` in [api/services/system.service.js](../api/services/system.service.js)). Check those three values on both sides first.
@@ -20,7 +20,7 @@ On a Worker, AppServer helpers/controllers are reachable as proxies once the Wor
 
 ---
 
-## 11.2 Plugins
+## 12.2 Plugins
 
 **A plugin folder is ignored on Worker start.**
 The loader skips a folder when:
@@ -40,7 +40,7 @@ Dependency install only runs when `ENABLE_PLUGINS_INSTALL_DEPS=true` on the Work
 
 ---
 
-## 11.3 Requests, Auth & Rate Limits
+## 12.3 Requests, Auth & Rate Limits
 
 **Requests to a domain get 401 `INVALID_REQUEST`.**
 The Gateway couldn't resolve the host to an application, or the row is blocked. Domains map through the `lgks_domains` table (`BASEAPP.getAppForDomain`); add or unblock the `domain_host` row.
@@ -56,24 +56,24 @@ Sessions and rate-limit counters live in Redis so any replica can serve any requ
 
 ---
 
-## 11.4 Data & Migrations
+## 12.4 Data & Migrations
 
 **Tables don't exist on first run.**
 Schema is applied by the migrator, not at boot by default. On the AppServer, run with `MIGRATION_MODE=IMPORT` once and wait for `Post Initalization Completed`. On a Worker, per-plugin schema runs when `ENABLE_DBMIGRATION=true`, applying each plugin's newest `dbschema/schema_*.json` ([§4.7](04-microapps.md#47-per-plugin-db-migration)).
 
 **A frontend log call “succeeds” but no row appears.**
-`_DBLOGGER._log` returns `false` (no error thrown) when the target table doesn't exist or the log id isn't allow-listed. The shipped allowlist also has a prefix quirk worth knowing about. See [§10.5](10-audit-logs.md#105-frontend-logs--the-_dblogger-helper) for the exact conditions and the fix.
+`_DBLOGGER._log` returns `false` (no error thrown) when the target table doesn't exist or the log id isn't allow-listed. The shipped allowlist also has a prefix quirk worth knowing about. See [§11.5](11-audit-logs.md#115-frontend-logs--the-_dblogger-helper) for the exact conditions and the fix.
 
 **Two MySQL connections — which is which.**
 `appdb` holds operational data; `logdb` holds audit/activity/error logs. They're configured separately and can have different retention.
 
 ---
 
-## 11.5 Events
+## 12.5 Events
 
 **A subscriber never fires.**
 Two common causes:
-- Delivery mode. `ctx.emit` gives the event to one instance per group; `ctx.broadcast` gives it to every instance on every node. If you scaled the subscriber and expected all copies to react, use `broadcast` ([§7.1](07-event-system.md)).
+- Delivery mode. `ctx.emit` gives the event to one instance per group; `ctx.broadcast` gives it to every instance on every node. If you scaled the subscriber and expected all copies to react, use `broadcast` ([§8.1](08-event-system.md)).
 - The subscriber was down when the event fired. The default transporters don't persist events, so a missed event is gone. For at-least-once delivery, use a durable transporter or persist the payload and replay it.
 
 **An event handler throws and the event disappears.**
@@ -81,17 +81,17 @@ There's no dead-letter queue. A throwing handler logs and the event is dropped. 
 
 ---
 
-## 11.6 AI (AICore)
+## 12.6 AI (AICore)
 
 **`AICORE.sendMessage` returns nothing useful.**
-The end-to-end path today is `sendMessage` → the configured engine, and the default engine currently returns `false`. The registry, context engine, memory, and agent loops are still being built. [§8 AI Layer](08-ai-layer.md) tracks what's wired versus planned. Point at a working engine, or treat the call as the integration seam it is for now.
+The end-to-end path today is `sendMessage` → the configured engine, and the default engine currently returns `false`. The registry, context engine, memory, and agent loops are still being built. [§9 AI Layer](09-ai-layer.md) tracks what's wired versus planned. Point at a working engine, or treat the call as the integration seam it is for now.
 
 **Qdrant isn't reachable in Docker.**
 It only starts under the `ai` compose profile: `docker compose --profile ai up -d` ([§2.1](02-getting-started.md#docker-compose)).
 
 ---
 
-## 11.7 Docker
+## 12.7 Docker
 
 **The AppServer container restarts or never reports healthy.**
 It depends on MySQL and Redis being healthy first, then runs its own healthcheck against `/api/public/public/ping`. If it loops, check the DB/Redis containers and that `config.json` is present — it's mounted at runtime, not baked into the image ([Dockerfile](../Dockerfile)).

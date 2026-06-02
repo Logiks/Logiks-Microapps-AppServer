@@ -339,11 +339,11 @@ module.exports = {
 };
 ```
 
-The AppServer emits `system.request_completed` after every routed call. Subscribers receive every event the bus fans out — across all nodes — because events are cluster-wide by default. To **emit** an event from your own code, use the broker on the context: `ctx.emit("myapp.invoice.created", payload)`. See [§7.2](07-event-system.md#72-working-with-events) for filtering and group semantics.
+The AppServer emits `system.request_completed` after every routed call. Subscribers receive every event the bus fans out — across all nodes — because events are cluster-wide by default. To **emit** an event from your own code, use the broker on the context: `ctx.emit("myapp.invoice.created", payload)`. See [§8.2](08-event-system.md#82-working-with-events) for filtering and group semantics.
 
 ### AI MicroApp — Consuming AICore
 
-A plugin reaches the agentic Tier 4 through the global `AICORE` interface (see [§8 AI Layer](08-ai-layer.md)). On a Worker, `AICORE` is one of the AppServer controllers mirrored as a local global proxy at connect time (§4.5), so calling it from `api.js` transparently forwards to the AppServer — no import needed.
+A plugin reaches the agentic Tier 4 through the global `AICORE` interface (see [§9 AI Layer](09-ai-layer.md)). On a Worker, `AICORE` is one of the AppServer controllers mirrored as a local global proxy at connect time (§4.5), so calling it from `api.js` transparently forwards to the AppServer — no import needed.
 
 `plugins/support/api.js`:
 ```javascript
@@ -378,7 +378,7 @@ module.exports = {
 
 AICore generates a session id, forwards the request through its engine, and returns the result.
 
-> **Status:** today AICore exposes `sendMessage` and a stub `oneShot`. The skill registry, context engine, agent loops, memory, vector DB, and tool integration are roadmap items — see [§8 AI Layer](08-ai-layer.md) for the design and current status of each piece. A plugin contributes to AICore the same way it does anything else: by exposing `api.js` functions that AICore can call as tools (`<plugin>.<fn>`). It does **not** reimplement retrieval, memory, or the agent loop — that is AICore's job.
+> **Status:** today AICore exposes `sendMessage` and a stub `oneShot`. The skill registry, context engine, agent loops, memory, vector DB, and tool integration are roadmap items — see [§9 AI Layer](09-ai-layer.md) for the design and current status of each piece. A plugin contributes to AICore the same way it does anything else: by exposing `api.js` functions that AICore can call as tools (`<plugin>.<fn>`). It does **not** reimplement retrieval, memory, or the agent loop — that is AICore's job.
 
 ### Multi-Worker Communication
 

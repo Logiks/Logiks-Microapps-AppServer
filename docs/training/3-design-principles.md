@@ -133,7 +133,7 @@ This training includes:
 
 So understanding event systems is essential.
 
-> **In Logiks:** a plugin subscribes to cluster event topics through the `events` map in `routes.json` (topic → controller), and publishes with `ctx.emit("<topic>", payload)`. Events fan out across the whole cluster by default — see [§7 Event System](../07-event-system.md).
+> **In Logiks:** a plugin subscribes to cluster event topics through the `events` map in `routes.json` (topic → controller), and publishes with `ctx.emit("<topic>", payload)`. Events fan out across the whole cluster by default — see [§8 Event System](../08-event-system.md).
 
 ---
 

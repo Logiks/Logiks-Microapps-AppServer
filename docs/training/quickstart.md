@@ -52,7 +52,7 @@ If those four work, you understand the core loop. The rest is breadth.
 | "How do I write a form/report/dashboard?" | [6-building-blocks.md](6-building-blocks.md) |
 | "How should I *think* about this (design)?" | [3-design-principles.md](3-design-principles.md) |
 | "Do I have the prerequisites?" | [0-prerequisites.md](0-prerequisites.md) |
-| "How do logs/audit work?" | [§10 Audit & Logs](../10-audit-logs.md) |
+| "How do logs/audit work?" | [§11 Audit & Logs](../11-audit-logs.md) |
 
 ---
 

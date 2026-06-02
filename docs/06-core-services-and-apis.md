@@ -313,4 +313,4 @@ To make your actions read well in the reference, give them a clear `name`, popul
 
 ---
 
-> **Next:** [§7 Event System](07-event-system.md) — the platform's eventing model, well-known topics, and distributed messaging patterns.
+> **Next:** [§7 Helpers and Controllers](07-helpers-and-controllers.md) — the helpers and controllers callable across the cluster, function by function.

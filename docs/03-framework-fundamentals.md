@@ -363,7 +363,7 @@ All controllers in [api/controllers/](../api/controllers/). The **Cluster-public
 
 | Controller global | Cluster-public | Purpose |
 |---|---|---|
-| `AICORE` | Conditional* | AI Layer — `sendMessage`, engine dispatch. See [§8](08-ai-layer.md). |
+| `AICORE` | Conditional* | AI Layer — `sendMessage`, engine dispatch. See [§9](09-ai-layer.md). |
 | `APIBOX` | ✅ | API versioning / sandboxing controls |
 | `APPLICATION` | ❌ | App metadata loader (consumed by `application.service.js`) |
 | `AUTHFEDERATED` | ✅ | Federated SSO engine catalogue + login response processing |

@@ -1,12 +1,12 @@
-# 7. Event System
+# 8. Event System
 
-> Audience: **app developers** primarily; **platform engineers** for §7.3.
+> Audience: **app developers** primarily; **platform engineers** for §8.3.
 
 Events are how microapps loosely couple themselves. Action calls handle synchronous request/response between exactly two parties; events handle fan-out — one emitter, many subscribers — across the whole cluster.
 
 ---
 
-## 7.1 Event Architecture
+## 8.1 Event Architecture
 
 ### Event-Driven Design
 
@@ -46,7 +46,7 @@ The shipped sample uses Redis (`TRANSPORTER=redis://127.0.0.1:6379` in `env_samp
 
 ---
 
-## 7.2 Working with Events
+## 8.2 Working with Events
 
 ### Publishing Events
 
@@ -167,7 +167,7 @@ The logs service handles the DB write idempotently and adds timestamps via `MISC
 
 ---
 
-## 7.3 Distributed Messaging
+## 8.3 Distributed Messaging
 
 ### Queue Systems
 
@@ -222,4 +222,4 @@ For production observability, ship MicroApp metrics to Prometheus / Datadog and 
 
 ---
 
-> **Next:** [§8 AI Layer](08-ai-layer.md) — the agentic tier microapps build on. The full chapter list is in the [Documentation Index](00-index.md).
+> **Next:** [§9 AI Layer](09-ai-layer.md) — the agentic tier microapps build on. The full chapter list is in the [Documentation Index](00-index.md).

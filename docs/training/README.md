@@ -28,7 +28,7 @@ The principles in files 3–4 are general enterprise-engineering ideas; here is 
 | Component-based / reuse | `api.js` functions are cluster-wide service actions (`<plugin>.<fn>`); reuse via `_call(...)` ([§4.4](../04-microapps.md#44-how-a-microapp-runtime-service-works), [§4.5](../04-microapps.md#45-cluster-wide-reuse)) |
 | Separation of concerns | Logic in `api.js`, exposure in `routes.json`, rendering in UI folders served by the `source` action |
 | Configuration-driven | `logiks.json` (`policies`, `navigation`) and `routes.json` (`data`) wire behaviour through config |
-| Event-driven | `routes.json` `events` map subscribes to topics; `ctx.emit(...)` publishes ([§7](../07-event-system.md)) |
+| Event-driven | `routes.json` `events` map subscribes to topics; `ctx.emit(...)` publishes ([§8](../08-event-system.md)) |
 | RBAC / authorization | `logiks.json` `policies` map, enforced by the `RBAC` controller; menus gated via `to_check: "policy#<key>"` |
 | Validation / data integrity | Route `params` in `routes.json` are validated before the handler runs |
 | Data access | The `_DB` global (and other mirrored AppServer helpers) rather than raw SQL in handlers |

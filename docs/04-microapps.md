@@ -386,7 +386,7 @@ Because a plugin is just a folder loaded into a Worker, plugins can be added or 
 
 A plugin participates in the agentic (4th-tier) layer the same way it does everything else: by exposing `api.js` functions as cluster-callable actions. AICore can invoke any plugin action by name (`<plugin>.<fn>`) just like another plugin would, forwarding `ctx` so RBAC and audit are preserved. The vector store, embeddings, memory scoping, and agent control flow are **AICore's** responsibility, not the plugin's — a plugin contributes *tools and skills*, it does not reimplement the agentic stack.
 
-The full AI design and its current build status live in [§8 AI Layer](08-ai-layer.md).
+The full AI design and its current build status live in [§9 AI Layer](09-ai-layer.md).
 
 ---
 

@@ -1,4 +1,4 @@
-# 8. AI Layer
+# 9. AI Layer
 
 > Audience: **app developers** building AI-powered microapps, **platform engineers** configuring AI engines, **architects** evaluating Logiks' AI posture.
 
@@ -8,7 +8,7 @@ Beneath AICore sits a pluggable **engine layer** ([AIEngine](../api/controllers/
 
 ---
 
-## 8.1 AI Architecture
+## 9.1 AI Architecture
 
 ### Where AICore Fits
 
@@ -117,7 +117,7 @@ Microapps don't assemble context themselves — they pass `ctx` to AICore and th
 
 ---
 
-## 8.2 LLM Integration
+## 9.2 LLM Integration
 
 AICore is LLM-agnostic. The LLM is whatever the configured engine talks to. Switching providers is a configuration change.
 
@@ -159,7 +159,7 @@ Embeddings power semantic memory and RAG retrieval inside AICore (intended). The
 
 ---
 
-## 8.3 AI Agents
+## 9.3 AI Agents
 
 ### Agent Framework
 
@@ -257,7 +257,7 @@ All of these use the AppServer's existing primitives (events, action calls, audi
 
 ---
 
-## 8.4 AI Pipelines
+## 9.4 AI Pipelines
 
 ### RAG Pipelines
 

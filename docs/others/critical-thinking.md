@@ -34,7 +34,7 @@ Every solution has a cost. On Logiks the most important trade-off is captured by
 
 | Question | Prefer | Over |
 |---|---|---|
-| Can a **Setup module** ([§9](../09-common-modules.md)) already do this? | `datalists`, `menuManager`, `vendorManager`, `automator`, `NotificationMatrix` | new code |
+| Can a **Setup module** ([§10](../10-common-modules.md)) already do this? | `datalists`, `menuManager`, `vendorManager`, `automator`, `NotificationMatrix` | new code |
 | Can it be **config**? | `logiks.json` `policies`/`navigation`, `routes.json`, a form/report JSON | a handler |
 | Does it need **logic**? | an `api.js` function in *your* plugin | forking shared code |
 | Is the logic **reusable**? | call another plugin's action via `_call` | re-implementing it |
@@ -43,7 +43,7 @@ Every solution has a cost. On Logiks the most important trade-off is captured by
 Other real Logiks trade-offs a critical thinker weighs:
 
 - **New plugin vs extend an existing one?** A plugin is the isolation + reuse boundary. Split when ownership/lifecycle differ; don't split for the sake of it.
-- **Event (`ctx.emit`) vs direct (`_call`)?** Events fan out to *all* subscribers cluster-wide and decouple producer from consumer ([§7](../07-event-system.md)); `_call` is request/response and couples you to a specific action. Use events for "react to this," `_call` for "I need an answer."
+- **Event (`ctx.emit`) vs direct (`_call`)?** Events fan out to *all* subscribers cluster-wide and decouple producer from consumer ([§8](../08-event-system.md)); `_call` is request/response and couples you to a specific action. Use events for "react to this," `_call` for "I need an answer."
 - **Custom React component vs JSON form/report?** JSON definitions are cheaper to maintain and reuse; reach for a `.jsx` component ([§6.7](../training/6-building-blocks.md#67-custom-react-components)) only when the JSON model can't express the UI.
 - **Dedicated table vs shared `appdb` rows?** Namespace your own (`<plugin>_*`) when you own the data; reuse platform tables when you're extending platform concepts.
 - **Run on a Worker vs the AppServer?** Heavy/owned logic belongs in a plugin on a Worker; the AppServer is the gateway.
@@ -62,7 +62,7 @@ Critical thinking — and a check on what Logiks **already provides** before you
 - RBAC? Declare a `policies` map in `logiks.json`; `RBAC` enforces it ([§4](../04-microapps.md)).
 - Login methods? `logiksauth`, `local`, federated login already exist; MFA lives in `lgks_mfa`.
 - Service-to-service? There's an `s2stoken` path so AICore/jobs act with identity.
-- Audit? `logs.audit` already stores tamper-evident before/after state ([§10](../10-audit-logs.md)).
+- Audit? `logs.audit` already stores tamper-evident before/after state ([§11](../11-audit-logs.md)).
 - Owner stamping? `forcefill` forces tenant/owner columns from the session on save.
 
 The critical thinker asks "what does the platform already solve?" *before* writing a login screen. The second-order effects (tenant scoping, audit, revocation) are mostly already wired — reusing them is the design decision.
@@ -79,7 +79,7 @@ Strong Logiks engineers ask:
 - Is **AICore** actually the right tool here, or is a deterministic `bizrules` hook simpler and governable? (Probabilistic ≠ better.)
 - Is this **abstraction** helping, or am I hiding behavior I'll need to debug later?
 
-A concrete cautionary example from this very codebase: frontend logging via `_DBLOGGER._log` **silently returns `false`** when the target table is missing or the `ALLOWED_LOGS` check mismatches ([§10.5](../10-audit-logs.md)). A non-critical thinker assumes "logging works because the call succeeded." A critical thinker verifies the row actually landed. *The call returning is not the same as the effect happening.*
+A concrete cautionary example from this very codebase: frontend logging via `_DBLOGGER._log` **silently returns `false`** when the target table is missing or the `ALLOWED_LOGS` check mismatches ([§11.5](../11-audit-logs.md)). A non-critical thinker assumes "logging works because the call succeeded." A critical thinker verifies the row actually landed. *The call returning is not the same as the effect happening.*
 
 ---
 
@@ -93,7 +93,7 @@ What the framework already gives you — and what you must design *with*:
 - **Idempotency** — events fan out to *all* subscribers; a `logs.activity`/`postsubmit` handler may run more than once. Make handlers idempotent (no double-charge, no duplicate row).
 - **Graceful drain** — Workers heartbeat and drain on `SIGINT/SIGTERM` so in-flight calls finish ([§4 lifecycle](../04-microapps.md)); don't hold un-checkpointed state.
 - **Isolation** — a crashing plugin shouldn't take down others; keep failures inside the plugin boundary.
-- **Observability** — emit `logs.*` and write file logs ([§10](../10-audit-logs.md)) so the request → action → webhook → notification chain is traceable.
+- **Observability** — emit `logs.*` and write file logs ([§11](../11-audit-logs.md)) so the request → action → webhook → notification chain is traceable.
 - **Graceful degradation** — if a `vendorManager` driver (SMS/email) is down, queue and retry via `automator`; don't lose the notification.
 
 ---
@@ -138,7 +138,7 @@ Logiks is an AI-first, hot-pluggable, distributed, contract-driven platform — 
 
 - **Hot-pluggable** plugins create dependency complexity — what calls what, and is it loaded yet?
 - **Distributed** modules make observability and idempotency non-negotiable.
-- The **AICore** (Tier 4, [§8](../08-ai-layer.md)) introduces probabilistic behavior — decisions must stay governable, with deterministic hooks where correctness matters.
+- The **AICore** (Tier 4, [§9](../09-ai-layer.md)) introduces probabilistic behavior — decisions must stay governable, with deterministic hooks where correctness matters.
 - **Plugin isolation** affects both performance and security.
 - **Contracts matter more than implementations** — a stable action/event contract lets modules evolve independently.
 

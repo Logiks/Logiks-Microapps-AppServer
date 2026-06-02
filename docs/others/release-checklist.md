@@ -8,7 +8,7 @@ Three checklists for shipping the MicroApps platform safely:
 
 Work top to bottom. Anything marked **gate** must pass before you continue. Tick boxes as you go and keep the completed list with the release record.
 
-> References: deployment in [§2 Getting Started](../02-getting-started.md), configuration in [§3 Framework Fundamentals](../03-framework-fundamentals.md), plugins in [§4 MicroApp / Plugin](../04-microapps.md), migrations in [§4.7](../04-microapps.md#47-per-plugin-db-migration), workers in [§5 Workers](../05-workers.md), logs in [§10 Audit & Logs](../10-audit-logs.md), and common failures in [§11 Troubleshooting](../11-troubleshooting.md).
+> References: deployment in [§2 Getting Started](../02-getting-started.md), configuration in [§3 Framework Fundamentals](../03-framework-fundamentals.md), plugins in [§4 MicroApp / Plugin](../04-microapps.md), migrations in [§4.7](../04-microapps.md#47-per-plugin-db-migration), workers in [§5 Workers](../05-workers.md), logs in [§11 Audit & Logs](../11-audit-logs.md), and common failures in [§12 Troubleshooting](../12-troubleshooting.md).
 
 ---
 
@@ -40,7 +40,7 @@ For bringing up a brand-new cluster. Allow time — this is the longest of the t
 - [ ] Back up the (empty) databases or snapshot the instance so you have a known baseline.
 - [ ] Apply the schema: run once with `MIGRATION_MODE=IMPORT node index.js` and wait for `Post Initalization Completed`, then stop. **(gate)**
 - [ ] Confirm tables exist in `appdb` and `logdb`.
-- [ ] If you intend to use frontend logging, create `log_activities_user` / `log_errors_frontend` — they are **not** in the shipped schema (see [§10.5](../10-audit-logs.md#105-frontend-logs--the-_dblogger-helper)).
+- [ ] If you intend to use frontend logging, create `log_activities_user` / `log_errors_frontend` — they are **not** in the shipped schema (see [§11.5](../11-audit-logs.md#115-frontend-logs--the-_dblogger-helper)).
 
 ### 1.4 Launch
 

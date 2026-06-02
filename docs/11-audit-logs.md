@@ -1,4 +1,4 @@
-# 10. Audit & Logs
+# 11. Audit & Logs
 
 > Audience: **app developers** and **platform engineers**. This chapter covers what the framework logs, how it logs it, and how a plugin emits and reads logs.
 
@@ -6,7 +6,7 @@ Logiks logs through **three independent layers**. Knowing which layer to reach f
 
 ---
 
-## 10.1 The Three Logging Layers
+## 11.1 The Three Logging Layers
 
 | Layer | Where it writes | Entry point | Use it for |
 |---|---|---|---|
@@ -18,7 +18,7 @@ File logs are always on. Database logs are written by an event-driven service. F
 
 ---
 
-## 10.2 File Logs (Winston)
+## 11.2 File Logs (Winston)
 
 File logging lives in [api/logger.js](../api/logger.js). It exposes **named loggers** built from `CONFIG.logger` and a fallback `core` logger.
 
@@ -54,7 +54,7 @@ So files land under `./logs/` by default and rotate/expire automatically. There 
 
 ---
 
-## 10.3 Database Logs — the `logs` Service
+## 11.3 Database Logs — the `logs` Service
 
 Durable logs are written by the [logs service](../api/services/logs.service.js), which is **event-driven**: producers `emit` an event on the cluster bus, and the service's handler writes a row to `logdb`. There are no public actions — only event handlers.
 
@@ -71,7 +71,7 @@ Every row is stamped with `appid`, `guid`, `created_on/by`, `edited_on/by` from 
 
 ---
 
-## 10.4 Audit & Activity Integrity
+## 11.4 Audit & Activity Integrity
 
 `log_audit` and `log_activities` are designed to be **tamper-evident**. Each captures the state on both sides of a change and stores a SHA-1 hash of each side:
 
@@ -89,7 +89,7 @@ Because the hash is derived from the stored JSON, after-the-fact edits to a stat
 
 ---
 
-## 10.5 Frontend Logs & the `_DBLOGGER` Helper
+## 11.5 Frontend Logs & the `_DBLOGGER` Helper
 
 Client-submitted logs to the api endpoint `/api/log/:logId` go through [_dbLogger.js](../api/helpers/_dbLogger.js), exposed as the global `_DBLOGGER`:
 
@@ -108,7 +108,7 @@ The browser reaches this through the log-ingest action in [utils.service.js](../
 
 ---
 
-## 10.6 Log Catalogue
+## 11.6 Log Catalogue
 
 `logdb` ships **22** `log_*` tables ([schema_logdb_100.json](../misc/dbschema/schema_logdb_100.json)), but most are reserved table definitions with no writer yet. Honest status:
 
@@ -126,7 +126,7 @@ The "Reserved"/"Planned" rows are real database tables but are **not** populated
 
 ---
 
-## 10.7 How a Plugin Logs
+## 11.7 How a Plugin Logs
 
 **Write an activity log** from any handler (controller `api.js` function or service action):
 
@@ -173,7 +173,7 @@ const rows = await _DB.db_selectQ("logdb", "log_activities", "*",
     { appid: ctx.meta.appInfo.appid }, { orderby: "created_on DESC", limit: 50 });
 ```
 
-Events fan out across the whole cluster (see [§7 Event System](07-event-system.md)), so a plugin on any Worker can emit `logs.*` and the AppServer's `logs` service will persist it.
+Events fan out across the whole cluster (see [§8 Event System](08-event-system.md)), so a plugin on any Worker can emit `logs.*` and the AppServer's `logs` service will persist it.
 
 ---
 

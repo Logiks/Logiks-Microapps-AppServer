@@ -215,7 +215,7 @@ Each key is a column; the value configures the input:
 Three ways to populate a selector, in increasing dynamism:
 
 ```json
-// 1. From a named option group (managed via the datalists module, §9)
+// 1. From a named option group (managed via the datalists module, §10)
 { "type": "dataSelector", "groupid": "biz_type" }
 
 // 2. From a database table (searchable, filterable)
@@ -340,7 +340,7 @@ HOOKS.hook_categories();                                    // list registered k
 | Notifications / messaging | [messaging.js](../../api/helpers/messaging.js) — `MESSAGING.sendTopic` / `sendMessage` / `sendEmail` / `sendAPI` | Driver-based (email, API); `dbops` emits `messaging.dispatch` on data changes to route topic messages |
 | Inbound webhooks | [webhooks.js](../../api/controllers/webhooks.js) — `WEBHOOKS.receiveRequest(endpoint, ctx)` + [webhooks.service.js](../../api/services/webhooks.service.js) | Receives external calls and routes them |
 | Scheduled jobs | [autojobs.js](../../api/controllers/autojobs.js) — `startJobs` / `loadJobs` / `registerNewJob` / `activateJob` | Cron-style background jobs |
-| Activity/audit logging | The `logs.*` events (see [§10 Audit & Logs](../10-audit-logs.md)) | `bizlogger` / `dbops` emit `logs.activity` |
+| Activity/audit logging | The `logs.*` events (see [§11 Audit & Logs](../11-audit-logs.md)) | `bizlogger` / `dbops` emit `logs.activity` |
 | Data-change events | [dbops.service.js](../../api/services/dbops.service.js) emits `dbops.create`, `messaging.dispatch`, `logs.activity` | Subscribe to these to automate on CRUD |
 
 ---
@@ -425,6 +425,6 @@ Values under a `widget`/`module` `config` (and session placeholders like `#refid
 
 These are real features named in the plan but **not fully derivable from this repo** — confirm the authoritative details before relying on the notes above:
 
-1. **`automator`** and **`notificationMatrix`** (the Advanced Setup modules in [§9 Common Modules](../09-common-modules.md)) — their configuration model and trigger/condition/action schema are UI-driven and not in this codebase.
+1. **`automator`** and **`notificationMatrix`** (the Advanced Setup modules in [§10 Common Modules](../10-common-modules.md)) — their configuration model and trigger/condition/action schema are UI-driven and not in this codebase.
 2. The **complete** field-type / formatter / filter-type catalogues live in the **frontend runtime**; the tables above cover only what the sampled plugins use.
 3. The exact **Excel-import** utility (parsing, validation, preview) referenced in Phase 5 — there is no dedicated importer in this repo; document the chosen approach once decided.
