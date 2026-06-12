@@ -228,6 +228,36 @@ module.exports = {
             "size": 0, 
             "path": tempPath.replace(uploadDir, uploadDir1).replace(UPLOADS.baseUploadFolder(), "")
         };
+    },
+
+    saveTempFile: async function(ctx, folder, content) {
+        const uploadDir = await UPLOADS.getDestinyPath(folder, "", true);
+        const tempPath = await universalFileSave(uploadDir, content, {});
+        const fileName = path.basename(tempPath);
+        const mimetype = mime.lookup(tempPath);
+        return {
+            "status": "success",
+            "fileId": "0",
+            "name": fileName,
+            "mime": mimetype, 
+            "size": 0, 
+            "path": tempPath
+        };
+    },
+
+    cacheFile: async function(ctx, folder, content) {
+        const uploadDir = await UPLOADS.getDestinyPath(".cache", "", false);
+        const tempPath = await universalFileSave(uploadDir, content, {});
+        const fileName = path.basename(tempPath);
+        const mimetype = mime.lookup(tempPath);
+        return {
+            "status": "success",
+            "fileId": "0",
+            "name": fileName,
+            "mime": mimetype, 
+            "size": 0, 
+            "path": tempPath
+        };
     }
 }
 
@@ -296,6 +326,17 @@ async function universalFileSave(folder, content, options = {}) {
 
     function sanitizeFilename(name) {
         return name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+    }
+
+    function isValidUrl(string) {
+        if(string.length>2048) return false;
+        try {
+            const parsed = new URL(string);
+            // Ensure it uses a downloadable protocol
+            return ['http:', 'https:', 'ftp:'].includes(parsed.protocol);
+        } catch (err) {
+            return false; // Not a valid URL
+        }
     }
 
     function isReadableStream(obj) {
@@ -504,6 +545,24 @@ async function universalFileSave(folder, content, options = {}) {
         return finalizeFile(tempPath);
     }
 
+    /**
+     * Initiates the download and returns a Readable Stream
+     * @param {string} fileUrl 
+     * @returns {Promise<import('stream').Readable>}
+     */
+    async function getDownloadStream(fileUrl) {
+        // 2. Request the file as a stream from Axios
+        const response = await axios({
+            method: 'GET',
+            url: fileUrl,
+            responseType: 'stream',
+            timeout: 30000 // 30-second connection timeout
+        });
+
+        // 3. Return the response data stream directly
+        return response.data;
+    }
+
     // ---------------------------------------------------------
     // BUFFER
     // ---------------------------------------------------------
@@ -608,6 +667,15 @@ async function universalFileSave(folder, content, options = {}) {
                 content.stream
             );
         }
+    }
+
+    // ---------------------------------------------------------
+    // URL
+    // ---------------------------------------------------------
+    if (typeof content === 'string' && isValidUrl(content)) {
+        const stream1 = await getDownloadStream(content);
+
+        return saveStream(stream1);
     }
 
     // ---------------------------------------------------------

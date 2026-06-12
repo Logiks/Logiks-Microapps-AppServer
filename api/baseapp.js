@@ -24,6 +24,8 @@ module.exports = {
             }
         });
 
+        _ENV.HELPERS.push("_CACHE");
+
         //Load all controllers
         fs.readdirSync('./api/controllers/').forEach(function(file) {
             if ((file.indexOf(".js") > 0 && (file.indexOf(".js") + 3 == file.length))) {

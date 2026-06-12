@@ -57,6 +57,7 @@ module.exports = {
 				}
 
 				queryObjCount.offset = 0;
+				queryObjCount.limit = 1000000;
 				//ctx.params.filter[col] = [ctx.params.stxt, "like"];
 				if(ctx.params.stxt && ctx.params.cols) {
 					const stxtWhere = processStxt(ctx.params.stxt, queryObj, ctx.params.cols);
@@ -309,6 +310,7 @@ module.exports = {
 				}
 
 				queryObjCount.offset = 0;
+				queryObjCount.limit = 1000000;
 				//ctx.params.filter[col] = [ctx.params.stxt, "like"];
 				if(ctx.params.stxt && ctx.params.cols) {
 					const stxtWhere = processStxt(ctx.params.stxt, queryObj, ctx.params.cols);
