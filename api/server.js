@@ -381,6 +381,104 @@ module.exports = {
 							}
 						},
 
+						//SSE Code
+						//EventSource(./api/events/e1f55806)
+						{
+							path: "/api/events",
+							authentication: false,
+							authorization: false,
+							opts: {
+								authRequired: false
+							},
+							whitelist: [
+								"sse.*"
+							],
+							bodyParsers:{
+								json: {
+									strict: false,
+									limit: "20MB"
+								},
+								urlencoded: {
+									extended: true,
+									limit: "20MB"
+								}
+							},
+							// Attach Express-compatible middlewares
+							// use: [
+							// 	// Attach IP/UA on every request
+							// 	(req, res, next) => {
+							// 		req.clientIp = MISC.getClientIP(req);
+							// 		req.clientUa = req.headers["user-agent"] || "unknown";
+							// 		next();
+							// 	}
+							// ],
+							compression: {
+								enabled: false
+							},
+							mappingPolicy: "restrict",
+							// autoAliases: true,
+							aliases: {
+								"GET /:eventId": "sse.recieveEvents"
+							},
+
+							onBeforeCall: async function (ctx, route, req, res) {
+								// ctx.meta.headers = req.headers; 
+								// ctx.meta.method = req.method; 
+								ctx.meta.__start = Date.now();
+
+								const serverIP = req.socket.localAddress || req.connection.localAddress;
+								const serverHost = req.headers.host;
+								const remoteIP = MISC.getClientIP(req);
+
+								console.log("REQUEST_EVENTS", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
+
+
+								// IP
+								// const domainApp = await BASEAPP.getAppForDomain(serverHost);
+								// if(!domainApp) {
+								// 	throw new LogiksError(
+								// 		"The no application found for current domain/url",
+								// 		401,
+								// 		"INVALID_REQUEST"
+								// 	);
+								// }
+								
+								// const appInfo = await BASEAPP.getAppInfo(domainApp.appid);
+								// if(!appInfo) {
+								// 	throw new LogiksError(
+								// 		"Application not defined or not found on server",
+								// 		401,
+								// 		"INVALID_REQUEST"
+								// 	);
+								// }
+
+								// const ipAllowed = await AUTHKEY.checkClientIP(remoteIP, appInfo.appid, true);
+								// if(!ipAllowed) {
+								// 	throw new LogiksError(
+								// 		"Client Request IP is required pre-approval",
+								// 		401,
+								// 		"INVALID_REQUEST"
+								// 	);
+								// }
+								
+								// ctx.meta.appInfo = appInfo || {};
+								// ctx.meta.serverHost = serverHost || "";
+
+								ctx.meta.serverIP = serverIP;
+								ctx.meta.serverHost = serverHost;
+								ctx.meta.remoteIP = remoteIP;
+								
+								ctx.meta.$responseType = "text/event-stream";
+								ctx.meta.$responseHeaders = {
+								    "Cache-Control": "no-cache",
+								    "Connection": "keep-alive"
+								};
+
+								ctx.meta.$req = req;
+								ctx.meta.$res = res;
+							}
+						},
+
 						// WEBHOOK routes (auth not required, but can be secured inside action)
 						{
 							path: "/webhooks",

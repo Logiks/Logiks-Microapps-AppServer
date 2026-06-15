@@ -48,7 +48,7 @@ module.exports = {
 						submoduleFile = `${submoduleFile}.json`;
 					}
 
-					if(ctx.params.recache===true || ctx.params.recache==="true") {
+					if(process.env.NODE_ENV== "development" || ctx.params.recache===true || ctx.params.recache==="true") {
 						if(COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`]) delete COMPONENT_CACHE[`${pluginID}:${moduleName}:${submoduleFile}`];
 					}
 
@@ -76,7 +76,7 @@ module.exports = {
 					var submoduleFile = ctx.params.item+".json";
 					const pluginID = moduleName;
 
-					if(ctx.params.recache===true || ctx.params.recache==="true") {
+					if(process.env.NODE_ENV== "development" || ctx.params.recache===true || ctx.params.recache==="true") {
 						if(COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`]) delete COMPONENT_CACHE[`PAGE:${moduleName}:${submoduleFile}`];
 					}
 
@@ -117,7 +117,7 @@ module.exports = {
 				
 				console.log("MODULE_COMPONENT_HANDLER", ctx.params);
 
-				if(ctx.params.recache===true || ctx.params.recache==="true") {
+				if(process.env.NODE_ENV== "development" || ctx.params.recache===true || ctx.params.recache==="true") {
 					if(COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`]) delete COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`];
 				}
 
