@@ -15,7 +15,7 @@ var ENABLED = true;
 
 module.exports = {
 
-    initialize : async function() {
+    initialize : function() {
         try {
             fs.mkdirSync(CONFIG.ROOT_PATH+'/misc/automators',true);
         } catch(e) {

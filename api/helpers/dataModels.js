@@ -79,7 +79,7 @@ module.exports = {
         try {
             if(dataModel.fields[field].encrypted) {
                 if(!dataModel.fields[field].key) dataModel.fields[field].key = `${table.toLowerCase()}.${field}.${CONFIG.SALT_KEY}`;
-                return ENCRYPTER.encrypt(data, dataModel.fields[field].key);
+                return ENCRYPTER.encrypt(`${data}`, dataModel.fields[field].key);
             }
         } catch(e) {}
 
@@ -94,21 +94,17 @@ module.exports = {
         try {
             if(dataModel.fields[field].encrypted) {
                 if(!dataModel.fields[field].key) dataModel.fields[field].key = `${table.toLowerCase()}.${field}.${CONFIG.SALT_KEY}`;
-                return ENCRYPTER.decrypt(data, dataModel.fields[field].key);
+                const originalValue = await ENCRYPTER.decrypt(data, dataModel.fields[field].key);
+                try {
+                    const newValue = castValue(originalValue, dataModel.fields[field].cast);
+                    return newValue;
+                } catch(e2) {
+                    return originalValue;
+                }
             }
         } catch(e) {}
 
         return data;
-    },
-
-    //Process record before sending out
-    processData: function(singleRecord) {
-        _.each(singleRecord, function(val, col) {
-            var colArr = col.split(".");
-            if(colArr.length>1) {
-                singleRecord[col] = DATAMODELS.processField(colArr[0], colArr[1], val);
-            }
-        });
     },
 
     //Prepare record before encryption
@@ -122,22 +118,33 @@ module.exports = {
         });
     },
 
-    processQuery: async function(table, sql) {
-        const tableArr = table.split(",");
-
-        for (var i = tableArr.length - 1; i >= 0; i--) {
-            const tbl = tableArr[i];
-
-            const dataModel = await DATAMODELS.getModel(tbl);
-            if(!dataModel || !dataModel.fields) continue;
-
-            if(dataModel.fields && Object.keys(dataModel.fields).length>0) {
-                const tempSQL = transformSQLForEncryption(sql, dataModel.fields);
-                if(tempSQL) sql = tempSQL;
+    //Process record before sending out
+    processData: async function(singleRecord) {
+        _.each(singleRecord, async function(val, col) {
+            var colArr = col.split(".");
+            if(colArr.length>1) {
+                singleRecord[col] = await DATAMODELS.processField(colArr[0], colArr[1], val);
             }
-        }
+        });
+    },
 
+    processQuery: async function(table, sql) {
         return sql;
+        // const tableArr = table.replace(/\`/g,'').split(",");
+
+        // for (var i = tableArr.length - 1; i >= 0; i--) {
+        //     const tbl = tableArr[i];
+
+        //     const dataModel = await DATAMODELS.getModel(tbl);
+        //     if(!dataModel || !dataModel.fields) continue;
+
+        //     if(dataModel.fields && Object.keys(dataModel.fields).length>0) {
+        //         const tempSQL = transformSQLForEncryption(sql, dataModel.fields);
+        //         if(tempSQL) sql = tempSQL;
+        //     }
+        // }
+
+        // return sql;
     }
 }
 
@@ -283,4 +290,35 @@ function transformSQLForEncryption(sql, columnsConfig = {}) {
     sql = replaceColumns(sql, false);
 
     return sql;
+}
+
+//cast data into various formats
+function castValue(value, castingTarget) {
+    if(!castingTarget) return value;
+    const target = castingTarget.toLowerCase();
+
+    switch (true) {
+        case target === "integer":
+          return parseInt(value, 10);
+
+        case target === "float":
+          return parseFloat(value);
+
+        case /^decimal\(\d+,\d+\)$/.test(target): {
+          const [, precision, scale] = target.match(/^decimal\((\d+),(\d+)\)$/);
+          return Number(parseFloat(value).toFixed(Number(scale)));
+        }
+
+        case target === "date":
+          return new Date(value);
+
+        case target === "datetime":
+          return new Date(value);
+
+        case target === "time":
+          return value; // or custom time parsing
+
+        default:
+          return value;
+    }
 }

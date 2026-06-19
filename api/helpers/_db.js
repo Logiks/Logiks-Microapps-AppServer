@@ -76,16 +76,35 @@ module.exports = {
 			return false;
 		}
 
-		try {
-			sql = await DATAMODELS.processQuery(table, sql);
-		} catch(err) {}
-
 		if(CONFIG.log_sql) {
 			console.log("SQL", sql, params);
 		}
-		var table = sql.toLowerCase().split("from");
-		if(table[1]) table = table[1].trim().split(" ")[0];
-		else table = false;
+		const queryType = sql.toLowerCase().split(" ")[0];
+		var table = false;
+
+		switch(queryType) {
+			case "select":case "delete":
+				var table = sql.toLowerCase().split("from");
+				if(table[1]) table = table[1].trim().split(" ")[0].replace(";","");
+				else table = false;
+				break;
+			case "insert":
+				var table = sql.toLowerCase().split("into");
+				if(table[1]) table = table[1].trim().split(" ")[0].replace(";","");
+				else table = false;
+				break;
+			case "update":
+				var table = sql.toLowerCase().split("update");
+				if(table[1]) table = table[1].trim().split(" ")[0].replace(";","");
+				else table = false;
+				break;
+			default:
+				break;
+		}
+
+		try {
+			sql = await DATAMODELS.processQuery(table || "", sql);
+		} catch(err) {}
 
 		if(table && table!="lgks_domains") sql = {sql: sql, nestTables: "."};
 
@@ -93,7 +112,7 @@ module.exports = {
 		const IS_SELECT = (RAW_SQL.toLowerCase().trim().indexOf("select")===0)?true:false;
 		
 		const dbResponse = await new Promise((resolve, reject) => {
-			_MYSQL[dbkey].query(sql, params, function(err, results, fields) {
+			_MYSQL[dbkey].query(sql, params, async function(err, results, fields) {
 					if(err) {
 						if(CONFIG.log_sql) console.log(err);
 						// console.log(err, err.code, err.sqlMessage);
@@ -111,14 +130,27 @@ module.exports = {
 						results = JSON.parse(JSON.stringify(results));
 
 						if(IS_SELECT) {
-							_.each(results, async function(row, k) {
-								_.each(row, async function(val, col) {
+							// _.each(results, async function(row, k) {
+							// 	_.each(row, async function(val, col) {
+							// 		if(col.indexOf(".")>0 || !table)
+							// 			results[k][col] = await field_decrypter(`${col}`, val);
+							// 		else
+							// 			results[k][col] = await field_decrypter(`${table}.${col}`, val);
+							// 	});
+							// })
+							for (var k = results.length - 1; k >= 0; k--) {
+								const row = results[k];
+								const cols = Object.keys(row);
+								for (var i = cols.length - 1; i >= 0; i--) {
+									const col = cols[i];
+									const val = row[col];
+
 									if(col.indexOf(".")>0 || !table)
 										results[k][col] = await field_decrypter(`${col}`, val);
 									else
 										results[k][col] = await field_decrypter(`${table}.${col}`, val);
-								});
-							})
+								}
+							}
 						}
 
 						resolve({
@@ -183,7 +215,7 @@ module.exports = {
 		}
 		
 		const dbResponse = await new Promise((resolve, reject) => {
-			_MYSQL[dbkey].query(sql, function(err, results, fields) {
+			_MYSQL[dbkey].query(sql, async function(err, results, fields) {
 					if(err || results.length<=0) {
 						if(!err) err = {"code":"NOT_FOUND","sqlMessage":"No records found"};
 						if(CONFIG.log_sql) console.log(err);
@@ -196,12 +228,26 @@ module.exports = {
 						});
 					} else {
 						results = JSON.parse(JSON.stringify(results));
-						_.each(results[0], async function(val, col) {
-							if(col.indexOf(".")>0)
-								results[0][col] = await field_decrypter(`${col}`, val);
+						// _.each(results[0], async function(val, col) {
+						// 	if(col.indexOf(".")>0)
+						// 		results[0][col] = await field_decrypter(`${col}`, val);
+						// 	else
+						// 		results[0][col] = await field_decrypter(`${table}.${col}`, val);
+						// });
+
+						const k = 0;
+						const row = results[k];
+						const cols = Object.keys(row);
+						for (var i = cols.length - 1; i >= 0; i--) {
+							const col = cols[i];
+							const val = row[col];
+
+							if(col.indexOf(".")>0 || !table)
+								results[k][col] = await field_decrypter(`${col}`, val);
 							else
-								results[0][col] = await field_decrypter(`${table}.${col}`, val);
-						});
+								results[k][col] = await field_decrypter(`${table}.${col}`, val);
+						}
+
 						if(flatObj) resolve(results[0]);
 						else resolve({
 							"status": "success", 
@@ -274,7 +320,7 @@ module.exports = {
 		}
 		
 		const dbResponse = await new Promise((resolve, reject) => {
-			_MYSQL[dbkey].query(sql, whereParams?Object.values(whereParams):[], function(err, results, fields) {
+			_MYSQL[dbkey].query(sql, whereParams?Object.values(whereParams):[], async function(err, results, fields) {
 					if(err) {
 						if(CONFIG.log_sql) console.log(err);
 						// reject(false, err.code, err.sqlMessage);
@@ -286,14 +332,28 @@ module.exports = {
 					} else {
 						results = JSON.parse(JSON.stringify(results));
 						
-						_.each(results, async function(row, k) {
-							_.each(row, async function(val, col) {
-								if(col.indexOf(".")>0)
+						// _.each(results, async function(row, k) {
+						// 	_.each(row, async function(val, col) {
+						// 		if(col.indexOf(".")>0)
+						// 			results[k][col] = await field_decrypter(`${col}`, val);
+						// 		else
+						// 			results[k][col] = await field_decrypter(`${table}.${col}`, val);
+						// 	});
+						// })
+
+						for (var k = results.length - 1; k >= 0; k--) {
+							const row = results[k];
+							const cols = Object.keys(row);
+							for (var i = cols.length - 1; i >= 0; i--) {
+								const col = cols[i];
+								const val = row[col];
+
+								if(col.indexOf(".")>0 || !table)
 									results[k][col] = await field_decrypter(`${col}`, val);
 								else
 									results[k][col] = await field_decrypter(`${table}.${col}`, val);
-							});
-						})
+							}
+						}
 
 						resolve({
 							"status": "success", 
@@ -355,7 +415,7 @@ module.exports = {
 		}
 
 		const results = await new Promise((resolve, reject) => {
-			_MYSQL[dbkey].query(sql, vals, function(err, results, fields) {
+			_MYSQL[dbkey].query(sql, vals, async function(err, results, fields) {
 					if(err) {
 						if(CONFIG.log_sql) console.log(err);
 						resolve({

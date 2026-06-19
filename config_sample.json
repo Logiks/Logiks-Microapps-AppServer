@@ -8,6 +8,7 @@
     "intercept_axios_response": false,
     "default_lang": "en-gb",
     "base_url": "http://localhost:9999/",
+    "SALT_KEY": "new_salt_key_1234567890",
     "mfa": {
         "mfa_length": 6,
         "strategy": "none",
