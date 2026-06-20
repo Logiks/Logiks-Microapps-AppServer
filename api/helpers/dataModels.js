@@ -34,7 +34,8 @@ module.exports = {
         if(MODEL_MAP[table]) return MODEL_MAP[table];
         var pluginID = table.split("_")[0];
 
-        if(["tables", "lgks", "do", "sys", "cache", "log", "logs", "data", "mapps", "my"].indexOf(pluginID.toLowerCase())>=0 || pluginID.length<=2) return false;
+        if(["tables", "lgks", "do", "sys", "cache", "logs", "mapps", "my"].indexOf(pluginID.toLowerCase())>=0 || pluginID.length<=2) return false;
+        if(["log", "data"].indexOf(pluginID.toLowerCase())>=0) pluginID = table.split("_")[1];
         
         const tableModel = await _call(`${pluginID}.source`, {folder: "dataModels", file: `${table}.json`, silent: true, params: {}});
         // console.log("tableModel", table, pluginID, tableModel);

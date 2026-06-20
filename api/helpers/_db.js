@@ -679,7 +679,8 @@ async function field_encrypter(fieldId, data) {
 async function field_decrypter(fieldId, data) {
 	// console.log("field_decrypter", fieldId, data);
 	var colArr = fieldId.split(".");
-	return await DATAMODELS.processField(colArr[0], colArr[1], data);
+	const d1 = await DATAMODELS.processField(colArr[0], colArr[1], data);
+	return d1;
 }
 
 function clean(value) {
