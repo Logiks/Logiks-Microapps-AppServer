@@ -34,11 +34,12 @@ module.exports = {
 				if(!ctx.params.query.page) ctx.params.query.page = 0;
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
 
-				var queryObjCount = _.cloneDeep(queryObj);
-				if(queryObj.cols_count && queryObj.cols_count.length>0) {
-					queryObjCount.column = (typeof queryObj.cols_count === "string") ? queryObj.cols_count : queryObj.cols_count.join(", ");
-				} else {
-					queryObjCount.column = "count(*) as count";
+				var queryObjCount = generateCountSQL(queryObj);
+
+				if(typeof queryObj.columns == "string") {
+					if(queryObj.columns.toLowerCase().includes("distinct")) {
+						hasDistinct = true;
+					}
 				}
 
 				if(!queryObj.column && queryObj.cols) queryObj.column = (typeof queryObj.cols === "string") ? queryObj.cols : queryObj.cols.join(", ");
@@ -56,9 +57,7 @@ module.exports = {
 					queryObj.offset = 0;
 				}
 
-				queryObjCount.offset = 0;
-				queryObjCount.limit = 1000000;
-				//ctx.params.filter[col] = [ctx.params.stxt, "like"];
+				//ctx.params.filter[col] = [ctx.params.stxt, "like"];.split("LIMIT")[0].split("ORDER")[0].split("GROUP")[0]
 				if(ctx.params.stxt && ctx.params.cols) {
 					const stxtWhere = processStxt(ctx.params.stxt, queryObj, ctx.params.cols);
 					if(stxtWhere.length>0) {
@@ -66,20 +65,9 @@ module.exports = {
 					}
 				}
 
-				if(typeof queryObj.column == "string") {
-					if(queryObj.column.toLowerCase().includes("distinct")) {
-						try {
-							queryObjCount.groupby = queryObj.column.toUpperCase().split("DISTINCT")[1].trim().split(" ");
-							hasDistinct = true;
-						} catch (error) {}
-					}
-				}
-				if(queryObj.groupby_count && queryObj.groupby_count.length>0) {
-					queryObjCount.groupby = queryObj.groupby_count;
-				}
-
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
-				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta))
+				var sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
+				sqlQueryCount = prepareCountQuery(sqlQueryCount);
 
 				const dbkey = queryObj.dbkey?queryObj.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
 				
@@ -89,8 +77,13 @@ module.exports = {
 				const dbResponseCount = await _DB.db_query(dbkey, sqlQueryCount, {});
 				var dbDataCount = dbResponseCount?.results || [{".count": 0}];
 
-				if((queryObj.groupby && queryObj.groupby.length>0) || hasDistinct) {
-					dbDataCount = [{".count": dbData?.length || 0}];
+				if(dbResponseCount?.results?.length>1) {
+					dbDataCount = dbResponseCount?.results.length;
+				// } else if((queryObj.groupby && queryObj.groupby.length>0) || hasDistinct) {
+				// 	dbDataCount = [{".count": dbData?.length || 0}];
+				// 	dbDataCount = (dbDataCount && dbDataCount[0])?(dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0):0;
+				} else {
+					dbDataCount = (dbDataCount && dbDataCount[0])?(dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0):0;
 				}
 
 				return {
@@ -286,13 +279,15 @@ module.exports = {
 				if(!queryObj.page) queryObj.page = 0;
 				if(!queryObj.limit) queryObj.limit = 0;
 
-				var queryObjCount = _.cloneDeep(queryObj);
-				if(queryObj.cols_count && queryObj.cols_count.length>0) {
-					queryObjCount.column = (typeof queryObj.cols_count === "string") ? queryObj.cols_count : queryObj.cols_count.join(", ");
-				} else {
-					queryObjCount.column = "count(*) as count";
-				}
 				
+				var queryObjCount = generateCountSQL(queryObj);
+
+				if(typeof queryObj.columns == "string") {
+					if(queryObj.columns.toLowerCase().includes("distinct")) {
+						hasDistinct = true;
+					}
+				}
+
 				if(!queryObj.column && queryObj.cols) queryObj.column = (typeof queryObj.cols === "string") ? queryObj.cols : queryObj.cols.join(", ");
 				
 				if(ctx.params.page) queryObj.page = ctx.params.page;
@@ -309,8 +304,6 @@ module.exports = {
 					queryObj.offset = 0;
 				}
 
-				queryObjCount.offset = 0;
-				queryObjCount.limit = 1000000;
 				//ctx.params.filter[col] = [ctx.params.stxt, "like"];
 				if(ctx.params.stxt && ctx.params.cols) {
 					const stxtWhere = processStxt(ctx.params.stxt, queryObj, ctx.params.cols);
@@ -319,20 +312,9 @@ module.exports = {
 					}
 				}
 
-				if(typeof queryObj.column == "string") {
-					if(queryObj.column.toLowerCase().includes("distinct")) {
-						try {
-							queryObjCount.groupby = queryObj.column.toUpperCase().split("DISTINCT")[1].trim().split(" ");
-							hasDistinct = true;
-						} catch (error) {}
-					}
-				}
-				// if(queryObj.groupby_count) {
-				// 	queryObjCount.groupby = queryObj.groupby_count;
-				// }
-
 				const sqlQuery = await QUERY.parseQuery(queryObj, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
-				const sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
+				var sqlQueryCount = await QUERY.parseQuery(queryObjCount, ctx.params.filter, _.extend({}, ctx.params, ctx.meta));
+				sqlQueryCount = prepareCountQuery(sqlQueryCount);
 				
 				const dbkey = queryObj.dbkey?queryObj.dbkey:(ctx.params.dbkey?ctx.params.dbkey:"appdb");
 
@@ -344,9 +326,9 @@ module.exports = {
 
 				if(dbResponseCount?.results.length>1) {
 					dbDataCount = dbResponseCount?.results.length;
-				} else if((queryObj.groupby && queryObj.groupby.length>0) || hasDistinct) {
-					dbDataCount = [{".count": dbData?.length || 0}];
-					dbDataCount = (dbDataCount && dbDataCount[0])?(dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0):0;
+				// } else if((queryObj.groupby && queryObj.groupby.length>0) || hasDistinct) {
+				// 	dbDataCount = [{".count": dbData?.length || 0}];
+				// 	dbDataCount = (dbDataCount && dbDataCount[0])?(dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0):0;
 				} else {
 					dbDataCount = (dbDataCount && dbDataCount[0])?(dbDataCount[0]['count'] || dbDataCount[0]['.count'] || 0):0;
 				}
@@ -399,4 +381,53 @@ function processStxt(stx, queryObj, cols) {
 	}
 
 	return "";
+}
+
+function generateCountSQL(queryObj) {
+	var queryObjCount = _.cloneDeep(queryObj);
+	if(queryObj.cols_count && queryObj.cols_count.length>0) {
+		queryObjCount.column = (typeof queryObj.cols_count === "string") ? queryObj.cols_count : queryObj.cols_count.join(", ");
+	} else {
+		queryObjCount.column = "1";//"count(*) as count";
+	}
+
+	queryObjCount.offset = 0;
+
+	if(typeof queryObjCount.columns == "string") {
+		if(queryObjCount.columns.toLowerCase().includes("distinct")) {
+			try {
+				// queryObjCount.groupby = queryObj.columns.toUpperCase().split("DISTINCT")[1].trim().split(" ");
+				// queryObjCount.groupby = `DISTINCT ${queryObjCount.groupby}`;
+				// queryObjCount.column = `DISTINCT ${queryObjCount.groupby}`;
+
+				var column = queryObjCount.columns.split("DISTINCT")[1].trim().split(",")[0].split(" ");
+				// queryObjCount.columns = `DISTINCT ${column}`;
+				queryObjCount.column = `DISTINCT ${column}`;
+				// queryObjCount.cols_count = `DISTINCT ${column}`;
+			} catch (error) {}
+		}
+	}
+	// if(queryObj.groupby_count && queryObj.groupby_count.length>0) {
+	// 	queryObjCount.groupby = queryObj.groupby_count;
+	// }
+
+	return queryObjCount;
+}
+
+function prepareCountQuery(sqlQueryCount) {
+    let query = sqlQueryCount;
+
+    // Remove final LIMIT
+    const limitPos = query.toUpperCase().lastIndexOf(" LIMIT ");
+    if (limitPos !== -1) {
+        query = query.substring(0, limitPos);
+    }
+
+    // Remove final ORDER BY
+    const orderPos = query.toUpperCase().lastIndexOf(" ORDER BY ");
+    if (orderPos !== -1) {
+        query = query.substring(0, orderPos);
+    }
+
+    return `SELECT COUNT(*) AS count FROM (${query}) t`;
 }

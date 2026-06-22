@@ -23,11 +23,16 @@
  * */
 
 const MODEL_MAP = {};
+var LOADEDED = false;
 
 module.exports = {
 
     initialize : function(callback) {
         console.log("\x1b[36m%s\x1b[0m","DataModel Initialized");
+    },
+
+    initializeCompleted: function() {
+        LOADEDED = true;
     },
 
     getModel: async function(table) {
@@ -41,7 +46,7 @@ module.exports = {
         // console.log("tableModel", table, pluginID, tableModel);
 
         if(!tableModel) {
-            // MODEL_MAP[table] = false;
+            if(LOADEDED) MODEL_MAP[table] = false;
             return false;
         }
 
