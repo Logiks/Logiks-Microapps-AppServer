@@ -77,6 +77,19 @@ module.exports = {
         })
     },
 
+    //Get a list of all encrypted fields for a given table
+    getEncryptedFields: async function(table) {
+        const dataModel = await DATAMODELS.getModel(table)
+        if(!dataModel || !dataModel.fields) return [];
+
+        const encryptedFields = [];
+        _.each(dataModel.fields, function(config, field) {
+            if(config.encrypted) encryptedFields.push(field);
+        });
+
+        return encryptedFields;
+    },
+
     //Prepare field before encryption
     prepareField: async function(table, field, data) {
         const dataModel = await DATAMODELS.getModel(table)

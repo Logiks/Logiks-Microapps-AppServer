@@ -127,28 +127,31 @@ module.exports = {
 							"results": []
 						});
 					} else {
-						results = JSON.parse(JSON.stringify(results));
+						const rows = new Array(results.length);
+
+						for (let i = 0; i < results.length; i++) {
+							rows[i] = { ...results[i] };
+						}
+						results = rows;
 
 						if(IS_SELECT) {
-							// _.each(results, async function(row, k) {
-							// 	_.each(row, async function(val, col) {
-							// 		if(col.indexOf(".")>0 || !table)
-							// 			results[k][col] = await field_decrypter(`${col}`, val);
-							// 		else
-							// 			results[k][col] = await field_decrypter(`${table}.${col}`, val);
-							// 	});
-							// })
-							for (var k = results.length - 1; k >= 0; k--) {
-								const row = results[k];
-								const cols = Object.keys(row);
-								for (var i = cols.length - 1; i >= 0; i--) {
-									const col = cols[i];
-									const val = row[col];
+							const encryptedData = await enum_encrypted(results[0]);
 
-									if(col.indexOf(".")>0 || !table)
-										results[k][col] = await field_decrypter(`${col}`, val);
-									else
-										results[k][col] = await field_decrypter(`${table}.${col}`, val);
+							if(encryptedData.fields.length>0) {
+								for (var k = results.length - 1; k >= 0; k--) {
+									const row = results[k];
+									const cols = Object.keys(row);
+									for (var i = cols.length - 1; i >= 0; i--) {
+										const col = cols[i];
+										const val = row[col];
+
+										if(encryptedData.fields.indexOf(col)>=0) {
+											if(col.indexOf(".")>0 || !table)
+												results[k][col] = await field_decrypter(`${col}`, val);
+											else
+												results[k][col] = await field_decrypter(`${table}.${col}`, val);	
+										}
+									}
 								}
 							}
 						}
@@ -330,28 +333,32 @@ module.exports = {
 							"err_message": err.sqlMessage
 						});
 					} else {
-						results = JSON.parse(JSON.stringify(results));
+						// results = JSON.parse(JSON.stringify(results));
 						
-						// _.each(results, async function(row, k) {
-						// 	_.each(row, async function(val, col) {
-						// 		if(col.indexOf(".")>0)
-						// 			results[k][col] = await field_decrypter(`${col}`, val);
-						// 		else
-						// 			results[k][col] = await field_decrypter(`${table}.${col}`, val);
-						// 	});
-						// })
+						const rows = new Array(results.length);
 
-						for (var k = results.length - 1; k >= 0; k--) {
-							const row = results[k];
-							const cols = Object.keys(row);
-							for (var i = cols.length - 1; i >= 0; i--) {
-								const col = cols[i];
-								const val = row[col];
+						for (let i = 0; i < results.length; i++) {
+							rows[i] = { ...results[i] };
+						}
+						results = rows;
+						
+						const encryptedData = await enum_encrypted(results[0], (table.indexOf(",")>0)?false: table);
+						
+						if(encryptedData.fields.length>0) {
+							for (var k = results.length - 1; k >= 0; k--) {
+								const row = results[k];
+								const cols = Object.keys(row);
+								for (var i = cols.length - 1; i >= 0; i--) {
+									const col = cols[i];
+									const val = row[col];
 
-								if(col.indexOf(".")>0 || !table)
-									results[k][col] = await field_decrypter(`${col}`, val);
-								else
-									results[k][col] = await field_decrypter(`${table}.${col}`, val);
+									if(encryptedData.fields.indexOf(col)>=0) {
+										if(col.indexOf(".")>0 || !table)
+											results[k][col] = await field_decrypter(`${col}`, val);
+										else
+											results[k][col] = await field_decrypter(`${table}.${col}`, val);	
+									}
+								}
 							}
 						}
 
@@ -666,6 +673,50 @@ module.exports = {
 
 		return results;
 	}
+}
+
+//Find Encryption in given records
+//Find Encryption in given records
+async function enum_encrypted(record, table = false) {
+	if(!record) {
+		return {
+			tables: [], 
+			fields: []
+		};
+	}
+
+	const cols = Object.keys(record);
+
+	const tables = new Set();
+
+	if(table) {
+		tables.add(table);
+	} else {
+		for (let i = 0; i < cols.length; i++) {
+		    const col = cols[i];
+		    const idx = col.indexOf(".");
+
+		    if (idx > 0) {
+		        tables.add(col.substring(0, idx));
+		    }
+		}
+	}
+
+	const uniqueTables = [...tables];
+	var uniqueFields = [];
+
+	for (var i = uniqueTables.length - 1; i >= 0; i--) {
+		var fields = await DATAMODELS.getEncryptedFields(uniqueTables[i]);
+		var fields1 = fields.map(a=>`${uniqueTables[i]}.${a}`);
+		uniqueFields = [...fields, ...fields1];
+	}
+
+	// console.log(uniqueTables, uniqueFields);
+
+	return {
+		tables: uniqueTables, 
+		fields: uniqueFields
+	};
 }
 
 //fieldId = table.column
