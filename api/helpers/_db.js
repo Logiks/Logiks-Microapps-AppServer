@@ -342,7 +342,7 @@ module.exports = {
 						}
 						results = rows;
 						
-						const encryptedData = await enum_encrypted(results[0], (table.indexOf(",")>0)?false: table);
+						const encryptedData = await enum_encrypted(results[0], (table.indexOf(",")>0 || table.indexOf(" ")>0)?false: table);
 						
 						if(encryptedData.fields.length>0) {
 							for (var k = results.length - 1; k >= 0; k--) {
