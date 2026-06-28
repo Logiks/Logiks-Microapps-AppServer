@@ -1443,7 +1443,8 @@
       }
     },
     "indexes": [
-      "PRIMARY"
+      "PRIMARY",
+      "domain_host"
     ]
   },
   "lgks_environment": {
@@ -3520,6 +3521,12 @@
         "primary": false
       },
       "params": {
+        "type": "text",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "ip_whitelist": {
         "type": "text",
         "nullable": false,
         "default": null,

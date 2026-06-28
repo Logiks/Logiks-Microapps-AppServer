@@ -83,6 +83,7 @@ module.exports = {
 				transporter: process.env.TRANSPORTER,
 				internalServices: true,
 				// validator: v,
+				serializer: process.env.TRANSPORTER_SERIALIZER || "json",
 
 				// Redis Cacher (distributed)
 				cacher: process.env.CLUSTER_CACHE === "true" ? {
@@ -96,8 +97,6 @@ module.exports = {
 				metadata: {
 					authToken: process.env.CLUSTER_TOKEN
 				},
-
-				serializer: "JSON",
 
 				requestTimeout: 30 * 1000,
 				retryPolicy: {

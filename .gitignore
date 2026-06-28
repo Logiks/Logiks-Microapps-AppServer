@@ -82,3 +82,6 @@ public/docs/
 api/config.js
 *.code-workspace
 gap-analysis.txt
+
+# Others
+misc/apps/demo/layouts/default1.json

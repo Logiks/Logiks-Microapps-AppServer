@@ -2281,6 +2281,18 @@
         "default": null,
         "primary": false
       },
+      "req_body": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "provider_response": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
       "blocked": {
         "type": "enum('false','true')",
         "nullable": true,
