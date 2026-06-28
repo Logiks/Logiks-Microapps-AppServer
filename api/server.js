@@ -1439,6 +1439,14 @@ module.exports = {
 			LOGGER.get("server").info("AppServer server startup complete", {
 				port: process.env.PORT || 3000
 			});
+
+			// console.log({
+			// 	serializer: MAINBROKER.options.serializer,
+			// 	transporter: MAINBROKER.options.transporter,
+			// 	transporter_default: process.env.TRANSPORTER_SERIALIZER,
+			// 	services: MAINBROKER.registry.getServiceList({ withActions: true })
+			// });
+
 		} catch (err) {
 			console.error("❌ Fatal startup error:", err);
 			process.exit(1);
