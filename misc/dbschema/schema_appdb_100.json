@@ -1494,13 +1494,13 @@
       "var_nature": {
         "type": "varchar(25)",
         "nullable": false,
-        "default": "frontend",
+        "default": "backend",
         "primary": false
       },
       "privilege": {
         "type": "varchar(155)",
         "nullable": false,
-        "default": "admin",
+        "default": "*",
         "primary": false
       },
       "blocked": {
@@ -1712,6 +1712,104 @@
       "PRIMARY",
       "area_spatial",
       "location_spatial"
+    ]
+  },
+  "lgks_kms": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": "global",
+        "primary": false
+      },
+      "key_title": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": "new key",
+        "primary": false
+      },
+      "key_module": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": "system",
+        "primary": false
+      },
+      "key_id": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "key_vers": {
+        "type": "int",
+        "nullable": true,
+        "default": "1",
+        "primary": false
+      },
+      "key_value": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "key_algo": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": "sha1",
+        "primary": false
+      },
+      "remarks": {
+        "type": "varchar(250)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "key_history": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('true','false')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "guid"
     ]
   },
   "lgks_mfa": {
@@ -2475,6 +2573,12 @@
         "primary": false
       },
       "dob": {
+        "type": "date",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "doj": {
         "type": "date",
         "nullable": true,
         "default": null,

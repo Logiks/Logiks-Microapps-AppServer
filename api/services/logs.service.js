@@ -11,7 +11,6 @@
 //   log_errors
 //
 // Waiting:
-//   log_operations - NA
 //   log_export
 //   log_feedbacks
 //   log_system
@@ -26,7 +25,7 @@ module.exports = {
     events: {
         //All Log Event Listeners
         async "logs.audit"(payload, nodeId) {
-            // console.log("LOGS_AUDIT", payload);
+            // log_info("LOGS_AUDIT", payload);
             var dated = moment().format("Y-MM-DD HH:mm:ss");
             await _DB.db_insertQ1("logdb", "log_audit", {
                 "appid": payload.appid || "-",
@@ -48,7 +47,7 @@ module.exports = {
         },
 
         async "logs.activity"(payload, nodeId) {
-            // console.log("LOGS_ACTIVITY", payload);
+            // log_info("LOGS_ACTIVITY", payload);
             var dated = moment().format("Y-MM-DD HH:mm:ss");
             var ref_src = payload.ref_src || "-";
             if(ref_src.indexOf("@")>=0) ref_src = ref_src.split("@").splice(0,2).join("@");
@@ -81,7 +80,7 @@ module.exports = {
         },
 
         async "logs.trace"(payload, nodeId) {
-            // console.log("LOGS_TRACE_TEMP", payload);
+            log_debug("LOGS_TRACE_TEMP", payload);
             var dated = moment().format("Y-MM-DD HH:mm:ss");
             _DB.db_insertQ1("logdb", "log_temp", {
                 "appid": payload.appid || "-",
@@ -101,7 +100,7 @@ module.exports = {
         },
 
         async "logs.error"(payload, nodeId) {
-            // console.log("LOGS_TRACE_TEMP", payload);
+            log_error("LOGS_TRACE_TEMP", payload);
             var dated = moment().format("Y-MM-DD HH:mm:ss");
             _DB.db_insertQ1("logdb", "log_errors", {
                 "appid": payload.appid || "-",
@@ -115,6 +114,66 @@ module.exports = {
                 "request_id": payload.request_id || "0", 
                 "severity": payload.severity || "medium", 
 
+                "created_on": dated,
+                "created_by": payload.userId || "-",
+                "edited_on": dated,
+                "edited_by": payload.userId || "-",
+            });
+        },
+
+        async "logs.notify"(payload, nodeId) {
+            var vStatus = VALIDATIONS.validateRule(payload, {
+                "ref_src": "required",
+                "ref_id": "required",
+            });
+            if (!vStatus.status) {
+                throw new LogiksError(
+                    "Message Validation Failed",
+                    400,
+                    "VALIDATION_ERROR",
+                    vStatus.errors
+                );
+            }
+            // log_info("LOGS_ACTIVITY", payload);
+            var dated = moment().format("Y-MM-DD HH:mm:ss");
+            _DB.db_insertQ1("logdb", "log_notifications", {
+                "appid": payload.appid || "-",
+                "guid": payload.guid || "-",
+                "dated": dated,
+
+                "ref_src": payload.ref_src,
+                "ref_id": payload.ref_id,
+
+                "title": payload.title || "",
+                "category": payload.category || "",
+                "message": payload.message || "",
+                "icon": payload.icon || "",
+                "rule": payload.rule || "{}",
+                "for_userid": payload.for_userid || "*",
+                "seen_by": payload.seen_by || "",
+
+                "created_on": dated,
+                "created_by": payload.userId || "-",
+                "edited_on": dated,
+                "edited_by": payload.userId || "-",
+            });
+        },
+
+        async "logs.system"(payload, nodeId) {
+            var dated = moment().format("Y-MM-DD HH:mm:ss");
+            _DB.db_insertQ1("logdb", "log_system", {
+                "appid": payload.appid || "-",
+                "guid": payload.guid || "-",
+
+                "level": payload.level || "info",
+                "module": payload.module || "",
+                "message": payload.message || "",
+                "stack_trace": payload.stack_trace || "{}",
+                "metadata": payload.metadata || "{}",
+                "request_id": payload.request_id || "0",
+                "trace_id": payload.trace_id || "0",
+                "environment": process.env.NODE_ENV,
+                
                 "created_on": dated,
                 "created_by": payload.userId || "-",
                 "edited_on": dated,

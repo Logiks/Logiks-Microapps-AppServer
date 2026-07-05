@@ -159,7 +159,7 @@ module.exports = {
                 vStatus.errors
             );
         }
-console.log("MESSAGING_AXIOS_OPTIONS", driverId, driverConfig, params);
+// console.log("MESSAGING_AXIOS_OPTIONS", driverId, driverConfig, params);
         var logData = _.extend({
             appid: ctx?.meta?.appInfo?.appid || params?.appid || "-",
             channel: "api",
@@ -244,7 +244,7 @@ console.log("MESSAGING_AXIOS_OPTIONS", driverId, driverConfig, params);
         
         if(params.cc) mailOptions.cc = params.cc;
         if(params.bcc) mailOptions.bcc = params.bcc;
-console.log("EMAIL_OPTIONS", driverId, mailOptions, params);
+// console.log("EMAIL_OPTIONS", driverId, mailOptions, params);
         var logData = _.extend({
             appid: ctx?.meta?.appInfo?.appid || params?.appid || "-",
             channel: "email",

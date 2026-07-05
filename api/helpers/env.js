@@ -1,19 +1,21 @@
 //Environment Variables Helper
+//This is used during variable replacement in enviroments
+//Cached data used during session
 
 var ENVIRONMENTS = {};
 
 module.exports = {
 
-    initialize : function() {
-        this.loadEnvironment();
+    initialize : async function() {
+        await this.loadEnvironment();
 
         console.log("\x1b[36m%s\x1b[0m","Environment Variables Loaded");
-        return true;
     },
     
     reloadEnvironment: async function() {
         ENVIRONMENTS = {};
-        this.loadEnvironment();
+        await this.loadEnvironment();
+        return true;
     },
 
     loadEnvironment: async function() {
@@ -29,7 +31,7 @@ module.exports = {
         // console.log(ENVIRONMENTS);
     },
 
-    registerEnvVariable : function(ctx, module, varName, varValue, varParams = {}, varNature = 'backend') {
+    registerEnvVariable : function(ctx, module, varName, varValue, varParams = {}, varNature = 'backend', varPrivilege = "*") {
         if(!ENVIRONMENTS[ctx?.meta?.user?.guid || "global"]) ENVIRONMENTS[ctx?.meta?.user?.guid || "global"] = {};
         ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][varName] = varValue;
 
@@ -42,7 +44,7 @@ module.exports = {
             "var_value": varValue, 
             "var_params": JSON.stringify(varParams), 
             "var_nature": varNature, 
-            "privilege": "admin",
+            "privilege": varPrivilege,
             "blocked": "false", 
             "created_on": dated, 
             "created_by": ctx?.meta?.user?.userId || "system", 

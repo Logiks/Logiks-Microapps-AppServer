@@ -25,19 +25,40 @@ module.exports = {
         return USERS.getUserInfo(federatedData.userid, {guid: guid}).then(async (userInfo)=>{
             if(userInfo) {
                 //User Exists, just return the info
-                //updateData.last_updated
+                const federatedDataMapped = {
+                    "id": userInfo.id,
+                    "name": federatedData.displayname || federatedData.userid,
+                    "email": federatedData.email || "",
+                    "mobile": federatedData.mobile || "",
+                    "designation": federatedData.designation || "",
+                    "department": federatedData.department || "",
+                    "company": federatedData.company || "",
+                    "office": federatedData.office || "",
+                    "reporting_to": federatedData.reporting_to || "",
+                    "gender": federatedData.gender || "male",
+                    "address": federatedData.address || "",
+                    "region": federatedData.region || "",
+                    "country": federatedData.country || "IN",
+                    "zipcode": federatedData.zipcode || "",
+                };
+                if(federatedData.dob) federatedDataMapped.dob = moment(federatedData.dob).format("YYYY-MM-DD");
+                if(federatedData.doj) federatedDataMapped.doj = moment(federatedData.doj).format("YYYY-MM-DD");
 
-                const userInfoFiltered = Object.keys(federatedData).reduce((acc, key) => {
-                        if (key in userInfo) acc[key] = userInfo[key];
-                        return acc;
-                    }, {});
-                const differences = diff(userInfoFiltered, federatedData);
-                console.log("FEDERATED_USER_DIFFERENCES", differences);
+                const cols = Object.keys(userInfo);
+                const toUpdate = {};
+                for (var i = cols.length - 1; i >= 0; i--) {
+                    if(federatedDataMapped[cols[i]] && federatedDataMapped[cols[i]]!=userInfo[cols[i]] ) {
+                        toUpdate[cols[i]] = federatedDataMapped[cols[i]];
+
+                        if(userInfo[cols[i]]) userInfo[cols[i]] = federatedDataMapped[cols[i]];
+                    }
+                }
                 
-                // await _DB.db_updateQ("appdb", "lgks_users", updateData, {
-                //     userid: userInfo.userid,
-                //     guid: userInfo.guid,
-                // });
+                if(Object.keys(toUpdate).length>0) {
+                    toUpdate['edited_on'] = moment().format("Y-M-D HH:mm:ss");
+                    toUpdate["edited_by"] =  "fedauth";
+                    await _DB.db_updateQ("appdb", "lgks_users", toUpdate, {"id": userInfo.id});
+                }
 
                 return userInfo;
             } else {
@@ -53,16 +74,16 @@ module.exports = {
                     "accessid": federatedData.accessid || 1, //Default to normal access
                     "groupid": federatedData.groupid || 1,
                     "roles": federatedData.roles ? federatedData.roles.join(",") : "",
-                    
-                    "reporting_to": federatedData.reporting_to || "",
-                    "hr_manager": federatedData.hr_manager || "",
-                    "dob": federatedData.dob || "0000-00-00",
-                    "gender": federatedData.gender || "male",
 
                     "department": federatedData.department || "-",
                     "designation": federatedData.designation || "-",
                     "office": federatedData.office || "",
                     "company": federatedData.company || guid || "",
+                    
+                    "reporting_to": federatedData.reporting_to || "",
+                    "hr_manager": federatedData.hr_manager || "",
+                    "dob": federatedData.dob || "0000-00-00",
+                    "gender": federatedData.gender || "male",
 
                     "address": federatedData.address || "",
                     "region": federatedData.region || "",

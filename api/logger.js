@@ -167,21 +167,21 @@ module.exports = {
 };
 
 global.log_debug = function(...args) {
-    //console.debug(...args);
+    if(process.env.TRANSPARENT_LOGGER === "true") console.debug(...args);
     SERVER.getBroker().logger.debug(...args);
 }
 
 global.log_info = function(...args) {
-    //console.info(...args);
+    if(process.env.TRANSPARENT_LOGGER === "true") console.info(...args);
     SERVER.getBroker().logger.info(...args);
 }
 
 global.log_warn = function(...args) {
-    //console.warn(...args);
-    SERVER.getBroker().logger.info(...args);
+    if(process.env.TRANSPARENT_LOGGER === "true") console.warn(...args);
+    SERVER.getBroker().logger.warn(...args);
 }
 
 global.log_error = function(...args) {
-    //console.error(...args);
-    SERVER.getBroker().logger.info(...args);
+    if(process.env.TRANSPARENT_LOGGER === "true") console.error(...args);
+    SERVER.getBroker().logger.error(...args);
 }

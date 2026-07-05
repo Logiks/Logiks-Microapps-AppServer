@@ -161,12 +161,14 @@ module.exports = {
                         givenname: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname")[0]?.AttributeValue,
                         surname: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname")[0]?.AttributeValue,
                         email: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")[0]?.AttributeValue,
-                        mobile: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/mobilephone")[0]?.AttributeValue,
+                        mobile: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/mobilephone/mobilephone")[0]?.AttributeValue || "",
 
-                        department: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/department")[0]?.AttributeValue,
-                        designation: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/title/title")[0]?.AttributeValue,
-                        office: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/office/Office")[0]?.AttributeValue,
-                        company: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/companyname/companyname")[0]?.AttributeValue,
+                        designation: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/title/title")[0]?.AttributeValue || "",
+                        department: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/department")[0]?.AttributeValue || "",
+                        company: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/companyname/companyname")[0]?.AttributeValue || "",
+                        office: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/office/Office")[0]?.AttributeValue || "",
+
+                        reporting_to: parsedSAMLContent.Response.Assertion.AttributeStatement.Attribute.filter(a=>a.$.Name=="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/reporting_to/reporting_to")[0]?.AttributeValue || "",
                     };
                     if(userData.userid) userData.userid = userData.userid.replace(/ /g,"_").toLowerCase();
 
