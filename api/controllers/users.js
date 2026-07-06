@@ -159,18 +159,21 @@ module.exports = {
             }
 
             try {
-                const userScopes = await _DB.db_selectQ("appdb", "lgks_scopes", "*", {
+                const userScopes = await _DB.db_selectQ("appdb", "lgks_scopes", "scopeid, scopes", {
                     "blocked": "false",
                     "guid": [["global", userInfo.guid], "IN"],
-                    "id": userInfo.userid
+                    "users": [userInfo.userid, "LIKE"],
                 }, {});
                 if(!userScopes.results) userScopes.results = [];
                 
-                userInfo.scopes = [];
+                userInfo.scopes = {};
 
                 _.each(userScopes.results, function(row, k) {
-                    userInfo.scopes = _.extend(userInfo.scopes, JSON.parse(row.scopes));
-                })
+                    try {
+                        userInfo.scopes[row.scopeid] = JSON.parse(row.scopes);
+                    } catch(e) {
+                    }
+                });
             } catch(e) {
                 userInfo.scopes = [];
             }

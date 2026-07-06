@@ -16,6 +16,16 @@
 //   log_system
 //   log_tenant
 
+const NO_LOGS = {
+    "activities": [
+        "workforceplanning_actuals",
+        "workforceplanning_default_increment",
+        "workforceplanning_movement",
+        "workforceplanning_snapshots",
+        "workforceplanning_tbl",
+    ],
+};
+
 module.exports = {
 	name: "logs",
 
@@ -51,6 +61,8 @@ module.exports = {
             var dated = moment().format("Y-MM-DD HH:mm:ss");
             var ref_src = payload.ref_src || "-";
             if(ref_src.indexOf("@")>=0) ref_src = ref_src.split("@").splice(0,2).join("@");
+
+            if(NO_LOGS?.activities.indexOf(ref_src.split("@")[1]) !== -1) return;
 
             await _DB.db_insertQ1("logdb", "log_activities", {
                 "appid": payload.appid || "-",

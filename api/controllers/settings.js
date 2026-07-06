@@ -1,6 +1,9 @@
 /*
  * Settings Controller for Application and Users
  * 
+ * lgks_settings : 
+ * sys_settings  : 
+ * user_settings : 
  * */
 
 module.exports = {
@@ -10,21 +13,32 @@ module.exports = {
         return true;
     },
 
-    getUserSettings: async function(guid, userId, setting_key, defaultValue = null) {
+    //For Application Level Settings per Tenant - lgks_settings
+    getAppSettings: async function(guid, appid, setting_key, defaultValue = null, category="general") {
         var whereCond = {
             "blocked": "false",
-            "userId": userId,
-            "guid": guid
+            "guid": guid,
+            "appid": appid,
+            "setting_key": setting_key
         };
-        if(setting_key!==false) {
-            whereCond["setting_key"] = setting_key;
-        }
-
-        var settingsData = await _DB.db_selectQ("appdb", "lgks_settings", "*", whereCond, {});
+        
+        var settingsData = await _DB.db_selectQ("appdb", "lgks_settings", "id, settings_value, setting_key, category", whereCond, {});
         if(!settingsData || !settingsData.results || settingsData.results.length<=0) {
             //Auto Register Default Value
             if(defaultValue) {
-                await this.registerUserSettings(guid, userId, setting_key, defaultValue);
+                var dated = moment().format("Y-M-D HH:mm:ss");
+                var createdData = {
+                    "guid": guid,
+                    "appid": appid,
+                    "setting_key": setting_key,
+                    "settings_value": (typeof defaultValue=="object")?JSON.stringify(defaultValue):defaultValue,
+                    "category": category,
+                    "created_on": dated,
+                    "created_by": "auto",
+                    "edited_on": dated,
+                    "edited_by": "auto",
+                };
+                await _DB._insertQ1("appdb", "lgks_settings", createdData);
             }
             return defaultValue;
         }
@@ -36,20 +50,83 @@ module.exports = {
         }
     },
 
-    registerUserSettings: async function(guid, userId, setting_key, setting_value, category="general") {
-        var dated = moment().format("Y-M-D HH:mm:ss");
-        var createdData = {
+    //For Module Level Settings per GUID and APPID -> sys_settings
+    getModuleSettings: async function(guid, appid, module_name, setting_key, defaultValue = null, params = {}) {
+        var whereCond = {
+            "blocked": "false",
             "guid": guid,
-            "userid": userId,
-            "setting_key": setting_key,
-            "settings_value": (typeof setting_value=="object")?JSON.stringify(setting_value):setting_value,
-            "category": category,
-            "created_on": dated,
-            "created_by": userId,
-            "edited_on": dated,
-            "edited_by": userId,
+            "appid": appid,
+            "module_name": module_name,
+            "setting_key": setting_key
         };
-        await _DB._insertQ1("appdb", "lgks_settings", createdData);
-        return true;
+        
+        var settingsData = await _DB.db_selectQ("appdb", "sys_settings", "id, settings_value, setting_key, category", whereCond, {});
+        if(!settingsData || !settingsData.results || settingsData.results.length<=0) {
+            //Auto Register Default Value
+            if(defaultValue) {
+                var dated = moment().format("Y-M-D HH:mm:ss");
+                if(!params) params = {};
+                var createdData = {
+                    "guid": guid,
+                    "appid": appid,
+                    "module_name": module_name,
+                    "setting_key": setting_key,
+                    "settings_value": (typeof defaultValue=="object")?JSON.stringify(defaultValue):defaultValue,
+                    "setting_params": (typeof params=="object")?JSON.stringify(params):params,
+                    "created_on": dated,
+                    "created_by": "auto",
+                    "edited_on": dated,
+                    "edited_by": "auto",
+                };
+                await _DB._insertQ1("appdb", "sys_settings", createdData);
+            }
+            return defaultValue;
+        }
+        try {
+            const tempValue = JSON.parse(settingsData.results[0].settings_value, true);
+            return tempValue;
+        } catch(e) {
+            return settingsData.results[0].settings_value;
+        }
+    },
+
+    loadUserSettings: async function(guid, appId, userId, module_name, setting_key, defaultValue = null, params = {}) {
+        var whereCond = {
+            "blocked": "false",
+            "guid": guid,
+            "appid": appId,
+            "created_by": userId,
+            "module_name": module_name,
+            "setting_key": setting_key
+        };
+        
+        var settingsData = await _DB.db_selectQ("appdb", "user_settings", "*", whereCond, {});
+        if(!settingsData || !settingsData.results || settingsData.results.length<=0) {
+            //Auto Register Default Value
+            if(defaultValue) {
+                var dated = moment().format("Y-M-D HH:mm:ss");
+                if(!params) params = {};
+                var createdData = {
+                    "guid": guid,
+                    "appid": appid,
+                    "module_name": module_name,
+                    "setting_key": setting_key,
+                    "settings_value": (typeof defaultValue=="object")?JSON.stringify(defaultValue):defaultValue,
+                    "setting_params": (typeof params=="object")?JSON.stringify(params):params,
+                    "created_on": dated,
+                    "created_by": "auto",
+                    "edited_on": dated,
+                    "edited_by": "auto",
+                };
+                await _DB._insertQ1("appdb", "sys_settings", createdData);
+            }
+            return defaultValue;
+        }
+        try {
+            const tempValue = JSON.parse(settingsData.results[0].settings_value, true);
+            return tempValue;
+        } catch(e) {
+            return settingsData.results[0].settings_value;
+        }
     },
 }

@@ -18,6 +18,22 @@ module.exports = {
 			}
 		},
 
+		myScope: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/scopes"
+			},
+			async handler(ctx) {
+				const userInfo = await USERS.getUserInfo(ctx.meta.user.userId, {
+					guid: ctx.meta.user.guid,
+					blocked: "false",
+					// scopeid: ctx.params.scopeid || "default"
+				});
+				if(userInfo.scopes[ctx.params.scopeid]) return userInfo.scopes[ctx.params.scopeid];
+				else return {};
+			}
+		},
+
 		passwordUpdate: {
 			rest: {
 				method: "POST",
