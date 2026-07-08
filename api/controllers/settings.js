@@ -1,9 +1,10 @@
 /*
  * Settings Controller for Application and Users
  * 
- * lgks_settings : 
- * sys_settings  : 
- * user_settings : 
+ * lgks_settings : Application Level Settings per Tenant for SuperAdmin
+ * sys_settings  : Module Level Settings per GUID and APPID for Admin
+ * user_settings : User Level Settings per GUID and APPID for Users
+ * 
  * */
 
 module.exports = {

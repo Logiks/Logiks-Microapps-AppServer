@@ -19,7 +19,7 @@ module.exports = {
         return data.results;
     },
 
-    getControl: async function(ctrlId, nature = "backend", module = false, guid = false) {
+    getControl: async function(ctrlId, defaultValue = false, nature = "backend", module = false, guid = false) {
         const whereLogic = {
             blocked: "false",
             var_code: ctrlId
@@ -28,8 +28,26 @@ module.exports = {
         if(module) whereLogic['module'] = module;
 
         var data = await _DB.db_selectQ("appdb", "lgks_ctrlcenter", "module, var_title, var_code, var_value", whereLogic,{});
-        if(!data || !data?.results || data.results.length<=0) data = {results: []};
+        if(!data || !data?.results || data.results.length<=0) {
+            var dated = moment().format("Y-M-D HH:mm:ss");
+            _DB.db_insertQ1("appdb", "lgks_ctrlcenter", {
+                guid: guid || "-", 
+                module: module || "-", 
+                var_title: ctrlId.replace(/[^a-zA-Z0-9]/g, ' ').toUpperCase().trim(), 
+                var_code: ctrlId, 
+                var_value: defaultValue, 
+                var_params: "{}", 
+                var_nature: nature, 
+                blocked: "false", 
+                created_on: dated, 
+                created_by: "-", 
+                edited_on: dated, 
+                edited_by: "-"
+            });
 
-        return data.results;
+            return {module: module || "-", var_title: ctrlId.replace(/[^a-zA-Z0-9]/g, ' ').toUpperCase().trim(), var_code: ctrlId, var_value: defaultValue};
+        } else {
+            return data.results[0]
+        }
     }
 }
