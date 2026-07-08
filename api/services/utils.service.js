@@ -85,12 +85,13 @@ module.exports = {
         logActivity: {
             rest: {
 				method: "POST",
-				fullPath: "/api/log/:logId"
+				fullPath: "/api/log"
 			},
             params: {
+                "logId": "string",
                 // "type": "string",//local, db
-                "group": "string",
-                "data": "object"
+                // "group": "string",
+                "payload": "object"
             },
 			async handler(ctx) {
                 if(!ctx.params.type || ["local", "db"].indexOf(ctx.params.type)<0)  ctx.params.type = "db";
@@ -106,9 +107,9 @@ module.exports = {
                 //activities, analytics, errors
 
                 if(ctx.params.type=="db")
-                    _DBLOGGER._log(`frontend_${logID}`, ctx.params.data, ctx);
+                    _DBLOGGER._log(`frontend_${logID}`, ctx.params.payload, ctx);
                 else
-                    LOGGER.log(ctx.params.data, `frontend_${logID}`, ctx.params.level);
+                    LOGGER.log(ctx.params.payload, `frontend_${logID}`, ctx.params.level);
             }
         },
         ctrlcenterGet: {

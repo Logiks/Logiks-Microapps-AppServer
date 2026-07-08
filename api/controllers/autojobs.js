@@ -193,6 +193,29 @@ async function runJobNow(jobConfig, userId = "system") {
                 return false;
             }
             break;
+        case "message":
+            try {
+                var response = await MESSAGING.sendMessage(jobConfig.job_script, jobConfig.params, {
+                    "meta": {
+                        "user": {
+                            guid: jobConfig.guid,
+                            userId: jobConfig.created_by,
+                        },
+                        sessionId: jobConfig.guid,
+                    }
+                });
+                if(!response) {
+                    log_jobrun(jobConfig, jobConfig.params, response, "FAILED", `JOB Plugin Failed at Running`, userId);
+                    return false;
+                } else {
+                    log_jobrun(jobConfig, jobConfig.params, response, "SUCCESS", `JOB Plugin Ran Successfully`, userId);
+                    return true;
+                }
+            } catch(e) {
+                log_jobrun(jobConfig, jobConfig.params, {}, "ERROR", "JOB Run Error - "+e.message, userId);
+                return false;
+            }
+            break;
         case "plugin":
             if(LOADED_PLUGINS[jobConfig.job_script] && LOADED_PLUGINS[jobConfig.job_script].runJob!=null && typeof LOADED_PLUGINS[jobConfig.job_script].runJob==="function") {
                 var response = await LOADED_PLUGINS[jobConfig.job_script].runJob(jobConfig.params, userId);

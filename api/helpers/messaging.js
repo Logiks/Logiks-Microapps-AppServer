@@ -140,7 +140,8 @@ module.exports = {
         if(methodArr.length<=1) {
             return MESSAGING[MESSAGING_DRIVER[driver].method](MESSAGING_DRIVER[driver].credentials, driver, params, ctx);
         } else {
-            return ctx.call(MESSAGING_DRIVER[driver].method, {
+            // return ctx.call(MESSAGING_DRIVER[driver].method, {
+            return SERVER.getBroker().call(MESSAGING_DRIVER[driver].method, {
                 "config": MESSAGING_DRIVER[driver].credentials, driverId: driver, params, ctx
             });
         }
