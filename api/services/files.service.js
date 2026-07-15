@@ -30,7 +30,8 @@ module.exports = {
 				}
 				if(ctx.params.searchTerm) {
 					whereLogic['filename'] = [ctx.params.searchTerm, "LIKE"];
-				}CONFIG.log_sql = true;
+				}
+				
 				const sqlResult = await _DB.db_selectQ("appdb", "files_tbl", "*", whereLogic, {
 					"limit": ctx.params.limit || 10,
 					"order_by": "created_at DESC"

@@ -140,10 +140,41 @@ module.exports = {
         if(methodArr.length<=1) {
             return MESSAGING[MESSAGING_DRIVER[driver].method](MESSAGING_DRIVER[driver].credentials, driver, params, ctx);
         } else {
-            // return ctx.call(MESSAGING_DRIVER[driver].method, {
-            return SERVER.getBroker().call(MESSAGING_DRIVER[driver].method, {
-                "config": MESSAGING_DRIVER[driver].credentials, driverId: driver, params, ctx
+            var logData = _.extend({
+                appid: ctx?.meta?.appInfo?.appid || params?.appid || "-",
+                channel: driver,
+                vendor: driver, 
+                template_id: params.template_code || "-", 
+                sent_to: params.sendTo, 
+                req_body: params.body, 
+                // status: "",
+                // provider_response: JSON.stringify({}), 
+                retry_count: 0, 
+                xtras_1: "", 
+                xtras_2: "", 
+                xtras_3: "", 
+            }, MISC.generateDefaultDBRecord(ctx));
+
+            logData.status = "sending";
+            // logData.provider_response = JSON.stringify(info);
+            const dbInsertId = await _DB.db_insertQ1("logdb", "log_messages", logData);
+
+            var responseObj = await SERVER.getBroker().call(MESSAGING_DRIVER[driver].method, {
+                "config": MESSAGING_DRIVER[driver].credentials, driverId: driver, params, ctx: ctx || SERVER.getBroker()
             });
+
+            if(responseObj[0]) responseObj = responseObj[0];
+
+            if(dbInsertId && dbInsertId.insertId) {
+                _DB.db_updateQ("logdb", "log_messages", {
+                    status: responseObj?.status || "error",
+                    provider_response: JSON.stringify(responseObj?.data || responseObj?.msg || responseObj || {}), 
+                }, {
+                    id: dbInsertId.insertId
+                });
+            }
+
+            return responseObj;
         }
     },
 

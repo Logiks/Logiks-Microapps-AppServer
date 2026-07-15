@@ -16,15 +16,7 @@
 //   log_system
 //   log_tenant
 
-const NO_LOGS = {
-    "activities": [
-        "workforceplanning_actuals",
-        "workforceplanning_default_increment",
-        "workforceplanning_movement",
-        "workforceplanning_snapshots",
-        "workforceplanning_tbl",
-    ],
-};
+const NO_LOGS = CONFIG.nologs || {};
 
 module.exports = {
 	name: "logs",

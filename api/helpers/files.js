@@ -6,6 +6,10 @@ const { pipeline } = require('stream/promises');
 const { Readable, Transform } = require('stream');
 // const { fileTypeFromBuffer } = require('file-type');
 const mime = require('mime-types');
+const https = require('https');
+const httpsAgent = new https.Agent({
+        rejectUnauthorized: false
+    });
 
 /**
  * Reads a file and returns its content.
@@ -156,50 +160,107 @@ module.exports = {
 
     getFileByPath: async function(guid, fileUri, responseType = "stream") {
         const filePath = path.join(UPLOADS.baseUploadFolder(), fileUri);
-        const fileMime = sqlResult[0].file_mime;
-        // const fileMime = mime.lookup(filePath);
+        const fileMime = mime.lookup(filePath);
+        var fileName = fileUri.split("/");
+        fileName = fileName[fileName.length-1];
 
         if(!filePath || !fs.existsSync(filePath)) {
             return null;
         }
 
-        var responseObj = {};
-        if(moreData) {
-            responseObj = {
-                folder: sqlResult[0].folder,
-                year: sqlResult[0].file_year,
-                metadata: sqlResult[0].metadata
-            };
-        }
+        const responseContent = await UPLOADS.resolveFileObj({
+            guid: guid,
+            driver: "local",
+            path_uri: fileUri
+        }, responseType);
 
-        if(responseType=="stream") {
-            const fileStream = fs.createReadStream(filePath);
+        if(responseContent.file_name) fileName = responseContent.file_name;
+
+        var responseObj = {};
+        // if(moreData) {
+        //     responseObj = {
+        //         folder: sqlResult.folder,
+        //         year: sqlResult.file_year,
+        //         metadata: sqlResult.metadata
+        //     };
+        // }
+
+        if(responseContent.responseType=="stream") {
             return {
                 ...responseObj,
-                stream: fileStream,
+                stream: responseContent.response,
                 mime: fileMime,
-                filename: sqlResult[0].filename,
+                filename: fileName,
+                responseType: responseType
             };
         } else if(responseType=="buffer") {
-            const fileBuffer = fs.readFileSync(filePath);
             return {
                 ...responseObj,
-                buffer: fileBuffer,
+                buffer: responseContent.response,
                 mime: fileMime,
-                filename: sqlResult[0].filename,
+                filename: fileName,
+                responseType: responseType
             };
         } else if(responseType=="content") {
-            const content = await fs.readFileSync(filePath, "utf8");
             return {
                 ...responseObj,
-                content: content,
+                content: responseContent.response,
                 mime: fileMime,
-                filename: sqlResult[0].filename,
+                filename: fileName,
+                responseType: responseType
             };
         }
 
         return null;
     },
+    
+    //Old Function
+    // getFileByPath: async function(guid, fileUri, responseType = "stream") {
+    //     const filePath = path.join(UPLOADS.baseUploadFolder(), fileUri);
+    //     const fileMime = sqlResult[0].file_mime;
+    //     // const fileMime = mime.lookup(filePath);
+
+    //     if(!filePath || !fs.existsSync(filePath)) {
+    //         return null;
+    //     }
+
+    //     var responseObj = {};
+    //     if(moreData) {
+    //         responseObj = {
+    //             folder: sqlResult[0].folder,
+    //             year: sqlResult[0].file_year,
+    //             metadata: sqlResult[0].metadata
+    //         };
+    //     }
+
+    //     if(responseType=="stream") {
+    //         const fileStream = fs.createReadStream(filePath);
+    //         return {
+    //             ...responseObj,
+    //             stream: fileStream,
+    //             mime: fileMime,
+    //             filename: sqlResult[0].filename,
+    //         };
+    //     } else if(responseType=="buffer") {
+    //         const fileBuffer = fs.readFileSync(filePath);
+    //         return {
+    //             ...responseObj,
+    //             buffer: fileBuffer,
+    //             mime: fileMime,
+    //             filename: sqlResult[0].filename,
+    //         };
+    //     } else if(responseType=="content") {
+    //         const content = await fs.readFileSync(filePath, "utf8");
+    //         return {
+    //             ...responseObj,
+    //             content: content,
+    //             mime: fileMime,
+    //             filename: sqlResult[0].filename,
+    //         };
+    //     }
+
+    //     return null;
+    // },
 
     saveFile: async function(ctx, folder, content) {
         const uploadDir = await UPLOADS.getDestinyPath(folder, "", true);
@@ -556,6 +617,7 @@ async function universalFileSave(folder, content, options = {}) {
             method: 'GET',
             url: fileUrl,
             responseType: 'stream',
+            httpsAgent,
             timeout: 30000 // 30-second connection timeout
         });
 

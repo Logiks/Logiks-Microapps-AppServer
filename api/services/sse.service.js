@@ -113,7 +113,10 @@ module.exports = {
     },
 
     events: {
+        //use SSE.broadcast to send events to all clients
         "sse.push"(payload) {
+            if(!clients.get(payload.id)) return;
+
             this.sendEvent(
                 payload.id,
                 payload.event,

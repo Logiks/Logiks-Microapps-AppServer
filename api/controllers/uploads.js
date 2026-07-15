@@ -5,6 +5,9 @@
 
 const multer = require("multer");
 const fs = require("fs-extra");
+const fs1 = require("fs");
+const crypto = require("crypto");
+const { pipeline } = require("stream/promises");
 
 const TEMP_UPLOAD_ROOT = process.env.UPLOAD_TEMP || path.resolve(ROOT_PATH+`/${CONFIG.storage.temp_path || "temp"}/`);
 const BASE_UPLOAD_ROOT = process.env.UPLOAD_ROOT || path.resolve(ROOT_PATH+`/${CONFIG.storage.base_path || "uploads"}/`);
@@ -214,6 +217,10 @@ async function get_from_store(fileObj, responseType = "stream") {
 			}
 			break;
 	
+		case "miniio":
+			return null;
+			break;
+
 		case "docqdrive":
 			return null;
 			break;
@@ -233,16 +240,21 @@ async function get_from_store(fileObj, responseType = "stream") {
 	}
 }
 
-async function move_to_store(tempFilePath, fileName, bucket) {
+async function move_to_store(tempFilePath, fileName, bucket, encrypt = false) {
 	// console.log("XXXXXXX", CONFIG.storage, tempFilePath, fileName, bucket);
 
-	//CONFIG.storage.encrypt
+	//Encrypt File
+	const encryptedPath = ENCRYPTER.encryptFile(tempFilePath, CONFIG.storage.encrypt_key || CONFIG.SALT_KEY);
 	
 	switch (CONFIG.storage.driver) {
 		case "local":
 			return local_storage(tempFilePath, fileName, bucket);
 			break;
 	
+		case "miniio":
+			return miniio_storage(tempFilePath, fileName, bucket);
+			break;
+
 		case "docqdrive":
 			return docqdrive_storage(tempFilePath, fileName, bucket);
 			break;
@@ -270,7 +282,7 @@ async function local_storage(tempFilePath, fileName, bucket = "default") {
 
 	const newFilePath = tempFilePath.replace(TEMP_UPLOAD_ROOT, BASE_UPLOAD_ROOT);
 
-	await fs.move(tempFilePath, newFilePath);
+	await fs.move(encryptedPath, newFilePath);
 	// console.log("XXXX", tempFilePath, newFilePath);
 
 	if(fs.existsSync(newFilePath)) {
@@ -279,6 +291,13 @@ async function local_storage(tempFilePath, fileName, bucket = "default") {
 	} else {
 		return false;
 	}
+}
+
+async function miniio_storage(tempFilePath, fileName, bucket) {
+	if(CONFIG.storage.driver!="docqdrive") return false;
+	const params = CONFIG.storage.params;
+
+	
 }
 
 async function docqdrive_storage(tempFilePath, fileName, bucket) {
