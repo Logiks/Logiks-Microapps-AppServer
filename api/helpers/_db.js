@@ -525,6 +525,16 @@ module.exports = {
 		
 	},
 
+	db_increamentQ : async function(dbkey, table, column, where, userid, increamentBy = 1) {
+		var dated = moment().format("Y-M-D HH:mm:ss");
+		return await this.db_updateQ(dbkey, table, `${column} = ${column} + ${increamentBy}, edited_on = '${dated}', edited_by = '${userid}'`, where);
+	},
+
+	db_decreamentQ : async function(dbkey, table, column, where, userid, decreamentBy = 1) {
+		var dated = moment().format("Y-M-D HH:mm:ss");
+		return await this.db_updateQ(dbkey, table, `${column} = ${column} - ${decreamentBy}, edited_on = '${dated}', edited_by = '${userid}'`, where);
+	},
+
 	db_updateQ : async function(dbkey, table, data, where) {
 		if(_MYSQL[dbkey]==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
