@@ -175,7 +175,7 @@ module.exports = {
         return outputFile;
     },
 
-    encryptStream: async function(readable, writable, encryptionKey) {
+    encryptStream: async function(readable, outputFile, encryptionKey) {
         const iv = crypto.randomBytes(IV_LENGTH);
 
         // Create output file
@@ -229,7 +229,7 @@ module.exports = {
         return outputFile;
     },
 
-    decryptStream: async function(inputFile, outputFile, encryptionKey) {
+    decryptStream: async function(readable, outputFile, encryptionKey) {
         const file = await fs.promises.open(inputFile, "r");
 
         try {
@@ -266,12 +266,13 @@ module.exports = {
             decipher.setAuthTag(tag);
 
             await pipeline(
-                fs.createReadStream(inputFile, {
-                    start: HEADER_LENGTH,
-                    highWaterMark: 8 * 1024 * 1024
-                }),
+                readable,
+                // fs.createReadStream(inputFile, {
+                //     start: HEADER_LENGTH,
+                //     highWaterMark: 8 * 1024 * 1024
+                // }),
                 decipher,
-                writable
+                fs.createWriteStream(outputFile)
             );
 
         } finally {
