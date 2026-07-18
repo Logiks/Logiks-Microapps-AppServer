@@ -4,12 +4,14 @@ const crypto = require('crypto');
 const sha1 = require('sha1');
 const bcrypt = require("bcrypt");
 const { pipeline } = require("stream/promises");
+const { PassThrough, Transform } = require("stream");
 const fs = require("fs");
 
 let MAGIC = Buffer.from("ENC1");
 let ALGORITHM = 'aes-256-gcm';
 let IV_LENGTH = 16; // recommended 96-bit nonce
 let KEY_LENGTH = 32;
+const TAG_LENGTH = 16;
 
 let MASTER_SALT = "";
 let HASH_MODE = "sha1";
@@ -96,22 +98,27 @@ module.exports = {
     encryptFile: async function(inputFile, encryptionKey) {
         const outputFile = inputFile+".enc";
         const iv = crypto.randomBytes(IV_LENGTH);
+        const key = crypto.scryptSync(
+                encryptionKey,
+                CONFIG.SALT_KEY,
+                32
+            );
 
         const cipher = crypto.createCipheriv(
             ALGORITHM,
-            encryptionKey,
+            key,
             iv
         );
 
-        const input = fs1.createReadStream(inputFile, {
+        const input = fs.createReadStream(inputFile, {
             //highWaterMark: 1024 * 1024 // 1MB chunks
             highWaterMark: 8 * 1024 * 1024 //4–8 MB gives better throughput than the default 64 KB.
         });
 
-        const output = fs1.createWriteStream(outputFile);
+        const output = fs.createWriteStream(outputFile);
 
         // Write IV first
-        output.write(iv);
+        output.write(Buffer.concat([MAGIC, iv]));
 
         await pipeline(
             input,
@@ -121,24 +128,33 @@ module.exports = {
 
         // Append Auth Tag
         const authTag = cipher.getAuthTag();
-        fs1.appendFileSync(outputFile, authTag);
+        fs.appendFileSync(outputFile, authTag);
 
         console.log("Encrypted File", outputFile);
         return outputFile;
     },
 
-    decryptFile: async function(inputFile, encryptionKey) {
-        const outputFile = inputFile.replace(".enc", "");
+    decryptFile: async function(inputFile, encryptionKey, outputFile = false) {
+        if (!outputFile) outputFile = inputFile.replace(".enc", "");
 
-        const stat = fs1.statSync(inputFile);
+        const stat = fs.statSync(inputFile);
+        const fd = fs.openSync(inputFile, "r");
 
-        const fd = fs1.openSync(inputFile, "r");
+        // Read and verify MAGIC
+        const magic = Buffer.alloc(MAGIC.length);
+        fs.readSync(fd, magic, 0, MAGIC.length, 0);
 
+        if (!magic.equals(MAGIC)) {
+            fs.closeSync(fd);
+            throw new Error("Invalid encrypted file");
+        }
+
+        // FIX 1: IV starts after MAGIC
         const iv = Buffer.alloc(IV_LENGTH);
-        fs1.readSync(fd, iv, 0, IV_LENGTH, 0);
+        fs.readSync(fd, iv, 0, IV_LENGTH, MAGIC.length);
 
         const authTag = Buffer.alloc(AUTH_TAG_LENGTH);
-        fs1.readSync(
+        fs.readSync(
             fd,
             authTag,
             0,
@@ -146,139 +162,205 @@ module.exports = {
             stat.size - AUTH_TAG_LENGTH
         );
 
-        fs1.closeSync(fd);
+        fs.closeSync(fd);
+
+        const key = crypto.scryptSync(
+            encryptionKey,
+            CONFIG.SALT_KEY,
+            32
+        );
 
         const decipher = crypto.createDecipheriv(
             ALGORITHM,
-            encryptionKey,
+            key,
             iv
         );
 
         decipher.setAuthTag(authTag);
 
-        const input = fs1.createReadStream(inputFile, {
-            start: IV_LENGTH,
+        const input = fs.createReadStream(inputFile, {
+            // FIX 2: Skip MAGIC + IV
+            start: MAGIC.length + IV_LENGTH,
             end: stat.size - AUTH_TAG_LENGTH - 1,
             highWaterMark: 1024 * 1024
         });
 
-        const output = fs1.createWriteStream(outputFile);
+        const output = fs.createWriteStream(outputFile);
 
-        await pipeline(
-            input,
-            decipher,
-            output
-        );
+        await pipeline(input, decipher, output);
 
         console.log("Decrypted File", outputFile);
 
         return outputFile;
     },
 
-    encryptStream: async function(readable, outputFile, encryptionKey) {
+    //encryptStream(fs.createReadStream("big.iso"), key).pipe(fs.createWriteStream("big.iso.enc"));
+    // encryptStream(
+    //     fs.createReadStream("big.iso", {
+    //         highWaterMark: 8 * 1024 * 1024
+    //     }),
+    //     key
+    // ).pipe(
+    //     fs.createWriteStream("big.iso.enc", {
+    //         highWaterMark: 8 * 1024 * 1024
+    //     })
+    // );
+    encryptStream: async function(readable, encryptionKey) {
         const iv = crypto.randomBytes(IV_LENGTH);
 
-        // Create output file
-        const writable = fs1.createWriteStream(outputFile, {
-            highWaterMark: 8 * 1024 * 1024
-        });
-
-        // Reserve header space
-        writable.write(Buffer.alloc(HEADER_LENGTH));
+        const key = crypto.scryptSync(
+                encryptionKey,
+                CONFIG.SALT_KEY,
+                32
+            );
 
         const cipher = crypto.createCipheriv(
             ALGORITHM,
-            encryptionKey,
+            key,
             iv
         );
 
-        // Encrypt stream
-        await pipeline(
-            readable,
-            cipher,
-            writable
-        );
+        const output = new PassThrough();
 
-        // Header
-        const tag = cipher.getAuthTag();
+        // Write header immediately
+        output.write(Buffer.concat([MAGIC, iv]));
 
-        const header = Buffer.concat([
-            MAGIC,
-            iv,
-            tag
-        ]);
+        cipher.pipe(output, { end: false });
 
-        // Patch header
-        const file = await fs.promises.open(outputFile, "r+");
+        cipher.on("end", () => {
+            output.end(cipher.getAuthTag());
+        });
 
-        try {
+        cipher.on("error", err => output.destroy(err));
+        readable.on("error", err => output.destroy(err));
 
-            await file.write(
-                header,
-                0,
-                HEADER_LENGTH,
-                0
-            );
+        readable.pipe(cipher);
 
-        } finally {
-
-            await file.close();
-
-        }
-
-        return outputFile;
+        return output;
     },
 
-    decryptStream: async function(readable, outputFile, encryptionKey) {
-        const file = await fs.promises.open(inputFile, "r");
+    //decryptStream(fs.createReadStream("big.iso.enc"), key).pipe(fs.createWriteStream("big.iso"));
+    // const rs = fs.createReadStream("big.iso.enc", {
+    //     highWaterMark: 8 * 1024 * 1024 // 8 MB
+    // });
 
-        try {
+    // const ws = fs.createWriteStream("big.iso", {
+    //     highWaterMark: 8 * 1024 * 1024
+    // });
 
-            const header = Buffer.alloc(HEADER_LENGTH);
+    // decryptStream(rs, key).pipe(ws);
+    decryptStream: function(readable, encryptionKey) {
+        let header = Buffer.alloc(0);
+        let decipher = null;
+        let tail = Buffer.alloc(0);
 
-            await file.read(
-                header,
-                0,
-                HEADER_LENGTH,
-                0
-            );
+        const transform = new Transform({
+            transform(chunk, encoding, callback) {
+                try {
+                    if (!decipher) {
+                        header = Buffer.concat([header, chunk]);
 
-            if (!header.subarray(0, 4).equals(MAGIC)) {
-                throw new Error("Invalid encrypted file.");
+                        if (header.length < MAGIC.length + IV_LENGTH) {
+                            return callback();
+                        }
+
+                        const magic = header.subarray(0, MAGIC.length);
+
+                        if (!magic.equals(MAGIC)) {
+                            return callback(
+                                new Error("Invalid encrypted stream.")
+                            );
+                        }
+
+                        const iv = header.subarray(
+                            MAGIC.length,
+                            MAGIC.length + IV_LENGTH
+                        );
+                        const key = crypto.scryptSync(
+                            encryptionKey,
+                            CONFIG.SALT_KEY,
+                            32
+                        );
+
+                        decipher = crypto.createDecipheriv(
+                            ALGORITHM,
+                            key,
+                            iv
+                        );
+
+                        chunk = header.subarray(
+                            MAGIC.length + IV_LENGTH
+                        );
+
+                        // Header no longer needed
+                        header = null;
+                    }
+
+                    /*
+                     * Always retain the last TAG_LENGTH bytes.
+                     * Those bytes are the GCM auth tag.
+                     */
+                    tail = Buffer.concat([tail, chunk]);
+
+                    if (tail.length <= TAG_LENGTH) {
+                        return callback();
+                    }
+
+                    const ciphertextLength =
+                        tail.length - TAG_LENGTH;
+
+                    const ciphertext = tail.subarray(
+                        0,
+                        ciphertextLength
+                    );
+
+                    tail = tail.subarray(ciphertextLength);
+
+                    const out = decipher.update(ciphertext);
+
+                    if (out.length) {
+                        this.push(out);
+                    }
+
+                    callback();
+
+                } catch (err) {
+                    callback(err);
+                }
+            },
+
+            flush(callback) {
+                try {
+                    if (!decipher) {
+                        throw new Error("Empty stream.");
+                    }
+
+                    if (tail.length !== TAG_LENGTH) {
+                        throw new Error(
+                            "Invalid encrypted stream."
+                        );
+                    }
+
+                    decipher.setAuthTag(tail);
+
+                    const out = decipher.final();
+
+                    if (out.length) {
+                        this.push(out);
+                    }
+
+                    callback();
+
+                } catch (err) {
+                    callback(err);
+                }
             }
+        });
 
-            const iv = header.subarray(
-                4,
-                4 + IV_LENGTH
-            );
+        readable.on("error", err => {
+            transform.destroy(err);
+        });
 
-            const tag = header.subarray(
-                4 + IV_LENGTH,
-                HEADER_LENGTH
-            );
-
-            const decipher = crypto.createDecipheriv(
-                ALGORITHM,
-                encryptionKey,
-                iv
-            );
-
-            decipher.setAuthTag(tag);
-
-            await pipeline(
-                readable,
-                // fs.createReadStream(inputFile, {
-                //     start: HEADER_LENGTH,
-                //     highWaterMark: 8 * 1024 * 1024
-                // }),
-                decipher,
-                fs.createWriteStream(outputFile)
-            );
-
-        } finally {
-
-            await file.close();
-
-        }
+        return readable.pipe(transform);
     }
 }

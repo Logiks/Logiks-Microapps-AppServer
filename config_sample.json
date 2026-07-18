@@ -55,7 +55,15 @@
     },
     "storage": {
         "driver": "local",
-        "base_path": "uploads"
+        "base_path": "uploads",
+        "encrypted": [
+            "dms"
+        ],
+        "events": {
+            "created": [],
+            "deleted": [],
+            "updated": []
+        }
     },
     "aicore": {
         "enabled": false,

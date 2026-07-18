@@ -6,8 +6,6 @@
 const multer = require("multer");
 const fs = require("fs-extra");
 const fs1 = require("fs");
-const crypto = require("crypto");
-const { pipeline } = require("stream/promises");
 
 const TEMP_UPLOAD_ROOT = process.env.UPLOAD_TEMP || path.resolve(ROOT_PATH+`/${CONFIG.storage.temp_path || "temp"}/`);
 const BASE_UPLOAD_ROOT = process.env.UPLOAD_ROOT || path.resolve(ROOT_PATH+`/${CONFIG.storage.base_path || "uploads"}/`);
@@ -65,8 +63,8 @@ module.exports = {
         return TEMP_UPLOAD_ROOT;
     },
 
-    getTargetPath: function(filePath) {
-        return path.join(BASE_UPLOAD_ROOT, filePath);
+    getTargetPath: function(filePath, isEncrypted = false) {
+        return path.join(BASE_UPLOAD_ROOT, filePath + (isEncrypted?".enc":""));
     },
 
     getUploadHandler: function() {
@@ -111,12 +109,18 @@ module.exports = {
 
         // CONFIG.log_sql = true;
 		var result = {};
+		var encryptFile = false;
+
+		//when to encrypt
+		if(CONFIG?.storage?.encrypted && (CONFIG.storage.encrypted=="*" || CONFIG.storage.encrypted.indexOf(bucket)>=0)) {
+			encryptFile = true;
+		}
 
 		if(Array.isArray(fileArray)) {
 			for(var i=0;i<fileArray.length-1;i++) {
 				const file = fileArray[i];
 
-				const fileURI = await move_to_store(file.path, file.filename, file.bucket || bucket);
+				const fileURI = await move_to_store(file.path, file.filename, file.bucket || bucket, encryptFile);
 				if(!fileURI) {
 					result[file.path] = 0;
 					continue;
@@ -126,15 +130,16 @@ module.exports = {
 					"guid": ctx.meta.user.guid,
 					"appid": ctx.meta.appInfo.appid,
 
-					"filename": file.filename,
+					"filename": ctx.params.filename?ctx.params.filename:file.filename,
 					"folder": bucket,
 					"path_uri": fileURI.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, ""),
 					"file_mime": file.mimetype,
 					"file_size": file.size,
 					"file_year": new moment().format("Y"),
-					"metadata": JSON.stringify(ctx.params.meta),
+					"metadata": ctx.params.meta?(typeof ctx.params.meta == "object"? JSON.stringify(ctx.params.meta):""): "{}",
 					"driver": CONFIG.storage.driver,
 					"processed": "false",
+					"encrypted": encryptFile?"true":"false",
 					"flags": "",
 				}, MISC.generateDefaultDBRecord(ctx, false)));
 
@@ -146,7 +151,7 @@ module.exports = {
 		} else {
 			const file = fileArray;
 
-			const fileURI = await move_to_store(file.path, file.filename, bucket);
+			const fileURI = await move_to_store(file.path, file.filename, bucket, encryptFile);
 			if(!fileURI) {
 				result[file.path] = 0;
 			} else {
@@ -160,9 +165,10 @@ module.exports = {
 					"file_mime": file.mimetype,
 					"file_size": file.size,
 					"file_year": new moment().format("Y"),
-					"metadata": JSON.stringify(ctx.params.meta),
+					"metadata": ctx.params.meta?(typeof ctx.params.meta == "object"? JSON.stringify(ctx.params.meta):""): "{}",
 					"driver": CONFIG.storage.driver,
 					"processed": "false",
+					"encrypted": encryptFile?"true":"false",
 					"flags": "",
 				}, MISC.generateDefaultDBRecord(ctx, false)));
 
@@ -176,12 +182,12 @@ module.exports = {
 		return result;
     },
 
-	resolveFileObj: async function(fileObj, responseType = "stream") {
-		return get_from_store(fileObj, responseType);
+	resolveFileObj: async function(fileObj, responseType = "stream", isEncrypted = false) {
+		return get_from_store(fileObj, responseType, isEncrypted);
 	}
 }
 
-async function get_from_store(fileObj, responseType = "stream") {
+async function get_from_store(fileObj, responseType = "stream", isEncrypted = false) {
 	if(!fileObj.driver) fileObj.driver = CONFIG.storage.driver;
 
 	//CONFIG.storage.encrypt
@@ -193,25 +199,33 @@ async function get_from_store(fileObj, responseType = "stream") {
 			if(!filePath || !fs.existsSync(filePath)) {
 				return null;
 			}
-
+			if(fileObj.encrypted===true || fileObj.encrypted==="true") {
+				isEncrypted = true;
+			}
+			var decryptedStream = null;
+			if(isEncrypted) {
+				decryptedStream = ENCRYPTER.decryptStream(fs.createReadStream(filePath), CONFIG.storage.encrypt_key || CONFIG.SALT_KEY);
+			} else {
+				decryptedStream = fs.createReadStream(filePath);
+			}
 			if(responseType=="stream") {
 				return {
-					response: fs.createReadStream(filePath),
+					response: decryptedStream,
 					responseType: responseType
 				};
 			} else if(responseType=="buffer") {
 				return {
-					response: fs.readFileSync(filePath),
+					response: await streamToBuffer(decryptedStream),
 					responseType: responseType
 				}
 			} else if(responseType=="content") {
 				return {
-					response: await fs.readFileSync(filePath, "utf8"),
+					response: await streamToString(decryptedStream),
 					responseType: responseType
 				}
 			} else {
 				return {
-					response: await fs.readFileSync(filePath, "utf8"),
+					response: await streamToString(decryptedStream),
 					responseType: responseType
 				}
 			}
@@ -244,8 +258,12 @@ async function move_to_store(tempFilePath, fileName, bucket, encrypt = false) {
 	// console.log("XXXXXXX", CONFIG.storage, tempFilePath, fileName, bucket);
 
 	//Encrypt File
-	const encryptedPath = ENCRYPTER.encryptFile(tempFilePath, CONFIG.storage.encrypt_key || CONFIG.SALT_KEY);
-	
+	if(encrypt) {
+		const encryptedPath = await ENCRYPTER.encryptFile(tempFilePath, CONFIG.storage.encrypt_key || CONFIG.SALT_KEY);
+		fs.unlinkSync(tempFilePath);
+		tempFilePath = encryptedPath;
+	}
+
 	switch (CONFIG.storage.driver) {
 		case "local":
 			return local_storage(tempFilePath, fileName, bucket);
@@ -282,7 +300,7 @@ async function local_storage(tempFilePath, fileName, bucket = "default") {
 
 	const newFilePath = tempFilePath.replace(TEMP_UPLOAD_ROOT, BASE_UPLOAD_ROOT);
 
-	await fs.move(encryptedPath, newFilePath);
+	await fs.move(tempFilePath, newFilePath);
 	// console.log("XXXX", tempFilePath, newFilePath);
 
 	if(fs.existsSync(newFilePath)) {
@@ -319,4 +337,26 @@ async function azureobjects_storage(tempFilePath, fileName, bucket) {
 	const params = CONFIG.storage.params;
 
 
+}
+
+
+
+async function streamToBuffer(stream) {
+    const chunks = [];
+
+    for await (const chunk of stream) {
+        chunks.push(chunk);
+    }
+
+    return Buffer.concat(chunks);
+}
+
+async function streamToString(stream) {
+    const chunks = [];
+
+    for await (const chunk of stream) {
+        chunks.push(chunk);
+    }
+
+    return Buffer.concat(chunks).toString("utf8");
 }

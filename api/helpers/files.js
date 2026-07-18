@@ -117,8 +117,9 @@ module.exports = {
         sqlResult = sqlResult.results[0];
 
         const fileMime = sqlResult.file_mime;
+        const isEncrypted = sqlResult.encrypted=="true"? true: false;
 
-        const responseContent = await UPLOADS.resolveFileObj(sqlResult, responseType);
+        const responseContent = await UPLOADS.resolveFileObj(sqlResult, responseType, isEncrypted);
         
         var responseObj = {};
         if(moreData) {
@@ -158,7 +159,7 @@ module.exports = {
         return null;
     },
 
-    getFileByPath: async function(guid, fileUri, responseType = "stream") {
+    getFileByPath: async function(guid, fileUri, responseType = "stream", isEncrypted = false) {
         const filePath = path.join(UPLOADS.baseUploadFolder(), fileUri);
         const fileMime = mime.lookup(filePath);
         var fileName = fileUri.split("/");
@@ -172,7 +173,7 @@ module.exports = {
             guid: guid,
             driver: "local",
             path_uri: fileUri
-        }, responseType);
+        }, responseType, isEncrypted);
 
         if(responseContent.file_name) fileName = responseContent.file_name;
 

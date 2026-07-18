@@ -81,14 +81,29 @@ module.exports = {
 			// could add scopes too if you want additional control
 			async handler(ctx) {
 				var fileURI = null;
+				const bucket = ctx.params.bucket?ctx.params.bucket:"default";
+				var isEncrypted = false;
+
+				//when to encrypt
+				if(CONFIG?.storage?.encrypted && (CONFIG.storage.encrypted=="*" || CONFIG.storage.encrypted.indexOf(bucket)>=0)) {
+					isEncrypted = true;
+				}
+
 				if(ctx.params.fileid) {
 					const fileResponse = await FILES.getFileById(ctx.meta.user.guid, ctx.params.fileid, "stream");
+					
+					var fileName = fileResponse.filename.split("_").splice(1).join("_");
+
 
 					if(fileResponse && fileResponse.stream) {
 						
 						if(ctx.params.download && ctx.params.download===true) {
 							ctx.meta.$responseHeaders = {
 								"Content-Disposition": `attachment; filename="${fileName}"`
+							};
+						} else {
+							ctx.meta.$responseHeaders = {
+								"Content-Disposition": `filename="${fileName}"`
 							};
 						}
 
@@ -98,23 +113,37 @@ module.exports = {
 					} else
 						return "File not found";
 				} else if(ctx.params.uri) {
-					fileURI = UPLOADS.getTargetPath(ctx.params.uri);
+					fileURI = UPLOADS.getTargetPath(ctx.params.uri, isEncrypted);
 				}
 
 				if(fileURI) {
 					if(fs.existsSync(fileURI)) {
-						var fileName = path.basename(fileURI);
+						var fileName = path.basename(fileURI.replace('.enc',''));
 						fileName = fileName.split("_").splice(1).join("_");
 						
 						if(ctx.params.download && ctx.params.download===true) {
 							ctx.meta.$responseHeaders = {
 								"Content-Disposition": `attachment; filename="${fileName}"`
 							};
+						} else {
+							ctx.meta.$responseHeaders = {
+								"Content-Disposition": `filename="${fileName}"`
+							};
 						}
 
-						ctx.meta.$responseType = mime.lookup(fileURI) || "application/octet-stream";
+						ctx.meta.$responseType = mime.lookup(fileURI.replace('.enc','')) || "application/octet-stream";
 
-						return fs.createReadStream(fileURI);
+						if(isEncrypted) {
+							const encryptedStream = fs.createReadStream(fileURI);
+							const decryptedStream = ENCRYPTER.decryptStream(
+							            encryptedStream,
+							            CONFIG.storage.encrypt_key || CONFIG.SALT_KEY
+							        );
+
+							return decryptedStream;
+						}
+						else
+							return fs.createReadStream(fileURI);
 					} else {
 						throw new LogiksError("File Not Found", 404, "FILE_NOT_FOUND");
 					}
