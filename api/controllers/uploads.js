@@ -43,7 +43,7 @@ const storage = multer.diskStorage({
 /* Security controls */
 const uploadHandler = multer({
 	storage,
-	limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+	limits: { fileSize: CONFIG.storage.max_size || 100 * 1024 * 1024 }, // 100MB
 	fileFilter(req, file, cb) {
 		cb(null, true); // allow all
 	}

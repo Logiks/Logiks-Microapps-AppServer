@@ -56,6 +56,7 @@
     "storage": {
         "driver": "local",
         "base_path": "uploads",
+        "max_size": 104857600,
         "encrypted": [
             "dms"
         ],
