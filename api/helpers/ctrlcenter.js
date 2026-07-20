@@ -19,6 +19,22 @@ module.exports = {
         return data.results;
     },
 
+    getForApp: async function(ctx) {
+        var data1 = await _DB.db_selectQ("appdb", "lgks_ctrlcenter", "module, var_code, var_value", {
+            "blocked": "false",
+            "module": [["*", ctx?.meta?.appInfo?.appid], "IN"],
+            "var_nature": "frontend"
+        }, {});
+        if(!data1 || !data1?.results || data1.results.length<=0) data1 = data1.results;
+        
+        var feature_flags = {};
+        for (let index = 0; index < data1.length; index++) {
+            feature_flags[data1[index]["var_code"]] = data1[index]["var_value"];
+        }
+
+        return feature_flags;
+    },
+
     getControl: async function(ctrlId, defaultValue = false, nature = "backend", module = false, guid = false) {
         const whereLogic = {
             blocked: "false",

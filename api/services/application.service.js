@@ -34,6 +34,9 @@ module.exports = {
 				applicationInfo.logins = logins;
 
 				delete applicationInfo.domain;
+
+				if(!applicationInfo.feature_flags) applicationInfo.feature_flags = {};
+				applicationInfo.feature_flags = _.extend({}, applicationInfo.feature_flags, CTRLCENTER.getForApp(ctx));
 				
 				return applicationInfo;
 			}
@@ -79,6 +82,29 @@ module.exports = {
 				CACHEMAP.set("SETTINGSCACHE", SETTINGS_KEY, settingsCache, ctx);
 
 				return settingsCache
+			}
+		},
+		settings: {
+			rest: {
+				method: "POST",
+				fullPath: "/api/feature_flags"
+			},
+			params: {
+				module: "string",
+				// recache: "boolean"
+			},
+			async handler(ctx) {
+				var whereCond = {
+					"blocked": "false",
+					"module": ctx.params.module,
+					"guid": [["global", ctx.meta.user.tenantId], "IN"],
+					"var_nature": "frontend"
+				};
+				
+				var data1 = await _DB.db_selectQ("appdb", "lgks_ctrlcenter", "module, var_code, var_value", whereCond, {});
+				if(!data1 || !data1?.results || data1.results.length<=0) data1 = data1.results;
+
+				return data1
 			}
 		},
 
