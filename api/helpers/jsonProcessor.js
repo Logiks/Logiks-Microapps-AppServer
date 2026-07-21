@@ -554,91 +554,95 @@ module.exports = {
             const k = fieldList[i];
             const v = formFields[k];
 
-            if(v.policy && v.policy.length>0) {
-                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
-                if(!isAllowed) {
-                    delete formFields[k];
-                    continue;
+            try {
+                if(v.policy && v.policy.length>0) {
+                    var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                    if(!isAllowed) {
+                        delete formFields[k];
+                        continue;
+                    }
                 }
-            }
 
-            switch(v.type) {
-                case 'dataMethod': case 'dataSelector': case 'dataSelectorFromUniques': case 'dataSelectorFromTable':
-                case 'dropdown': case 'select': case 'autosuggest'://case 'selectAJAX':
-                    // v.table = 
-                    // v.columns = 
-                    // v.columns = 
-                    v.where = v.where || {};
-                    var newWhere = {};
-                    for (const [key, value] of Object.entries(v.where)) {
-                        newWhere[_replaceCtx(key, ctx)] = _replaceCtx(value, ctx);
-                    }
-                    v.where = newWhere;
+                switch(v.type) {
+                    case 'dataMethod': case 'dataSelector': case 'dataSelectorFromUniques': case 'dataSelectorFromTable':
+                    case 'dropdown': case 'select': case 'autosuggest'://case 'selectAJAX':
+                        // v.table = 
+                        // v.columns = 
+                        // v.columns = 
+                        v.where = v.where || {};
+                        var newWhere = {};
+                        for (const [key, value] of Object.entries(v.where)) {
+                            newWhere[_replaceCtx(key, ctx)] = _replaceCtx(value, ctx);
+                        }
+                        v.where = newWhere;
 
-                    var selectorOptions = await JSONPROCESSOR.generateSelector(v, k, ctx);
-                    if(!selectorOptions) selectorOptions = [];
-                    
-                    formFields[k].type = "select";
-                    formFields[k].options = selectorOptions;
+                        var selectorOptions = await JSONPROCESSOR.generateSelector(v, k, ctx);
+                        if(!selectorOptions) selectorOptions = [];
+                        
+                        formFields[k].type = "select";
+                        formFields[k].options = selectorOptions;
 
-                    if(formFields[k].table) delete formFields[k].table;
-                    if(formFields[k].columns) delete formFields[k].columns;
-                    if(formFields[k].where) delete formFields[k].where;
-                    
-                    if(v.type=="autosuggest") {
-                        formFields[k].type = "autosuggest";
-                    }
-                    break;
-                default:
-                    if(v.table) {
-                        formFields[k] = {
-                            ...v,
-                            queryid: await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId}, ctx),
-                        };
                         if(formFields[k].table) delete formFields[k].table;
                         if(formFields[k].columns) delete formFields[k].columns;
                         if(formFields[k].where) delete formFields[k].where;
-                    }
-            }
-            if(v.ajaxchain) {
-                if(Array.isArray(v.ajaxchain))
-                    for (let k1 = 0; k1 < v.ajaxchain.length; k1++) {
-                        const obj = v.ajaxchain[k1];
                         
-                        if(!obj.src) continue;
+                        if(v.type=="autosuggest") {
+                            formFields[k].type = "autosuggest";
+                        }
+                        break;
+                    default:
+                        if(v.table) {
+                            formFields[k] = {
+                                ...v,
+                                queryid: await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId}, ctx),
+                            };
+                            if(formFields[k].table) delete formFields[k].table;
+                            if(formFields[k].columns) delete formFields[k].columns;
+                            if(formFields[k].where) delete formFields[k].where;
+                        }
+                }
+                if(v.ajaxchain) {
+                    if(Array.isArray(v.ajaxchain))
+                        for (let k1 = 0; k1 < v.ajaxchain.length; k1++) {
+                            const obj = v.ajaxchain[k1];
+                            
+                            if(!obj.src) continue;
 
-                        if(!obj.src.type) obj.src.type = "sql";
+                            if(!obj.src.type) obj.src.type = "sql";
 
-                        if(obj.src.type=="sql") {
-                            v.ajaxchain[k1].src = {
-                                "type": "sql",
-                                queryid: await QUERY.storeQuery(v.ajaxchain[k1].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.${k1}`}, ctx),
+                            if(obj.src.type=="sql") {
+                                v.ajaxchain[k1].src = {
+                                    "type": "sql",
+                                    queryid: await QUERY.storeQuery(v.ajaxchain[k1].src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.${k1}`}, ctx),
+                                }
+                            }
+                        }
+                    else {
+                        if(v.ajaxchain.src) {
+                            if(!v.ajaxchain.src.type) v.ajaxchain.src.type = "sql";
+                            if(v.ajaxchain.src.type=="sql") {
+                                v.ajaxchain.src = {
+                                    "type": "sql",
+                                    queryid: await QUERY.storeQuery(v.ajaxchain.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.0`}, ctx),
+                                };
                             }
                         }
                     }
-                else {
-                    if(v.ajaxchain.src) {
-                        if(!v.ajaxchain.src.type) v.ajaxchain.src.type = "sql";
-                        if(v.ajaxchain.src.type=="sql") {
-                            v.ajaxchain.src = {
-                                "type": "sql",
-                                queryid: await QUERY.storeQuery(v.ajaxchain.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.ajaxchain.0`}, ctx),
-                            };
-                        }
+                }
+                if(v.autocomplete && v.autocomplete.src) {
+                    if(!v.autocomplete.src.type) v.autocomplete.src.type = "sql";
+                    if(v.autocomplete.src.type=="sql") {
+                        v.autocomplete.src = {
+                            "type": "sql",
+                            queryid: await QUERY.storeQuery(v.autocomplete.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.autocomplete.0`}, ctx),
+                        };
                     }
                 }
-            }
-            if(v.autocomplete) {
-                if(!v.autocomplete.src.type) v.autocomplete.src.type = "sql";
-                if(v.autocomplete.src.type=="sql") {
-                    v.autocomplete.src = {
-                        "type": "sql",
-                        queryid: await QUERY.storeQuery(v.autocomplete.src, ctx.meta.user, false, {objId, moduleId, "refid": `fields.${k}.autocomplete.0`}, ctx),
-                    };
+                if(v.default && v.default.length>0) {
+                    v.default = _replaceCtx(v.default, ctx);
                 }
-            }
-            if(v.default && v.default.length>0) {
-                v.default = _replaceCtx(v.default, ctx);
+            } catch(errorField) {
+                console.log("FORM FIELD ERROR", errorField, objId, moduleId);
             }
         }
 
