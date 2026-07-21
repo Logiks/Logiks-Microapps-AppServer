@@ -105,20 +105,20 @@ module.exports = {
 			}
 		}
 
-		const bucket = ctx.params.bucket?ctx.params.bucket:"default";
-
         // CONFIG.log_sql = true;
 		var result = {};
-		var encryptFile = false;
-
-		//when to encrypt
-		if(CONFIG?.storage?.encrypted && (CONFIG.storage.encrypted=="*" || CONFIG.storage.encrypted.indexOf(bucket)>=0)) {
-			encryptFile = true;
-		}
 
 		if(Array.isArray(fileArray)) {
 			for(var i=0;i<fileArray.length-1;i++) {
+				var encryptFile = false;
 				const file = fileArray[i];
+
+				var bucket = file.bucket?file.bucket:(ctx.params.bucket?ctx.params.bucket:"default");
+
+				//when to encrypt
+				if(CONFIG?.storage?.encrypted && (CONFIG.storage.encrypted=="*" || CONFIG.storage.encrypted.indexOf(bucket)>=0)) {
+					encryptFile = true;
+				}
 
 				const fileURI = await move_to_store(file.path, file.filename, file.bucket || bucket, encryptFile);
 				if(!fileURI) {
@@ -149,7 +149,15 @@ module.exports = {
 				//result[fileURI.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, "")] = sqlResult.insertId?sqlResult.insertId:0;
 			}
 		} else {
+			var encryptFile = false;
 			const file = fileArray;
+
+			var bucket = file.bucket?file.bucket:(ctx.params.bucket?ctx.params.bucket:"default");
+
+			//when to encrypt
+			if(CONFIG?.storage?.encrypted && (CONFIG.storage.encrypted=="*" || CONFIG.storage.encrypted.indexOf(bucket)>=0)) {
+				encryptFile = true;
+			}
 
 			const fileURI = await move_to_store(file.path, file.filename, bucket, encryptFile);
 			if(!fileURI) {
