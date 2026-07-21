@@ -145,11 +145,20 @@ module.exports = {
                 const insertId = dbResponse.insertId;
 
                 if(!insertId) {
-                    throw new LogiksError(
-                        "Error creating db record",
-                        400,
-                        "DB_ERROR",
-                    );
+                    if(isProd || isStaging) {
+                        throw new LogiksError(
+                            "Error creating db record",
+                            400,
+                            "DB_ERROR",
+                        );
+                    } else {
+                        throw new LogiksError(
+                            `Error creating db record`,
+                            404,
+                            "DB_ERROR",
+                            dbResponse
+                        );    
+                    }
                 }
 
                 if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
