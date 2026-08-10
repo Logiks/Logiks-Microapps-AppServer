@@ -741,6 +741,13 @@ module.exports = {
 				}
 				const sessionId = payload.jti.replace("acc:","").replace("ref:","");
 
+				var userData = await authRedis.get(`user:${sessionId}`);
+				try {
+					userData = JSON.parse(userData);
+				} catch(err) {
+					userData = {};
+				}
+
 				payload = JSON.parse(await ENCRYPTER.decrypt(payload.payload, JWT_SECRET));
 
 				// console.log("XXXXX", payload, sessionId);
@@ -749,8 +756,8 @@ module.exports = {
 					username: payload.username,
 					tenantId: payload.tenantId || payload.guid,
 					privilege: payload.privilege,
-					roles: payload.roles || [],
-					scopes: payload.scopes || [],
+					roles: payload.roles || userData.roles || [],
+					scopes: payload.scopes || userData.scopes || [],
 					deviceType: payload.deviceType,
 					ip: payload.ip,
 					sessionId: sessionId,
@@ -1059,8 +1066,6 @@ module.exports = {
 				tenantId: user.tenantId,
 				guid: user.guid,
 				privilege: user.privilege,
-				roles: user.roles || [],
-				scopes: user.scopes || [],
 				ip,
 				deviceType
 			};
@@ -1272,6 +1277,8 @@ async function check_log_device(userInfo, ctx) {
 	const dated = moment().format("Y-M-D HH:mm:ss");
 	const geolocation = ctx.params.geolocation?ctx.params.geolocation:"0,0";
 	const deviceId = ctx.params.deviceid?ctx.params.deviceid:"";
+	//devmodel
+	//devos
 	if(!deviceId) {
 		if(DEVICE_LOCK_ENABLED) {
 			await log_login_error({
