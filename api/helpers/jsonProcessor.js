@@ -160,7 +160,7 @@ module.exports = {
                     break;
                 case "dashboards":
                 case "dashboard":
-                    const cardList = Object.keys(tempObj.cards);
+                    const cardList = Object.keys(tempObj?.cards || {});
                     for (var i = cardList.length - 1; i >= 0; i--) {
                         const k = cardList[i];
                         const v = tempObj.cards[k];
@@ -657,7 +657,7 @@ module.exports = {
                 break;
             case 'dataSelector': 
                 if(!fieldObj.groupid) return [];
-                const sqlData1 = await _DB.db_selectQ("appdb", "do_lists", "title, value, class, privilege", {
+                const sqlData1 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", "do_lists", "title, value, class, privilege", {
                         "blocked": false,
                         "guid": ctx.meta.user.guid,
                         "groupid": fieldObj.groupid,
@@ -668,13 +668,13 @@ module.exports = {
                 break;
             case 'dataSelectorFromUniques': 
                 // fieldObj.where['guid'] = ctx.meta.user.guid;
-                const sqlData2 = await _DB.db_selectQ("appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || 'id'} ORDER BY ${fieldObj.orderby || 'id'}`);
+                const sqlData2 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || 'id'} ORDER BY ${fieldObj.orderby || 'id'}`);
                 if(!sqlData2.results) sqlData2.results = [];
                 return sqlData2.results;
                 break;
             case 'dataSelectorFromTable':
             case 'autosuggest':
-                const sqlData3 = await _DB.db_selectQ("appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || 'id'} ORDER BY ${fieldObj.orderby || 'id'}`);
+                const sqlData3 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || 'id'} ORDER BY ${fieldObj.orderby || 'id'}`);
                 if(!sqlData3.results) sqlData3.results = [];
                 return sqlData3.results;
                 break;
