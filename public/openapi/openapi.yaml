@@ -1,0 +1,2776 @@
+openapi: 3.0.3
+info:
+  title: Logiks MicroApps AppServer API
+  version: 1.0.0
+  description: "REST surface of the Logiks Microapps AppServer, reconstructed from the moleculer service definitions under api/services/**/*.service.js and the moleculer-web route/alias configuration in api/server.js.\n\nAuth: most endpoints live under the private `/api` route and require either a Bearer JWT (`Authorization: Bearer <token>`), an API key (`X-API-Key` header or `api_key` query param), a time-limited token (`tkn` query param), or a server-to-server token (`s2stkn` query param). Endpoints under `/auth/*`, `/webhooks/*`, `/api/public/*`, and `/health` do not require authentication.\n\nNote: because the private `/api` route whitelists `**`, every action documented here under its dedicated mount (`/auth/*`, `/webhooks/*`, `/api/public/*`) is also reachable a second time at `/api/<service>/<path>` (or, for GET, `/api/<...>`), an accidental byproduct of the wildcard whitelist. Only the primary, intended mount is documented here."
+servers:
+  - url: "http://localhost:9999"
+    description: Local development
+tags:
+  - name: admin
+    description: "Admin console: apps, control panels, node/plugin inspection, and admin-owned file/media management."
+  - name: application
+    description: "Application metadata, layout, navigator, pages, themes, components, and feature settings."
+  - name: auth
+    description: "Login, token issuance/refresh/verification, federated login, and logout. Public (no bearer auth required)."
+  - name: data
+    description: Read-only lookup/reference data groups.
+  - name: dbops
+    description: Generic CRUD-style database operations against configured data sources.
+  - name: developers
+    description: "Developer tooling: route listing/inspection and the auto-generated OpenAPI spec (dev/UAT only)."
+  - name: files
+    description: "Tenant file storage: browsing, upload, preview, trash, and purge."
+  - name: me
+    description: "Current authenticated user's profile, scopes, and password management."
+  - name: modules
+    description: "Microapp module resolution: components, UI assets, and module-scoped service requests."
+  - name: pages
+    description: "Public, SEO-friendly page rendering."
+  - name: public
+    description: "Unauthenticated public endpoints: health checks and public file access."
+  - name: query
+    description: Stored/raw query execution and management.
+  - name: sse
+    description: Server-Sent Events streaming.
+  - name: system
+    description: System/worker-level controls.
+  - name: tenant
+    description: Tenant lookup.
+  - name: test
+    description: Internal test endpoints.
+  - name: userstates
+    description: "Per-user, per-module UI/application state persistence."
+  - name: utils
+    description: "Misc utilities: rule/validation execution, payload runners, activity logging, and cache inspection."
+  - name: webhooks
+    description: Inbound webhook receivers.
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+paths:
+  /api:
+    get:
+      tags:
+        - application
+      summary: Fetch
+      operationId: application.fetch
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin:
+    get:
+      tags:
+        - admin
+      summary: Admin List
+      operationId: admin.adminList
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/admin/apps/{task}/{appid}":
+    post:
+      tags:
+        - admin
+      summary: Apps
+      operationId: admin.apps.apps
+      parameters:
+        - name: task
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+        - name: appid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin/buildPolicy:
+    get:
+      tags:
+        - admin
+      summary: Build Policy
+      operationId: admin.buildPolicy
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/admin/ctrls/{task}/{refid}":
+    post:
+      tags:
+        - admin
+      summary: Ctrls
+      operationId: admin.ctrls.ctrls
+      parameters:
+        - name: task
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+        - name: refid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin/files:
+    post:
+      tags:
+        - admin
+      summary: Files
+      operationId: admin.files.files
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                appid:
+                  type: string
+              required:
+                - path
+                - appid
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin/files/content:
+    post:
+      tags:
+        - admin
+      summary: Files Preview
+      operationId: admin.files.filesPreview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                appid:
+                  type: string
+              required:
+                - file
+                - appid
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin/files/upload:
+    post:
+      tags:
+        - admin
+      summary: Files Upload
+      operationId: admin.files.filesUpload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                content:
+                  type: string
+                appid:
+                  type: string
+              required:
+                - file
+                - content
+                - appid
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin/media:
+    post:
+      tags:
+        - admin
+      summary: List Media
+      operationId: admin.media.listMedia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+              required:
+                - path
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin/media/delete:
+    post:
+      tags:
+        - admin
+      summary: Delete Media
+      operationId: admin.media.deleteMedia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+              required:
+                - path
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin/media/preview:
+    get:
+      tags:
+        - admin
+      summary: Preview Media
+      operationId: admin.media.previewMedia
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin/media/upload:
+    post:
+      tags:
+        - admin
+      summary: Upload Media
+      operationId: admin.media.uploadMedia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+              required:
+                - path
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin/nodes:
+    get:
+      tags:
+        - admin
+      summary: List Nodes
+      operationId: admin.nodes.listNodes
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin/nodes/cmd:
+    get:
+      tags:
+        - admin
+      summary: Cmd
+      operationId: admin.nodes.cmd
+      parameters:
+        - name: cmd
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: nodeId
+          in: query
+          required: false
+          schema:
+            type: string
+            default: ""
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/admin/nodes/info/{nodeId}":
+    get:
+      tags:
+        - admin
+      summary: Node Info
+      operationId: admin.nodes.nodeInfo
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin/nodes/services:
+    get:
+      tags:
+        - admin
+      summary: Services
+      operationId: admin.nodes.services
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/admin/plugins:
+    get:
+      tags:
+        - admin
+      summary: List Nodes
+      operationId: admin.plugins.listNodes
+      parameters:
+        - name: more
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "false"
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/admin/plugins/info/{plugin}":
+    get:
+      tags:
+        - admin
+      summary: Node Info
+      operationId: admin.plugins.nodeInfo
+      parameters:
+        - name: plugin
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/api/{apiCode}":
+    post:
+      tags:
+        - utils
+      summary: Run API
+      operationId: utils.runAPI
+      parameters:
+        - name: apiCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/appvers:
+    get:
+      tags:
+        - application
+      summary: App Vers
+      operationId: application.appVers
+      parameters:
+        - name: packageid
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/cacheMap:
+    get:
+      tags:
+        - utils
+      summary: List Cache Key
+      operationId: utils.listCacheKey
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/cacheMap/clear/{cacheId}":
+    get:
+      tags:
+        - utils
+      summary: Clear Cache
+      operationId: utils.clearCache
+      parameters:
+        - name: cacheId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/component/{compid}":
+    get:
+      tags:
+        - application
+      summary: Component
+      operationId: application.component
+      parameters:
+        - name: compid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/ctrlcenter/{module}/{ctrlId}":
+    get:
+      tags:
+        - utils
+      summary: Ctrlcenter Get
+      operationId: utils.ctrlcenterGet
+      parameters:
+        - name: ctrlId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+        - name: module
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/data:
+    get:
+      tags:
+        - data
+      summary: List Groups
+      operationId: data.listGroups
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/data/bulk:
+    post:
+      tags:
+        - data
+      summary: Fetch Bulk
+      operationId: data.fetchBulk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                groupids:
+                  type: array
+              required:
+                - groupids
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/data/fetch:
+    post:
+      tags:
+        - data
+      summary: Fetch Filtered
+      operationId: data.fetchFiltered
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                groupid:
+                  type: string
+                filter:
+                  type: object
+              required:
+                - groupid
+                - filter
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/data/{groupid}":
+    get:
+      tags:
+        - data
+      summary: Fetch
+      operationId: data.fetch
+      parameters:
+        - name: groupid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/dbops:
+    get:
+      tags:
+        - dbops
+      summary: Start
+      operationId: dbops.start
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/dbops/bulk:
+    post:
+      tags:
+        - dbops
+      summary: Bulk
+      operationId: dbops.bulk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refid:
+                  type: string
+                fields:
+                  type: array
+                datahash:
+                  type: string
+              required:
+                - refid
+                - fields
+                - datahash
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/dbops/create:
+    post:
+      tags:
+        - dbops
+      summary: Create
+      operationId: dbops.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refid:
+                  type: string
+                fields:
+                  type: object
+                datahash:
+                  type: string
+              required:
+                - refid
+                - fields
+                - datahash
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/dbops/delete:
+    post:
+      tags:
+        - dbops
+      summary: Delete
+      operationId: dbops.delete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refid:
+                  type: string
+                filter:
+                  type: object
+                datahash:
+                  type: string
+              required:
+                - refid
+                - filter
+                - datahash
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/dbops/fetch:
+    post:
+      tags:
+        - dbops
+      summary: Fetch Single
+      operationId: dbops.fetchSingle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refid:
+                  type: string
+                datahash:
+                  type: string
+              required:
+                - refid
+                - datahash
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/dbops/save:
+    post:
+      tags:
+        - dbops
+      summary: Save
+      operationId: dbops.save
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                operation:
+                  type: string
+                source:
+                  type: object
+                fields:
+                  type: object
+              required:
+                - operation
+                - source
+                - fields
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/dbops/update:
+    post:
+      tags:
+        - dbops
+      summary: Update
+      operationId: dbops.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refid:
+                  type: string
+                fields:
+                  type: object
+                datahash:
+                  type: string
+              required:
+                - refid
+                - fields
+                - datahash
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/domrules/{ruleId}":
+    get:
+      tags:
+        - utils
+      summary: Get DOMRule
+      operationId: utils.getDOMRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/events/{eventId}":
+    get:
+      tags:
+        - sse
+      summary: "Subscribe to a Server-Sent Events (SSE) stream for the given event channel. Registered as an explicit moleculer-web alias (not via action.rest), so it is excluded from the app's own /openapi.json auto-discovery."
+      description: "Subscribe to a Server-Sent Events (SSE) stream for the given event channel. Registered as an explicit moleculer-web alias (not via action.rest), so it is excluded from the app's own /openapi.json auto-discovery."
+      operationId: sse.recieveEvents
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /api/feature_flags:
+    post:
+      tags:
+        - application
+      summary: Settings
+      operationId: application.settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                module:
+                  type: string
+              required:
+                - module
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/fileTree:
+    get:
+      tags:
+        - files
+      summary: File Tree
+      operationId: files.fileTree
+      parameters:
+        - name: folder
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/files:
+    get:
+      tags:
+        - files
+      summary: Files
+      operationId: files.files
+      parameters:
+        - name: folder
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: searchTerm
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/files/delete:
+    post:
+      tags:
+        - files
+      summary: Delete
+      operationId: files.delete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fileId:
+                  type: string
+              required:
+                - fileId
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/files/preview/{fileid}":
+    get:
+      tags:
+        - files
+      summary: Files Preview
+      operationId: files.filesPreview
+      parameters:
+        - name: fileid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/files/purge:
+    delete:
+      tags:
+        - files
+      summary: Purge
+      operationId: files.purge
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/files/trash:
+    post:
+      tags:
+        - files
+      summary: Trash
+      operationId: files.trash
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: object
+              required:
+                - filters
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/files/upload:
+    post:
+      tags:
+        - files
+      summary: Upload
+      operationId: files.upload
+      requestBody:
+        description: "Upload a single file (multipart/form-data, field name 'file'). Handled by a dedicated multer middleware in the private API route."
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/files/uploadbulk:
+    post:
+      tags:
+        - files
+      summary: Upload Bulk
+      operationId: files.uploadBulk
+      requestBody:
+        description: "Upload up to 50 files in one request (multipart/form-data, field name 'files'). Handled by a dedicated multer middleware in the private API route."
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+              required:
+                - files
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/layout/{layoutid}":
+    get:
+      tags:
+        - application
+      summary: Layout
+      operationId: application.layout
+      parameters:
+        - name: layoutid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/log:
+    post:
+      tags:
+        - utils
+      summary: Log Activity
+      operationId: utils.logActivity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                logId:
+                  type: string
+                payload:
+                  type: object
+              required:
+                - logId
+                - payload
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/me:
+    get:
+      tags:
+        - me
+      summary: My Info
+      operationId: me.myInfo
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/me/reloadPolicies:
+    post:
+      tags:
+        - me
+      summary: Reload Policies
+      operationId: me.reloadPolicies
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/me/updatepass:
+    post:
+      tags:
+        - me
+      summary: Password Update
+      operationId: me.passwordUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: string
+                newPassword:
+                  type: string
+                passwordType:
+                  type: string
+              required:
+                - oldPassword
+                - newPassword
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/modules/{module}/component/{item}":
+    get:
+      tags:
+        - modules
+      summary: Fetch Component
+      operationId: modules.fetchComponent
+      parameters:
+        - name: item
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+        - name: module
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/modules/{module}/{item}/{operation}/{refid}":
+    get:
+      tags:
+        - modules
+      summary: Fetch Module
+      operationId: modules.fetchModule
+      parameters:
+        - name: item
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+        - name: operation
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+        - name: refid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+        - name: module
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/navigator/{navid}/{deviceType}":
+    get:
+      tags:
+        - application
+      summary: Navigator
+      operationId: application.navigator
+      parameters:
+        - name: navid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+        - name: deviceType
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/page/{pageid}":
+    get:
+      tags:
+        - application
+      summary: Page
+      operationId: application.page
+      parameters:
+        - name: pageid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/ping:
+    get:
+      tags:
+        - public
+      summary: Ping
+      operationId: public.ping
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /api/public/developers/routes:
+    get:
+      tags:
+        - developers
+      summary: "List all available API routes with params & metadata"
+      description: "List all available API routes with params & metadata"
+      operationId: developers.listRoutes
+      parameters:
+        - name: allAPI
+          in: query
+          required: false
+          schema:
+            type: string
+            default: false
+        - name: allServices
+          in: query
+          required: false
+          schema:
+            type: string
+            default: false
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /api/public/developers/routes.json:
+    get:
+      tags:
+        - developers
+      summary: "List all available API routes with params & metadata as JSON format"
+      description: "List all available API routes with params & metadata as JSON format"
+      operationId: developers.listRoutesJSON
+      parameters:
+        - name: allAPI
+          in: query
+          required: false
+          schema:
+            type: string
+            default: false
+        - name: allServices
+          in: query
+          required: false
+          schema:
+            type: string
+            default: false
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  "/api/public/developers/routes/{name}":
+    get:
+      tags:
+        - developers
+      summary: Get detail of a specific API route
+      description: Get detail of a specific API route
+      operationId: developers.fetchRoute
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /api/public/developers/swagger/openapi.json:
+    get:
+      tags:
+        - developers
+      summary: Get OpenAPI (Swagger) specification in JSON format
+      description: Get OpenAPI (Swagger) specification in JSON format
+      operationId: developers.swagger.spec
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  "/api/public/files/{fileUri}":
+    get:
+      tags:
+        - public
+      summary: File
+      operationId: public.file
+      parameters:
+        - name: fileUri
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /api/query:
+    post:
+      tags:
+        - query
+      summary: Query
+      operationId: query.query
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: object
+              required:
+                - query
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/query/raw:
+    post:
+      tags:
+        - query
+      summary: Query Raw
+      operationId: query.queryRaw
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: object
+              required:
+                - query
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/query/run:
+    post:
+      tags:
+        - query
+      summary: Run Query
+      operationId: query.runQuery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                queryid:
+                  type: string
+                filter:
+                  type: object
+              required:
+                - queryid
+                - filter
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/query/save:
+    post:
+      tags:
+        - query
+      summary: Store Query
+      operationId: query.storeQuery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: object
+                srcid:
+                  type: string
+              required:
+                - query
+                - srcid
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/query/view:
+    post:
+      tags:
+        - query
+      summary: View Query
+      operationId: query.viewQuery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                queryid:
+                  type: string
+                filter:
+                  type: object
+              required:
+                - queryid
+                - filter
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/requests/{moduleId}/{actionId}":
+    post:
+      tags:
+        - modules
+      summary: Fetch Service
+      operationId: modules.fetchService
+      parameters:
+        - name: actionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/rules/{ruleId}":
+    post:
+      tags:
+        - utils
+      summary: Run Rule
+      operationId: utils.runRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fields:
+                  type: object
+              required:
+                - fields
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/run/{payloadId}":
+    post:
+      tags:
+        - utils
+      summary: Run Payload
+      operationId: utils.runPayload
+      parameters:
+        - name: payloadId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cmd:
+                  type: string
+                data:
+                  type: object
+              required:
+                - cmd
+                - data
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/scopes:
+    get:
+      tags:
+        - me
+      summary: My Scope
+      operationId: me.myScope
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/settings/save:
+    post:
+      tags:
+        - application
+      summary: Settings save
+      operationId: application.settings_save
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                module:
+                  type: string
+                module_name:
+                  type: string
+                setting_name:
+                  type: string
+                setting_value:
+                  description: "Accepts one of these types: string|number|boolean|object|array"
+              required:
+                - module
+                - module_name
+                - setting_name
+                - setting_value
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/system/system/switch-color:
+    post:
+      tags:
+        - system
+      summary: Switch Active Color
+      operationId: system.switchActiveColor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                color:
+                  type: string
+                  enum:
+                    - blue
+                    - green
+              required:
+                - color
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/template/{templatecode}":
+    get:
+      tags:
+        - application
+      summary: Template
+      operationId: application.template
+      parameters:
+        - name: templatecode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/tenant:
+    post:
+      tags:
+        - tenant
+      summary: Fetch
+      operationId: tenant.fetch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                guid:
+                  type: string
+              required:
+                - guid
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/test:
+    post:
+      tags:
+        - test
+      summary: Test1
+      operationId: test.test1
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/test/t2:
+    post:
+      tags:
+        - test
+      summary: Test2
+      operationId: test.test2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pluginid:
+                  type: string
+                module:
+                  type: string
+                file:
+                  type: string
+              required:
+                - pluginid
+                - module
+                - file
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/test/t3:
+    post:
+      tags:
+        - test
+      summary: Test3
+      operationId: test.test3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pluginid:
+                  type: string
+                module:
+                  type: string
+                file:
+                  type: string
+              required:
+                - pluginid
+                - module
+                - file
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/theme/{themeid}":
+    get:
+      tags:
+        - application
+      summary: Theme
+      operationId: application.theme
+      parameters:
+        - name: themeid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/theme/{themeid}/media/{filename}":
+    get:
+      tags:
+        - application
+      summary: Media
+      operationId: application.media
+      parameters:
+        - name: themeid
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/ui/{module}/{asset1}/{asset2}":
+    get:
+      tags:
+        - modules
+      summary: Fetch UI
+      operationId: modules.fetchUI
+      parameters:
+        - name: asset1
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+        - name: asset2
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+        - name: module
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/userstates:
+    post:
+      tags:
+        - userstates
+      summary: Fetch
+      operationId: userstates.fetch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                module:
+                  type: string
+              required:
+                - module
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/userstates/reset:
+    post:
+      tags:
+        - userstates
+      summary: Reset
+      operationId: userstates.reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                module:
+                  type: string
+              required:
+                - module
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  /api/userstates/save:
+    post:
+      tags:
+        - userstates
+      summary: Save
+      operationId: userstates.save
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                module:
+                  type: string
+                state:
+                  type: object
+              required:
+                - module
+                - state
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/api/validate/{ruleId}":
+    post:
+      tags:
+        - utils
+      summary: Run Validation
+      operationId: utils.runValidation
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fields:
+                  type: object
+              required:
+                - fields
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+        "401":
+          description: "Missing, invalid, or expired credentials"
+        "403":
+          description: Authenticated but missing required scope/role
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+  "/auth/applink/{hashid}":
+    get:
+      tags:
+        - auth
+      summary: Applink
+      operationId: auth.applink
+      parameters:
+        - name: hashid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /auth/authlink:
+    post:
+      tags:
+        - auth
+      summary: Authlink
+      operationId: auth.authlink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                loginId:
+                  type: string
+                geolocation:
+                  type: string
+                  default: "0,0"
+              required:
+                - loginId
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  "/auth/federated-login/{uuid}":
+    get:
+      tags:
+        - auth
+      summary: Federated Login Get
+      operationId: auth.federatedLoginGet
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+    post:
+      tags:
+        - auth
+      summary: Federated Login Post
+      operationId: auth.federatedLoginPost
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Optional path segment at runtime (omitted together with any segments after it); OpenAPI requires path parameters to be marked required.
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /auth/fedtoken:
+    post:
+      tags:
+        - auth
+      summary: Do Token Login
+      operationId: auth.doTokenLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                retoken:
+                  type: string
+                deviceid:
+                  type: string
+                  default: ""
+                deviceType:
+                  type: string
+                  default: web
+                geolocation:
+                  type: string
+                  default: "0,0"
+              required:
+                - retoken
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /auth/generateToken:
+    post:
+      tags:
+        - auth
+      summary: Generate Token
+      operationId: auth.generateToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                encrypt:
+                  type: boolean
+                user:
+                  type: object
+              required:
+                - encrypt
+                - user
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: Login
+      operationId: auth.login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                deviceid:
+                  type: string
+                  default: ""
+                deviceType:
+                  type: string
+                  default: web
+                geolocation:
+                  type: string
+                  default: "0,0"
+              required:
+                - username
+                - password
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /auth/logout:
+    post:
+      tags:
+        - auth
+      summary: Logout
+      operationId: auth.logout
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                accessToken:
+                  type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /auth/logout-all:
+    post:
+      tags:
+        - auth
+      summary: Logout All
+      operationId: auth.logoutAll
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: Refresh
+      operationId: auth.refresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                deviceType:
+                  type: string
+                geolocation:
+                  type: string
+              required:
+                - refreshToken
+                - deviceType
+                - geolocation
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /auth/s2stoken:
+    post:
+      tags:
+        - auth
+      summary: S2stoken
+      operationId: auth.s2stoken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                appid:
+                  type: string
+                appkey:
+                  type: string
+                deviceid:
+                  type: string
+                deviceType:
+                  type: string
+                  default: web
+                geolocation:
+                  type: string
+                  default: "0,0"
+              required:
+                - appid
+                - appkey
+                - deviceid
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /auth/tltoken:
+    post:
+      tags:
+        - auth
+      summary: Tltoken
+      operationId: auth.tltoken
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                geolocation:
+                  type: string
+                  default: "0,0"
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /auth/verify-otp:
+    post:
+      tags:
+        - auth
+      summary: Verify Otp
+      operationId: auth.verifyOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                identifier:
+                  type: string
+                otp:
+                  type: string
+                deviceType:
+                  type: string
+                  default: web
+                geolocation:
+                  type: string
+                  default: "0,0"
+              required:
+                - identifier
+                - otp
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /auth/verifyToken:
+    post:
+      tags:
+        - auth
+      summary: Verify Token
+      operationId: auth.verifyToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                appid:
+                  type: string
+                token:
+                  type: string
+              required:
+                - appid
+                - token
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  /health:
+    get:
+      tags:
+        - public
+      summary: Health
+      operationId: public.health
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  "/pages/*path":
+    get:
+      tags:
+        - pages
+      summary: "Render a public, SEO-friendly page (HTML/EJS/Vue) resolved from public/pages/*. Registered as an explicit moleculer-web alias (not via action.rest), so it is excluded from the app's own /openapi.json auto-discovery."
+      description: "Render a public, SEO-friendly page (HTML/EJS/Vue) resolved from public/pages/*. Registered as an explicit moleculer-web alias (not via action.rest), so it is excluded from the app's own /openapi.json auto-discovery."
+      operationId: pages.render
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+  "/webhooks/{webhookid}":
+    post:
+      tags:
+        - webhooks
+      summary: Run Webhook
+      operationId: webhooks.runWebhook
+      parameters:
+        - name: webhookid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []
+    get:
+      tags:
+        - webhooks
+      summary: Run Webhook1
+      operationId: webhooks.runWebhook1
+      parameters:
+        - name: webhookid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Validation error (malformed or missing parameters)
+      security: []

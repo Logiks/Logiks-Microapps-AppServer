@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Logiks OpenAPI Viewer</title>
+  <!-- Self-contained: no CDN, no inline script/style. Works offline and under the
+       gateway CSP (script-src/style-src/connect-src 'self'). -->
+  <link rel="stylesheet" href="openapi-viewer.css">
+</head>
+<body>
+  <header class="bar">
+    <strong class="brand">Logiks OpenAPI</strong>
+    <input id="specUrl" class="in" placeholder="OpenAPI spec URL" autocomplete="off">
+    <input id="token" class="in tok" placeholder="Bearer token or API key (optional)" autocomplete="off">
+    <button id="load" class="btn">Load</button>
+    <a class="link" href="openapi.yaml" target="_blank" rel="noopener">Raw YAML</a>
+    <a class="link" href="openapi.json" target="_blank" rel="noopener">Raw JSON</a>
+  </header>
+  <div id="status" class="status"></div>
+  <main id="app" class="app"></main>
+  <script src="openapi-viewer.js"></script>
+</body>
+</html>

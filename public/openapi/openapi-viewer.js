@@ -1,7 +1,8 @@
-/* Self-contained OpenAPI explorer for the Logiks API.
+/* Self-contained OpenAPI viewer for the Logiks API.
    No CDN, no inline code — passes the gateway CSP (script-src/connect-src 'self').
-   Loads the spec the server generates (developers.swagger), lists endpoints, and
-   lets you call them with an optional token. */
+   Loads the static spec generated at build time (public/openapi/openapi.json,
+   mirrored as openapi.yaml for humans/tools), lists endpoints grouped by tag,
+   and lets you try them with an optional token. */
 (function () {
   "use strict";
   var origin = location.origin;
@@ -9,15 +10,17 @@
   var $ = function (id) { return document.getElementById(id); };
   var specInput = $("specUrl"), tokenInput = $("token"), app = $("app"), statusEl = $("status");
 
-  // Candidate spec URLs to probe if the given one fails.
+  // Candidate spec URLs to probe if the given one fails. The static file
+  // (this folder) is tried first since it always exists, in every env;
+  // the live moleculer-generated ones are dev/UAT-only fallbacks.
   var CANDIDATES = [
-    "/api/public/developers/swagger/openapi.json",
-    "/api/openapi.json",
-    "/openapi.json"
+    "/openapi/openapi.json",
+    "/api/developers.swagger/openapi.json",
+    "/api/openapi.json"
   ];
 
-  specInput.value = qs.get("spec") || localStorage.getItem("logiks-spec") || (origin + CANDIDATES[0]);
-  tokenInput.value = qs.get("token") || localStorage.getItem("logiks-token") || "";
+  specInput.value = qs.get("spec") || localStorage.getItem("logiks-openapi-spec") || (origin + CANDIDATES[0]);
+  tokenInput.value = qs.get("token") || localStorage.getItem("logiks-openapi-token") || "";
 
   function el(tag, cls, txt) {
     var e = document.createElement(tag);
@@ -48,8 +51,8 @@
   }
 
   async function loadSpec() {
-    localStorage.setItem("logiks-spec", specInput.value.trim());
-    localStorage.setItem("logiks-token", (tokenInput.value || "").trim());
+    localStorage.setItem("logiks-openapi-spec", specInput.value.trim());
+    localStorage.setItem("logiks-openapi-token", (tokenInput.value || "").trim());
     app.innerHTML = "";
     setStatus("Loading spec…");
 
@@ -63,7 +66,7 @@
       }
     }
     if (!spec) {
-      setStatus("Could not load the OpenAPI spec. Check the URL and your token — the spec endpoint is development/staging only and may require authentication.", "err");
+      setStatus("Could not load the OpenAPI spec. Check the URL and your token.", "err");
       return;
     }
     render(spec);
@@ -73,6 +76,9 @@
     var info = spec.info || {};
     setStatus((info.title || "API") + " · v" + (info.version || "?") + " · " + Object.keys(spec.paths).length + " paths", "ok");
     var base = (spec.servers && spec.servers[0] && spec.servers[0].url) || origin;
+
+    var tagDesc = {};
+    (spec.tags || []).forEach(function (t) { tagDesc[t.name] = t.description || ""; });
 
     var groups = {};
     Object.keys(spec.paths).sort().forEach(function (p) {
@@ -86,7 +92,8 @@
 
     Object.keys(groups).sort().forEach(function (tag) {
       var sec = el("section", "group");
-      sec.appendChild(el("h2", "group-title", tag));
+      sec.appendChild(el("h2", "group-title", tag + " (" + groups[tag].length + ")"));
+      if (tagDesc[tag]) sec.appendChild(el("p", "group-desc", tagDesc[tag]));
       groups[tag].forEach(function (o) { sec.appendChild(opRow(o, base)); });
       app.appendChild(sec);
     });
@@ -98,9 +105,13 @@
     head.appendChild(el("span", "m m-" + o.method.toLowerCase(), o.method));
     head.appendChild(el("span", "op-path", o.path));
     if (o.op.summary) head.appendChild(el("span", "op-sum", o.op.summary));
+    if (o.op.security && o.op.security.length) head.appendChild(el("span", "op-lock", "🔒"));
 
     var panel = el("div", "op-panel hidden");
     head.addEventListener("click", function () { panel.classList.toggle("hidden"); });
+    if (o.op.description && o.op.description !== o.op.summary) {
+      panel.appendChild(el("p", "op-desc", o.op.description));
+    }
     buildTry(panel, o, base);
 
     row.appendChild(head);
@@ -118,7 +129,7 @@
         var wrap = el("label", "param");
         wrap.appendChild(el("span", "param-name", p.name + (p.required ? " *" : "") + " · " + (p.in || "query")));
         var inp = el("input");
-        inp.placeholder = p.name;
+        inp.placeholder = (p.schema && p.schema.default != null) ? String(p.schema.default) : p.name;
         inputs[p.name] = { in: p.in || "query", el: inp };
         wrap.appendChild(inp);
         pl.appendChild(wrap);
@@ -135,11 +146,19 @@
         var schema = json && json.schema;
         if (schema && schema.properties) {
           var sample = {};
-          Object.keys(schema.properties).forEach(function (k) { sample[k] = ""; });
+          Object.keys(schema.properties).forEach(function (k) {
+            var def = schema.properties[k];
+            sample[k] = def && def.default != null ? def.default : "";
+          });
           bodyTa.value = JSON.stringify(sample, null, 2);
+        } else if (o.op.requestBody.content && o.op.requestBody.content["multipart/form-data"]) {
+          bodyTa = null; // file upload — not supported by this lightweight tester
         }
       } catch (e) { /* leave empty */ }
-      panel.appendChild(bodyTa);
+      if (bodyTa) panel.appendChild(bodyTa);
+      else if (o.op.requestBody.content && o.op.requestBody.content["multipart/form-data"]) {
+        panel.appendChild(el("p", "op-desc", "This endpoint expects multipart/form-data (file upload) — use curl/Postman to try it."));
+      }
     }
 
     var send = el("button", "send", "Send " + o.method);
