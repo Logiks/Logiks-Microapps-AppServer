@@ -48,16 +48,32 @@ module.exports = {
         for (var i = finalLinks.length - 1; i >= 0; i--) {
             var link = finalLinks[i];
 
+            if(link?.link || link.link.length<=0) {
+                link.link = "#";
+            }
+
+            const linkArr = link.link.split("@");
+            if(linkArr.length>1) {
+                link.linktype = linkArr[0];
+                link.link = linkArr[1];
+            } else {
+                link.linktype = "internal";
+            }
+
             // Process link URL
-            // if(link.linktype == "internal") {
-            //     link.url = _APPCONFIG.getInternalLink(link.link);
-            // } else if(link.linktype == "external") {
-            //     link.url = link.link;
-            // } else if(link.linktype == "module") {
-            //     link.url = _APPCONFIG.getModuleLink(link.link, appID);
-            // } else {
-            //     link.url = "#";
-            // }
+            if(link?.linktype) {
+                switch(link.linktype) {
+                    case "external":
+                        const hashId = await ENCRYPTER.generateHash(`${appID}:${userInfo.guid}:${userInfo.userId}:${link.link}`);//navID
+                        _CACHE.storeDataEx(`NAV:${hashId}`, link.link, 3600); // Store with 1-hour TTL
+                        link.link = `modules/applink/${hashId}`;
+                        break;
+                    case "internal":
+                    default:
+                        break;
+                }
+            }
+
             // link.url = _APPCONFIG.processLink(link.link, link.linktype, appID);
             if(link.to_check && link.to_check.length>0) {
                 const toCheck = link.to_check.split(",");
@@ -72,12 +88,14 @@ module.exports = {
                             }
                             break;
                         case "module":
+                            // Check if module exists and is enabled
                             break;
                         default:
                             break;
                     }
                 }
             }
+            //link.module => Check if module exists and is enabled, if not, block the link
 
             finalLinks[i] = link;
         }

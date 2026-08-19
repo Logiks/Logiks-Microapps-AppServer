@@ -192,6 +192,33 @@ module.exports = {
                 	return Readable.from(fileContent);
 				}
 			}
+		},
+		redirectApp: {
+			rest: {
+				method: "GET",
+				fullPath: "/api/applink/:hashid"
+			},
+			async handler(ctx) {
+				const hashId = ctx.params.hashid;
+
+				const redirectURL = await _CACHE.fetchDataSync(`NAV:${hashId}`);
+
+				console.log("REDIRECT_APP_HANDLER", redirectURL, ctx.params);
+
+				if(redirectURL) {
+					ctx.meta.$statusCode = 302;
+					ctx.meta.$responseHeaders = {
+						Location: redirectURL
+					};
+					return redirectURL;
+				} else {
+					throw new LogiksError(
+						"Invalid Link",
+						404,
+						"LINK_NOT_FOUND"
+					);
+				}
+			}	
 		}
 	}
 };
