@@ -45,6 +45,9 @@ module.exports = {
         var finalLinks = dbLinks?.results;
         if(!finalLinks) finalLinks = [];
 
+        const pluginList =  await ctx.call("system.plugins");
+        const userPrivs = userInfo.privilege.split(",");
+
         for (var i = finalLinks.length - 1; i >= 0; i--) {
             var link = finalLinks[i];
 
@@ -57,7 +60,7 @@ module.exports = {
                 link.linktype = linkArr[0];
                 link.link = linkArr[1];
             } else {
-                link.linktype = "internal";
+                link.linktype = "general";
             }
 
             // Process link URL
@@ -66,6 +69,7 @@ module.exports = {
                     case "external":
                         //For external links, we can generate a hash and store the actual link in cache for security
                         //On rediction we pass new JWT Token for the link and validate it on the redirect controller
+                        //Encrypted Payload
                         const hashId = await ENCRYPTER.generateHash(`${appID}:${userInfo.guid}:${userInfo.userId}:${link.link}`);//navID
                         _CACHE.storeDataEx(`NAV:${hashId}`, {
                             "url": link.link,
@@ -77,6 +81,19 @@ module.exports = {
                         link.link = `auth/applink/${hashId}`;
                         break;
                     case "internal":
+                        //For internal links, we can generate a hash and store the actual link in cache for security
+                        //On rediction we pass new JWT Token for the link and validate it on the redirect controller
+                        //UnEncrypted Payload
+                        const hashId1 = await ENCRYPTER.generateHash(`${appID}:${userInfo.guid}:${userInfo.userId}:${link.link}`);//navID
+                        _CACHE.storeDataEx(`NAV:${hashId1}`, {
+                            "url": link.link,
+                            "encrypted": false,
+                            // "appID": appID,
+                            "userInfo": userInfo,
+                            // "navID": navID
+                        }, 3600); // Store with 1-hour TTL
+                        link.link = `auth/applink/${hashId1}`;
+                        break;
                     default:
                         break;
                 }
@@ -95,15 +112,45 @@ module.exports = {
                                 link.blocked = "true";
                             }
                             break;
+                        case "privilege":
+                            if(!userInfo.privilege || userInfo.privilege.length<=0) {
+                                link.blocked = "true";
+                            } else {
+                                const privs = checkArr[1].split("|");
+                                
+                                if(!privs.some(value => userPrivs.includes(value))) {
+                                    link.blocked = "true";
+                                }
+                            }
+                            break;
+                        case "user":
+                            if(!userInfo.privilege || userInfo.privilege.length<=0) {
+                                link.blocked = "true";
+                            } else {
+                                const userList = checkArr[1].split("|");
+                                
+                                if(!userList.includes(userInfo.userId)) {
+                                    link.blocked = "true";
+                                }
+                            }
+                            break;
                         case "module":
                             // Check if module exists and is enabled
+                            if(pluginList.PLUGINS.indexOf(checkArr[1])<0) {
+                                link.blocked = "true";
+                            }
                             break;
                         default:
                             break;
                     }
                 }
             }
-            //link.module => Check if module exists and is enabled, if not, block the link
+            // Check if module exists and is enabled, if not, block the link
+            if(link.module && link.module.length>0) {
+                if(pluginList.PLUGINS.indexOf(link.module)<0) {
+                    link.blocked = "true";
+                }
+            }
 
             finalLinks[i] = link;
         }
