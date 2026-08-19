@@ -24,7 +24,7 @@ const { MoleculerError } = require("moleculer").Errors;
 
 // Distributed rate limit settings
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
-const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 300);
+const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 3000);
 
 // const v = new FastestValidator();
 

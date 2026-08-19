@@ -99,7 +99,109 @@ module.exports = {
 			}
 		},
 
+		//To generate token for external servers, testing Code
+		generateToken: {
+			rest: {
+				method: "POST",
+				path: "/generateToken"
+			},
+			params: {
+				encrypt: "boolean",
+				user: "object"
+			},
+			async handler(ctx) {
+				if(isProd || isStaging) {
+					throw new LogiksError(
+						"Restricted, Only Development Environment has access to this API",
+						404,
+						"RESTRICTED_ENVIRONMENT"
+					);
+				}
+
+				const token = await AUTHTOKEN.generateToken(ctx.meta.appInfo.appid, ctx.params.user, ctx, ctx.params.encrypt);
+				return { token };
+			}
+		},
+
+		verifyToken: {
+			rest: {
+				method: "POST",
+				path: "/verifyToken"
+			},
+			params: {
+				appid: "string",
+				token: "string",
+			},
+			async handler(ctx) {
+				//Check appkey is valid with valid appid
+				if(ctx.params.appid!=ctx.meta.appInfo.appid) {
+					throw new LogiksError("APPID Mismatch", 401);
+				}
+
+				var { appId, token } = ctx.params;
+
+				const decodedToken = await AUTHTOKEN.verifyToken(appId, token, ctx);
+
+				if(!decodedToken) {
+					throw new LogiksError("Invalid Token", 401);
+				} else {
+					return {
+						"status": "success",
+						"token": decodedToken
+					};
+				}
+			}
+		},
+
 		//For magic link login related system
+		applink: {
+			rest: {
+				method: "GET",
+				fullPath: "/auth/applink/:hashid",
+			},
+			async handler(ctx) {
+				const hashId = ctx.params.hashid;
+
+				const redirectionData = await _CACHE.fetchDataSync(`NAV:${hashId}`);
+
+				const redirectURL = redirectionData?.url;
+				const encrypted = redirectionData?.encrypted;
+				const userInfo = redirectionData?.userInfo;
+				// appID
+				// navID
+
+				if(redirectURL) {
+					if(userInfo.userId != ctx.meta.user.userId) {
+						throw new LogiksError(
+							"Invalid Link",
+							404,
+							"LINK_NOT_FOUND"
+						);
+					}
+					
+					const newToken = await AUTHTOKEN.generateToken(ctx.meta.appInfo.appid, ctx.meta.user, ctx, encrypted);
+
+					if(redirectURL.indexOf("?")>=6) {
+						redirectURL += "&token="+newToken;
+					} else {
+						redirectURL += "?token="+newToken;
+					}
+					
+					ctx.meta.$statusCode = 302;
+					ctx.meta.$responseHeaders = {
+						Location: redirectURL
+					};
+					return redirectURL;
+				} else {
+					throw new LogiksError(
+						"Invalid Link",
+						404,
+						"LINK_NOT_FOUND"
+					);
+				}
+			}	
+		},
+
 		/**
 		 * Generate Auth Link
 		 * POST /api/public/auth/authlink

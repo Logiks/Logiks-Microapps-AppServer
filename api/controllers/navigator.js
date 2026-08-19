@@ -64,9 +64,17 @@ module.exports = {
             if(link?.linktype) {
                 switch(link.linktype) {
                     case "external":
+                        //For external links, we can generate a hash and store the actual link in cache for security
+                        //On rediction we pass new JWT Token for the link and validate it on the redirect controller
                         const hashId = await ENCRYPTER.generateHash(`${appID}:${userInfo.guid}:${userInfo.userId}:${link.link}`);//navID
-                        _CACHE.storeDataEx(`NAV:${hashId}`, link.link, 3600); // Store with 1-hour TTL
-                        link.link = `modules/applink/${hashId}`;
+                        _CACHE.storeDataEx(`NAV:${hashId}`, {
+                            "url": link.link,
+                            "encrypted": true,
+                            // "appID": appID,
+                            "userInfo": userInfo,
+                            // "navID": navID
+                        }, 3600); // Store with 1-hour TTL
+                        link.link = `auth/applink/${hashId}`;
                         break;
                     case "internal":
                     default:

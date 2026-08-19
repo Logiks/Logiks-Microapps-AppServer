@@ -67,7 +67,7 @@ module.exports = {
                 return {
                     key: EXISTING_KEYS[`${guid}${keyId}`],
                     key_algo: "sha1",
-                    history: (data.results[0].key_history || "").split(",").filter(k => k.trim() != "")
+                    history: []
                 };
             } else {
                 EXISTING_KEYS[`${guid}${keyId}`] = getKeyValue(keyId, CONFIG.SALT_KEY, "sha1", "1");
@@ -75,7 +75,7 @@ module.exports = {
                 return {
                     key: EXISTING_KEYS[`${guid}${keyId}`],
                     key_algo: "sha1",
-                    history: (data.results[0].key_history || "").split(",").filter(k => k.trim() != "")
+                    history: []
                 };
             }
         } else {

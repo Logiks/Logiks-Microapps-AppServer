@@ -579,6 +579,12 @@
         "default": null,
         "primary": false
       },
+      "device_type": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": "WEB",
+        "primary": false
+      },
       "os_version": {
         "type": "varchar(155)",
         "nullable": false,
@@ -849,79 +855,6 @@
         "type": "timestamp",
         "nullable": false,
         "default": "CURRENT_TIMESTAMP",
-        "primary": false
-      }
-    },
-    "indexes": [
-      "PRIMARY"
-    ]
-  },
-  "log_feedbacks": {
-    "columns": {
-      "id": {
-        "type": "int",
-        "nullable": false,
-        "default": null,
-        "primary": true
-      },
-      "guid": {
-        "type": "varchar(50)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "appid": {
-        "type": "varchar(50)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "ref_uri": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "rating": {
-        "type": "int",
-        "nullable": false,
-        "default": "0",
-        "primary": false
-      },
-      "feedback": {
-        "type": "longtext",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "blocked": {
-        "type": "enum('false','true')",
-        "nullable": true,
-        "default": "false",
-        "primary": false
-      },
-      "created_by": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "created_on": {
-        "type": "datetime",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "edited_by": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "edited_on": {
-        "type": "datetime",
-        "nullable": true,
-        "default": null,
         "primary": false
       }
     },
@@ -1981,6 +1914,12 @@
       },
       "seen_by": {
         "type": "tinytext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "response_data": {
+        "type": "text",
         "nullable": true,
         "default": null,
         "primary": false
