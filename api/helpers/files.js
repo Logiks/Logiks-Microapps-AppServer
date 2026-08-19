@@ -272,13 +272,14 @@ module.exports = {
         ext = ext[ext.length-1];
         const mimetype = mime.lookup(tempPath);
         const fileName = path.basename(tempPath);//ctx?.params?.filename || "file_"+moment().format("YMD_Hms")+"."+ext;
+        const fileSize = fs.statSync(tempPath).size;
 
         const fileInfo = await UPLOADS.moveUploadedFile(ctx, {
             "path": tempPath,
             "bucket": folder,
             "filename": fileName,
             "mimetype": mimetype || "application/octet-stream",
-            "size": fs.statSync(tempPath).size,
+            "size": fileSize,
         });
         fs.promises.rm(tempPath);
         //fileInfo.path = tempPath.replace(uploadDir, uploadDir1);
@@ -287,7 +288,7 @@ module.exports = {
             "fileId": fileInfo[tempPath],
             "name": fileName,
             "mime": mimetype, 
-            "size": 0, 
+            "size": fileSize, 
             "path": tempPath.replace(uploadDir, uploadDir1).replace(UPLOADS.baseUploadFolder(), "")
         };
     },
@@ -297,12 +298,14 @@ module.exports = {
         const tempPath = await universalFileSave(uploadDir, content, {});
         const fileName = path.basename(tempPath);
         const mimetype = mime.lookup(tempPath);
+        const fileSize = fs.statSync(tempPath).size;
+        
         return {
             "status": "success",
             "fileId": "0",
             "name": fileName,
             "mime": mimetype, 
-            "size": 0, 
+            "size": fileSize, 
             "path": tempPath
         };
     },
@@ -312,12 +315,14 @@ module.exports = {
         const tempPath = await universalFileSave(uploadDir, content, {});
         const fileName = path.basename(tempPath);
         const mimetype = mime.lookup(tempPath);
+        const fileSize = fs.statSync(tempPath).size;
+
         return {
             "status": "success",
             "fileId": "0",
             "name": fileName,
             "mime": mimetype, 
-            "size": 0, 
+            "size": fileSize, 
             "path": tempPath
         };
     }

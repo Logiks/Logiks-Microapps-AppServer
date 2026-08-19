@@ -3,7 +3,7 @@
 
 module.exports = {
 
-    initialize : function() {
+    initialize: function() {
     },
 
     listControls: async function(nature = "backend", module = false, guid = false) {
@@ -65,5 +65,11 @@ module.exports = {
         } else {
             return data.results[0]
         }
+    },
+
+    getControlValue: async function(ctrlId, defaultValue = false, nature = "backend", module = false, guid = false) {
+        return await this.getControl(ctrlId, defaultValue, nature, module, guid).then((data) => {
+            return data.var_value;
+        });
     }
 }

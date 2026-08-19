@@ -16,9 +16,6 @@ const TLTOKENS_MAX = 10;
 const GEO_DISTANCE_MAX = 10000;
 const FEDERATED_LOGIN_TIMEOUT = 2 * 60; // 5 minutes
 
-const DEVICE_LOCK_ENABLED = false;
-const GEOFENCES_ENABLED = false;
-
 const TLTOKEN_SCOPES = ["/api"];
 const S2STOKEN_SCOPES = ["/api/*"];
 
@@ -1274,9 +1271,12 @@ async function log_login_error(userInfo, loginType, loginURI, errorMessage, ctx)
 }
 
 async function check_log_device(userInfo, ctx) {
+	if(ctx?.params?.deviceType=="web" || ctx?.params?.deviceType=="api") return true;
+	
 	const dated = moment().format("Y-M-D HH:mm:ss");
 	const geolocation = ctx.params.geolocation?ctx.params.geolocation:"0,0";
 	const deviceId = ctx.params.deviceid?ctx.params.deviceid:"";
+	const DEVICE_LOCK_ENABLED = CONFIG?.security?.device_lock_enabled || (await CTRLCENTER.getControl("SYSTEM.DEVICE_LOCK_ENABLED", "false")==="true"?true:false);
 	//devmodel
 	//devos
 	if(!deviceId) {
@@ -1295,8 +1295,9 @@ async function check_log_device(userInfo, ctx) {
 		"guid": userInfo.guid?userInfo.guid:"-",
 		"userid": userInfo.userId, 
 		"device_uuid": deviceId, 
-		"device_model": "-",
-		"os_version": "-",
+		"device_type": ctx?.params?.deviceType || "web",
+		"device_model": ctx?.params?.devmodel || "-",
+		"os_version": ctx?.params?.devos || "-",
 		"ip_address": ctx.meta.remoteIP,
 		"geolocation": geolocation, 
 		"is_active": "true",
@@ -1359,6 +1360,7 @@ async function check_log_device(userInfo, ctx) {
 }
 
 async function check_geofencing(userInfo, geolocation) {
+	const GEOFENCES_ENABLED = CONFIG?.security?.geofences_enabled || (await CTRLCENTER.getControl("SYSTEM.GEOFENCES_ENABLED", "false")==="true"?true:false);
 	if(!GEOFENCES_ENABLED) return true;
 
 	if(geolocation=="0,0") {
