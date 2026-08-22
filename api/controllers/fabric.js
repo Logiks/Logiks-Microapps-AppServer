@@ -27,6 +27,9 @@ module.exports = {
 
     initialize : function() {
         console.log("\x1b[36m%s\x1b[0m","Fabric - Ingrained Proxy Controller Initialized");
+
+        //Health check endpoints to check health of assocciated servers
+
         // return true;
     },
 
