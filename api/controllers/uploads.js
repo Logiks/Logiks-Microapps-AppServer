@@ -146,6 +146,11 @@ module.exports = {
 				// console.log("XXXXX", sqlResult.insertId);
 				
 				result[file.path] = sqlResult.insertId?sqlResult.insertId:0;
+
+				if(ctx)
+					ctx.emit("files.create", {"id": sqlResult.insertId, "bucket": bucket, "user": ctx.meta.user});
+				else
+					SERVER.getBroker().emit("files.create", {"id": sqlResult.insertId, "bucket": bucket, "user": ctx.meta.user});
 				//result[fileURI.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, "")] = sqlResult.insertId?sqlResult.insertId:0;
 			}
 		} else {
@@ -183,6 +188,11 @@ module.exports = {
 				// console.log("XXXXX", sqlResult.insertId);
 
 				result[file.path] = sqlResult.insertId?sqlResult.insertId:0;
+				
+				if(ctx)
+					ctx.emit("files.create", {"id": sqlResult.insertId, "bucket": bucket, "user": ctx.meta.user});
+				else
+					SERVER.getBroker().emit("files.create", {"id": sqlResult.insertId, "bucket": bucket, "user": ctx.meta.user});
 				// result[fileURI.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, "")] = sqlResult.insertId?sqlResult.insertId:0;
 			}
 		}

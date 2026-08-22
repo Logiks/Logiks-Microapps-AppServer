@@ -14,7 +14,7 @@ module.exports = {
 
     receiveRequest: async function(endpoint, ctx) {
         console.log("\x1b[35m%s\x1b[0m","WEBHOOK RECIEVED", endpoint, ctx.query, ctx.params, ctx.headers, ctx.meta);
-        const time1 = _DB.db_nowunix();
+        const time1 = process.hrtime.bigint();
 
         const logRecord = await _DB.db_insertQ1("logdb", "log_webhooks", _.extend({
             appid: ctx.meta.appInfo.appid || "unknown", 
@@ -43,7 +43,7 @@ module.exports = {
             console.log("\x1b[31m%s\x1b[0m","WEBHOOK NOT FOUND OR BLOCKED", endpoint);
 
             _DB.db_updateQ("logdb", "log_webhooks", {
-                latency_ms: (_DB.db_nowunix()-time1), 
+                latency_ms: Number(process.hrtime.bigint() - time1) / 1e6,
                 status_code: "404",
                 error_message: "Webhook Not Found or Blocked",
                 response_payload: JSON.stringify({"error": "Webhook Not Found or Blocked"}),
@@ -69,7 +69,7 @@ module.exports = {
 
                 _DB.db_updateQ("logdb", "log_webhooks", {
                     guid: webhookInfo.guid,
-                    latency_ms: (_DB.db_nowunix()-time1), 
+                    latency_ms: Number(process.hrtime.bigint() - time1) / 1e6,
                     status_code: "401",
                     error_message: "Unauthorized: Invalid Auth Key",
                     response_payload: JSON.stringify({"error": "Unauthorized: Invalid Auth Key"}),
@@ -89,7 +89,7 @@ module.exports = {
 
             _DB.db_updateQ("logdb", "log_webhooks", {
                 guid: webhookInfo.guid,
-                latency_ms: (_DB.db_nowunix()-time1), 
+                latency_ms: Number(process.hrtime.bigint() - time1) / 1e6,
                 status_code: "400",
                 error_message: "Input Validation Failed",
                 response_payload: JSON.stringify({"error": "Input Validation Failed", "details": vStatus.errors}),
@@ -112,7 +112,7 @@ module.exports = {
 
                 _DB.db_updateQ("logdb", "log_webhooks", {
                     guid: webhookInfo.guid,
-                    latency_ms: (_DB.db_nowunix()-time1), 
+                    latency_ms: Number(process.hrtime.bigint() - time1) / 1e6,
                     status_code: "200",
                     response_payload: (webhookInfo.keep_log=="true"?JSON.stringify(response):JSON.stringify({"msg": "Response hidden as per webhook settings"})),
                 }, {
@@ -129,7 +129,7 @@ module.exports = {
 
                 _DB.db_updateQ("logdb", "log_webhooks", {
                     guid: webhookInfo.guid,
-                    latency_ms: (_DB.db_nowunix()-time1), 
+                    latency_ms: Number(process.hrtime.bigint() - time1) / 1e6,
                     status_code: "500",
                     error_message: "Webhook Function Execution Failed",
                     response_payload: JSON.stringify({"error": "Webhook Function Execution Failed", "details": err.message}),
@@ -148,7 +148,7 @@ module.exports = {
 
             _DB.db_updateQ("logdb", "log_webhooks", {
                 guid: webhookInfo.guid,
-                latency_ms: (_DB.db_nowunix()-time1), 
+                latency_ms: Number(process.hrtime.bigint() - time1) / 1e6,
                 status_code: "500",
                 error_message: "Webhook Function Not Defined",
                 response_payload: JSON.stringify({"error": "Webhook Function Not Defined", "details": err.message}),
