@@ -146,7 +146,7 @@ module.exports = {
                 }
             }
             // Check if module exists and is enabled, if not, block the link
-            if(link.module && link.module.length>0) {
+            if(link.module && link.module.length>0 && pluginList.PLUGINS.length>0) {
                 if(pluginList.PLUGINS.indexOf(link.module)<0) {
                     link.blocked = "true";
                 }
