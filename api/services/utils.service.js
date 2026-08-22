@@ -159,5 +159,8 @@ module.exports = {
         async "messaging.vendor_added"(payload, nodeId) {
             MESSAGING.loadDrivers();
         },
+        async "queue.created"(ctx, nodeId) {
+            QUEUE.registerQueue(ctx.params)
+        }
     }
 }

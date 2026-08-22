@@ -113,7 +113,8 @@
     },
     "queue": {
         "enable": false,
-        "host": "amqp://rabbit01:rabbit01@127.0.0.1:5672"
+        "driver": "rabbitmq",
+        "host1": "amqp://rabbit01:rabbit01@127.0.0.1:5672"
     },
     "logger": {
         "default": [
