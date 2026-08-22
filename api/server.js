@@ -478,6 +478,110 @@ module.exports = {
 							}
 						},
 
+						//Nginx-style proxy where the upstream target is resolved dynamically per
+						{
+							path: "/fabric",
+							authentication: CONFIG?.fabric?.login_required || true,
+							authorization: CONFIG?.fabric?.login_required || true,
+							opts: {
+								authRequired: CONFIG?.fabric?.login_required || true
+							},
+							// whitelist: [
+							// 	"sse.*"
+							// ],
+							bodyParsers: false,
+							// bodyParsers:{
+							// 	json: {
+							// 		strict: false,
+							// 		limit: "20MB"
+							// 	},
+							// 	urlencoded: {
+							// 		extended: true,
+							// 		limit: "20MB"
+							// 	}
+							// },
+							// Attach Express-compatible middlewares
+							// use: [
+							// 	// Attach IP/UA on every request
+							// 	(req, res, next) => {
+							// 		req.clientIp = MISC.getClientIP(req);
+							// 		req.clientUa = req.headers["user-agent"] || "unknown";
+							// 		next();
+							// 	}
+							// ],
+							// compression: {
+							// 	enabled: false
+							// },
+							cors: {
+								origin: "*",
+								methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+							},
+							mappingPolicy: "restrict",
+							// autoAliases: true,
+							aliases: {
+								// Matches everything under /api/fabric/** and hands the raw
+								// req/res to our own method (bound to `this` = the service).
+								"/*path": function proxyHandler(req, res) {
+									// console.log("req.url:", req.url);
+									// console.log("req.originalUrl:", req.originalUrl);
+									// console.log("req.params:", req.params);
+									// console.log("req.path:", req.path);
+									return FABRIC.forwardRequest(req, res);
+								}
+							},
+
+							onBeforeCall: async function (ctx, route, req, res) {
+							// 	// ctx.meta.headers = req.headers; 
+							// 	// ctx.meta.method = req.method; 
+							ctx.meta.__start = Date.now();
+							
+							const serverIP = req.socket.localAddress || req.connection.localAddress;
+							const serverHost = req.headers.host;
+							const remoteIP = MISC.getClientIP(req);
+
+							// 	console.log("REQUEST_EVENTS", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
+
+
+							// IP
+							const domainApp = await BASEAPP.getAppForDomain(serverHost);
+							if(!domainApp) {
+								throw new LogiksError(
+									"The no application found for current domain/url",
+									401,
+									"INVALID_REQUEST"
+								);
+							}
+								
+							const appInfo = await BASEAPP.getAppInfo(domainApp.appid);
+							if(!appInfo) {
+								throw new LogiksError(
+									"Application not defined or not found on server",
+									401,
+									"INVALID_REQUEST"
+								);
+							}
+
+							const ipAllowed = await AUTHKEY.checkClientIP(remoteIP, appInfo.appid, true);
+							if(!ipAllowed) {
+								throw new LogiksError(
+									"Client Request IP is required pre-approval",
+									401,
+									"INVALID_REQUEST"
+								);
+							}
+								
+							ctx.meta.appInfo = appInfo || {};
+							ctx.meta.serverHost = serverHost || "";
+
+							ctx.meta.serverIP = serverIP;
+							ctx.meta.serverHost = serverHost;
+							ctx.meta.remoteIP = remoteIP;
+
+							// 	ctx.meta.$req = req;
+							// 	ctx.meta.$res = res;
+							}
+						},
+
 						// WEBHOOK routes (auth not required, but can be secured inside action)
 						{
 							path: "/webhooks",
