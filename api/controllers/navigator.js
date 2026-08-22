@@ -51,7 +51,7 @@ module.exports = {
         for (var i = finalLinks.length - 1; i >= 0; i--) {
             var link = finalLinks[i];
 
-            if(link?.link || link.link.length<=0) {
+            if(!link?.link || link.link.length<=0) {
                 link.link = "#";
             }
 
