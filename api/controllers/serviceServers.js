@@ -3,7 +3,7 @@
  * This controller is responsible for connecting to remote servers, workers, and agents for various modules and applications. 
  * It provides functionalities to handle server-related operations via various endpoints and services for these remote entities.
  * 
- * sys_servers : Manage Remote Servers, Workers and Agents for modules and apps
+ * sys_serviceservers : Manage Remote Servers, Workers and Agents for modules and apps
  * 
  * eg: analytics101, sysops, reporting_servers, etc
  * */
@@ -36,7 +36,7 @@ module.exports = {
         if(categoryCode) {
             whereCond.category_code = categoryCode;
         }
-        var serverData = await _DB.db_selectQ("appdb", "sys_servers", "*", whereCond, {});
+        var serverData = await _DB.db_selectQ("appdb", "sys_serviceservers", "*", whereCond, {});
         if(!serverData || !serverData.results || serverData.results.length<=0) {
             return [];
         }
@@ -49,7 +49,7 @@ module.exports = {
             "guid": [["global", guid], "IN"],
             "server_code": serverCode
         };
-        var serverData = await _DB.db_selectQ("appdb", "sys_servers", "*", whereCond, {});
+        var serverData = await _DB.db_selectQ("appdb", "sys_serviceservers", "*", whereCond, {});
         if(!serverData || !serverData.results || serverData.results.length<=0) {
             return null;
         }
@@ -93,7 +93,7 @@ module.exports = {
         }
         
         //Update the server table for last run
-        _DB.db_updateQ("appdb", "sys_servers", {
+        _DB.db_updateQ("appdb", "sys_serviceservers", {
                 "last_run": _DB.db_now(),
             }, {
                 server_code: serverCode

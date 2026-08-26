@@ -906,6 +906,131 @@
       "PRIMARY"
     ]
   },
+  "lgks_abacpolicies": {
+    "columns": {
+      "id": {
+        "type": "varchar(64)",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "name": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "rule_combining_algorithm": {
+        "type": "varchar(32)",
+        "nullable": false,
+        "default": "deny-overrides",
+        "primary": false
+      },
+      "target": {
+        "type": "json",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "target_logic": {
+        "type": "varchar(3)",
+        "nullable": false,
+        "default": "AND",
+        "primary": false
+      },
+      "target_resource_type": {
+        "type": "varchar(128)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "target_action": {
+        "type": "varchar(128)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "created_at": {
+        "type": "timestamp",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "updated_at": {
+        "type": "timestamp",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "idx_policies_lookup"
+    ]
+  },
+  "lgks_abacpolicies_rules": {
+    "columns": {
+      "id": {
+        "type": "varchar(64)",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "policy_id": {
+        "type": "varchar(64)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "effect": {
+        "type": "enum('Permit','Deny')",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "description": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "target": {
+        "type": "json",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "target_logic": {
+        "type": "varchar(3)",
+        "nullable": false,
+        "default": "AND",
+        "primary": false
+      },
+      "sort_order": {
+        "type": "int",
+        "nullable": false,
+        "default": "0",
+        "primary": false
+      },
+      "created_at": {
+        "type": "timestamp",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      },
+      "updated_at": {
+        "type": "timestamp",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP",
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "idx_abac_rules_policy",
+      "idx_abac_rules_policy_policy"
+    ]
+  },
   "lgks_access": {
     "columns": {
       "id": {
@@ -3508,7 +3633,7 @@
       "topic"
     ]
   },
-  "sys_servers": {
+  "sys_serviceservers": {
     "columns": {
       "id": {
         "type": "int",
