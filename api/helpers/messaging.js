@@ -67,8 +67,8 @@ module.exports = {
         }, params), ctx);
     },
 
-    sendMessageByEvent: async function(driver, params, ctx) {
-        console.log("sendMessageByEvent", driver, params, ctx);
+    sendMessageByEvent: async function(driver, payload, ctx) {
+        console.log("sendMessageByEvent", driver, payload, ctx);
         this.sendMessage(driver, _.extend({}, payload.data || {}, payload.user || {}, payload));
     }, 
 
