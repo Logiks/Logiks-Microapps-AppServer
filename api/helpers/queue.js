@@ -22,7 +22,6 @@ module.exports = {
         await QUEUE.connect();
         //await queue.disconnect();
         console.log("\x1b[36m%s\x1b[0m",`QUEUE Controller Initialized - ${driver}`);
-        return true;
     },
 
     registerQueue: function(taskKey) {

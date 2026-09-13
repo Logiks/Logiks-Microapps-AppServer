@@ -21,8 +21,6 @@ module.exports = {
         });
         
         console.log("\x1b[36m%s\x1b[0m", "DBLogger Engine Intialized");
-
-        return true;
     },
 
     _log : async function(logID, payload, ctx) {
