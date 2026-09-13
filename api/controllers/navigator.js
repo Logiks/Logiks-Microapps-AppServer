@@ -46,6 +46,7 @@ module.exports = {
         if(!finalLinks) finalLinks = [];
 
         const pluginList =  await ctx.call("system.plugins");
+        const pluginCount = pluginList?.PLUGINS?.length || 0;
         const userPrivs = userInfo.privilege.split(",");
 
         for (var i = finalLinks.length - 1; i >= 0; i--) {
@@ -136,7 +137,7 @@ module.exports = {
                             break;
                         case "module":
                             // Check if module exists and is enabled
-                            if(pluginList.PLUGINS.indexOf(checkArr[1])<0) {
+                            if(checkArr[1] && checkArr[1].length>1 && pluginCount>0 && pluginList.PLUGINS.indexOf(checkArr[1])<0) {
                                 link.blocked = "true";
                             }
                             break;
@@ -146,7 +147,7 @@ module.exports = {
                 }
             }
             // Check if module exists and is enabled, if not, block the link
-            if(link.module && link.module.length>0 && pluginList.PLUGINS.length>0) {
+            if(link.module && link.module.length>1 && pluginCount>0) {
                 if(pluginList.PLUGINS.indexOf(link.module)<0) {
                     link.blocked = "true";
                 }
