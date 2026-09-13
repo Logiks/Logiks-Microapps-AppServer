@@ -78,9 +78,10 @@
             "appid": ""
         }
     },
-    "dbmysql": {
+    "databases": {
         "appdb": {
             "enable": false,
+            "driver": "mysql",
             "host": "127.0.0.1",
             "port": 3306,
             "user": "test",
@@ -91,6 +92,7 @@
         },
         "logdb": {
             "enable": false,
+            "driver": "mysql",
             "host": "127.0.0.1",
             "port": 3306,
             "user": "test",
@@ -98,11 +100,53 @@
             "database": "logdb",
             "insecureAuth": true,
             "multipleStatements": true
+        },
+        "dbmongo": {
+            "enable": false,
+            "driver": "mongodb",
+            "uri": "mongodb://127.0.0.1:27017/silkapi"
+        },
+        "pgdb": {
+            "enable": false,
+            "driver": "pgsql",
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "test",
+            "password": "test",
+            "database": "testdb"
+        },
+        "mssqldb": {
+            "enable": false,
+            "driver": "mssql",
+            "host": "127.0.0.1",
+            "port": 1433,
+            "user": "test",
+            "password": "test",
+            "database": "testdb"
+        },
+        "crdb": {
+            "enable": false,
+            "driver": "cockroachdb",
+            "host": "127.0.0.1",
+            "port": 26257,
+            "user": "root",
+            "password": "",
+            "database": "testdb",
+            "ssl": false
+        },
+        "duckdb": {
+            "enable": false,
+            "driver": "duckdb",
+            "path": "misc/duckdb/appdb.duckdb"
+        },
+        "dynamodb": {
+            "enable": false,
+            "driver": "dynamodb",
+            "region": "us-east-1",
+            "accessKeyId": "",
+            "secretAccessKey": "",
+            "tablePrefix": ""
         }
-    },
-    "dbmongo": {
-        "enable": false,
-        "uri": "mongodb://127.0.0.1:27017/silkapi"
     },
     "cache": {
         "host": "127.0.0.1",
