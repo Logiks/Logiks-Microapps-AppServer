@@ -3433,6 +3433,12 @@
         "default": null,
         "primary": false
       },
+      "rulegroup": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
       "rulecode": {
         "type": "varchar(155)",
         "nullable": false,
@@ -3448,7 +3454,19 @@
       "category": {
         "type": "varchar(150)",
         "nullable": false,
-        "default": "general",
+        "default": "-",
+        "primary": false
+      },
+      "module": {
+        "type": "varchar(150)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "vers": {
+        "type": "int",
+        "nullable": false,
+        "default": "1",
         "primary": false
       },
       "descs": {
@@ -3479,6 +3497,24 @@
         "type": "json",
         "nullable": true,
         "default": null,
+        "primary": false
+      },
+      "priority": {
+        "type": "int",
+        "nullable": true,
+        "default": "1000",
+        "primary": false
+      },
+      "effective_from": {
+        "type": "date",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "is_published": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
         "primary": false
       },
       "blocked": {
@@ -3514,7 +3550,8 @@
     },
     "indexes": [
       "PRIMARY",
-      "rulecode"
+      "guid_rulecode_is_published_blocked",
+      "module_category"
     ]
   },
   "sys_notifications": {
