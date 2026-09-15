@@ -80,9 +80,7 @@
 };
  */
 
-// const ABAC_CACHE = _CACHE.getCacheMap("ABACCACHE");
-
-const OPERATORS = new Set(['==', '!=', '>', '>=', '<', '<=', 'contains', 'in']);
+const OPERATORS = new Set(['==', '!=', '>', '>=', '<', '<=', 'contains', 'in', 'notIn', 'startsWith', 'endsWith', 'exists']);
 const RULE_ALGORITHMS = new Set(['deny-overrides', 'permit-overrides', 'first-applicable']);
 const EFFECTS = new Set(['Permit', 'Deny']);
 
@@ -273,10 +271,31 @@ function evaluateCondition(condition, request) {
 
   const raw = getAttr(request, attr);
   const target = resolveValue(request, condition.value);
-  if (raw === undefined || raw === null || target === undefined || target === null) return false;
+  if (raw === undefined || raw === null || raw === '' || target === undefined || target === null) return false;
 
+  // In
   if (op === 'in') {
     return Array.isArray(target) ? target.includes(raw) : String(target).includes(String(raw));
+  }
+
+  // notIn
+  if (op === 'notIn') {
+    return Array.isArray(target)
+      ? !target.includes(raw)
+      : !String(target).includes(String(raw));
+  }
+
+  // String operators
+  if (op === 'startsWith') {
+    return String(raw)
+      .toLowerCase()
+      .startsWith(String(target).toLowerCase());
+  }
+
+  if (op === 'endsWith') {
+    return String(raw)
+      .toLowerCase()
+      .endsWith(String(target).toLowerCase());
   }
 
   const bothNumeric = !isNaN(parseFloat(target)) && !isNaN(parseFloat(raw));

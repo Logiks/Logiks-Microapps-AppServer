@@ -40,7 +40,7 @@
 };
  * */
 
-const OPERATORS = new Set(['==', '!=', '>', '>=', '<', '<=', 'contains']);
+const OPERATORS = new Set(['==', '!=', '>', '>=', '<', '<=', 'contains', 'in', 'notIn', 'startsWith', 'endsWith', 'exists']);
 
 module.exports = {
 
@@ -142,7 +142,32 @@ function evaluateCondition(condition, attributes) {
     throw new Error(`Unsupported operator "${op}" in condition on "${attr}"`);
   }
   const raw = attributes[attr];
-  if (raw === undefined || raw === null || raw === '') return false;
+  if (raw === undefined || raw === null || raw === '' || val === undefined || val === null) return false;
+
+  // In
+  if (op === 'in') {
+    return Array.isArray(val) ? val.includes(raw) : String(val).includes(String(raw));
+  }
+
+  // notIn
+  if (op === 'notIn') {
+    return Array.isArray(val)
+      ? !val.includes(raw)
+      : !String(val).includes(String(raw));
+  }
+
+  // String operators
+  if (op === 'startsWith') {
+    return String(raw)
+      .toLowerCase()
+      .startsWith(String(val).toLowerCase());
+  }
+
+  if (op === 'endsWith') {
+    return String(raw)
+      .toLowerCase()
+      .endsWith(String(val).toLowerCase());
+  }
 
   const bothNumeric = !isNaN(parseFloat(val)) && !isNaN(parseFloat(raw));
   const a = bothNumeric ? parseFloat(raw) : String(raw).toLowerCase();
