@@ -19,7 +19,7 @@ module.exports = {
         
         //Process For Policies
         if(jsonObj.policy && jsonObj.policy.length>0) {
-            var isAllowed = await RBAC.checkPolicy(ctx, jsonObj.policy);//false
+            var isAllowed = await checkAccessPolicy(ctx, jsonObj.policy, {objId, moduleId, ...jsonObj});//false
             if(!isAllowed) {
                 throw new LogiksError(
                     "Forbidden",
@@ -58,7 +58,7 @@ module.exports = {
                             const v = tempObj.actions[k];
 
                             if(v.policy && v.policy.length>0) {
-                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                var isAllowed = await checkAccessPolicy(ctx, v.policy, {objId, moduleId, ...jsonObj});
                                 if(!isAllowed) {
                                     delete tempObj.actions[k];
                                     continue;
@@ -81,7 +81,7 @@ module.exports = {
                             const v = tempObj.infoview.groups[k];
 
                             if(v.policy && v.policy.length>0) {
-                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                var isAllowed = await checkAccessPolicy(ctx, v.policy, {objId, moduleId, ...jsonObj});
                                 if(!isAllowed) {
                                     delete tempObj.infoview.groups[k];
                                     continue;
@@ -95,7 +95,7 @@ module.exports = {
                                     const v = v.actions[k];
 
                                     if(v.policy && v.policy.length>0) {
-                                        var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                        var isAllowed = await checkAccessPolicy(ctx, v.policy, {objId, moduleId, ...jsonObj});
                                         if(!isAllowed) {
                                             delete tempObj.infoview.groups[k].actions[k];
                                             continue;
@@ -166,7 +166,7 @@ module.exports = {
                         const v = tempObj.cards[k];
 
                         if(v.policy && v.policy.length>0) {
-                            var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                            var isAllowed = await checkAccessPolicy(ctx, v.policy, {objId, moduleId, ...jsonObj});
                             if(!isAllowed) {
                                 delete tempObj.cards[k];
                                 continue;
@@ -204,7 +204,7 @@ module.exports = {
                             const v = v.actions[k];
 
                             if(v.policy && v.policy.length>0) {
-                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                var isAllowed = await checkAccessPolicy(ctx, v.policy, {objId, moduleId, ...jsonObj});
                                 if(!isAllowed) {
                                     delete tempObj.actions[k];
                                     continue;
@@ -225,7 +225,7 @@ module.exports = {
                             const v = tempObj.sidebar.source[k];
 
                             if(v.policy && v.policy.length>0) {
-                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                var isAllowed = await checkAccessPolicy(ctx, v.policy, {objId, moduleId, ...jsonObj});
                                 if(!isAllowed) {
                                     delete tempObj.sidebar.source[k];
                                     continue;
@@ -293,7 +293,7 @@ module.exports = {
                             const v = tempObj.actions[k];
 
                             if(v.policy && v.policy.length>0) {
-                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                var isAllowed = await checkAccessPolicy(ctx, v.policy, {objId, moduleId, ...jsonObj});
                                 if(!isAllowed) {
                                     delete tempObj.actions[k];
                                     continue;
@@ -315,7 +315,7 @@ module.exports = {
                             const v = tempObj.buttons[k];
 
                             if(v.policy && v.policy.length>0) {
-                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                var isAllowed = await checkAccessPolicy(ctx, v.policy, {objId, moduleId, ...jsonObj});
                                 if(!isAllowed) {
                                     delete tempObj.buttons[k];
                                     continue;
@@ -337,7 +337,7 @@ module.exports = {
                             const v = tempObj.sidebar.source[k];
 
                             if(v.policy && v.policy.length>0) {
-                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                var isAllowed = await checkAccessPolicy(ctx, v.policy);
                                 if(!isAllowed) {
                                     delete tempObj.sidebar.source[k];
                                     continue;
@@ -388,7 +388,7 @@ module.exports = {
                             const v = tempObj.sidebar.source[k];
 
                             if(v.policy && v.policy.length>0) {
-                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                var isAllowed = await checkAccessPolicy(ctx, v.policy);
                                 if(!isAllowed) {
                                     delete tempObj.sidebar.source[k];
                                     continue;
@@ -423,7 +423,7 @@ module.exports = {
                             const v = tempObj.actions[k];
 
                             if(v.policy && v.policy.length>0) {
-                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                var isAllowed = await checkAccessPolicy(ctx, v.policy);
                                 if(!isAllowed) {
                                     delete tempObj.actions[k];
                                     continue;
@@ -445,7 +445,7 @@ module.exports = {
                             const v = tempObj.buttons[k];
 
                             if(v.policy && v.policy.length>0) {
-                                var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                                var isAllowed = await checkAccessPolicy(ctx, v.policy);
                                 if(!isAllowed) {
                                     delete tempObj.buttons[k];
                                     continue;
@@ -467,7 +467,7 @@ module.exports = {
                         const v = tempObj.datagrid[k];
 
                         if(v.policy && v.policy.length>0) {
-                            var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                            var isAllowed = await checkAccessPolicy(ctx, v.policy);
                             if(!isAllowed) {
                                 delete tempObj.datagrid[k];
                                 continue;
@@ -556,7 +556,7 @@ module.exports = {
 
             try {
                 if(v.policy && v.policy.length>0) {
-                    var isAllowed = await RBAC.checkPolicy(ctx, v.policy);
+                    var isAllowed = await checkAccessPolicy(ctx, v.policy, {objId, moduleId, ...formFields, "field": k});
                     if(!isAllowed) {
                         delete formFields[k];
                         continue;
@@ -684,5 +684,18 @@ module.exports = {
                 return fieldObj.options;
                 break;
         }
+    }
+}
+
+async function checkAccessPolicy(ctx, policyStr, resource) {
+    const checkArr = policyStr.split(":");
+    if(checkArr.length<2) checkArr.unsift("rbac");
+
+    switch(checkArr[0]) {
+        case "abac":
+            return ABAC.checkPolicy(ctx, checkArr[1], resource);
+        case "rbac":
+        default:
+            return RBAC.checkPolicy(ctx, checkArr[1]);
     }
 }

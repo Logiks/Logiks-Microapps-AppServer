@@ -113,6 +113,24 @@ module.exports = {
                                 link.blocked = "true";
                             }
                             break;
+                        case "abac":
+                            const response1 = await ABAC.checkPolicy(ctx, checkArr[1],
+                                { "type": "menu", ...link, "appID": appID, "navID": navID, policyArr: checkArr },
+                                { "name": "access" },
+                                { 
+                                    "hour": new Date().getHours(), 
+                                    "ip": ctx?.meta?.remoteIP, 
+                                    "userAgent": ctx.meta?.headers['user-agent'] || "-", 
+                                    "headers": ctx.meta?.headers,
+                                    "appInfo": ctx.meta.appInfo,
+                                    "deviceType": ctx.meta?.user?.deviceType,
+                                    "deviceId": ctx.meta?.user?.deviceId
+                                }
+                            );
+                            if(!response1 || response1.decision !== "allow") {
+                                link.blocked = "true";
+                            }
+                            break;
                         case "privilege":
                             if(!userInfo.privilege || userInfo.privilege.length<=0) {
                                 link.blocked = "true";

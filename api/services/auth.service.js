@@ -858,6 +858,7 @@ module.exports = {
 					roles: payload.roles || userData.roles || [],
 					scopes: payload.scopes || userData.scopes || [],
 					deviceType: payload.deviceType,
+					deviceId: payload.deviceId,
 					ip: payload.ip,
 					sessionId: sessionId,
 				};
@@ -1166,7 +1167,8 @@ module.exports = {
 				guid: user.guid,
 				privilege: user.privilege,
 				ip,
-				deviceType
+				deviceType,
+				deviceId: ctx.params.deviceid
 			};
 
 			const accessToken = jwt.sign(
