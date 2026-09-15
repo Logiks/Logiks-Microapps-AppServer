@@ -19,6 +19,12 @@ module.exports = {
 		console.log("\x1b[36m%s\x1b[0m", "Database Engine Intialized");
 	},
 
+	//Dbkeys this app actually has a registered driver for - not every microapp
+	//configures/enables the same set of databases.
+	db_keys : function() {
+		return Object.keys(DBMANAGER.drivers);
+	},
+
 	db_connection : function(dbkey) {
 		const driver = DBMANAGER.getDriver(dbkey);
 		return driver ? driver.getRawConnection() : undefined;

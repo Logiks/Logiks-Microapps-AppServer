@@ -6,6 +6,12 @@ const diff = require("deep-diff").diff;
 const SCHEMA_DIR = "misc/dbschema/";//path.join(__dirname, "../schema_versions");
 fs1.ensureDirSync(SCHEMA_DIR);
 
+function _getMysqlConnection(dbKey) {
+    const raw = _DB.db_connection(dbKey);
+    if (!raw) throw new Error(`No database driver configured/enabled for dbkey "${dbKey}"`);
+    return raw.promise();
+}
+
 module.exports = {
     
     initalize : function() {
@@ -140,7 +146,7 @@ module.exports = {
     ------------------------------------------ */
     exportSchema : async function(dbKey, writeFile = true, tablePrefix = false) {
         try {
-            const mysqlConnection = _DB.db_connection(dbKey).promise();
+            const mysqlConnection = _getMysqlConnection(dbKey);
 
             const schema = {};
             const [tables] = await mysqlConnection.query(`SHOW TABLES`);
@@ -244,7 +250,7 @@ module.exports = {
     ------------------------------------------ */
     applyMigration : async function(dbKey, filename) {
         try {
-            const mysqlConnection = _DB.db_connection(dbKey).promise();
+            const mysqlConnection = _getMysqlConnection(dbKey);
 
             const sql = await fs1.readFile(path.join(SCHEMA_DIR, filename), "utf8");
 
@@ -273,7 +279,7 @@ module.exports = {
 
     applyMigrationSchema : async function(dbKey, sql) {
         try {
-            const mysqlConnection = _DB.db_connection(dbKey).promise();
+            const mysqlConnection = _getMysqlConnection(dbKey);
 
             // Safety checks
             if (/DROP|TRUNCATE|DELETE/i.test(sql)) {

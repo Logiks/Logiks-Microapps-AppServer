@@ -1,14 +1,15 @@
 //This is the common functions available and required at system level
 
 const APP_EVENT_LISTENER = [];
-const DBKEYS = ["appdb", "logdb"];
 
 module.exports = {
 
 }
 
+//Only dbkeys the running app actually configured & enabled - not every
+//microapp defines a "logdb" alongside "appdb", so this must not assume both.
 global._dbkeys = function() {
-    return DBKEYS;
+    return _DB.db_keys();
 }
 
 global.printObj = function(msg, clr, intent) {
