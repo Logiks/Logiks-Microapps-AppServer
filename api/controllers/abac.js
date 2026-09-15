@@ -101,9 +101,9 @@ module.exports = {
 
         environment = await this.getEnvironment(ctx, environment);
 
-         const policies = await this.getPolicyObject(ctx?.meta?.user?.guid, policyArr);
+        const policies = await this.getPolicyObject(ctx?.meta?.user?.guid, policyArr);
 
-         if(!policies) return {
+        if(!policies) return {
             "decision": defaultValue,
             "defaulted": true,
             "message": "No policies found for the given policies"
@@ -234,7 +234,7 @@ module.exports = {
         const env = await ENV.fetchEnvByNature(ctx, "backend");
         const envInfo = await ENV.fetchEnvInfo(ctx.meta);
 
-        return _.extend({}, env, envInfo, environment || { 
+        return _.extend(envInfo, env, environment || { 
             "timestamp": new Date(),
             "hour": new Date().getHours(), 
          });
