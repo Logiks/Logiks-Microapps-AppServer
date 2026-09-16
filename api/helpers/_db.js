@@ -183,6 +183,7 @@ module.exports = {
 			return false;
 		}
 		if(!table) return false;
+		if(whereParams?.nodeID) whereParams = {};
 
 		const { error, rows } = await driver.select(table, columns, where, whereParams?Object.values(whereParams):[], additionalQueryParams, joins);
 

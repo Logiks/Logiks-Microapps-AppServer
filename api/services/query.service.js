@@ -324,7 +324,7 @@ module.exports = {
 				const dbResponseCount = await _DB.db_query(dbkey, sqlQueryCount, {});
 				var dbDataCount = dbResponseCount?.results || [{".count": 0}];
 
-				if(dbResponseCount?.results.length>1) {
+				if(dbResponseCount?.results?.length>1) {
 					dbDataCount = dbResponseCount?.results.length;
 				// } else if((queryObj.groupby && queryObj.groupby.length>0) || hasDistinct) {
 				// 	dbDataCount = [{".count": dbData?.length || 0}];

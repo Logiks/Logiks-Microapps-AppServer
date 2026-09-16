@@ -126,7 +126,7 @@ class MySQLDriver extends DBDriver {
 			console.log("SQL", sql);
 		}
 
-		if (hasTopLevelComma(table)) {
+		if (hasTopLevelComma(table) || table.toLowerCase().indexOf("join")>0) {
 			sql = { sql: sql, nestTables: "." };
 		}
 
@@ -190,7 +190,7 @@ class MySQLDriver extends DBDriver {
 			console.log("SQL", sql, whereParams);
 		}
 
-		if (hasTopLevelComma(table)) {
+		if (hasTopLevelComma(table) || table.toLowerCase().indexOf("join")>0) {
 			sql = { sql: sql, nestTables: "." };
 		}
 
