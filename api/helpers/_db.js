@@ -176,7 +176,7 @@ module.exports = {
 		};
 	},
 
-	db_selectQ : async function(dbkey, table, columns, where, whereParams, additionalQueryParams, joins) {
+	db_selectQ : async function(dbkey, table, columns, where, whereParams, additionalQueryParams, joins, flattenColumn = false) {
 		const driver = DBMANAGER.getDriver(dbkey);
 		if(driver==null) {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
@@ -213,6 +213,22 @@ module.exports = {
 							rows[k][col] = await field_decrypter(`${table}.${col}`, val);
 					}
 				}
+			}
+		}
+
+		if(flattenColumn) {
+			for (var k = rows.length - 1; k >= 0; k--) {
+				const row = rows[k];
+				const cols = Object.keys(row);
+
+				const newCol = {};
+				for (var i = cols.length - 1; i >= 0; i--) {
+					const col = cols[i];
+					const colArr = col.split(".");
+					const col1 = colArr[colArr.length-1];
+					newCol[col1] = rows[k][col];
+				}
+				rows[k] = newCol;
 			}
 		}
 
