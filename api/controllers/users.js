@@ -206,7 +206,7 @@ module.exports = {
                 "lgks_users.blocked": 'false',
                 "lgks_privileges.blocked": 'false',
                 "(lgks_access.sites='*' OR FIND_IN_SET(?, lgks_access.sites))": "RAW",
-            },{appId});
+            },{appId},null,null, true);
         if(!userInfo || !userInfo?.results || userInfo.results.length<=0) return false;
         
         userInfo = userInfo.results[0];
