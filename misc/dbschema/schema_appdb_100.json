@@ -4352,56 +4352,142 @@
       },
       "guid": {
         "type": "varchar(155)",
-        "nullable": true,
-        "default": "global",
+        "nullable": false,
+        "default": null,
         "primary": false
       },
       "workflow_code": {
         "type": "varchar(55)",
-        "nullable": true,
+        "nullable": false,
         "default": null,
         "primary": false
       },
       "title": {
         "type": "varchar(155)",
-        "nullable": true,
-        "default": null,
+        "nullable": false,
+        "default": "",
         "primary": false
       },
       "descs": {
-        "type": "varchar(200)",
+        "type": "text",
         "nullable": true,
         "default": null,
         "primary": false
       },
-      "from_status": {
-        "type": "varchar(15)",
-        "nullable": true,
-        "default": "new",
+      "vers": {
+        "type": "int",
+        "nullable": false,
+        "default": "1",
         "primary": false
       },
-      "to_status": {
-        "type": "varchar(15)",
-        "nullable": true,
-        "default": "new",
-        "primary": false
-      },
-      "assigned_to": {
-        "type": "varchar(155)",
+      "rules_json": {
+        "type": "json",
         "nullable": true,
         "default": null,
         "primary": false
       },
-      "remarks": {
-        "type": "varchar(255)",
+      "designer_json": {
+        "type": "json",
         "nullable": true,
         "default": null,
         "primary": false
       },
       "status": {
         "type": "varchar(15)",
+        "nullable": false,
+        "default": "draft",
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
         "nullable": true,
-        "default": "open",
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "workflow_code"
+    ]
+  },
+  "sys_workflows_history": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "workflow_code": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "title": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": "",
+        "primary": false
+      },
+      "descs": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "vers": {
+        "type": "int",
+        "nullable": false,
+        "default": "1",
+        "primary": false
+      },
+      "rules_json": {
+        "type": "json",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "designer_json": {
+        "type": "json",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "status": {
+        "type": "varchar(15)",
+        "nullable": false,
+        "default": "draft",
         "primary": false
       },
       "blocked": {
@@ -4437,6 +4523,330 @@
     },
     "indexes": [
       "PRIMARY"
+    ]
+  },
+  "sys_workflows_stages": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "workflow_code": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "stage_code": {
+        "type": "varchar(15)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "stage_name": {
+        "type": "varchar(200)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "stage_type": {
+        "type": "varchar(15)",
+        "nullable": true,
+        "default": "decision",
+        "primary": false
+      },
+      "required_approvals": {
+        "type": "int",
+        "nullable": true,
+        "default": "1",
+        "primary": false
+      },
+      "assigned_to": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "priority": {
+        "type": "int",
+        "nullable": true,
+        "default": "1",
+        "primary": false
+      },
+      "remarks": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "workflow_code_stage_code"
+    ]
+  },
+  "sys_workflows_transitions": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "workflow_code": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "from_stage": {
+        "type": "varchar(15)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "to_stage": {
+        "type": "varchar(15)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "rule_match": {
+        "type": "varchar(10)",
+        "nullable": true,
+        "default": "OR",
+        "primary": false
+      },
+      "rules": {
+        "type": "json",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "on_reject": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": "-",
+        "primary": false
+      },
+      "default_resolver": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": "creator",
+        "primary": false
+      },
+      "remarks": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "workflow_code_from_stage_to_stage"
+    ]
+  },
+  "sys_workflows_wflows": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "data_refid": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "workflow_code": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "vers": {
+        "type": "int",
+        "nullable": false,
+        "default": "1",
+        "primary": false
+      },
+      "current_stage": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": "start",
+        "primary": false
+      },
+      "current_assigned_to": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": "",
+        "primary": false
+      },
+      "current_approvers": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "last_rejected_by": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "last_updated_on": {
+        "type": "datetime",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "last_updated_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": "",
+        "primary": false
+      },
+      "last_updated_stage": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": "",
+        "primary": false
+      },
+      "approval_history": {
+        "type": "json",
+        "nullable": true,
+        "default": "_utf8mb4\\'{}\\'",
+        "primary": false
+      },
+      "rules_json": {
+        "type": "json",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "rejected": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "data_refid_workflow_code_vers_rejected_blocked"
     ]
   },
   "user_settings": {
