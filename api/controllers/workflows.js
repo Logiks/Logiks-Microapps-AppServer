@@ -112,96 +112,43 @@ module.exports = {
 
     //Run a workflow rule for a given workflow instance and data record. This function will be called when a data record is created or updated, and it will check the workflow rules and execute the appropriate actions.
     getNextStep: async function(ctx, wflowId, dataRefId, dataPayload) {
-        const workflowData = await _DB.db_selectQ("appdb", "sys_workflows_wflows", "*", {
+        const whereLogic = {
                     guid: ctx?.meta?.user?.guid,
-                    id: wflowId,
+                    // id: wflowId,
                     data_refid: dataRefId, 
                     rejected: "false",
                     blocked: 'false'
-                }, {});
+        };
+        if(isNaN(wflowId)) whereLogic["workflow_code"] = wflowId;
+        else whereLogic["id"] = wflowId;
+
+        const workflowData = await _DB.db_selectQ("appdb", "sys_workflows_wflows", "*", whereLogic, {});
         if(!workflowData || workflowData.results.length<=0) return {status: "error", message: "Workflow Log Not Found (wflows-1)"}
 
-        const workflowCode = workflowData.results[0].workflow_code;
-        const workflowRule = workflowData.results[0].rules_json;
-        const currentStage = workflowData.results[0].current_stage;
-        const currentAssignee = workflowData.results[0].current_assigned_to;
-        const currentApprovers = workflowData.results[0].current_approvers;
-        const approvalHistory = workflowData.results[0].approval_history || {};
-
-        // workflowData.results[0].last_updated_on
-        // workflowData.results[0].last_updated_by
-        // workflowData.results[0].last_updated_stage
-
-        const nextStep = resolveNextStep(workflowRule, currentStage, currentAssignee, approvalHistory, dataPayload);
-        nextStep.next_assignee = "-";
-
-        // console.log(">>>>>>>>getNextStep", wflowId, dataRefId, dataPayload, currentStage, currentAssignee, approvalHistory, JSON.stringify(nextStep, null, 2));
-
-        if(nextStep.next_stage && workflowRule.stages[nextStep.next_stage]) {
-            nextStep.next_assignee = workflowRule.stages[nextStep.next_stage].assigned_to;
-
-            if(nextStep.next_assignee.substr(0,1)=="@") {
-                nextStep.next_assignee = ASSIGNMENT.getAssignment(ctx.meta.user.guid, nextStep.next_assignee, dataPayload);
-            }
-
-            // console.log(">>>>>>>>getNextStep2", wflowId, dataRefId, dataPayload, currentStage, currentAssignee, approvalHistory, JSON.stringify(nextStep, null, 2), JSON.stringify(workflowRule, null, 2));
-
-            await _DB.db_updateQ("appdb", "sys_workflows_wflows", {
-                // "approval_history": approval_history,
-                "last_updated_on": moment().format("Y-M-D HH:mm:ss"),
-                "last_updated_by": ctx?.meta?.user?.userId,
-                "last_updated_stage": currentStage,
-                "current_stage": nextStep.next_stage,
-                "current_assigned_to": nextStep.next_assignee,
-                "current_approvers": "",
-                
-                "edited_on": moment().format("Y-M-D HH:mm:ss"),
-            }, {
-                "id": wflowId,
-                "blocked": false,
-            });
-
-            return nextStep;
-        } else if(nextStep.status=="WAITING" && nextStep.approved_count<nextStep.required_approvals) {
-            return {status: "waiting", message: "Required Approvals is not achived", current_stage: currentStage, approved_count: nextStep.approved_count, required_approvals: nextStep.required_approvals, required: workflowData.results[0].current_assigned_to.split(",").filter(a=>a.length>0), approved: workflowData.results[0].current_approvers.split(",").filter(a=>a.length>0)}
-        } else if(nextStep.status=="COMPLETED") {
-            if(!approvalHistory.completed) {
-                approvalHistory["completed"] = {"index": Object.keys(approvalHistory).length};
-                approvalHistory["completed"][workflowData.results[0].last_updated_by] = workflowData.results[0].last_updated_on;
-
-                await _DB.db_updateQ("appdb", "sys_workflows_wflows", {
-                    "approval_history": approvalHistory,
-                    "edited_on": moment().format("Y-M-D HH:mm:ss"),
-                }, {
-                    "id": wflowId,
-                    "blocked": false,
-                    "current_stage<>'completed'": "RAW"
-                });
-            }
-
-            return {status: "completed", message: "This flow is completed",  approvalHistory};
-        } else {
-            return {status: "error", message: "Workflow Configuration Error, can not move to next step", current_stage: currentStage}
-        }
+        return await processNextStep(ctx, workflowData.results[0], dataRefId, dataPayload);
     },
 
     approveFlow: async function(ctx, wflowId, dataRefId, approver, dataPayload = {}) {
         if(!approver) approver = ctx?.meta?.user?.userId;
 
-        const workflowData = await _DB.db_selectQ("appdb", "sys_workflows_wflows", "*", {
+        const whereLogic = {
                     guid: ctx?.meta?.user?.guid,
-                    id: wflowId,
+                    // id: wflowId,
                     data_refid: dataRefId, 
                     rejected: 'false',
                     blocked: 'false'
-                }, {});
+                };
+        if(isNaN(wflowId)) whereLogic["workflow_code"] = wflowId;
+        else whereLogic["id"] = wflowId;
+
+        const workflowData = await _DB.db_selectQ("appdb", "sys_workflows_wflows", "*", whereLogic, {});
         if(!workflowData || workflowData.results.length<=0) return {status: "error", message: "Workflow Log Not Found (wflows-1)"}
 
         // const workflowCode = workflowData.results[0].workflow_code;
         // const workflowRule = workflowData.results[0].rules_json;
         const currentStage = workflowData.results[0].current_stage;
-        const currentAssignee = workflowData.results[0].current_assigned_to;
-        let currentApprovers = workflowData.results[0].current_approvers;
+        const currentAssignee = workflowData.results[0].current_assigned_to || "";
+        let currentApprovers = workflowData.results[0].current_approvers || "";
         const approvalHistory = workflowData.results[0].approval_history || {};
 
         if(!approvalHistory[currentStage]) approvalHistory[currentStage] = {"index": Object.keys(approvalHistory).length};
@@ -225,35 +172,46 @@ module.exports = {
                 
                 "edited_on": moment().format("Y-M-D HH:mm:ss"),
             }, {
-                "id": wflowId,
-                "blocked": false,
+                "id": workflowData.results[0].id,
+                "blocked": "false",
             });
         
         return {"status": "success", approver, wflowId, dataRefId}
     },
 
     rejectFlow: async function(ctx, wflowId, dataRefId, rejectedBy) {
+        const whereLogic = {
+                    guid: ctx?.meta?.user?.guid,
+                    // id: wflowId,
+                    data_refid: dataRefId, 
+                    rejected: 'false',
+                    blocked: 'false',
+                    "current_stage<>'completed'": "RAW"
+                };
+        if(isNaN(wflowId)) whereLogic["workflow_code"] = wflowId;
+        else whereLogic["id"] = wflowId;
+
         await _DB.db_updateQ("appdb", "sys_workflows_wflows", {
                 "last_rejected_by": rejectedBy || ctx?.meta?.user?.userId,
                 "last_updated_on": moment().format("Y-M-D HH:mm:ss"),
                 "edited_on": moment().format("Y-M-D HH:mm:ss"),
                 "rejected": true,
-            }, {
-                "guid": ctx?.meta?.user?.guid,
-                "id": wflowId,
-                "blocked": false,
-                "current_stage<>'completed'": "RAW"
-            });
-        return {"status": "success", rejectedBy, wflowId, dataRefId}
+            }, whereLogic);
+
+        return {"status": "success", rejectedBy, wflowId, dataRefId};
     },
 
     validateTransition: async function(ctx, wflowId, dataRefId, dataPayload) {
-        const workflowData = await _DB.db_selectQ("appdb", "sys_workflows_wflows", "*", {
-                    id: wflowId,
-                    data_refid: dataRefId, 
-                    rejected: "false",
-                    blocked: 'false'
-                }, {});
+        const whereLogic = {
+            // id: wflowId,
+            data_refid: dataRefId, 
+            rejected: "false",
+            blocked: 'false'
+        };
+        if(isNaN(wflowId)) whereLogic["workflow_code"] = wflowId;
+        else whereLogic["id"] = wflowId;
+
+        const workflowData = await _DB.db_selectQ("appdb", "sys_workflows_wflows", "*", whereLogic, {});
         if(!workflowData || workflowData.results.length<=0) return {status: "error", message: "Workflow Log Not Found (wflows-1)"}
 
         const workflowCode = workflowData.results[0].workflow_code;
@@ -317,6 +275,71 @@ module.exports = {
         } else {
             return false;
         }
+    }
+}
+
+async function processNextStep(ctx, workflowData, dataRefId, dataPayload) {
+    const workflowCode = workflowData.workflow_code;
+    const workflowRule = workflowData.rules_json;
+    const currentStage = workflowData.current_stage;
+    const currentAssignee = workflowData.current_assigned_to;
+    const currentApprovers = workflowData.current_approvers;
+    const approvalHistory = workflowData.approval_history || {};
+
+    // workflowData.last_updated_on
+    // workflowData.last_updated_by
+    // workflowData.last_updated_stage
+
+    const nextStep = resolveNextStep(workflowRule, currentStage, currentAssignee, approvalHistory, dataPayload);
+    nextStep.next_assignee = "-";
+
+    // console.log(">>>>>>>>getNextStep", wflowId, dataRefId, dataPayload, currentStage, currentAssignee, approvalHistory, JSON.stringify(nextStep, null, 2));
+
+    if(nextStep.next_stage && workflowRule.stages[nextStep.next_stage]) {
+        nextStep.next_assignee = workflowRule.stages[nextStep.next_stage].assigned_to;
+
+        if(nextStep.next_assignee.substr(0,1)=="@") {
+            nextStep.next_assignee = ASSIGNMENT.getAssignment(ctx.meta.user.guid, nextStep.next_assignee, dataPayload);
+        }
+
+        // console.log(">>>>>>>>getNextStep2", wflowId, dataRefId, dataPayload, currentStage, currentAssignee, approvalHistory, JSON.stringify(nextStep, null, 2), JSON.stringify(workflowRule, null, 2));
+
+        const a1 = await _DB.db_updateQ("appdb", "sys_workflows_wflows", {
+            // "approval_history": approval_history,
+            "last_updated_on": moment().format("Y-M-D HH:mm:ss"),
+            "last_updated_by": ctx?.meta?.user?.userId,
+            "last_updated_stage": currentStage,
+            "current_stage": nextStep.next_stage,
+            "current_assigned_to": nextStep.next_assignee,
+            "current_approvers": "",
+            
+            "edited_on": moment().format("Y-M-D HH:mm:ss"),
+        }, {
+            "id": workflowData.id,
+            "blocked": "false",
+        });
+
+        return nextStep;
+    } else if(nextStep.status=="WAITING" && nextStep.approved_count<nextStep.required_approvals) {
+        return {status: "waiting", message: "Required Approvals is not achieved", current_stage: currentStage, approved_count: nextStep.approved_count, required_approvals: nextStep.required_approvals, required: workflowData.current_assigned_to.split(",").filter(a=>a.length>0), approved: workflowData.current_approvers.split(",").filter(a=>a.length>0)}
+    } else if(nextStep.status=="COMPLETED") {
+        if(!approvalHistory.completed) {
+            approvalHistory["completed"] = {"index": Object.keys(approvalHistory).length};
+            approvalHistory["completed"][workflowData.last_updated_by] = workflowData.last_updated_on;
+
+            await _DB.db_updateQ("appdb", "sys_workflows_wflows", {
+                "approval_history": approvalHistory,
+                "edited_on": moment().format("Y-M-D HH:mm:ss"),
+            }, {
+                "id": wflowId,
+                "blocked": "false",
+                "current_stage<>'completed'": "RAW"
+            });
+        }
+
+        return {status: "completed", message: "This flow is completed",  approvalHistory};
+    } else {
+        return {status: "error", message: "Workflow Configuration Error, can not move to next step", current_stage: currentStage}
     }
 }
 

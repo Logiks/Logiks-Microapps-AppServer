@@ -161,6 +161,10 @@ module.exports = {
                     }
                 }
 
+                if(jsonQuery.source.workflow && jsonQuery.source.workflow.length>0) {
+                    WORKFLOWS.createWorkflow(ctx, jsonQuery.source.workflow, insertId, dataFields, true);
+                }
+
                 if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
                     _.each(jsonQuery.hooks.postsubmit, function(func, k) {
                         _call(func, {"id": insertId, "data": dataFields, "operation": "insert", "meta": ctx.meta});
@@ -539,6 +543,10 @@ module.exports = {
                 
                 const dbResponse = await _DB.db_updateQ(dbkey, sqlTable, newDataFields, sqlWhere);
 
+                if(jsonQuery.source.workflow && jsonQuery.source.workflow.length>0) {
+                    WORKFLOWS.getNextStep(ctx, jsonQuery.source.workflow, insertId, dataFields);
+                }
+
                 if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
                     _.each(jsonQuery.hooks.postsubmit, function(func, k) {
                         _call(func, {"where": sqlWhere, "data": newDataFields, "operation": "update", "meta": ctx.meta});
@@ -681,6 +689,135 @@ module.exports = {
                 });
 
                 return dbResponse;
+            }
+        },
+        workflowApprove: {
+			rest: {
+				method: "POST",
+				path: "/approve"
+			},
+            params: {
+                "refid": "string",
+                "filter": "object",
+                "datahash": "string"
+            },
+            async handler(ctx) {
+                const dbOpsID = ctx.params.refid;
+                const dbOpsHash = ctx.params.datahash;
+                var dataFields = ctx.params.fields;
+                const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
+
+                ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
+
+                var filter = ctx.params.filter?ctx.params.filter:{};
+                const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user, ctx);
+
+                const sqlRefid = ctx.params.refid1 ?? jsonQuery.source.refid;
+
+                if(!jsonQuery) {
+                    throw new LogiksError(
+                        "Provided RefID is invalid",
+                        400,
+                        "INVALID_REQUEST"
+                    );
+                }
+
+                if(jsonQuery.source.workflow && jsonQuery.source.workflow.length>0) {
+                    const response = WORKFLOWS.approveFlow(ctx, jsonQuery.source.workflow, sqlRefid, ctx.meta.user.userId, dataFields);
+                    return response;
+                } else {
+                    throw new LogiksError(
+                        "Provided Workflow Not Found",
+                        400,
+                        "INVALID_REQUEST"
+                    );
+                }
+            }
+        },
+        workflowReject: {
+			rest: {
+				method: "POST",
+				path: "/reject"
+			},
+            params: {
+                "refid": "string",
+                "filter": "object",
+                "datahash": "string"
+            },
+            async handler(ctx) {
+                const dbOpsID = ctx.params.refid;
+                const dbOpsHash = ctx.params.datahash;
+                var dataFields = ctx.params.fields;
+                const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
+
+                ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
+
+                var filter = ctx.params.filter?ctx.params.filter:{};
+                const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user, ctx);
+
+                const sqlRefid = ctx.params.refid1 ?? jsonQuery.source.refid;
+
+                if(!jsonQuery) {
+                    throw new LogiksError(
+                        "Provided RefID is invalid",
+                        400,
+                        "INVALID_REQUEST"
+                    );
+                }
+
+                if(jsonQuery.source.workflow && jsonQuery.source.workflow.length>0) {
+                    const response = WORKFLOWS.rejectFlow(ctx, jsonQuery.source.workflow, sqlRefid, ctx.meta.user.userId);
+                    return response;
+                } else {
+                    throw new LogiksError(
+                        "Provided Workflow Not Found",
+                        400,
+                        "INVALID_REQUEST"
+                    );
+                }
+            }
+        },
+        workflowValidate: {
+			rest: {
+				method: "POST",
+				path: "/validate"
+			},
+            params: {
+                "refid": "string",
+                "filter": "object",
+                "datahash": "string"
+            },
+            async handler(ctx) {
+                const dbOpsID = ctx.params.refid;
+                const dbOpsHash = ctx.params.datahash;
+                var dataFields = ctx.params.fields;
+                const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
+
+                ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
+
+                var filter = ctx.params.filter?ctx.params.filter:{};
+                const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user, ctx);
+
+                const sqlRefid = ctx.params.refid1 ?? jsonQuery.source.refid;
+
+                if(!jsonQuery) {
+                    throw new LogiksError(
+                        "Provided RefID is invalid",
+                        400,
+                        "INVALID_REQUEST"
+                    );
+                }
+                
+                if(jsonQuery.source.workflow && jsonQuery.source.workflow.length>0) {
+                    const response = WORKFLOWS.validateTransition(ctx, jsonQuery.source.workflow, sqlRefid, dataFields);
+                    return response;
+                } else {
+                    throw new LogiksError(
+                        "Provided Workflow Not Found",
+                        400,
+                        "INVALID_REQUEST"
+                    );
+                }
             }
         }
     },
