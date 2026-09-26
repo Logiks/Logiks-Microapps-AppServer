@@ -2188,7 +2188,7 @@
     },
     "indexes": [
       "PRIMARY",
-      "guid"
+      "key_id"
     ]
   },
   "lgks_mfa": {
@@ -3916,7 +3916,7 @@
       "topic"
     ]
   },
-  "sys_serviceservers": {
+  "sys_providers": {
     "columns": {
       "id": {
         "type": "int",
@@ -3936,7 +3936,7 @@
         "default": null,
         "primary": false
       },
-      "server_code": {
+      "provider_code": {
         "type": "varchar(55)",
         "nullable": false,
         "default": null,

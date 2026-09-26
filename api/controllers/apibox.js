@@ -39,6 +39,10 @@ module.exports = {
         }
 
         return await sendRequest(apiCode, apiInfo, params, ctx);
+    },
+
+    sendRequest: async function(apiCode, apiInfo, params = {}, ctx) {
+        return await sendRequest(apiCode, apiInfo, params, ctx);
     }
 }
 

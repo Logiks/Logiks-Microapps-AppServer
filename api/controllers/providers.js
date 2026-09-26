@@ -3,7 +3,7 @@
  * This controller is responsible for connecting to remote servers, workers, and agents for various modules and applications. 
  * It provides functionalities to handle server-related operations via various endpoints and services for these remote entities.
  * 
- * sys_serviceservers : Manage Remote Servers, Workers and Agents for modules and apps
+ * sys_providers : Manage Remote Servers, Workers and Agents for modules and apps
  * 
  * eg: analytics101, sysops, reporting_servers, etc
  * */
@@ -28,7 +28,7 @@ module.exports = {
         ];
     },
 
-    getServerList: async function(guid, categoryCode = false) {
+    list: async function(guid, categoryCode = false) {
         var whereCond = {
             "blocked": "false",
             "guid": [["global", guid], "IN"],
@@ -36,28 +36,28 @@ module.exports = {
         if(categoryCode) {
             whereCond.category_code = categoryCode;
         }
-        var serverData = await _DB.db_selectQ("appdb", "sys_serviceservers", "*", whereCond, {});
+        var serverData = await _DB.db_selectQ("appdb", "sys_providers", "*", whereCond, {});
         if(!serverData || !serverData.results || serverData.results.length<=0) {
             return [];
         }
         return serverData.results;
     },
 
-    getServerInfo: async function(guid, serverCode) {
+    getInfo: async function(guid, providerCode) {
         var whereCond = {
             "blocked": "false",
             "guid": [["global", guid], "IN"],
-            "server_code": serverCode
+            "provider_code": providerCode
         };
-        var serverData = await _DB.db_selectQ("appdb", "sys_serviceservers", "*", whereCond, {});
+        var serverData = await _DB.db_selectQ("appdb", "sys_providers", "*", whereCond, {});
         if(!serverData || !serverData.results || serverData.results.length<=0) {
             return null;
         }
         return serverData.results[0];
     },
 
-    send: async function(guid, serverCode, endpoint, payload, optionParams = {}, method = "POST") {
-        var serverInfo = await this.getServerInfo(guid, serverCode);
+    send: async function(guid, providerCode, endpoint, payload, optionParams = {}, method = "POST") {
+        var serverInfo = await this.getServerInfo(guid, providerCode);
         if(!serverInfo) {
             throw new Error("Server not found");
         }
@@ -93,10 +93,10 @@ module.exports = {
         }
         
         //Update the server table for last run
-        _DB.db_updateQ("appdb", "sys_serviceservers", {
+        _DB.db_updateQ("appdb", "sys_providers", {
                 "last_run": _DB.db_now(),
             }, {
-                server_code: serverCode
+                provider_code: providerCode
             });
 
 
@@ -111,10 +111,10 @@ module.exports = {
             const statusCode = response.status;
 
             //Create a log for the run
-            _DB.db_insertQ1("logdb", "log_servers", _.extend({
+            _DB.db_insertQ1("logdb", "log_providers", _.extend({
                 guid: ctx.meta.user.guid, 
                 category_code: "",
-                server_code: serverCode, 
+                provider_code: providerCode, 
                 env_code: env_code, 
                 method: method, 
                 endpoint: finalURL, 
@@ -131,10 +131,10 @@ module.exports = {
             console.error(`Error sending request: ${error.message}`, error);
             
             //Create a log for the run
-            _DB.db_insertQ1("logdb", "log_servers", _.extend({
+            _DB.db_insertQ1("logdb", "log_providers", _.extend({
                 guid: ctx.meta.user.guid, 
                 category_code: "",
-                server_code: serverCode, 
+                provider_code: providerCode, 
                 env_code: env_code, 
                 method: method, 
                 endpoint: finalURL, 
