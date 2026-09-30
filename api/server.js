@@ -531,54 +531,126 @@ module.exports = {
 							},
 
 							onBeforeCall: async function (ctx, route, req, res) {
-							// 	// ctx.meta.headers = req.headers; 
-							// 	// ctx.meta.method = req.method; 
-							ctx.meta.__start = Date.now();
+								// 	// ctx.meta.headers = req.headers; 
+								// 	// ctx.meta.method = req.method; 
+								ctx.meta.__start = Date.now();
+								
+								const serverIP = req.socket.localAddress || req.connection.localAddress;
+								const serverHost = req.headers.host;
+								const remoteIP = MISC.getClientIP(req);
+
+								// 	console.log("REQUEST_EVENTS", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
+
+
+								// IP
+								const domainApp = await BASEAPP.getAppForDomain(serverHost);
+								if(!domainApp) {
+									throw new LogiksError(
+										"The no application found for current domain/url",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+									
+								const appInfo = await BASEAPP.getAppInfo(domainApp.appid);
+								if(!appInfo) {
+									throw new LogiksError(
+										"Application not defined or not found on server",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+
+								const ipAllowed = await AUTHKEY.checkClientIP(remoteIP, appInfo.appid, true);
+								if(!ipAllowed) {
+									throw new LogiksError(
+										"Client Request IP is required pre-approval",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+									
+								ctx.meta.appInfo = appInfo || {};
+								ctx.meta.serverHost = serverHost || "";
+
+								ctx.meta.serverIP = serverIP;
+								ctx.meta.serverHost = serverHost;
+								ctx.meta.remoteIP = remoteIP;
+
+								// 	ctx.meta.$req = req;
+								// 	ctx.meta.$res = res;
+							}
+						},
+
+						//For Integrated MCP tools exposed for using in Claude etc
+						{
+							path: "/mcp",
+							authentication: true,
+							authorization: true,
+							opts: {
+								authRequired: true
+							},
+							bodyParsers: false,
+							cors: {
+								origin: "*",
+								methods: ["GET", "POST", "DELETE", "OPTIONS"]
+							},
+							mappingPolicy: "restrict",
+							aliases: {
+								"/*path": function mcpHandler(req, res) {
+									return MCP.handleRequest(req, res);
+								}
+							},
 							
-							const serverIP = req.socket.localAddress || req.connection.localAddress;
-							const serverHost = req.headers.host;
-							const remoteIP = MISC.getClientIP(req);
-
-							// 	console.log("REQUEST_EVENTS", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
-
-
-							// IP
-							const domainApp = await BASEAPP.getAppForDomain(serverHost);
-							if(!domainApp) {
-								throw new LogiksError(
-									"The no application found for current domain/url",
-									401,
-									"INVALID_REQUEST"
-								);
-							}
+							onBeforeCall: async function (ctx, route, req, res) {
+								// 	// ctx.meta.headers = req.headers; 
+								// 	// ctx.meta.method = req.method; 
+								ctx.meta.__start = Date.now();
 								
-							const appInfo = await BASEAPP.getAppInfo(domainApp.appid);
-							if(!appInfo) {
-								throw new LogiksError(
-									"Application not defined or not found on server",
-									401,
-									"INVALID_REQUEST"
-								);
-							}
+								const serverIP = req.socket.localAddress || req.connection.localAddress;
+								const serverHost = req.headers.host;
+								const remoteIP = MISC.getClientIP(req);
 
-							const ipAllowed = await AUTHKEY.checkClientIP(remoteIP, appInfo.appid, true);
-							if(!ipAllowed) {
-								throw new LogiksError(
-									"Client Request IP is required pre-approval",
-									401,
-									"INVALID_REQUEST"
-								);
-							}
-								
-							ctx.meta.appInfo = appInfo || {};
-							ctx.meta.serverHost = serverHost || "";
+								// 	console.log("REQUEST_EVENTS", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
 
-							ctx.meta.serverIP = serverIP;
-							ctx.meta.serverHost = serverHost;
-							ctx.meta.remoteIP = remoteIP;
 
-							// 	ctx.meta.$req = req;
-							// 	ctx.meta.$res = res;
+								// IP
+								const domainApp = await BASEAPP.getAppForDomain(serverHost);
+								if(!domainApp) {
+									throw new LogiksError(
+										"The no application found for current domain/url",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+									
+								const appInfo = await BASEAPP.getAppInfo(domainApp.appid);
+								if(!appInfo) {
+									throw new LogiksError(
+										"Application not defined or not found on server",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+
+								const ipAllowed = await AUTHKEY.checkClientIP(remoteIP, appInfo.appid, true);
+								if(!ipAllowed) {
+									throw new LogiksError(
+										"Client Request IP is required pre-approval",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+									
+								ctx.meta.appInfo = appInfo || {};
+								ctx.meta.serverHost = serverHost || "";
+
+								ctx.meta.serverIP = serverIP;
+								ctx.meta.serverHost = serverHost;
+								ctx.meta.remoteIP = remoteIP;
+
+								// 	ctx.meta.$req = req;
+								// 	ctx.meta.$res = res;
 							}
 						},
 

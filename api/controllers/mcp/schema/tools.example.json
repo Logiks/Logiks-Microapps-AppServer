@@ -1,0 +1,37 @@
+{
+    "namespace": "demo",
+    "plugin": "com.smartinfologiks.demo",
+    "version": "1.0",
+    "tools": [
+        {
+            "name": "lookup_customer",
+            "description": "Looks up a single customer by ID or email and returns their profile and account status. Use this before making changes on a customer's behalf.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "customer_id": { "type": "string", "description": "Internal customer ID." },
+                    "email": { "type": "string", "description": "Customer email, used if customer_id isn't known." }
+                }
+            },
+            "action": "demo.lookupCustomer",
+            "policy": "demo.allow.access",
+            "readOnly": true
+        },
+        {
+            "name": "create_support_ticket",
+            "description": "Opens a new support ticket for a customer. Requires customer_id and a summary of the issue.",
+            "inputSchema": {
+                "type": "object",
+                "required": ["customer_id", "summary"],
+                "properties": {
+                    "customer_id": { "type": "string" },
+                    "summary": { "type": "string" },
+                    "priority": { "type": "string", "enum": ["low", "normal", "high"] }
+                }
+            },
+            "action": "demo.createSupportTicket",
+            "policy": "demo.tab.access",
+            "readOnly": false
+        }
+    ]
+}

@@ -1,0 +1,70 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://logiks.internal/schema/tools.schema.json",
+    "title": "Logiks Plugin MCP Tools Manifest",
+    "description": "Sits alongside a plugin's logiks.json (same directory). Declares the MCP tools a plugin exposes. The Worker aggregates every installed plugin's tools.json and reports them to the AppServer at registration (system.registerWorker), the same way it already reports `policies` and `navigation`. The AppServer's MCP registry (api/controllers/mcp/registry.js) turns each entry into a callable MCP tool.",
+    "type": "object",
+    "required": ["namespace", "plugin", "tools"],
+    "additionalProperties": false,
+    "properties": {
+        "namespace": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,32}$",
+            "description": "Short, stable slug for this plugin's tools. Prefixed onto every tool name (`${namespace}__${name}`) so two plugins can't collide in the global MCP tool list. Pick something that won't change - renaming it changes every tool's public name."
+        },
+        "plugin": {
+            "type": "string",
+            "description": "Must match this plugin's logiks.json `package` (or `marketid`), so a tool can be traced back to the plugin that owns it."
+        },
+        "version": {
+            "type": "string",
+            "description": "Manifest version, independent of the plugin's own version. Bump when tool signatures change."
+        },
+        "tools": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/tool" }
+        }
+    },
+    "$defs": {
+        "tool": {
+            "type": "object",
+            "required": ["name", "description", "inputSchema", "action"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_-]{1,40}$",
+                    "description": "Combined with the manifest's `namespace` as `${namespace}__${name}`. Keep the combined length <= 64 chars - that's OpenAI's tool-name limit, and Claude/other MCP hosts follow the same convention."
+                },
+                "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Shown to the calling LLM verbatim. State what the tool does and when to use it - this is the only thing the model uses to decide whether to call it."
+                },
+                "inputSchema": {
+                    "type": "object",
+                    "description": "A JSON Schema (type: object) describing this tool's arguments. Passed through to MCP clients as-is, so keep it self-contained (no external $refs).",
+                    "properties": {
+                        "type": { "const": "object" }
+                    },
+                    "required": ["type"]
+                },
+                "action": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_.-]+\\.[a-zA-Z0-9_]+$",
+                    "description": "A Moleculer broker action already exposed by this plugin's Worker service, e.g. 'demo.lookupCustomer'. Invoked as ctx.call(action, args, {meta: ctx.meta}) - the action owns its own DB access, validation, and read/write semantics. Not a file path or inline function: the tool must already exist as a normal service action."
+                },
+                "policy": {
+                    "type": "string",
+                    "description": "A policy key from this plugin's logiks.json `policies` map (e.g. 'demo.allow.access'). If set, the call is gated through RBAC.checkPolicy(ctx, policy, false) before the action runs. Omit for tools any authenticated MCP caller may use."
+                },
+                "readOnly": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Advisory hint surfaced to MCP clients - some hosts use it to decide whether to ask the user to confirm before calling. Does not change server-side behavior; the action itself is still responsible for enforcing read-only semantics."
+                }
+            }
+        }
+    }
+}
