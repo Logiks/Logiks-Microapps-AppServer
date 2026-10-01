@@ -9,6 +9,7 @@ const KNOWLEDGE = require("./knowledge.js");
 const TOOLING = require("./aicore/tooling.js");
 const PERSONAS = require("./aicore/personas.js");
 const AGENTS = require("./aicore/agents.js");
+const TASKS = require("./aicore/tasks.js");
 const CONVERSATIONS = require("./aicore/conversations.js");
 const BASICS = require("./aicore/basics.js");
 const detectIntent = require("./aicore/intentDetector.js");
@@ -53,19 +54,42 @@ module.exports = {
     //Registers this node as a consumer of queued agent runs (execution_mode
     //"queue"). Called from baseapp.js's postInitalization(), after every
     //controller - including QUEUE - has had a chance to finish connecting.
+    //When the run was dispatched from a task (payload.taskId set - see
+    //AICORE.queueAgentRun and aicore/tasks.js), reports the outcome back
+    //onto that task row so its status/result reflect what actually happened.
     startQueueConsumer: async function() {
         if(!(CONFIG.aicore && CONFIG.aicore.enabled)) return;
 
         QUEUE.registerQueue(QUEUE_TASK_KEY);
         await QUEUE.setupConsumer(QUEUE_TASK_KEY, async function(payload) {
             const ctx = { meta: { user: payload.user || {} } };
-            return await AGENT_LOOP.runTurn(ENGINES, RESILIENCE_CONFIG, payload.sessId, payload.agentCode, payload.message, ctx);
+            const guid = payload.user?.guid;
+
+            try {
+                const result = await AGENT_LOOP.runTurn(ENGINES, RESILIENCE_CONFIG, payload.sessId, payload.agentCode, payload.message, ctx);
+
+                if (payload.taskId) {
+                    if (result.status === "success") {
+                        await TASKS.complete(guid, payload.taskId, result.message, ctx);
+                    } else {
+                        await TASKS.fail(guid, payload.taskId, result.message || result.status, ctx);
+                    }
+                }
+
+                return result;
+            } catch (err) {
+                if (payload.taskId) {
+                    await TASKS.fail(guid, payload.taskId, err.message || String(err), ctx);
+                }
+                throw err;
+            }
         });
     },
 
     getTools: TOOLING,
     personas: PERSONAS,
     agents: AGENTS,
+    tasks: TASKS,
 
     //Entry point for a normal, synchronous chat turn. Resolves an agent
     //either explicitly (moduleId) or via intentDetector against the
@@ -95,15 +119,18 @@ module.exports = {
     //Publishes an agent run to the cross-node queue for async/distributed
     //execution - picked up by whichever node's startQueueConsumer() is
     //listening, with the existing QUEUE implementation's retry + dead-letter.
-    queueAgentRun: async function(agentCode, message, sessId, ctx) {
+    //taskId is optional - set when this run is a task's execution (see
+    //aicore/tasks.js), so startQueueConsumer can report the outcome back
+    //onto that task row once the run finishes.
+    queueAgentRun: async function(agentCode, message, sessId, ctx, taskId) {
         if(!sessId) sessId = UNIQUEID.generate(10);
         const guid = ctx?.meta?.user?.guid;
 
         await QUEUE.publish(guid, QUEUE_TASK_KEY, {
-            sessId, agentCode, message, user: ctx?.meta?.user || {}
+            sessId, agentCode, message, user: ctx?.meta?.user || {}, taskId: taskId || null
         });
 
-        return { sessId, status: "queued" };
+        return { sessId, status: "queued", taskId: taskId || null };
     },
 
     sessionHistory: async function(guid, sessId) {

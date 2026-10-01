@@ -12,6 +12,7 @@ const PERSONAS = require("./personas.js");
 const AGENTS = require("./agents.js");
 const CONVERSATIONS = require("./conversations.js");
 const RAG = require("./rag.js");
+const TASKS = require("./tasks.js");
 
 //engines: [{key, priority, instance}] from ./index.js's createEngines()
 //resilienceConfig: {retry, breaker} from CONFIG.aicore
@@ -50,6 +51,12 @@ async function executeLoop(engines, resilienceConfig, sessId, persona, agent, us
     if (RAG.usesOnDemand(persona)) {
         tools.push(RAG.knowledgeSearchTool(guid, persona).definition);
     }
+    //create_task is only meaningful for a real, persisted chat turn - not
+    //the one-off utility calls (queryNL etc.) that drive executeLoop with
+    //persist: false and a transient, non-DB-backed agent/persona.
+    if (persist && TASKS.isAllowedFor(persona)) {
+        tools.push(TASKS.createTaskTool(guid, opts.agentCode, sessId, ctx).definition);
+    }
 
     const turnMessages = [];
     if (RAG.usesForced(persona)) {
@@ -82,6 +89,8 @@ async function executeLoop(engines, resilienceConfig, sessId, persona, agent, us
                 //dispatched directly through rag.js instead of TOOLING.run.
                 toolResult = call.name === RAG.KNOWLEDGE_TOOL_NAME
                     ? await RAG.knowledgeSearchTool(guid, persona).handler(call.arguments)
+                    : call.name === TASKS.CREATE_TASK_TOOL_NAME
+                    ? await TASKS.createTaskTool(guid, opts.agentCode, sessId, ctx).handler(call.arguments)
                     : await TOOLING.run(call.name, call.arguments, ctx);
             } catch (err) {
                 toolResult = { error: err.message || String(err) };
