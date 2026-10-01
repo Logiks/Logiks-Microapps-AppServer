@@ -83,8 +83,17 @@ There's no dead-letter queue. A throwing handler logs and the event is dropped. 
 
 ## 12.6 AI (AICore)
 
-**`AICORE.sendMessage` returns nothing useful.**
-The end-to-end path today is `sendMessage` → the configured engine, and the default engine currently returns `false`. The registry, context engine, memory, and agent loops are still being built. [§9 AI Layer](09-ai-layer.md) tracks what's wired versus planned. Point at a working engine, or treat the call as the integration seam it is for now.
+**`AICORE.sendMessage`/`runAgent` errors with "unknown agent" or "unknown persona".**
+Both are DB-backed (`sys_ai_agents`/`sys_ai_personas`) and must be created first via `AICORE.agents.upsert`/`AICORE.personas.upsert` or `POST /ai/agents/:agentCode` / `POST /ai/personas/:personaCode` — there's no implicit default. See [§9 AI Layer](09-ai-layer.md) and [misc/examples/aicore-usage.js](../misc/examples/aicore-usage.js).
+
+**`AICORE.sendMessage` resolves to "No agent resolved for this request".**
+With no `moduleId`, it falls back to intent detection ([intentDetector.js](../api/controllers/aicore/intentDetector.js)) against `CONFIG.aicore.intentAgentMap`, then `CONFIG.aicore.defaultAgent`. Set one of those, or call `AICORE.runAgent(agentCode, ...)` directly with an explicit agent.
+
+**A persona's `knowledge_search` tool (or forced RAG context) never returns anything.**
+Expected today — [api/controllers/knowledge.js](../api/controllers/knowledge.js)'s `search()`/`extract()` are stubs. RAG delivery (`rag.js`) is fully wired; the retrieval backend behind it isn't built yet. See [§9.4](09-ai-layer.md#94-ai-pipelines).
+
+**LogiksAI engine calls fail or return an unexpected shape.**
+Its request/response mapping ([engines/logiksai.js](../api/controllers/aicore/engines/logiksai.js)) is written against a best-effort field layout, not yet confirmed against LogiksAI's real API. Claude and OpenAI are fully implemented and the more reliable engines to point a persona at today.
 
 **Qdrant isn't reachable in Docker.**
 It only starts under the `ai` compose profile: `docker compose --profile ai up -d` ([§2.1](02-getting-started.md#docker-compose)).

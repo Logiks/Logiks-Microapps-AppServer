@@ -17,6 +17,8 @@ The AppServer ships a set of platform services in [api/services/](../api/service
 | Service | Purpose | Notable actions |
 |---|---|---|
 | `auth` | Login, logout, token issuance, verification | `login`, `logout`, `logout-all`, `refresh`, `tltoken`, `s2stoken`, `verifyAccessToken`, `verifyS2SToken`, `verifyTLToken` |
+| `agents` | AICore persona/agent registries and runs ([§9.3](09-ai-layer.md#93-ai-agents)) | `listPersonas`, `upsertPersona`, `removePersona`, `listAgents`, `upsertAgent`, `removeAgent`, `runAgent`, `sessionHistory` |
+| `tasks` | AICore background/recurring agent tasks ([§9.3](09-ai-layer.md#93-ai-agents)) | `listTasks`, `getTask`, `createTask`, `cancelTask` |
 | `tenant` | Multi-tenant data | `fetch`, `list`, `create`, `update` |
 | `application` | App metadata, theme, pages | `fetch`, `settings`, `pages`, `theme` |
 | `data` | Generic list management (do_lists) | `listGroups`, `fetch`, `fetchFiltered`, `upsert` |
@@ -284,12 +286,13 @@ Uploaded paths are exposed on `ctx.meta.file`, `ctx.meta.files`, or `ctx.meta[fi
 
 ## 6.4 API Reference, Examples & Explorer
 
-The endpoint reference is generated, not hand-written, so it never drifts out of date. The `developers.swagger` service ([api/services/developers/swagger.service.js](../api/services/developers/swagger.service.js)) builds an OpenAPI 3 document from the live action catalogue across every node — every `rest:`-annotated action, its params, and its scopes. It includes a plugin's routes as soon as the Worker hosting them joins.
+The endpoint reference is generated, not hand-written, so it never drifts out of date. The `developers.swagger` service ([api/services/developers/swagger.service.js](../api/services/developers/swagger.service.js)) builds an OpenAPI 3 document from the API Gateway's own resolved route aliases (`listAliases`, moleculer-web's built-in alias introspection) rather than re-deriving paths from each action's raw `rest:` definition — so the documented paths, including route-mount prefixes and optional-segment routes, match what's actually reachable. It includes a plugin's routes as soon as the Worker hosting them joins.
 
 **Live spec** (development/staging — disabled in production):
 
 ```
-GET /api/developers.swagger/openapi.json
+GET /api/developers/swagger/openapi.json          (authenticated mount)
+GET /api/public/developers/swagger/openapi.json   (public mount)
 ```
 
 Load that JSON into Swagger UI, Postman, or an SDK generator for a browsable, always-current reference.
@@ -309,7 +312,7 @@ curl http://localhost:9999/api/me/info -H "X-API-Key: <your-key>"
 curl "http://localhost:9999/api/services/demo/" -H "Authorization: Bearer <token>"
 ```
 
-To make your actions read well in the reference, give them a clear `name`, populated `params`, and a short `description`; AICore's tool catalogue draws on the same metadata.
+To make your actions read well in the reference, give them a clear `name`, populated `params`, and a short `description`. Note this is a separate catalogue from AICore's agent tools ([§9.3](09-ai-layer.md#93-ai-agents)) — those come from the MCP tool registry (built-in system tools, plus plugin `tools.json` manifests), not from this OpenAPI spec.
 
 ---
 

@@ -3548,24 +3548,6 @@
         "default": null,
         "primary": false
       },
-      "repeat_schedule": {
-        "type": "varchar(25)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "repeat_until": {
-        "type": "datetime",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "autojob_id": {
-        "type": "int",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
       "status": {
         "type": "varchar(25)",
         "nullable": false,

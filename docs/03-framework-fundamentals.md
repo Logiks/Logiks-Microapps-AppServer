@@ -363,7 +363,7 @@ All controllers in [api/controllers/](../api/controllers/). The **Cluster-public
 
 | Controller global | Cluster-public | Purpose |
 |---|---|---|
-| `AICORE` | Conditional* | AI Layer — `sendMessage`, engine dispatch. See [§9](09-ai-layer.md). |
+| `AICORE` | ✅ | AI Layer — personas/agents, agent loop, tasks. See [§9](09-ai-layer.md). |
 | `APIBOX` | ✅ | API versioning / sandboxing controls |
 | `APPLICATION` | ❌ | App metadata loader (consumed by `application.service.js`) |
 | `AUTHFEDERATED` | ✅ | Federated SSO engine catalogue + login response processing |
@@ -382,8 +382,6 @@ All controllers in [api/controllers/](../api/controllers/). The **Cluster-public
 | `USERS` | ✅ | User CRUD, federated user resolution |
 | `VENDORS` | ❌ | Third-party integration registry (`sys_vendors`) |
 | `WEBHOOKS` | ❌ | Inbound webhook reception + logging |
-
-\* `AICORE.initialize()` returns `true` only when `CONFIG.aicore.enabled` is `true` *and* the configured engine resolves. If AI is disabled, `AICORE` is loaded but stays in-process.
 
 ### Discoverability at Runtime
 

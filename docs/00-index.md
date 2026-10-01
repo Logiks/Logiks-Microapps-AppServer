@@ -16,4 +16,4 @@
 | 12 | Troubleshooting & FAQ | [12-troubleshooting.md](12-troubleshooting.md) |
 | — | Developer Training (onboarding track) | [training/README.md](training/README.md) |
 
-The chapters are grounded in the source under [../api/](../api/) and [../misc/](../misc/). Chapter 9 (AI Layer) documents **AICore**, much of which is still being built — that chapter tracks what runs today against the design it's heading toward. Anything not yet built is marked **Roadmap** or **Planned** inline.
+The chapters are grounded in the source under [../api/](../api/) and [../misc/](../misc/). Chapter 9 (AI Layer) documents **AICore** — personas/agents, the tool-calling agent loop, tasks/scheduling, and two LLM engines (Claude, OpenAI) are built and runnable; the main open piece is the knowledge/vector-retrieval backend. That chapter's closing table tracks exactly what's built versus what's still open.

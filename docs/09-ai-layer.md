@@ -2,9 +2,9 @@
 
 > Audience: **app developers** building AI-powered microapps, **platform engineers** configuring AI engines, **architects** evaluating Logiks' AI posture.
 
-The AI Layer is named **AICore** — the 4th tier of Logiks' T4 architecture, implemented in this repo at [api/controllers/aicore.js](../api/controllers/aicore.js). AICore is *the* agentic platform of Logiks: it owns the skill registry, context engine, memory, vector DB connections, agent loops, and tools integration. Microapps consume those capabilities through AICore's interfaces and can extend the registry with their own skills, tools, and domain-specific components — they do not reinvent the agentic stack.
+The AI Layer is named **AICore** — the 4th tier of Logiks' T4 architecture, implemented in this repo at [api/controllers/aicore.js](../api/controllers/aicore.js) plus the module tree under [api/controllers/aicore/](../api/controllers/aicore/). AICore is *the* agentic platform of Logiks: it owns persona/agent definitions, the tool-calling agent loop, conversation history, background task scheduling, and the engine layer that talks to LLM providers. Microapps consume those capabilities through AICore's interfaces and the REST surface it exposes, and extend it by registering their own personas, agents and tasks — they do not reinvent the agentic stack.
 
-Beneath AICore sits a pluggable **engine layer** ([AIEngine](../api/controllers/aicore/aiengine.js)) that adapts to LLM providers (LogiksAI today; Ollama, Claude, OpenAI by extension). Engines do the LLM I/O; AICore does the agentic work.
+Custom, proprietary — not built on LangChain, LlamaIndex, or the Anthropic Agent SDK — because the agentic primitives need to be first-class consumers of Logiks' tenancy, RBAC, audit, and event surfaces. The agent loop is a real multi-turn tool-use loop built directly against each provider's native tool-calling protocol.
 
 ---
 
@@ -14,32 +14,33 @@ Beneath AICore sits a pluggable **engine layer** ([AIEngine](../api/controllers/
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Microapps (use-case-specific solutions: support, sales, …)     │
-│   · register skills with AICore                                 │
-│   · contribute tools                                            │
-│   · consume AICore interfaces for skills/context/memory/agents  │
+│  Microapps (use-case-specific solutions: support, sales, …)      │
+│   · define personas (system prompt, model, tool/knowledge scope) │
+│   · define agents (which persona, how it executes, limits)       │
+│   · contribute tools via tools.json (registration path, not live)│
+│   · call AICORE.sendMessage / runAgent / queueAgentRun           │
 └────────────────────────────┬─────────────────────────────────────┘
-                             │  AICORE.sendMessage / interfaces
+                             │
                              ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│  AICore  (api/controllers/aicore.js)  — Tier 4: agentic layer    │
+│  AICore  (api/controllers/aicore.js + aicore/*.js) — Tier 4       │
 │   ┌──────────────────────────────────────────────────────────┐   │
-│   │  Skill registry      ·  Context engine                   │   │
-│   │  Memory (semantic + episodic)  ·  Vector DB connections  │   │
-│   │  Agent loops         ·  Tools integration                │   │
-│   │  Policy controls     ·  Session ids                      │   │
+│   │  Personas & Agents (sys_ai_personas / sys_ai_agents)      │   │
+│   │  Agent loop (agentLoop.js)  ·  Tool dispatch (tooling.js) │   │
+│   │  RAG delivery (rag.js)      ·  Tasks (tasks.js + cron)    │   │
+│   │  Conversations (conversations.js)  ·  Basics (basics.js) │   │
+│   │  Resilience: retry, timeout, circuit breaker              │   │
 │   └──────────────────────────────────────────────────────────┘   │
 └────────────────────────────┬─────────────────────────────────────┘
-                             │  engine.sendMessage
+                             │  engine.sendMessage(sessId, messages, tools, …)
                              ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│  Engine layer  (api/controllers/aicore/<engine>.js)              │
-│   AIEngine (abstract)                                            │
-│       │                                                          │
-│       ├── LogiksAI       ──►  LogiksAI hosted LLM platform       │
-│       ├── Ollama         ──►  local Ollama models  (roadmap)     │
-│       ├── Claude         ──►  Anthropic Claude     (roadmap)     │
-│       └── OpenAI         ──►  OpenAI models        (roadmap)     │
+│  Engine layer  (api/controllers/aicore/engines/<engine>.js)       │
+│   AIEngine (abstract)                                             │
+│       │                                                           │
+│       ├── LogiksAI   ──►  LogiksAI hosted LLM platform (stub)     │
+│       ├── Claude     ──►  Anthropic Messages API                  │
+│       └── OpenAI     ──►  OpenAI Responses API                    │
 └──────────────────────────────────────────────────────────────────┘
                              │  HTTP / SDK
                              ▼
@@ -48,344 +49,263 @@ Beneath AICore sits a pluggable **engine layer** ([AIEngine](../api/controllers/
 
 The architecture cleanly separates three concerns:
 
-1. **LLM I/O** — engines adapt to specific providers; pure protocol translation.
-2. **Agentics** — AICore owns the orchestration, memory, retrieval, skills, tools.
-3. **Domain** — microapps own their business logic and extend AICore with use-case-specific skills/tools.
+1. **LLM I/O** — engines adapt a generic `{messages, tools}` shape to a specific provider's wire protocol; pure protocol translation (see [api/controllers/aicore/engines/aiengine.js](../api/controllers/aicore/engines/aiengine.js)).
+2. **Agentics** — AICore owns persona/agent definitions, the tool-calling loop, conversation history, scheduling, and resilience.
+3. **Domain** — microapps own their business logic: they define personas/agents for their use case. Contributing their own tools (via `tools.json`) is the intended path but isn't fully wired yet (see Tool Calling, below) — today a persona's tool list draws from the built-in system tools.
 
 ### AI Runtime Layer
 
-AICore runs *inline* with the AppServer process. The controller is loaded as a global (`AICORE`) at boot by [api/baseapp.js:28-47](../api/baseapp.js#L28-L47); engines are instantiated during `AICore.initialize()` based on `CONFIG.aicore`.
+AICore runs *inline* with the AppServer process. The controller is loaded as a global (`AICORE`) at boot; `AICore.initialize()` reads `CONFIG.aicore`, instantiates one adapter per configured engine (sorted by `priority`), and wires resilience (retry/timeout/circuit-breaker) config for the agent loop and the `basics.js` utilities to share.
 
-For lightweight workloads (HTTP-based LLM calls, broker tool invocations), inline operation is sufficient — the LLM is I/O-bound and doesn't block the event loop meaningfully. For workloads that need heavy local computation (embedding generation, in-process retrieval, vector indexing), the recommended pattern is to deploy a Python Worker via [Microapps-Worker-Python](https://github.com/Logiks/Microapps-Worker-Python) that participates in the cluster and exposes specialized actions — AICore can be configured to call those Worker actions as part of its agent loops.
+Three execution lanes exist for running an agent turn:
 
-### AI Contracts
+| Lane | How it runs | Entry point |
+|---|---|---|
+| **inline** | In the calling process, synchronously | `AICORE.runAgent(...)` / `AICORE.sendMessage(...)` |
+| **queue** | Published to the cross-node NATS queue (`aicore.agent.run`); any node running `AICORE.startQueueConsumer()` picks it up | `AICORE.queueAgentRun(...)`, or `POST /ai/agents/:agentCode/run?async=true` |
+| **local_worker** | Scaffolded, not yet dispatched | [api/workers/aiagent.worker.js](../api/workers/aiagent.worker.js) — a partial-bootstrap worker-thread lane for CPU-heavy local work, documented and ready to receive jobs, but nothing currently routes an agent's `execution_mode: "local_worker"` to it |
 
-The contracts AICore exposes have two sides:
-
-**For microapps consuming AICore** (the interface surface — intended):
-
-| Capability | AICore interface |
-|---|---|
-| LLM round-trip | `AICORE.sendMessage(message, sessId, moduleId, params, ctx)` |
-| One-shot LLM call | `AICORE.oneShot(message, moduleId, params, ctx)` |
-| Skill execution | `AICORE.runSkill(skillId, params, ctx)` |
-| Skill registration | `AICORE.registerSkill(skillDef)` |
-| Tool registration | `AICORE.registerTool(toolDef)` |
-| Memory access | `AICORE.memory.get/put/search(...)` |
-| Context assembly | `AICORE.context.assemble(ctx, requirements)` |
-
-**For engines plugging into AICore** (the engine plugin contract — present in code):
-
-```javascript
-// api/controllers/aicore/myengine.js
-const AIEngine = require("./aiengine");
-
-module.exports = class MyEngine extends AIEngine {
-    constructor(params = {}) { super(params); /* … */ }
-    __name() { return "myengine"; }
-    async sendMessage(sessId, message, userInfo, params = {}) {
-        // call the LLM; return the response
-    }
-};
-```
-
-Then in [api/controllers/aicore.js](../api/controllers/aicore.js) `initialize()`:
-
-```javascript
-case "myengine":
-    aiEngine = new MyEngine(CONFIG.aicore.config);
-    break;
-```
-
-### AI Context Engine
-
-The **Context Engine** is the AICore module that assembles per-request context before the LLM call. Once built, it will pull:
-
-| Source | Use |
-|---|---|
-| `ctx.meta.user` | Identity, role, scopes |
-| `ctx.meta.tenantInfo` | Tenant defaults, feature flags |
-| Episodic memory (KV) | Recent agent–user exchanges in session |
-| Semantic memory (vector DB) | Relevant past knowledge by similarity |
-| Platform events (subscribed) | Activity since last turn |
-| Skill metadata | Prompt template, tool list, memory scope of the dispatched skill |
-| Environment | Time, locale, current page/route |
-
-Microapps don't assemble context themselves — they pass `ctx` to AICore and the Context Engine handles assembly. This avoids each microapp re-implementing context logic; corrections and improvements live in one place.
-
-> **Status:** Roadmap. Not yet in code.
-
----
-
-## 9.2 LLM Integration
-
-AICore is LLM-agnostic. The LLM is whatever the configured engine talks to. Switching providers is a configuration change.
-
-Though LogiksAI provides additional layer of intelligence and cross platform Personas which expdediates the delivery of AI based objectives.
+Recurring work (scheduled tasks) rides the platform's existing cron infrastructure ([api/controllers/autojobs.js](../api/controllers/autojobs.js)) rather than a bespoke scheduler — see §9.3 Tasks.
 
 ### Engine Plugin Pattern
 
 To add a new LLM provider:
 
-1. Create `api/controllers/aicore/<provider>.js` extending `AIEngine`.
-2. Implement `__name()` and `async sendMessage(sessId, message, userInfo, params)`.
-3. Add a `case "<provider>"` branch in [api/controllers/aicore.js:15-21](../api/controllers/aicore.js#L15-L21).
+1. Create `api/controllers/aicore/engines/<provider>.js` extending `AIEngine` ([aiengine.js](../api/controllers/aicore/engines/aiengine.js)).
+2. Implement `__name()` and `async sendMessage(sessId, messages, tools, userInfo, params)`, translating the generic message/tool shape into the provider's native protocol and translating the response back into `{ message, toolCalls, usage, raw }`.
+3. Register the driver in [api/controllers/aicore/index.js](../api/controllers/aicore/index.js)'s `DRIVERS` map.
+4. Add an entry under `CONFIG.aicore.engines` (`{ key, driver, priority, config }`).
 
-The `params` object is engine-specific — model name, temperature, system prompt, tool schemas if AICore is doing tool calling, retrieval hits if pre-computed, etc. Engines pass-through unrecognised fields.
+Engines are provider-agnostic from the agent loop's point of view — `agentLoop.js` and `basics.js` only ever see `{message, toolCalls, usage, raw}`, never a provider-specific response shape.
 
-### LogiksAI (default)
+---
 
-**LogiksAI** is Logiks' own hosted LLM platform — the default engine and the only one wired in the switch today. The integration class [api/controllers/aicore/logiksai.js](../api/controllers/aicore/logiksai.js) extends `AIEngine`; `sendMessage` is currently a stub. When complete, it will issue requests against the LogiksAI service.
+## 9.2 LLM Integration
 
-### Ollama, Claude, OpenAI
+AICore supports multiple engines simultaneously, ordered by `priority`. `resilience.js`'s `callEngine()` tries them in order, applying per-engine retry/timeout and a circuit breaker (state kept in `_CACHE` so it's shared cluster-wide, not per-process) — if the highest-priority engine is failing or its breaker is open, the call falls through to the next one. This is real fallback behaviour, not a documented intention.
 
-> **Roadmap.** None are wired yet. The expected shape:
->
-> - **Ollama** — POST to a local Ollama URL (`/api/chat`); translate the response.
-> - **Claude** — use `@anthropic-ai/sdk`; call `messages.create` with system + user messages + tool definitions.
-> - **OpenAI** — use `openai`; call `chat.completions.create` or `responses.create`.
->
-> Each is one file under `api/controllers/aicore/` plus one `case` in the initialize switch.
+### Claude
+
+[api/controllers/aicore/engines/claude.js](../api/controllers/aicore/engines/claude.js) — fully implemented against the Anthropic Messages API via `@anthropic-ai/sdk`. Tool calls round-trip as native `tool_use` / `tool_result` content blocks — the same protocol Claude Code itself is built on. Supports multimodal input (text + base64 images) for `describe`/`ocr`.
+
+### OpenAI
+
+[api/controllers/aicore/engines/openai.js](../api/controllers/aicore/engines/openai.js) — fully implemented against OpenAI's Responses API (`responses.create`), using `function_call` / `function_call_output` for tool calling. Also the only engine wired for `embed()` (`text-embedding-3-small` by default).
+
+### LogiksAI
+
+[api/controllers/aicore/engines/logiksai.js](../api/controllers/aicore/engines/logiksai.js) — Logiks' own hosted LLM platform, and the default/priority-1 engine in `config_sample.json`. The request/response mapping (`{url, apikey, appid}` → `POST {url}/chat`) is written against a best-effort field layout and is **not yet confirmed against LogiksAI's real API reference** — treat it as a stub with a realistic shape until verified.
+
+### Ollama and other providers
+
+Not wired yet. Adding one is exactly the four-step engine plugin pattern above — no architectural gap, just an unwritten adapter file.
 
 ### Multi-Model Routing
 
-> **Roadmap.** AICore today selects one engine per process via `CONFIG.aicore.engine`. The intended evolution: a skill can declare its preferred engine (`skillDef.engine = "claude"`), and the dispatcher picks the right one at runtime. Automatic routing (latency / cost / quality) is further out.
+Today: one process can run several engines with priority-ordered fallback (above), but a given **persona** pins to a single `engine_key` + `model`. Routing a single call across models by cost/quality/latency, or letting a skill-equivalent declare a *preferred* engine rather than a pinned one, is not implemented.
 
-### Embedding Models
+### Embeddings
 
-Embeddings power semantic memory and RAG retrieval inside AICore (intended). The plan: AICore manages an embedding provider (configured separately from the chat engine) and exposes embedding-aware memory APIs. Microapps don't choose embedding models per call — they trust AICore's configured embedder.
-
-> **Status:** Roadmap. The embedding interface is not yet present.
+`AICORE.embed(input, ctx, params)` → `basics.js`'s `embed()` tries engines in priority order and uses the first one whose adapter implements `embed()` — today that's OpenAI only (Claude and LogiksAI throw `AIEngine`'s default "does not support embeddings"). There is no separate `CONFIG.aicore.embeddings` provider selection; it's the same engine list.
 
 ---
 
 ## 9.3 AI Agents
 
-### Agent Framework
+### Personas and Agents — the two building blocks
 
-AICore *is* the agent framework for Logiks. Custom, proprietary — not built on LangChain, LlamaIndex, or the Anthropic Agent SDK — because the agentic primitives need to be first-class consumers of Logiks' tenancy, RBAC, audit, and event surfaces.
+AICore replaced the originally-planned single "Skill" abstraction with two simpler, DB-backed registries (`sys_ai_personas` / `sys_ai_agents` in `appdb`, cached in `_CACHE` with upsert-invalidation — same pattern as `api/controllers/providers.js`):
 
-The central abstractions are **Skills**, **Tools**, **Memory**, **Context Engine**, and **Agent Loops** — described below.
-
-### Skills — The Unit of Agentic Capability
-
-A **Skill** is a registered behavioural unit in AICore's skill registry. A skill bundles:
-
-- A **prompt template** — typically with placeholders for context the engine fills in.
-- A **tool list** — which tools the LLM may use during the skill's execution.
-- A **memory scope** — `tenant` | `user` | `session` | `none`.
-- An **input schema** — what callers must supply to invoke the skill.
-- A **provider hint** *(roadmap)* — which engine to prefer.
-- **Context requirements** — which slices of context the Context Engine should pre-fill.
-
-Skill records live in `appdb` (intended schema below) and are loaded by AICore at dispatch.
+**Persona** — *what the AI is and what it's allowed to touch*: system prompt, engine/model, allowed MCP tools, allowed knowledge scopes (and knowledge delivery mode — see RAG below).
 
 ```javascript
-// Intended shape — not yet enforced by code
-{
-    skillId: "billing.refund",
-    appid: "billing",
-    version: 1,
-    promptTemplate: "Refund {{params.amount}} for invoice {{params.invoiceId}}. Reason: {{params.reason}}. Customer history: {{context.recentActivity}}.",
-    tools: ["billing.lookupInvoice", "billing.processRefund", "notifications.notifyCustomer"],
-    memoryScope: "tenant",
-    inputSchema: {
-        invoiceId: { type: "string" },
-        amount: { type: "number" },
-        reason: { type: "string" }
-    },
-    engine: "logiksai",
-    contextRequirements: ["user", "tenant", "recentActivity"]
-}
+await AICORE.personas.upsert(guid, "support-agent", {
+    title: "Support Agent",
+    systemPrompt: "You are a support assistant… use tools to look up real data before answering.",
+    engineKey: "claude",                 // must match a `key` in CONFIG.aicore.engines
+    model: "claude-sonnet-5",
+    allowedTools: ["query_schema", "query_index", "query_results"], // subset of REGISTRY.listTools()
+    allowedKnowledge: ["kb.support"],    // optional — see RAG
+    knowledgeMode: "on_demand",          // off | forced | on_demand | both
+    params: { temperature: 0.2 }
+}, ctx);
 ```
 
-**Microapps register skills** through `AICORE.registerSkill(skillDef)` (planned API). Registration happens at microapp install or first run; the skill is then available to dispatch from any code path.
+**Agent** — *when/how a persona actually runs*: which persona, execution mode, step/time limits, trigger.
 
-**Microapps extend the skill set** — they don't ship parallel skill registries. The billing microapp owns `billing.*` skills; the support microapp owns `support.*` skills; AICore is the central registry.
+```javascript
+await AICORE.agents.upsert(guid, "support-bot", {
+    title: "Support Bot",
+    personaCode: "support-agent",
+    executionMode: "inline",   // inline | queue | local_worker (see §9.1 — local_worker not yet dispatched)
+    maxSteps: 6,                // tool-calling steps before giving up
+    timeoutMs: 30000,
+    trigger: "manual"
+}, ctx);
+```
 
-> **Status:** Skill registry is roadmap. Microapps wanting LLM access today call `AICORE.sendMessage` directly.
+Both are exposed over REST by [api/services/agents.service.js](../api/services/agents.service.js): `GET/POST/DELETE /ai/personas(/:personaCode)` and `GET/POST/DELETE /ai/agents(/:agentCode)`. Like every AICore route, these are only auto-aliased under the private, authenticated `/api` route — `agents.*`/`tasks.*` aren't in `CONFIG.noauth`, so they're never reachable via `/api/public` without a Bearer JWT / API key / `tkn` / `s2stkn`.
+
+### The Agent Loop
+
+[api/controllers/aicore/agentLoop.js](../api/controllers/aicore/agentLoop.js) is the real, working multi-turn tool-use loop: load the agent + its persona → build the tool list → call the engine → if it asks for tool calls, execute them and feed results back → repeat until the model stops asking for tools or `max_steps` is hit → persist the turn.
+
+```javascript
+const result = await AICORE.runAgent("support-bot", "How many orders were placed last week?", null, ctx);
+// result: { sessId, status: "success" | "max_steps_reached" | "error", message, steps, response, turnMessages }
+```
+
+Or over REST: `POST /ai/agents/:agentCode/run` with `{ message, sessId? }`; add `?async=true` to dispatch via the queue lane instead and get back `{ sessId, status: "queued" }`. Passing the same `sessId` back in continues the conversation — history is reassembled from `conversations.js` on every call.
+
+`AICORE.sendMessage(message, sessId, moduleId, params, ctx)` is the no-explicit-agent entry point: it resolves an agent via `moduleId` if given, else via [intentDetector.js](../api/controllers/aicore/intentDetector.js) (a small regex-rule matcher) against `CONFIG.aicore.intentAgentMap`, else `CONFIG.aicore.defaultAgent`.
 
 ### Tool Calling
 
-AICore will integrate tools from two sources:
+AICore does not have its own separate tool system — [tooling.js](../api/controllers/aicore/tooling.js) wraps the existing **MCP tool registry** ([api/controllers/mcp/registry.js](../api/controllers/mcp/registry.js)) directly, in-process: any tool an MCP client would see via `tools/list`/`tools/call` is available to an agent, narrowed to a persona's `allowedTools` (empty/missing list = unrestricted). That dispatch path is genuinely built — not a roadmap item.
 
-1. **AppServer broker actions** — auto-discovered via `developers.swagger`. Any action with `params` + `meta.scopes` is a candidate. AICore presents them to the LLM in the provider's tool-use format, executes the LLM's tool calls via `ctx.call(...)`, and feeds results back into the loop. RBAC and audit apply uniformly.
-2. **AICore-native tools** — helpers AICore provides directly (e.g., memory search, vector retrieval, web fetch, internal book-keeping). These don't go through the broker.
+What's in the registry today is narrower than "any broker action", though. Two sources feed it:
 
-**Microapps contribute tools** by exposing actions on their services. Any well-scoped, well-described action becomes available to skill dispatchers cluster-wide.
+- **System tools** ([api/controllers/mcp/tools/](../api/controllers/mcp/tools/)) — always registered. Today that's four: `query_schema`, `query_index`, `query_analyse`, `query_results` — natural-language-friendly access to the Logiks JSON query DSL.
+- **Plugin tools** — the intended path for microapps to contribute tools: a plugin declares them in a `tools.json` manifest next to its `logiks.json`. The AppServer-side registration code exists (`loadPluginTools()`), but the chain feeding it isn't complete yet — the Worker side doesn't read/forward `tools.json`, and `system.plugins` doesn't aggregate a `tools` array yet, so `loadPluginTools()` currently has nothing to register (you'll see `MCP: failed to load plugin tools from system.plugins` in the boot log; harmless today, but a sign this path isn't live). Until that's finished, a plugin cannot yet make its own actions callable as agent tools this way.
 
-> **Status:** Tools integration is roadmap. The infrastructure (action catalog via `developers.swagger`, `ctx.call(...)`, RBAC, audit) exists; the AICore-side dispatcher and tool registry do not yet.
+Two tools are injected by the agent loop itself rather than coming from the MCP registry:
+
+- **`knowledge_search`** — added when a persona's knowledge mode is `on_demand`/`both` (see RAG, below).
+- **`create_task`** — added for any persisted chat turn whose persona allows it; lets the model defer work to a background task (one-off or recurring) instead of answering inline. See §9.3 Tasks.
 
 ### Memory
 
-AICore will manage memory in two tiers:
+Two tiers exist today, both real:
 
-| Tier | Backed by | Lifetime | Used for |
+| Tier | Backed by | Lifetime | Module |
 |---|---|---|---|
-| **Semantic memory** | Vector DB (Qdrant or alternative) | Long-lived; aged out by policy | "What does the agent know about this tenant / user / topic?" |
-| **Episodic memory** | Key-value store (Redis short-term, MySQL durable) | Per session or per agent run | Recent turns, intermediate tool results, working memory |
+| **Episodic (conversation) memory** | `_CACHE` hot buffer (sliding TTL) + durable `log_ai_conversations`/`log_ai_messages` in `logdb` | Per session; durable log never expires | [conversations.js](../api/controllers/aicore/conversations.js) |
+| **Semantic memory (vector)** | — | — | Not present. `knowledge.js`'s `search()`/`extract()` are stubs (`search` returns `[]`, `extract` is empty) |
 
-Memory is **scoped per skill** via `memoryScope`. The Context Engine respects the scope when retrieving for a given dispatch — so a `user`-scoped skill never sees another user's memory.
+The RAG *delivery* pipeline (below) is fully wired to call into semantic memory the moment it exists — nothing in `agentLoop.js` or `rag.js` needs to change when `knowledge.js` is implemented.
 
-Microapps access memory through AICore's interfaces (`AICORE.memory.*`); they don't write directly to the vector DB or the KV store. This keeps multi-tenant isolation, retention, and embedding strategy centralised.
+### Tasks — background, scheduled agent work
 
-> **Status:** Roadmap. Memory interfaces and the vector DB integration are planned.
+[api/controllers/aicore/tasks.js](../api/controllers/aicore/tasks.js) is a durable work-item registry (`sys_ai_tasks`, `appdb`) — a real, built feature, not a design sketch. A task always runs under its owner's own identity and permissions (no privilege escalation via deferred work). Two ways to create one:
 
-### Context Windows
+- **Directly**, via `AICORE.tasks.create(guid, { title, message, agentCode, repeat? }, ctx)` or `POST /ai/tasks`.
+- **From inside a chat turn**, via the `create_task` tool the agent loop offers automatically — the model decides something needs deferred/background handling and calls it itself.
 
-AICore's Context Engine (when built) will manage prompt budgets per-engine — Claude's 200K window vs OpenAI's 128K vs LogiksAI's specifics. Strategy:
+One-off tasks are dispatched immediately through the queue lane (`AICORE.queueAgentRun`, tagged with the `taskId`); `startQueueConsumer()` reports the outcome back onto the task row (`completed`/`failed`) once the run finishes. A **recurring** task (`repeat: { every, unit, until? }`) registers a row in `lgks_autojobs` — the platform's existing cron system — whose `job_script` points back at `tasks.runScheduled`, so every cron firing just re-dispatches the same task under the same owner; the task's status cycles `scheduled → queued → scheduled` rather than reaching a terminal state. Cancelling a recurring task also retires its autojob row so it actually stops firing.
 
-1. Rank context sources by priority (skill metadata first, then identity, then episodic, then RAG, then events).
-2. Re-rank semantic memory hits and include top-K within budget.
-3. Summarise older episodic turns when raw transcript would overflow.
-
-Microapps don't worry about context budgets — AICore does.
+REST surface ([api/services/tasks.service.js](../api/services/tasks.service.js)): `GET /ai/tasks`, `GET /ai/tasks/:taskId`, `POST /ai/tasks`, `POST /ai/tasks/:taskId/cancel`.
 
 ### Multi-Agent Systems
 
-Multi-agent topology in AICore emerges from **skill composition**: a skill can invoke other skills via the LLM's tool-use mechanism (because skills are also tool definitions). Cross-skill orchestration is implicit — the LLM chooses what to call next.
-
-Concrete topologies microapps will be able to build:
-
-- **Supervisor + sub-skills** — one orchestrator skill delegates to specialist skills.
-- **Skill-based dispatch** — a router matches user intent to one of many skills.
-- **Event-driven agents** — microapps subscribe to events and trigger skill runs autonomously.
-
-All of these use the AppServer's existing primitives (events, action calls, audit) plus AICore's skill registry.
-
-> **Status:** Multi-agent composition emerges naturally once skill registry + tool calling are built. Today, none of it.
+Today's primitive for composing agents is the MCP tool surface: nothing stops one agent's allowed tools from including a broker action that itself calls `AICORE.runAgent(...)` for another agent/persona, giving a supervisor → sub-agent topology. There is no dedicated orchestration layer beyond that — composition is whatever a microapp wires up using tool calling + `ctx.call`.
 
 ---
 
 ## 9.4 AI Pipelines
 
-### RAG Pipelines
+### RAG
 
-RAG flows through AICore's memory + retrieval interfaces. The full pipeline (intended):
+The delivery mechanism is fully built in [rag.js](../api/controllers/aicore/rag.js): a persona's `knowledgeMode` controls how retrieved context reaches the model —
 
-1. **Ingest** — microapps push documents (or AICore subscribes to events that announce new content); AICore chunks, embeds, and writes to the vector DB.
-2. **Query** — at skill dispatch, the Context Engine embeds the user query and searches the vector DB under the skill's memory scope.
-3. **Compose** — top-K hits are re-ranked, deduplicated, and injected into the prompt's RAG section.
-4. **Generate** — the engine (LLM) produces an answer grounded in the retrieved context.
+- `off` (default, no `allowedKnowledge`) — no knowledge involved.
+- `forced` — retrieved once per turn, injected into context before the first engine call; the model doesn't choose.
+- `on_demand` — exposed as the `knowledge_search` tool; the model decides whether/what to search.
+- `both` — forces an initial retrieval *and* still offers the tool for follow-up queries within the same turn.
 
-Microapps trigger ingest through `AICORE.memory.ingest(payload, scope)` (planned); retrieval is automatic during skill dispatch.
-
-> **Status:** Roadmap. Vector DB integration not yet present.
+What's still a stub: the actual retrieval backend. `rag.js` calls `KNOWLEDGE.search(guid, query, false, { scopes }, {}, topN)` ([api/controllers/knowledge.js](../api/controllers/knowledge.js)), which returns `[]` unconditionally today. So RAG is wired end-to-end but currently never surfaces real hits — implementing `knowledge.js` is the only remaining piece.
 
 ### Embedding Pipelines
 
-AICore will manage one embedding model per deployment (configured via `CONFIG.aicore.embeddings`). Embeddings + metadata (tenant, scope, source pointer, timestamp) land in the vector DB through AICore's interfaces. Microapps don't run embeddings themselves.
-
-> **Status:** Roadmap.
-
-### Semantic Search
-
-Semantic search is exposed to microapps as `AICORE.memory.search(query, scope, options)`. Microapps that want search-as-a-feature in their UI call this and either return raw hits or compose with an LLM step.
-
-> **Status:** Roadmap.
+`AICORE.embed(input, ctx, params)` → first engine (priority order) that implements `embed()` — OpenAI today (see §9.2). `AICORE.ingestKnowledge(filePath, ctx)` chains `KNOWLEDGE.extract()` (also a stub) into `embed()`, so the ingest *path* exists but produces nothing until `knowledge.js`'s extraction is implemented.
 
 ### Vector Storage
 
-**Qdrant** is the intended default vector store. Architecture:
+Not present. No vector DB connection exists in the codebase yet; `knowledge.js`'s header comment lists the intended sources (a Vector Gateway service, MySQL full-text search, local RAG) but none are implemented. This is the one genuinely open architectural piece of AICore's roadmap — everything else documented as "built" above is real, runnable code.
 
-- Self-hosted or cloud Qdrant — connection configured in `CONFIG.aicore.vectorDB`.
-- AICore manages collections; microapps don't address Qdrant directly.
-- Multi-tenant isolation enforced by AICore via metadata filters (`tenant_id`, `scope_id`) on every query.
-- HNSW indexes for fast approximate nearest-neighbour search.
-
-Alternative vector backends (pgvector, Pinecone, Weaviate, Milvus) can be supported through pluggable vector-store adapters, similar to the engine plugin pattern.
-
-> **Status:** Vector DB connection layer is roadmap. The choice of Qdrant is the intended default; the abstraction will allow alternatives.
-
-### AI Orchestration
-
-End-to-end orchestration inside AICore (intended):
+### AI Orchestration — the actual end-to-end flow today
 
 ```
-Microapp action calls AICORE.runSkill(skillId, params, ctx)
+Caller: AICORE.runAgent(agentCode, message, sessId, ctx)   (or sendMessage / queueAgentRun)
         │
         ▼
-AICore: load skill from registry
+Load agent (sys_ai_agents) + persona (sys_ai_personas)
         │
         ▼
-Context Engine: assemble per-request context
-   · user/tenant from ctx.meta
-   · episodic memory in scope
-   · semantic memory hits from vector DB
-   · subscribed events since last turn
+Build tool list: MCP tools (scoped to persona.allowedTools)
+   + knowledge_search (if knowledgeMode is on_demand/both)
+   + create_task (if persisted turn and persona allows it)
         │
         ▼
-Render prompt: skill template + context + params
+If knowledgeMode is forced/both: retrieve once, inject as context
         │
         ▼
-Engine.sendMessage(prompt, tool schemas)
+Loop (up to agent.max_steps):
+   engine.sendMessage(messages, tools) via resilience.js
+     (retry → timeout → circuit breaker → next-priority engine fallback)
         │
-        ▼  (LLM may emit tool calls)
-Tool dispatcher:
-   · broker action → ctx.call(...) with audit
-   · AICore-native tool → execute directly
+   tool calls? → dispatch via tooling.js (MCP) / rag.js / tasks.js → feed results back
         │
-        ▼
-Loop until terminal or step limit
+   no tool calls → done
         │
         ▼
-Memory writes (episodic + semantic) per skill scope
+Persist turn (conversations.js: hot cache + durable logdb)
         │
         ▼
-Audit emit (logs.audit event on broker)
-        │
-        ▼
-Return response to microapp
+Return { sessId, status, message, steps, response }
 ```
 
-Microapps invoke the loop with one call; AICore runs the rest. The microapp's job is to define skills, contribute tools (its actions), and consume the response.
+### Utility functions (no persona/agent needed)
 
-> **Status:** This loop is the design; today AICore performs only the engine dispatch step.
+[basics.js](../api/controllers/aicore/basics.js) implements a set of single-shot utilities, all built on the same `complete()` primitive (one engine call, no tools, with full resilience/fallback) and exposed directly on `AICORE`: `summerize`, `extract` (structured fields from content), `classify`, `translate`, `generate` (raw completion), `moderate`, `describe` (vision), `ocr` (vision), `queryNL` (natural language over the Logiks JSON query DSL), `embed`. These accept the same flexible content shape as the agent loop (`string | {fileId} | {attachment} | {text} | {mimeType, data}`), resolved by [content.js](../api/controllers/aicore/content.js). This replaces what an earlier design called `oneShot` — there is no `AICORE.oneShot`; `generate` is the raw one-shot entry point today.
 
 ---
 
 ## What Microapps Do, What AICore Does
 
-The division of labour, stated explicitly:
-
 | Concern | Owner |
 |---|---|
-| LLM model selection | AICore (via engine config) |
-| LLM I/O protocol | Engine (adapter) |
-| Prompt template authoring | Microapp (in skill definitions) |
-| Skill registry | AICore |
-| Skill dispatch logic | AICore |
-| Tool registry | AICore (sourced from broker + native) |
-| Tool execution | AICore (via `ctx.call` for broker actions) |
-| Context assembly | AICore (Context Engine) |
-| Memory storage | AICore (semantic + episodic) |
-| Vector DB connection | AICore |
-| Agent loop control | AICore |
-| Multi-tenant isolation in AI | AICore (using AppServer's tenant context) |
+| LLM model selection | AICore (per-persona `engineKey`/`model`, with cluster-wide priority fallback) |
+| LLM I/O protocol | Engine adapter (`api/controllers/aicore/engines/*.js`) |
+| Persona/agent definitions | Microapp (via `AICORE.personas`/`AICORE.agents` or `/ai/personas`, `/ai/agents`) |
+| Agent loop control, retry/fallback | AICore |
+| Tool registry | AppServer broker + MCP registry (not AICore-specific) |
+| Tool execution | AICore's `tooling.js`, via `ctx.call(...)` under RBAC/audit |
+| Conversation history | AICore (`conversations.js`) |
+| Background/recurring task scheduling | AICore (`tasks.js` + the platform's existing cron/autojobs system) |
+| Knowledge retrieval backend | **Open** — `knowledge.js` is a stub; implementing it is the main remaining gap |
+| Vector DB connection | **Open** — not yet built |
 | Domain logic | Microapp |
-| Use-case-specific prompts and skills | Microapp (extending AICore's registry) |
-| Domain-specific data ingestion | Microapp (calling AICore's memory interfaces) |
+| Use-case-specific prompts (personas) | Microapp |
+| Contributing new tools (`tools.json` → MCP registry) | Microapp (intended path; not fully wired yet) |
 | Use-case UI | Microapp |
 
-The headline: **microapps extend AICore; microapps do not duplicate AICore.**
+The headline: **microapps define personas/agents and tasks run under them; AICore runs the loop, keeps history, schedules recurring work, and talks to the LLM.**
 
 ## What This Chapter Documents vs Current Code
 
-| Capability | Documented as | Code state |
-|---|---|---|
-| `AICORE.sendMessage` | Present | ✅ Implemented (delegates to engine) |
-| `AICORE.oneShot` | Present | 🚧 Empty stub |
-| Engine plugin (`AIEngine`) | Present | ✅ Implemented (abstract base) |
-| LogiksAI engine | Present | 🚧 Wired, but `sendMessage` returns false |
-| Ollama / Claude / OpenAI engines | Present | 🚧 Not wired yet |
-| Skill registry | Intended | ❌ Not in code |
-| Context Engine | Intended | ❌ Not in code |
-| Memory (semantic + episodic) | Intended | ❌ Not in code |
-| Vector DB integration | Intended (Qdrant default) | ❌ Not in code |
-| Agent loops | Intended | ❌ Not in code |
-| Tools integration | Intended | ❌ Not in code |
+| Capability | Code state |
+|---|---|
+| `AICORE.sendMessage` / `runAgent` / `queueAgentRun` | ✅ Implemented |
+| Agent loop (multi-turn tool calling) | ✅ Implemented |
+| Personas / Agents registries + REST | ✅ Implemented |
+| Engine: Claude | ✅ Implemented |
+| Engine: OpenAI | ✅ Implemented |
+| Engine: LogiksAI | 🚧 Wired, request/response shape unconfirmed against the real API |
+| Engine: Ollama / others | ❌ Not written (plugin pattern ready) |
+| Resilience (retry, timeout, circuit breaker, fallback) | ✅ Implemented |
+| Tool calling via MCP registry (dispatch + system tools) | ✅ Implemented |
+| Plugin-contributed tools (`tools.json` → MCP registry) | 🚧 Registration code exists; Worker-side + `system.plugins` wiring not finished |
+| Tasks (one-off + recurring, via cron) | ✅ Implemented |
+| `create_task` tool (model-initiated deferral) | ✅ Implemented |
+| Conversation history (episodic memory) | ✅ Implemented |
+| RAG delivery (forced / on_demand / both) | ✅ Implemented |
+| Knowledge retrieval backend (`knowledge.js`) | ❌ Stub — returns no results |
+| Vector DB integration | ❌ Not in code |
+| Embeddings | 🚧 OpenAI only |
+| `local_worker` execution lane | 🚧 Worker file exists; nothing dispatches to it yet |
+| Intent detection | 🚧 Basic regex matcher, documented as such in its own source |
 
-Treat this chapter as the architectural contract microapps will build against. Today, the only end-to-end path that exists is: microapp calls `AICORE.sendMessage`, which delegates to the configured engine (LogiksAI), which currently returns false. Everything else is the platform AICore will become.
+Compared to where this chapter stood before: personas, agents, the real agent loop, tool calling, tasks/scheduling, conversation history, and two full LLM engines all moved from "roadmap" to "built." The remaining gap is almost entirely the knowledge/vector-retrieval backend — everything that depends on it (RAG delivery, embedding ingestion) is wired and waiting.
 
 ---
 

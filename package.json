@@ -6,6 +6,7 @@
     "start": "clear;node index.js",
     "deploy": "npm install && pm2 reload ecosystem.config.js",
     "deploy_production": "npm install && pm2 reload ecosystem.config.js --env production",
+    "docgen": "clear;node docs/build-docs.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

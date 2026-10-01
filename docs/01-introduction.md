@@ -17,25 +17,25 @@ Underneath sits a clustered service layer, the **MicroApp Runtime**, which handl
 Logiks treats AI as a tier of the architecture rather than a bolt-on. The 4th tier — **AICore** — is where agentic capability lives, and other tiers and microapps depend on it.
 
 ```
-Microapps (domain solutions — extend AICore with skills + tools)
-        │ AICORE.sendMessage / runSkill / memory / registerSkill / …
+Microapps (domain solutions — define personas/agents, contribute tools)
+        │ AICORE.sendMessage / runAgent / queueAgentRun / tasks.create / …
         ▼
 AICore  (api/controllers/aicore.js)   ← Tier 4
-        · Skill registry · Context engine · Memory · Vector DB · Agent loops · Tools
+        · Personas/Agents · Agent loop · Tool calling (MCP) · Tasks · Memory
         │ engine.sendMessage
         ▼
-Engine  (LogiksAI default; Ollama / Claude / OpenAI as adapters)
+Engine  (Claude, OpenAI implemented; LogiksAI wired; Ollama as adapter)
         │ calls
         ▼
 Hosted or local LLM service
 ```
 
 - **AppServer** runs the classic three tiers — UI rendering (T1), business logic and the broker (T2), data/storage (T3) — and hosts the new T4.
-- **AICore** (Tier 4) is the agentic layer: skill registry, context engine, memory, vector DB connections, agent loops, tools, policy controls.
-- **AIEngine** ([api/controllers/aicore/aiengine.js](../api/controllers/aicore/aiengine.js)) is the provider contract; concrete engines (LogiksAI today; Ollama/Claude/OpenAI planned) sit beside it.
-- **Microapps** consume AICore and add their own skills and tools; they don't rebuild the agentic stack.
+- **AICore** (Tier 4) is the agentic layer: persona/agent registries, the tool-calling agent loop, task scheduling, conversation memory, and resilience (retry/fallback/circuit breaker).
+- **AIEngine** ([api/controllers/aicore/engines/aiengine.js](../api/controllers/aicore/engines/aiengine.js)) is the provider contract; concrete engines (Claude and OpenAI fully implemented, LogiksAI wired with an unconfirmed wire format, Ollama not yet written) sit beside it.
+- **Microapps** consume AICore by defining personas/agents and contribute tools as ordinary broker actions; they don't rebuild the agentic stack.
 
-What runs today is the spine: a microapp calls `AICORE.sendMessage`, which dispatches to the configured engine. The registry, context engine, memory, vector store, and agent loops described above are the design AICore is being built toward. [§9 AI Layer](09-ai-layer.md) tracks what exists versus what's planned, piece by piece.
+What runs today is substantial: a microapp defines a persona + agent, calls `AICORE.runAgent`/`sendMessage`, and gets a real multi-turn tool-calling loop with history, retries, and engine fallback. Background/recurring work goes through `AICORE.tasks`. The piece still open is semantic/vector memory — the retrieval backend behind RAG is a stub. [§9 AI Layer](09-ai-layer.md) tracks exactly what's built versus what's open.
 
 ### Distributed By Nature
 
@@ -233,17 +233,16 @@ The set of Workers in one namespace, connected through a single transporter, sha
 
 ### AI Layer
 
-**AICore** ([api/controllers/aicore.js](../api/controllers/aicore.js)) is the 4th tier and the central agentic layer. Its intended surface:
+**AICore** ([api/controllers/aicore.js](../api/controllers/aicore.js) + [api/controllers/aicore/](../api/controllers/aicore/)) is the 4th tier and the central agentic layer. Its surface:
 
-- **Skill registry** — registered skills (prompt + tools + memory scope + input schema) callable by id.
-- **Context engine** — assembles per-request context (user, tenant, history, retrieval hits, environment) before each LLM call.
-- **Memory** — semantic (vector DB) and episodic (key-value), scoped per skill.
-- **Vector DB connections** — managed centrally; microapps don't address the store directly.
-- **Agent loops** — multi-step LLM interaction with tool calling and termination logic.
-- **Tools** — sourced from broker actions (auto-discovered) and AICore helpers.
-- **Policy controls** — guardrails on what can be invoked, by whom.
+- **Personas & Agents** — DB-backed registries (`sys_ai_personas`/`sys_ai_agents`) defining system prompt, engine/model, allowed tools/knowledge, and execution limits.
+- **Agent loop** — a real multi-turn tool-use loop: call the engine, dispatch any tool calls, feed results back, repeat until done or `max_steps`.
+- **Tools** — sourced from the AppServer's MCP tool registry (auto-discovered broker actions), under RBAC/audit.
+- **Tasks** — durable background/recurring agent work, riding the platform's existing cron system for recurrence.
+- **Conversation memory** — episodic, cache + durable log; semantic/vector memory is the one piece not yet built.
+- **Resilience** — retry, timeout, and a cross-node circuit breaker with engine fallback by priority.
 
-Below AICore is the **engine layer** (`AIEngine`) that adapts to providers — LogiksAI today; Ollama/Claude/OpenAI planned. Today the working path is `AICORE.sendMessage` → engine; the registry, context engine, memory, and agent loops are in progress. Microapps consume AICore's interfaces and extend the registry with their own skills and tools rather than chaining primitives themselves. Design and current state: [§9 AI Layer](09-ai-layer.md).
+Below AICore is the **engine layer** (`AIEngine`) that adapts to providers — Claude and OpenAI are fully implemented; LogiksAI is wired but its wire format is unconfirmed; Ollama is unwritten. Microapps consume AICore by defining personas/agents and calling `AICORE.sendMessage`/`runAgent`/`queueAgentRun`, and extend it by contributing tools (their own broker actions) rather than chaining LLM calls themselves. Full picture, including what's still open: [§9 AI Layer](09-ai-layer.md).
 
 ### Event Bus
 
@@ -275,8 +274,9 @@ Tier 2 — Business Logic       services, controllers, helpers, rule engine, mic
 Tier 3 — Data & Storage       MySQL appdb + logdb; Redis cache + sessions + locks;
                               local/S3 file storage; vector DB (Qdrant) for AI
 
-Tier 4 — AI Layer             AICore — skill registry, context engine, memory,
-                              vector DB connections, agent loops, tools, policy
+Tier 4 — AI Layer             AICore — personas/agents, the tool-calling agent
+                              loop, tasks/scheduling, conversation memory,
+                              resilience; vector/semantic memory still open
 ```
 
 The AppServer supplies the infrastructure for all four: the page renderer for T1, the broker + platform services + globals for T2, the data/storage abstractions (`_DB`, `_CACHE`, `FILES`) for T3, and `AICORE` for T4. A microapp is a thin slice across the tiers that delivers one capability. Workers host T1/T2 microapp code and reach T3/T4 through the cluster.
@@ -316,13 +316,13 @@ Action calls handle request/response; events handle fan-out. The framework emits
 
 ### AI Orchestration Layer
 
-Orchestration is meant to happen inside AICore: a microapp sends a message or invokes a skill, and AICore assembles context, renders the skill, calls the LLM, runs tool calls, updates memory, and emits audit — one loop, one call from the microapp's side. Today that loop is partly built; the working path is the message → engine round-trip. The platform already contributes the pieces AICore weaves in:
+Orchestration happens inside AICore: a microapp calls `AICORE.runAgent`/`sendMessage`, and AICore loads the persona/agent, calls the LLM, dispatches any tool calls, loops until the model is done, and persists the turn — one call from the microapp's side. This loop is built and runs today; the platform contributes the pieces it weaves in:
 
-1. The typed action catalogue becomes the broker side of the tool registry.
-2. RBAC scopes and audit apply when AICore runs tool calls on a microapp's behalf.
-3. Event topics let AICore track platform activity as context.
+1. The MCP tool registry (auto-discovered broker actions) is what AICore's tool calling dispatches against.
+2. RBAC scopes and audit apply when AICore runs tool calls on a microapp's behalf, via `ctx.call(...)`.
+3. The existing cron/autojobs system drives recurring AI tasks — no second scheduler.
 
-[§9 AI Layer](09-ai-layer.md) has the loop's intended shape and the current state of each piece.
+[§9 AI Layer](09-ai-layer.md) has the full loop and exactly what's built versus still open (semantic/vector memory).
 
 ---
 

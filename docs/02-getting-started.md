@@ -352,11 +352,11 @@ module.exports = {
         const response = await AICORE.sendMessage(
             params.message,
             params.sessId,        // optional — AICore generates one if absent
-            "support",            // moduleId — used by AICore for context
+            "support",            // moduleId — the agentCode of a persona/agent already created (see §9.3)
             { temperature: 0.3 }, // engine-specific params
             ctx                   // forwards ctx.meta.user
         );
-        return response;          // { sessId, status, response, message }
+        return response;          // { sessId, status, response, message, steps }
     }
 };
 ```
@@ -376,9 +376,9 @@ module.exports = {
 }
 ```
 
-AICore generates a session id, forwards the request through its engine, and returns the result.
+The `"support"` agent must exist first (`AICORE.agents.upsert`/`AICORE.personas.upsert`, or `POST /ai/agents`/`/ai/personas` — one-time setup, not per-call). Once it does, `sendMessage` runs the full tool-calling agent loop against it and persists the turn.
 
-> **Status:** today AICore exposes `sendMessage` and a stub `oneShot`. The skill registry, context engine, agent loops, memory, vector DB, and tool integration are roadmap items — see [§9 AI Layer](09-ai-layer.md) for the design and current status of each piece. A plugin contributes to AICore the same way it does anything else: by exposing `api.js` functions that AICore can call as tools (`<plugin>.<fn>`). It does **not** reimplement retrieval, memory, or the agent loop — that is AICore's job.
+> **Status:** personas/agents, the agent loop, tool calling, tasks, and the Claude/OpenAI engines are built and runnable — see [§9 AI Layer](09-ai-layer.md) for the full breakdown and the one piece still open (the knowledge/vector-retrieval backend behind RAG). A plugin contributes to AICore the same way it does anything else: by exposing `api.js` functions that become callable MCP tools (`<plugin>.<fn>`) an agent's persona can be allowed to use. It does **not** reimplement retrieval or the agent loop — that is AICore's job.
 
 ### Multi-Worker Communication
 

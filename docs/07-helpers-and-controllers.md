@@ -5,7 +5,7 @@
 Every file in [api/helpers/](../api/helpers/) and [api/controllers/](../api/controllers/) is autoloaded as an `UPPER_CASE` global on each node ([§3.4](03-framework-fundamentals.md#34-controllers--helpers-reference)). Two surfaces are reachable across the cluster:
 
 - **Helpers** — all of them are reachable through the `system.helpers` action.
-- **Controllers** — only those whose `initialize()` returns `true` are reachable through `system.controllers`. This chapter documents those nine (plus `AICORE`, which is public only when AI is enabled).
+- **Controllers** — only those whose `initialize()` returns `true` are reachable through `system.controllers`. This chapter documents those nine, plus `AICORE` (its `initialize()` always returns `true`; when `CONFIG.aicore.enabled` is `false` the global is still public, it just has no engines wired).
 
 `initialize()` is the boot hook on every module and is not listed below.
 
@@ -236,9 +236,9 @@ These have `initialize()` returning `true`, so they're reachable via `system.con
 - **`initiateSingleton(activityName, funcToStart, funcOnEnd, options={})`** — run a task as a cluster-wide singleton (Redis lock + heartbeat); only one node runs it at a time. Returns a `Singleton` instance whose lifecycle methods (`tryAcquire`, `startHeartbeat`, `check`, `release`, `stop`) are managed internally.
 - **`listRunning()`** — list singleton activities running on this node.
 
-### `AICORE` — AI layer (conditionally public)
+### `AICORE` — AI layer ([aicore.js](../api/controllers/aicore.js) + [aicore/*.js](../api/controllers/aicore/))
 
-`AICORE` ([aicore.js](../api/controllers/aicore.js)) is cluster-public **only when AI is enabled** and an engine resolves. Its primary method is `sendMessage(message, sessId, moduleId, params, ctx)`. See [§9 AI Layer](09-ai-layer.md) for the full surface and current status.
+Always reachable node-to-node via `system.controllers` (internal broker RPC, gated by cluster membership — `TRANSPORTER`/`NAMESPACE`/`CLUSTER_TOKEN` — not by a user auth token); if `CONFIG.aicore.enabled` is `false` or no engines are configured, calling into it is just a no-op. This is unrelated to the HTTP surface: `agents`/`tasks`' `/ai/*` routes are always behind the authenticated `/api` route (Bearer/API key/`tkn`/`s2stkn`) — they're never whitelisted under `/api/public`. Key methods: `sendMessage(message, sessId, moduleId, params, ctx)`, `runAgent(agentCode, message, sessId, ctx)`, `queueAgentRun(agentCode, message, sessId, ctx, taskId?)`, `sessionHistory(guid, sessId)`, plus the `personas`, `agents`, and `tasks` sub-registries and the single-shot utilities (`summerize`, `extract`, `classify`, `translate`, `generate`, `moderate`, `describe`, `ocr`, `queryNL`, `embed`). See [§9 AI Layer](09-ai-layer.md) for the full surface and current status.
 
 ---
 
