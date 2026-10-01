@@ -71,12 +71,18 @@
     },
     "aicore": {
         "enabled": false,
-        "engine": "logiksai",
-        "config": {
-            "url": "",
-            "apikey": "",
-            "appid": ""
-        }
+        "engines": [
+            { "key": "logiksai", "driver": "logiksai", "priority": 1, "config": { "url": "", "apikey": "", "appid": "" } },
+            { "key": "openai", "driver": "openai", "priority": 2, "config": { "apikey": "", "model": "gpt-4.1" } },
+            { "key": "claude", "driver": "claude", "priority": 3, "config": { "apikey": "", "model": "claude-sonnet-5" } }
+        ],
+        "defaultAgent": "",
+        "intentAgentMap": {
+            "summarize": "",
+            "sql_report": ""
+        },
+        "retry": { "maxAttempts": 2, "baseDelayMs": 200, "timeoutMs": 30000 },
+        "breaker": { "failureThreshold": 3, "cooldownMs": 30000 }
     },
     "databases": {
         "appdb": {
