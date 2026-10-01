@@ -22,7 +22,7 @@ const WORKER_MODE = process.env.WORKER_MODE || "threads";  // "threads" | "proce
 const MAX_CONCURRENCY_PER_WORKER = parseInt(process.env.MAX_CONCURRENCY || "5");
 const AUTO_RESPAWN = process.env.AUTO_RESPAWN !== "false";
 
-const WORKER_DIR = path.join(CONFIG.ROOT_PATH+'/app/workers');
+const WORKER_DIR = path.join(CONFIG.ROOT_PATH+'/api/workers');
 const workers = new Map(); // name → worker instance
 const workerMeta = new Map(); // name → status, file, pid, uptime
 const jobQueues = new Map();     // name → job queue (FIFO)
