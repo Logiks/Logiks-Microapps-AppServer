@@ -4,6 +4,7 @@
  * */
 
 const cron = require('node-cron');
+const os = require('os');
 
 const LOADED_JOBS = {};
 const ACTIVE_JOBS = [];
@@ -162,8 +163,43 @@ module.exports = {
         }
     },
 
+    //Activates a job row (lgks_autojobs) that was created at runtime,
+    //without waiting for this node's next reloadAllJobs() (election or
+    //restart). AUTOJOBS only drives cron on whichever node currently holds
+    //the "singleton:AUTOJOBS" lock (see singletonmanager.js) - calling this
+    //on any other node is a safe no-op, the same way activateJob/
+    //deactivateJob already no-op when LOADED_JOBS/ACTIVE_JOBS are empty
+    //there. The job row itself is already persisted by the caller, so a
+    //non-leader node still picks it up for real the next time it becomes
+    //leader.
     registerNewJob: async function(jobConfig) {
-        return false;
+        if (jobConfig == null || jobConfig.id == null || jobConfig.schedule == null) return false;
+
+        const nodeId = `${os.hostname()}-${process.pid}`;
+        const leaderId = await _CACHE.fetchDataSync("singleton:AUTOJOBS");
+        if (leaderId !== nodeId) return false;
+
+        const jobId = `${jobConfig.name}_${jobConfig.id}`;
+        if (LOADED_JOBS[jobId]) return true; //already loaded - idempotent
+
+        let params = jobConfig.params;
+        if (typeof params === "string") {
+            try { params = JSON.parse(params || "{}"); } catch (e) { params = {}; }
+        }
+
+        const conf = _.extend({}, jobConfig, { params, active: true, job_id: jobId });
+        const job = cron.schedule(conf.schedule, () => runJobNow(conf));
+
+        LOADED_JOBS[jobId] = {
+            job_id: jobId,
+            config: conf,
+            job,
+            started: moment().format(),
+            status: "active"
+        };
+        ACTIVE_JOBS.push(jobId);
+
+        return true;
     },
     
     runJobNow(jobConfig, userId) {

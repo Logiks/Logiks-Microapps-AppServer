@@ -36,6 +36,17 @@ module.exports = {
             async handler(ctx) {
                 return await AICORE.tasks.cancel(ctx.meta.user.guid, ctx.params.taskId, ctx);
             }
+        },
+
+        //Internal only, no rest route - the job_script a recurring task's
+        //lgks_autojobs row points at (see aicore/tasks.js's
+        //registerRecurringJob). Called by autojobs.js's runJobNow() via
+        //_call("tasks.runScheduled", {guid, taskId}) on every cron firing.
+        runScheduled: {
+            params: { guid: "string", taskId: "string" },
+            async handler(ctx) {
+                return await AICORE.tasks.runScheduled(ctx.params.guid, ctx.params.taskId);
+            }
         }
     }
 }

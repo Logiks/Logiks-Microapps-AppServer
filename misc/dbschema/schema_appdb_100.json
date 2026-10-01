@@ -3381,131 +3381,6 @@
       "idx_agent_code"
     ]
   },
-  "sys_ai_tasks": {
-    "columns": {
-      "id": {
-        "type": "int",
-        "nullable": false,
-        "default": null,
-        "primary": true
-      },
-      "guid": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "task_id": {
-        "type": "varchar(50)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "title": {
-        "type": "varchar(255)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "message": {
-        "type": "text",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "agent_code": {
-        "type": "varchar(55)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "owner_guid": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "assigned_by": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "trigger_source": {
-        "type": "varchar(25)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "source_ref": {
-        "type": "varchar(255)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "source_sess_id": {
-        "type": "varchar(50)",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "status": {
-        "type": "varchar(25)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "result": {
-        "type": "longtext",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "error": {
-        "type": "text",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "blocked": {
-        "type": "enum('false','true')",
-        "nullable": true,
-        "default": "false",
-        "primary": false
-      },
-      "created_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "created_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "edited_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "edited_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      }
-    },
-    "indexes": [
-      "PRIMARY",
-      "idx_guid",
-      "idx_task_id",
-      "idx_owner_guid",
-      "idx_status"
-    ]
-  },
   "sys_ai_personas": {
     "columns": {
       "id": {
@@ -3603,6 +3478,149 @@
       "PRIMARY",
       "idx_guid",
       "idx_persona_code"
+    ]
+  },
+  "sys_ai_tasks": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true
+      },
+      "guid": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "task_id": {
+        "type": "varchar(50)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "title": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "message": {
+        "type": "text",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "agent_code": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "owner_guid": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "assigned_by": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "trigger_source": {
+        "type": "varchar(25)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "source_ref": {
+        "type": "varchar(255)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "source_sess_id": {
+        "type": "varchar(50)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "repeat_schedule": {
+        "type": "varchar(25)",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "repeat_until": {
+        "type": "datetime",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "autojob_id": {
+        "type": "int",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "status": {
+        "type": "varchar(25)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "result": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "error": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "idx_guid",
+      "idx_task_id",
+      "idx_owner_guid",
+      "idx_status"
     ]
   },
   "sys_apibox": {
