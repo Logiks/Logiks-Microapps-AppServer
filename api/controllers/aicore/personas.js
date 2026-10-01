@@ -38,7 +38,10 @@ module.exports = {
             model: data.model || "",
             allowed_tools: JSON.stringify(data.allowedTools || []),
             allowed_knowledge: JSON.stringify(data.allowedKnowledge || []),
-            params: JSON.stringify(data.params || {}),
+            //knowledgeMode: "off" (default, no allowed_knowledge) | "forced" (always
+            //injected into context) | "on_demand" (exposed as the knowledge_search
+            //tool) | "both". Stored inside params - see aicore/rag.js.
+            params: JSON.stringify(_.extend({}, data.params || {}, data.knowledgeMode ? { knowledgeMode: data.knowledgeMode } : {})),
             blocked: "false"
         };
 

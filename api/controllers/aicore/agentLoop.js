@@ -11,6 +11,7 @@ const TOOLING = require("./tooling.js");
 const PERSONAS = require("./personas.js");
 const AGENTS = require("./agents.js");
 const CONVERSATIONS = require("./conversations.js");
+const RAG = require("./rag.js");
 
 //engines: [{key, priority, instance}] from ./index.js's createEngines()
 //resilienceConfig: {retry, breaker} from CONFIG.aicore
@@ -40,10 +41,23 @@ async function executeLoop(engines, resilienceConfig, sessId, persona, agent, us
     const guid = ctx?.meta?.user?.guid;
 
     const history = persist ? await CONVERSATIONS.getHistory(sessId) : [];
-    const tools = TOOLING.list(ctx, persona.allowed_tools);
     const engineParams = _.extend({ model: persona.model, timeout_ms: agent.timeout_ms }, persona.params || {});
 
-    const turnMessages = [{ role: "user", content: userMessage }];
+    //Knowledge: "forced" mode retrieves once up front and goes straight
+    //into context; "on_demand" (and "both") add knowledge_search to the
+    //tool list so the model can choose to call it, same as any MCP tool.
+    const tools = TOOLING.list(ctx, persona.allowed_tools);
+    if (RAG.usesOnDemand(persona)) {
+        tools.push(RAG.knowledgeSearchTool(guid, persona).definition);
+    }
+
+    const turnMessages = [];
+    if (RAG.usesForced(persona)) {
+        const knowledgeContext = await RAG.retrieveForced(guid, userMessage, persona);
+        if (knowledgeContext) turnMessages.push(knowledgeContext);
+    }
+    turnMessages.push({ role: "user", content: userMessage });
+
     const maxSteps = agent.max_steps || 6;
 
     let result = null;
@@ -63,7 +77,12 @@ async function executeLoop(engines, resilienceConfig, sessId, persona, agent, us
         for (const call of result.toolCalls) {
             let toolResult;
             try {
-                toolResult = await TOOLING.run(call.name, call.arguments, ctx);
+                //knowledge_search isn't an MCP tool (it's AICore's own
+                //knowledge source, not an AppServer broker action), so it's
+                //dispatched directly through rag.js instead of TOOLING.run.
+                toolResult = call.name === RAG.KNOWLEDGE_TOOL_NAME
+                    ? await RAG.knowledgeSearchTool(guid, persona).handler(call.arguments)
+                    : await TOOLING.run(call.name, call.arguments, ctx);
             } catch (err) {
                 toolResult = { error: err.message || String(err) };
             }

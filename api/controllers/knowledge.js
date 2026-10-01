@@ -14,5 +14,10 @@ module.exports = {
 
     search: async function(guid, stext, cypher = false, filter = {}, params = {}, top_n = 5) {
         return [];
+    },
+
+    //filePath = can be id of files_tbl, or path wrt to root path of installation or complete path or URL
+    extract: async function(guid, filePath) {
+
     }
 }

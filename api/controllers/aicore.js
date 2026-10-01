@@ -5,7 +5,7 @@
 
 const { createEngines } = require("./aicore/index.js");
 const AGENT_LOOP = require("./aicore/agentLoop.js");
-const KNOWLEDGE = require("./aicore/knowledge.js");
+const KNOWLEDGE = require("./knowledge.js");
 const TOOLING = require("./aicore/tooling.js");
 const PERSONAS = require("./aicore/personas.js");
 const AGENTS = require("./aicore/agents.js");
@@ -63,7 +63,6 @@ module.exports = {
         });
     },
 
-    getKnowledge: KNOWLEDGE,
     getTools: TOOLING,
     personas: PERSONAS,
     agents: AGENTS,
@@ -109,6 +108,24 @@ module.exports = {
 
     sessionHistory: async function(guid, sessId) {
         return await CONVERSATIONS.history(guid, sessId);
+    },
+
+    // -----------------------------------------------------------------
+    // Knowledge ingestion - pulls a file into retrievable form via
+    // KNOWLEDGE.extract(), then embeds it. KNOWLEDGE.extract() is still a
+    // stub (knowledge.js isn't complete yet - see its header comment), so
+    // this currently no-ops past that point; the chain is wired so nothing
+    // else needs to change once extract() returns real content.
+    // -----------------------------------------------------------------
+
+    ingestKnowledge: async function(filePath, ctx) {
+        const guid = ctx?.meta?.user?.guid;
+
+        const content = await KNOWLEDGE.extract(guid, filePath);
+        if (!content) return { content: null, vectors: null };
+
+        const { vectors } = await BASICS.embed(content, ctx);
+        return { content, vectors };
     },
 
     // -----------------------------------------------------------------
