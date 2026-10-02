@@ -7,11 +7,17 @@
     "deploy": "npm install && pm2 reload ecosystem.config.js",
     "deploy_production": "npm install && pm2 reload ecosystem.config.js --env production",
     "docgen": "clear;node docs/build-docs.mjs",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --selectProjects unit; u=$?; jest --selectProjects http; h=$?; exit $(( u > h ? u : h ))",
+    "test:unit": "jest --selectProjects unit",
+    "test:http": "jest --selectProjects http",
+    "test:watch": "jest --watch"
   },
   "author": "",
   "license": "ISC",
   "description": "",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
     "@aws-sdk/client-dynamodb": "^3.1131.0",
