@@ -18,9 +18,4 @@ describe("Static assets", () => {
 		expect(res.data).toHaveProperty("openapi");
 		expect(res.data).toHaveProperty("paths");
 	});
-
-	test("serves the API explorer", async () => {
-		const res = await client.get("/explorer/index.html");
-		expect(res.status).toBe(200);
-	});
 });

@@ -15,7 +15,7 @@ if (!process.env.TEST_USERNAME || !process.env.TEST_PASSWORD) {
 
 async function login() {
 	const client = createClient();
-	const res = await client.post("/api/public/auth/login", {
+	const res = await client.post("/auth/login", {
 		username: USERNAME,
 		password: PASSWORD,
 		deviceType: "web"

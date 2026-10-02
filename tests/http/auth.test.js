@@ -7,7 +7,7 @@ describe("Auth (public)", () => {
 	const client = createClient();
 
 	test("rejects invalid credentials", async () => {
-		const res = await client.post("/api/public/auth/login", {
+		const res = await client.post("/auth/login", {
 			username: "definitely-not-a-real-user",
 			password: "wrong-password",
 			deviceType: "web"

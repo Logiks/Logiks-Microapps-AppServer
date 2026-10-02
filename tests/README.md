@@ -25,6 +25,21 @@ run the whole thing, or just the part you're touching.
   It's a client, not a bootstrapper: point it at whatever's running
   (your local dev server by default, or a staging box) via `TEST_BASE_URL`
   rather than having it spawn a new instance.
+  - `health.test.js`, `auth.test.js`, `me.test.js`, `developers.test.js`,
+    `static-assets.test.js` - hand-written, assert on actual response
+    shape/business behavior for the paths that matter most.
+  - `endpoint-coverage.test.js` - breadth, not depth. Pulls the *live*
+    route list straight from the gateway (the same data the OpenAPI spec
+    is generated from) and hits every single registered endpoint, so new
+    routes get covered automatically without anyone updating a hand-kept
+    list. GETs run with a real token and only check "didn't crash" (500).
+    Mutating calls run with NO token - anything actually private 401s
+    before its handler ever touches the DB, so this can never execute a
+    real create/update/delete; the few genuinely-public mutating routes
+    (`auth.*`, `webhooks.*`) are designed to tolerate arbitrary input by
+    nature. SSE and the wildcard page renderer are the only two routes
+    explicitly excluded (long-lived/not a request-response shape) - see
+    the comment at the top of that file for why.
 
 ## Running it
 
@@ -86,9 +101,11 @@ wherever a domain doesn't actually need to be exercised end-to-end.
 
 ## Adding a new domain suite
 
-`dbops`, `admin`, `files` (upload), `tasks`, `agents` etc. aren't covered
-yet - their actions need real module/table/workflow names that only you
-know for this deployment, so fabricating example calls for them risked
-shipping tests that silently assert the wrong thing. Follow the pattern in
+`endpoint-coverage.test.js` means every route gets *reachability* coverage
+automatically, but `dbops`, `admin`, `files` (upload), `tasks`, `agents`
+etc. don't have hand-written *business-logic* tests yet - their actions
+need real module/table/workflow names that only you know for this
+deployment, so fabricating example calls for them risked shipping tests
+that silently assert the wrong thing. Follow the pattern in
 `tests/http/me.test.js` (login once in `beforeAll`, assert on status +
 shape) and add cleanup per the section above if the test creates anything.
