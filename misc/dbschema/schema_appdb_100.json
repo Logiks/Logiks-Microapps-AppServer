@@ -3338,7 +3338,7 @@
         "default": null,
         "primary": false
       },
-      "trigger": {
+      "triggers": {
         "type": "varchar(25)",
         "nullable": false,
         "default": null,

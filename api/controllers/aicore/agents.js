@@ -36,7 +36,7 @@ module.exports = {
             execution_mode: data.executionMode || "inline",
             max_steps: data.maxSteps != null ? data.maxSteps : 6,
             timeout_ms: data.timeoutMs != null ? data.timeoutMs : 30000,
-            trigger: data.trigger || "manual",
+            triggers: data.trigger || "manual",
             blocked: "false"
         };
 
