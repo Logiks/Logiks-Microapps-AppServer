@@ -16,7 +16,7 @@
  * 
  * Overall, this controller plays a vital role in enabling efficient and effective management of remote servers, workers, and agents within the system, contributing to the overall stability and performance of the applications it supports.
  * 
- * # /health, /restart, /status, /metrics, /logs, /config, /update, /deploy, /backup, /restore, /shutdown
+ * controls =  health, restart, status, metrics, logs, config, update, deploy, backup, restore, shutdown
  * */
 
 module.exports = {
@@ -157,5 +157,32 @@ module.exports = {
             
             throw error;
         }
+    },
+
+    runControl: async function(guid, providerCode, control, payload = {}, optionParams = {}) {
+        return await APIBOX.sendRequest(providerCode, {
+            guid: guid,
+            api_code: `providers_${control}`,
+            subpath: `/${control}`,
+            method: "POST",
+            dataParams: {
+                body: payload
+            },
+            ..._.extend({
+                debug: false, 
+                cache_ttl: 0, 
+                use_mock: false, 
+                format: "json", 
+                authorization: "", 
+                authorization_token: "", 
+                input_validation: {}, 
+                params: {}, //other configurations
+                headers: {}, 
+                query_obj: {},
+                body: {}, 
+                output_transformation: {}, 
+                mockdata: false,
+            }, optionParams)
+        }, payload, {meta:{user:{guid}}});
     }
 }
