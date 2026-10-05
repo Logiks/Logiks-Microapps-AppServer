@@ -3649,10 +3649,10 @@
         "default": "false",
         "primary": false
       },
-      "use_cache": {
-        "type": "enum('false','true')",
+      "cache_ttl": {
+        "type": "int",
         "nullable": false,
-        "default": "false",
+        "default": "0",
         "primary": false
       },
       "use_mock": {

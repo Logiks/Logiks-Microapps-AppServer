@@ -52,11 +52,10 @@ async function sendRequest(providerCode, apiInfo, dataParams, ctx) {
         guid,
         api_code,
         debug, 
-        use_cache, 
+        cache_ttl, 
         use_mock, 
         format, 
         method, 
-        env_code,
         subpath, 
         authorization, 
         authorization_token, 
@@ -69,6 +68,15 @@ async function sendRequest(providerCode, apiInfo, dataParams, ctx) {
         mockdata
     } = apiInfo;
     if(use_mock) return mockdata;
+
+    const cacheHash = MISC.generateHash(api_code + subpath + method + JSON.stringify(_.extend({}, dataParams.query || {}, dataParams.body || {})));
+
+    if(cache_ttl>0) {
+        const cacheData = await _CACHE.fetchDataSync(`APIBOX:${cacheHash}`);
+        if(cacheData) {
+            return cacheData;
+        }
+    }
 
     var env_params = {};
     var end_point = "";
@@ -140,6 +148,9 @@ async function sendRequest(providerCode, apiInfo, dataParams, ctx) {
             request_payload: JSON.stringify(logOptions), 
             response_payload: JSON.stringify(response.data), 
         }, MISC.generateDefaultDBRecord(ctx, false)));
+
+        // Store the response in cache
+        await _CACHE.storeDataEx(`APIBOX:${cacheHash}`, response.data, cache_ttl, true);
 
         return response.data;
     } catch (error) {
