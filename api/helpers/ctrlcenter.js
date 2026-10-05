@@ -19,7 +19,7 @@ module.exports = {
         return data.results;
     },
 
-    getForApp: async function(ctx) {
+    getAppFeatureFlags: async function(ctx) {
         var data1 = await _DB.db_selectQ("appdb", "lgks_ctrlcenter", "module, var_code, var_value", {
             "blocked": "false",
             "module": [["*", ctx?.meta?.appInfo?.appid], "IN"],

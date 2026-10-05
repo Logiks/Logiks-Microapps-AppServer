@@ -36,7 +36,7 @@ module.exports = {
 				delete applicationInfo.domain;
 
 				if(!applicationInfo.feature_flags) applicationInfo.feature_flags = {};
-				applicationInfo.feature_flags = _.extend({}, applicationInfo.feature_flags, CTRLCENTER.getForApp(ctx));
+				applicationInfo.feature_flags = _.extend({}, applicationInfo.feature_flags, CTRLCENTER.getAppFeatureFlags(ctx));
 				
 				return applicationInfo;
 			}

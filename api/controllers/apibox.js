@@ -4,6 +4,8 @@
  * 
  * sys_apibox           - APIBox Endpoint Configurations
  * log_apibox           - APIBox Run Logs
+ * 
+ * Depends on the provider controller to get the server information and endpoint configurations for each provider.
  * */
 
 const qs = require('qs');
