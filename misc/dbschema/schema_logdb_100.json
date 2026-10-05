@@ -301,7 +301,7 @@
         "default": null,
         "primary": false
       },
-      "env_code": {
+      "provider": {
         "type": "varchar(55)",
         "nullable": false,
         "default": null,

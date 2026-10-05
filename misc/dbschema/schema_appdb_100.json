@@ -3625,7 +3625,7 @@
         "default": null,
         "primary": false
       },
-      "env_code": {
+      "provider": {
         "type": "varchar(55)",
         "nullable": false,
         "default": null,
@@ -3779,80 +3779,6 @@
     "indexes": [
       "PRIMARY",
       "api_code"
-    ]
-  },
-  "sys_apibox_env": {
-    "columns": {
-      "id": {
-        "type": "int unsigned",
-        "nullable": false,
-        "default": null,
-        "primary": true
-      },
-      "guid": {
-        "type": "varchar(100)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "env_code": {
-        "type": "varchar(55)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "env_title": {
-        "type": "varchar(150)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "end_point": {
-        "type": "varchar(50)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "env_params": {
-        "type": "json",
-        "nullable": true,
-        "default": null,
-        "primary": false
-      },
-      "blocked": {
-        "type": "enum('false','true')",
-        "nullable": false,
-        "default": "false",
-        "primary": false
-      },
-      "created_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "created_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "edited_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      },
-      "edited_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": null,
-        "primary": false
-      }
-    },
-    "indexes": [
-      "PRIMARY",
-      "env_code"
     ]
   },
   "sys_fabric": {

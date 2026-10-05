@@ -6,6 +6,17 @@
  * sys_providers : Manage Remote Servers, Workers and Agents for modules and apps
  * 
  * eg: analytics101, sysops, reporting_servers, etc
+ * 
+ * Based on type of server - health, status, and other endpoints can be configured for each server type.
+ * Based on the server type, the controller can handle different types of requests and responses, ensuring that the system can effectively communicate with and manage these remote servers.
+ * 
+ * The controller also maintains logs of all interactions with the remote servers, including request and response payloads, status codes, and latency metrics. This logging functionality is crucial for monitoring the health and performance of the remote servers and for troubleshooting any issues that may arise during communication.
+ * The controller is designed to be flexible and extensible, allowing for the addition of new server types and endpoints as needed. It can be integrated with other modules and applications within the system, providing a centralized point of management for all remote server interactions.
+ * The controller also supports various authentication mechanisms for secure communication with remote servers, ensuring that sensitive data is protected during transmission.
+ * 
+ * Overall, this controller plays a vital role in enabling efficient and effective management of remote servers, workers, and agents within the system, contributing to the overall stability and performance of the applications it supports.
+ * 
+ * # /health, /restart, /status, /metrics, /logs, /config, /update, /deploy, /backup, /restore, /shutdown
  * */
 
 module.exports = {

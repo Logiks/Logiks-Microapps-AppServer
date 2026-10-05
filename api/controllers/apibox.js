@@ -3,8 +3,6 @@
  * This controls all the API requests going out of the system
  * 
  * sys_apibox           - APIBox Endpoint Configurations
- * sys_apibox_env       - APIBox Environment Variables
- * > sys_apibox.env_code = sys_apibox_env.env_code
  * log_apibox           - APIBox Run Logs
  * */
 
@@ -18,44 +16,47 @@ module.exports = {
         return true;
     },
 
-    runAPI: async function(apiCode, params = {}, ctx) {
-        if(!apiCode) return false;
+    runAPI: async function(apiCode, payload = {}, providerCode = false, ctx) {
+        if(!providerCode || !apiCode) return false;
 
-        const apiData = _DB.db_selectQ("appdb", "sys_apibox,sys_apibox_env", "sys_apibox.*, sys_apibox_env.end_point, sys_apibox_env.env_params", {
+        //, sys_apibox_env.end_point, sys_apibox_env.env_params
+        const apiData = _DB.db_selectQ("appdb", "sys_apibox", "sys_apibox.*", {
             "sys_apibox.blocked": "false",
-            "sys_apibox_env.blocked": "false",
             "sys_apibox.api_code": apiCode,
             "sys_apibox.guid": [["global", ctx?.meta?.user?.guid || "global"], "IN"],
-            "sys_apibox.env_code = sys_apibox_env.env_code": "RAW"
         });
         if (!apiData || !apiData.results) return false;
 
         const apiInfo = apiData.results[0];
 
-        try {
-            apiInfo['env_params'] = JSON.parse(apiInfo['env_params'] || '{}');
-        } catch (error) {
-            apiInfo['env_params'] = {};
+        if(!providerCode) {
+            providerCode = apiInfo.provider;
         }
 
-        return await sendRequest(apiCode, apiInfo, params, ctx);
+        return await sendRequest(providerCode, apiInfo, payload, ctx);
     },
 
-    sendRequest: async function(apiCode, apiInfo, params = {}, ctx) {
-        return await sendRequest(apiCode, apiInfo, params, ctx);
+    sendRequest: async function(providerCode, apiInfo, payload = {}, ctx) {
+        return await sendRequest(providerCode, apiInfo, payload, ctx);
     }
 }
 
-async function sendRequest(apiCode, apiInfo, dataParams, ctx) {
+async function sendRequest(providerCode, apiInfo, dataParams, ctx) {
+    //validate the apiInfo and providerCode
+    if(!providerCode || !apiInfo || !apiInfo.api_code) {
+        throw new Error("Invalid provider code or API information");
+    }
+
+    //Extract necessary information from apiInfo
     const {
+        guid,
+        api_code,
         debug, 
         use_cache, 
         use_mock, 
         format, 
         method, 
         env_code,
-        end_point, 
-        env_params,
         subpath, 
         authorization, 
         authorization_token, 
@@ -68,6 +69,20 @@ async function sendRequest(apiCode, apiInfo, dataParams, ctx) {
         mockdata
     } = apiInfo;
     if(use_mock) return mockdata;
+
+    var env_params = {};
+    var end_point = "";
+    try {
+        const serverInfo = await PROVIDER.getInfo(guid, providerCode);
+
+        end_point = (serverInfo?.server_url || '').replace(/\/+$/, '');
+        env_params = JSON.parse(serverInfo.params || '{}');
+    } catch(error) {
+        env_params = {}
+    }
+    if(!end_point || end_point.length<=0) {
+        throw new Error("Server URL not found");
+    }
     
     const time1 = process.hrtime.bigint();
     const finalURL = end_point + (subpath ? subpath : '');
@@ -93,7 +108,7 @@ async function sendRequest(apiCode, apiInfo, dataParams, ctx) {
     _DB.db_updateQ("appdb", "sys_apibox", {
             "last_run": _DB.db_now(),
         }, {
-            api_code: apiCode
+            api_code: apiInfo.api_code
         });
 
     const logOptions = {
@@ -116,8 +131,8 @@ async function sendRequest(apiCode, apiInfo, dataParams, ctx) {
         //Create a log for the run
         _DB.db_insertQ1("logdb", "log_apibox", _.extend({
             guid: ctx.meta.user.guid, 
-            api_code: apiCode, 
-            env_code: env_code, 
+            api_code: apiInfo.api_code, 
+            provider: providerCode, 
             method: method, 
             endpoint: finalURL, 
             status_code: statusCode, 
@@ -134,7 +149,8 @@ async function sendRequest(apiCode, apiInfo, dataParams, ctx) {
         //Create a log for the run
         _DB.db_insertQ1("logdb", "log_apibox", _.extend({
             guid: ctx.meta.user.guid, 
-            api_code: apiCode, 
+            api_code: apiInfo.api_code, 
+            provider: providerCode,
             method: method, 
             endpoint: finalURL, 
             status_code: "ERR", 
