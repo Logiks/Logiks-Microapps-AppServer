@@ -201,7 +201,7 @@ module.exports = {
         var userInfo = await _DB.db_selectQ("appdb", 
             "lgks_users JOIN lgks_privileges ON lgks_privileges.id = lgks_users.privilegeid JOIN lgks_access ON lgks_access.id = lgks_users.accessid LEFT JOIN lgks_users_group ON lgks_users_group.id = lgks_users.groupid", 
             //"lgks_users,lgks_privileges,lgks_access LEFT JOIN lgks_users_group ON lgks_users_group.id = lgks_users.groupid", 
-            "lgks_privileges.name as privilege_name, lgks_access.name as access_name, lgks_access.sites as scope_sites, lgks_users_group.*, lgks_users.*, lgks_users.userid as userId", {
+            "lgks_privileges.name as privilege_name, lgks_access.name as access_name, lgks_access.sites as scope_sites, lgks_users.*, lgks_users.userid as userId,lgks_users_group.group_parent,lgks_users_group.group_name,lgks_users_group.group_manager,lgks_users_group.group_phone,lgks_users_group.group_email,lgks_users_group.group_branch,lgks_users_group.group_area,lgks_users_group.group_region,lgks_users_group.group_state,lgks_users_group.group_zone,lgks_users_group.group_country,lgks_users_group.group_descs", {
                 "userid": userid,
                 "lgks_users.blocked": 'false',
                 "lgks_privileges.blocked": 'false',
