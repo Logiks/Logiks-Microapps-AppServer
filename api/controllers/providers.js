@@ -19,6 +19,12 @@
  * controls =  health, restart, status, metrics, logs, config, update, deploy, backup, restore, shutdown
  * */
 
+const qs = require('qs');
+
+const PROTECTED_HEADERS = ['authorization', 'cookie', 'set-cookie', 'x-api-key'];
+const CONTROLS = ["health", "restart", "status", "metrics", "logs", "config", "update", "deploy", "backup", "restore", "shutdown"];
+const MAX_LOG_PAYLOAD = 64 * 1024;
+
 module.exports = {
 
     initialize : function() {
@@ -72,37 +78,40 @@ module.exports = {
         if(!serverInfo) {
             throw new Error("Server not found");
         }
-        var serverUrl = serverInfo.server_url;
+        var serverUrl = (serverInfo.server_url || '').replace(/\/+$/, '');
         if(!serverUrl) {
             throw new Error("Server URL not found");
         }
-        var finalURL = serverUrl + endpoint;// + (subpath ? subpath : '');
-        var headers = optionParams.headers || {};
-        var timeout = optionParams.timeout || 5000;
-        const time1 = process.hrtime.bigint();
-        // var response = await _HTTP.request(url, method, payload, headers, timeout);
-        // return response;
+        method = String(method || "POST").toUpperCase();
+        endpoint = String(endpoint || '');
+        if(endpoint && !endpoint.startsWith('/')) endpoint = '/' + endpoint;
 
+        var finalURL = serverUrl + endpoint;
+        var headers = optionParams.headers || {};
+        const time1 = process.hrtime.bigint();
+        const ctx = {meta: {user: {guid: guid}}};
+
+        // Caller headers cannot carry credentials; provider auth is applied last
+        const callerHeaders = _.omitBy(headers, (v, k) => PROTECTED_HEADERS.includes(String(k).toLowerCase()));
         const options = {
             url: finalURL,
-            method: method.toUpperCase(),
+            method: method,
             headers: {
-                ...(serverInfo.authorization && serverInfo.authorization === 'apikey' ? {'Authorization': `Bearer ${serverInfo.authorization_key}`} : {}),
-                ...MISC._replaceObj(_.extend({}, headers)),//, dataParams.headers || {}
+                ...MISC._replaceObj(callerHeaders),
+                ...(serverInfo.authorization === 'apikey' && serverInfo.authorization_key ? {'Authorization': `Bearer ${serverInfo.authorization_key}`} : {}),
             },
             data: {},
-            timeout: optionParams.timeout_ms || 30000
+            timeout: optionParams.timeout_ms || optionParams.timeout || 30000
         };
 
         if(payload) {
             if (method === 'GET') {
-                const QUERY_OBJ = MISC._replaceObj(_.extend({}, payload || {}, options.body || {}));
-                options.url += `?${qs.stringify(QUERY_OBJ)}`;
+                options.url += `${options.url.includes('?') ? '&' : '?'}${qs.stringify(MISC._replaceObj(payload))}`;
             } else {
-                options.data = MISC._replaceObj(_.extend({}, payload || {}, options.body || {}));
+                options.data = MISC._replaceObj(payload);
             }
         }
-        
+
         //Update the server table for last run
         _DB.db_updateQ("appdb", "sys_providers", {
                 "last_run": _DB.db_now(),
@@ -110,79 +119,85 @@ module.exports = {
                 provider_code: providerCode
             });
 
+        const logOptions = {
+            ...options,
+            headers: sanitizeHeaders(options.headers)
+        };
+
+        const writeLog = (statusCode, responsePayload) => {
+            Promise.resolve(_DB.db_insertQ1("logdb", "log_providers", _.extend({
+                category_code: serverInfo.category_code || "",
+                server_code: providerCode, 
+                method: method, 
+                endpoint: String(finalURL).substring(0, 255), 
+                status_code: statusCode, 
+                latency_ms: Math.round(Number(process.hrtime.bigint() - time1) / 1e6), 
+                request_payload: truncate(JSON.stringify(logOptions)), 
+                response_payload: truncate(responsePayload)
+            }, MISC.generateDefaultDBRecord(ctx, false)))).catch(e => {
+                console.error("PROVIDERS log write failed", e.message);
+            });
+        };
 
         try {
             const response = await axios(options);
 
-            const time2 = process.hrtime.bigint();
+            if (serverInfo.debug === 'true') console.log(`Request sent to ${logOptions.url} with method ${logOptions.method}`, logOptions);
 
-            if (options.debug) console.log(`Request sent to ${options.url} with method ${options.method}`, options);
-
-            // Get the HTTP status code
-            const statusCode = response.status;
-
-            //Create a log for the run
-            _DB.db_insertQ1("logdb", "log_providers", _.extend({
-                guid: ctx.meta.user.guid, 
-                category_code: "",
-                provider_code: providerCode, 
-                env_code: env_code, 
-                method: method, 
-                endpoint: finalURL, 
-                status_code: statusCode, 
-                latency_ms: Number(process.hrtime.bigint() - time1) / 1e6, 
-                request_payload: JSON.stringify(options), 
-                response_payload: JSON.stringify(response.data)
-            }, MISC.generateDefaultDBRecord(ctx, false)));
+            writeLog(response.status, JSON.stringify(response.data));
 
             return response.data;
         } catch (error) {
-            const time2 = process.hrtime.bigint();
+            console.error(`Error sending request: ${error.message}`);
 
-            console.error(`Error sending request: ${error.message}`, error);
-            
-            //Create a log for the run
-            _DB.db_insertQ1("logdb", "log_providers", _.extend({
-                guid: ctx.meta.user.guid, 
-                category_code: "",
-                provider_code: providerCode, 
-                env_code: env_code, 
-                method: method, 
-                endpoint: finalURL, 
-                status_code: "ERR", 
-                latency_ms: Number(process.hrtime.bigint() - time1) / 1e6, 
-                request_payload: JSON.stringify(options), 
-                response_payload: JSON.stringify(error?.response || error), 
-            }, MISC.generateDefaultDBRecord(ctx, false)));
-            
+            // status_code is an int column; 0 = no HTTP response (network error, timeout)
+            writeLog(error?.response?.status || 0, JSON.stringify(error?.response?.data ?? {error: error.message}));
+
             throw error;
         }
     },
 
     runControl: async function(guid, providerCode, control, payload = {}, optionParams = {}) {
-        return await APIBOX.sendRequest(providerCode, {
+        if(!CONTROLS.includes(control)) {
+            throw new Error("Unsupported provider control: " + control);
+        }
+
+        return await APIBOX.sendRequest(providerCode, _.extend({
+            debug: false, 
+            cache_ttl: 0, 
+            use_mock: false, 
+            format: "json", 
+            authorization: "", 
+            authorization_token: "", 
+            input_validation: {}, 
+            params: {}, //other configurations
+            headers: {}, 
+            query_obj: {},
+            body: {}, 
+            output_transformation: {}, 
+            mockdata: false,
+        }, optionParams, {
             guid: guid,
             api_code: `providers_${control}`,
             subpath: `/${control}`,
             method: "POST",
-            dataParams: {
-                body: payload
-            },
-            ..._.extend({
-                debug: false, 
-                cache_ttl: 0, 
-                use_mock: false, 
-                format: "json", 
-                authorization: "", 
-                authorization_token: "", 
-                input_validation: {}, 
-                params: {}, //other configurations
-                headers: {}, 
-                query_obj: {},
-                body: {}, 
-                output_transformation: {}, 
-                mockdata: false,
-            }, optionParams)
-        }, payload, {meta:{user:{guid}}});
+        }), {body: payload}, {meta:{user:{guid}}});
     }
+}
+
+function sanitizeHeaders(headers = {}) {
+    const sanitized = { ...headers };
+
+    for (const key of Object.keys(sanitized)) {
+        if (PROTECTED_HEADERS.includes(key.toLowerCase())) {
+            sanitized[key] = '[REDACTED]';
+        }
+    }
+
+    return sanitized;
+}
+
+function truncate(str) {
+    str = typeof str === 'string' ? str : String(str);
+    return str.length > MAX_LOG_PAYLOAD ? str.substring(0, MAX_LOG_PAYLOAD) + '...[truncated]' : str;
 }

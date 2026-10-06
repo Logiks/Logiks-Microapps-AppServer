@@ -231,10 +231,12 @@ These have `initialize()` returning `true`, so they're reachable via `system.con
 
 Outbound API calls are defined in `sys_apibox` (endpoint path, method, headers, body/query templates, mock data, cache TTL) and sent to a server registered in `sys_providers`; the base URL and auth come from the provider (see `PROVIDERS` below). The old `sys_apibox_env` table is no longer used.
 
-- **`runAPI(apiCode, payload={}, providerCode, ctx)`** — look up the stored definition by `apiCode` (rows with `guid` = `global` or the caller's tenant) and send it through `providerCode`. Returns `false` if either code is missing. `payload` is `{ query, body }`.
+- **`runAPI(apiCode, payload={}, providerCode=false, ctx)`** — look up the stored definition by `apiCode` (rows with `guid` = `global` or the caller's tenant) and send it. `providerCode` is optional and falls back to the definition's `provider` column. Returns `false` if `apiCode` is missing. `payload` is `{ query, body, headers }`. If the tenant has its own definition for `apiCode`, it wins over the global one; returns `false` when no definition matches. There is no public REST route for this; call it from services and microapp code.
 - **`sendRequest(providerCode, apiInfo, payload={}, ctx)`** — send an already-loaded definition. `apiInfo` needs at least `api_code`; unset fields default to `method: POST`, `format: json`, `cache_ttl: 0`, `use_mock: false`. Throws if the provider has no `server_url`.
 
-Behaviour: `use_mock` returns the stored `mockdata` without calling out. When `cache_ttl > 0`, responses are cached in `_CACHE` under `APIBOX:<hash of api_code, subpath, method, query+body>` and served from there until they expire. Every call updates `sys_apibox.last_run` and writes a `log_apibox` row (provider, method, endpoint, status, latency, request/response payloads); failures log status `ERR` and rethrow.
+Auth: the provider's `apikey` credential and the definition's `token` credential are always applied last, and a caller cannot set `Authorization`, `Cookie` or `X-API-Key` through `payload.headers`. The `text` JSON columns (`headers`, `body`, `query_obj`, `params`, `mockdata`) are parsed on read, and `use_mock` / `debug` are the `'true'`/`'false'` enum values. Timeout comes from the definition's `params.timeout_ms`, then the provider's, then 30s.
+
+Behaviour: sensitive headers (`Authorization`, `Cookie`, `Set-Cookie`, `X-API-Key`) are redacted in `log_apibox`. `use_mock` returns the stored `mockdata` without calling out. When `cache_ttl > 0`, responses are cached in `_CACHE` under `APIBOX:<sha256 of tenant guid, provider, api_code, subpath, method, query+body>` (so tenants never share entries) and served from there until they expire. Every call updates `sys_apibox.last_run` and writes a `log_apibox` row (provider, method, endpoint, status, latency, request/response payloads); failures log the HTTP status (or `0` when there was no response) and rethrow.
 
 ### `PROVIDERS` — remote server registry ([providers.js](../api/controllers/providers.js))
 
@@ -243,8 +245,8 @@ Cluster-public. Manages the remote servers, workers and agents registered in `sy
 - **`getType()`** — provider types, from `CONFIG.REMOTE_SERVER_TYPE` or the default `["sysops", "analytics101"]`.
 - **`list(guid, categoryCode=false)`** — non-blocked providers, optionally filtered by category.
 - **`getInfo(guid, providerCode)`** — one provider row (`server_url`, `params`, auth settings), or `null`.
-- **`send(guid, providerCode, endpoint, payload, optionParams={}, method="POST")`** — direct request to a provider, logged to `log_providers`.
-- **`runControl(guid, providerCode, control, payload={}, optionParams={})`** — POST to `/<control>` on the provider through `APIBOX.sendRequest`. Intended controls: `health`, `restart`, `status`, `metrics`, `logs`, `config`, `update`, `deploy`, `backup`, `restore`, `shutdown`.
+- **`send(guid, providerCode, endpoint, payload, optionParams={}, method="POST")`** — direct request to a provider using its `apikey` credential; logged to `log_providers` with headers redacted and payloads capped at 64 KB.
+- **`runControl(guid, providerCode, control, payload={}, optionParams={})`** — POST to `/<control>` on the provider through `APIBOX.sendRequest`. `control` must be one of: `health`, `restart`, `status`, `metrics`, `logs`, `config`, `update`, `deploy`, `backup`, `restore`, `shutdown`.
 
 ### `SINGLETONMANAGER` — cluster-singleton election ([singletonmanager.js](../api/controllers/singletonmanager.js))
 

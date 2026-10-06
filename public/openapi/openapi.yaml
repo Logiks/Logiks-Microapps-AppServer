@@ -2465,24 +2465,6 @@ paths:
           description: Success
       security:
       - BearerAuth: []
-  /api/api/{apiCode}:
-    post:
-      tags:
-      - utils
-      parameters:
-      - name: apiCode
-        in: path
-        required: true
-        schema:
-          type: string
-      summary: utils.runAPI
-      description: 'Runs the stored APIBox definition `apiCode` and returns the remote response. Body: `{ query, body }`. The definition is sent through the provider registered in `sys_providers`; responses are cached when the definition sets `cache_ttl`.'
-      operationId: utils.runAPI
-      responses:
-        '200':
-          description: Success
-      security:
-      - BearerAuth: []
   /api/run/{payloadId}:
     post:
       tags:
