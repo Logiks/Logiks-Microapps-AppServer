@@ -22,7 +22,7 @@ module.exports = {
         if(!providerCode || !apiCode) return false;
 
         //, sys_apibox_env.end_point, sys_apibox_env.env_params
-        const apiData = _DB.db_selectQ("appdb", "sys_apibox", "sys_apibox.*", {
+        const apiData = await _DB.db_selectQ("appdb", "sys_apibox", "sys_apibox.*", {
             "sys_apibox.blocked": "false",
             "sys_apibox.api_code": apiCode,
             "sys_apibox.guid": [["global", ctx?.meta?.user?.guid || "global"], "IN"],
@@ -48,6 +48,23 @@ async function sendRequest(providerCode, apiInfo, dataParams, ctx) {
     if(!providerCode || !apiInfo || !apiInfo.api_code) {
         throw new Error("Invalid provider code or API information");
     }
+
+    apiInfo = _.extend({
+        guid: ctx?.meta?.user?.guid || "global",
+        // api_code,
+        debug: false, 
+        cache_ttl: 0, 
+        use_mock: false, 
+        format: "json", 
+        method: "POST", 
+        input_validation: false, 
+        params: {}, //other configurations
+        headers: {}, 
+        query_obj: {},
+        body: {}, 
+        output_transformation: {}, 
+        mockdata: false
+    }, apiInfo);
 
     //Extract necessary information from apiInfo
     const {
