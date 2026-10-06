@@ -136,6 +136,7 @@ The application config is the largest knob set. The shipped [config_sample.json]
 | `ipwhitelisting` | Per-route IP allow lists |
 | `authjwt.{algorithm, secret, access_token_ttl, refresh_token_ttl}` | JWT issuance |
 | `mail.{host, port, secure, auth, default_from}` | SMTP for `MESSAGING.sendEmail` |
+| `mcp.system_tool_privileges` | Privileges allowed to use the built-in MCP query tools (default `["root", "devroot", "admin"]`; the `admin` role is always allowed) |
 | `storage.{driver, base_path}` | File storage (`local` is the only built-in driver) |
 | `storage.allow_private_downloads` | Default `false`. Remote-URL downloads refuse hosts that resolve to loopback, private or link-local addresses; set `true` only if you need to fetch from internal hosts |
 | `trust_proxy`, `trust_proxy_hops` | `X-Forwarded-For` is only honoured when the direct peer is a trusted proxy. By default loopback/private peers are trusted; set `trust_proxy` to `true`/`false` to force it. `trust_proxy_hops` (default `1`) is how many proxies sit in front, and the client IP is read from the right of the header. This drives IP-bound tokens, API-key IP whitelists and rate limiting |

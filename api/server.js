@@ -1301,6 +1301,7 @@ module.exports = {
 						const serverIP = req.socket.localAddress || req.connection.localAddress;
 						const serverHost = req.headers.host;
 						const remoteIP = MISC.getClientIP(req);
+						ctx.meta.remoteIP = remoteIP;//token verification below compares against it
 
 						const appInfo = ctx.meta.appInfo;
 						
@@ -1372,7 +1373,7 @@ module.exports = {
 
 						// --- API KEY AUTH ---
 						if (apiKey) {
-							const apiInfo = AUTHKEY.getAPIKeyInfo(apiKey, "api");
+							const apiInfo = await AUTHKEY.getAPIKeyInfo(apiKey, "api");
 
 							if(!apiInfo) {
 								throw new LogiksError(

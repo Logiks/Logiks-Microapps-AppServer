@@ -165,7 +165,7 @@ AICore does not have its own separate tool system — [tooling.js](../api/contro
 
 What's in the registry today is narrower than "any broker action", though. Two sources feed it:
 
-- **System tools** ([api/controllers/mcp/tools/](../api/controllers/mcp/tools/)) — always registered. Today that's four: `query_schema`, `query_index`, `query_analyse`, `query_results` — natural-language-friendly access to the Logiks JSON query DSL.
+- **System tools** ([api/controllers/mcp/tools/](../api/controllers/mcp/tools/)) — always registered. Today that's four: `query_schema`, `query_index`, `query_analyse`, `query_results` — natural-language-friendly access to the Logiks JSON query DSL. They can read schema and rows from any configured database, so they are listed and callable only for admin users (`admin` role, or privilege `root`/`devroot`/`admin`). To widen that, set `mcp.system_tool_privileges` in `config.json` to the privilege names you want to allow. The same rule applies to agents and `queryNL`, which run with the calling user's identity.
 - **Plugin tools** — the intended path for microapps to contribute tools: a plugin declares them in a `tools.json` manifest next to its `logiks.json`. The AppServer-side registration code exists (`loadPluginTools()`), but the chain feeding it isn't complete yet — the Worker side doesn't read/forward `tools.json`, and `system.plugins` doesn't aggregate a `tools` array yet, so `loadPluginTools()` currently has nothing to register (you'll see `MCP: failed to load plugin tools from system.plugins` in the boot log; harmless today, but a sign this path isn't live). Until that's finished, a plugin cannot yet make its own actions callable as agent tools this way.
 
 Two tools are injected by the agent loop itself rather than coming from the MCP registry:
@@ -193,7 +193,9 @@ The RAG *delivery* pipeline (below) is fully wired to call into semantic memory 
 
 One-off tasks are dispatched immediately through the queue lane (`AICORE.queueAgentRun`, tagged with the `taskId`); `startQueueConsumer()` reports the outcome back onto the task row (`completed`/`failed`) once the run finishes. A **recurring** task (`repeat: { every, unit, until? }`) registers a row in `lgks_autojobs` — the platform's existing cron system — whose `job_script` points back at `tasks.runScheduled`, so every cron firing just re-dispatches the same task under the same owner; the task's status cycles `scheduled → queued → scheduled` rather than reaching a terminal state. Cancelling a recurring task also retires its autojob row so it actually stops firing.
 
-REST surface ([api/services/tasks.service.js](../api/services/tasks.service.js)): `GET /ai/tasks`, `GET /ai/tasks/:taskId`, `POST /ai/tasks`, `POST /ai/tasks/:taskId/cancel`.
+REST surface ([api/services/tasks.service.js](../api/services/tasks.service.js)): `GET /ai/tasks`, `GET /ai/tasks/:taskId`, `POST /ai/tasks`, `POST /ai/tasks/:taskId/cancel`. A task always runs against the caller's own tenant; an `ownerGuid` in the request body is ignored.
+
+Conversation history is private to the user who created the session: the hot buffer is keyed by tenant and user, and `GET /ai/sessions/:sessId` only returns that user's messages. MCP sessions (`Mcp-Session-Id`) are likewise only usable by the user they were issued to.
 
 ### Multi-Agent Systems
 

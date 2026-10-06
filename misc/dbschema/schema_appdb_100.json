@@ -4233,6 +4233,12 @@
         "default": null,
         "primary": false
       },
+      "controls": {
+        "type": "text",
+        "nullable": true,
+        "default": "_utf8mb4\\'health\\'",
+        "primary": false
+      },
       "remarks": {
         "type": "varchar(250)",
         "nullable": false,

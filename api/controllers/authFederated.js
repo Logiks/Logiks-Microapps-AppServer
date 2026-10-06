@@ -65,7 +65,8 @@ module.exports = {
             "blocked": "false",
             "appid": appId
         };
-        whereCond[`(refid='${federatedLoginID}' OR id='${federatedLoginID}')`] = "RAW";
+        const safeLoginID = _DB.db_clean(String(federatedLoginID));
+        whereCond[`(refid=${safeLoginID} OR id=${safeLoginID})`] = "RAW";
 
         var data = await _DB.db_selectQ("appdb", "lgks_federatedlogins", "*", whereCond, {});
 

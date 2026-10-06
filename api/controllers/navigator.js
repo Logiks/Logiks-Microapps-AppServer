@@ -17,7 +17,7 @@ module.exports = {
 
         if(!userInfo.privilege) userInfo.privilege = "";
         if(!userInfo.roles) userInfo.roles = [];
-        if(!userInfo.scopes) userInfo.scopes = {};
+        if(!Array.isArray(userInfo.scopes)) userInfo.scopes = [];
         
         if(!filter) filter = {};
 
@@ -34,7 +34,8 @@ module.exports = {
             filter['device'] = [["*", deviceType], "IN"];
         }
         
-        filter[`FIND_IN_SET('${navID}', menuid)`] = "RAW";
+        // navID is a URL segment and this clause is raw SQL, so quotes and backslashes are neutralised
+        filter[`FIND_IN_SET('${String(navID).replace(/\\/g, "\\\\").replace(/'/g, "''")}', menuid)`] = "RAW";
 
         const dbLinks = await _DB.db_selectQ("appdb", "do_links", "*", _.extend({}, filter, {
             "blocked": "false",

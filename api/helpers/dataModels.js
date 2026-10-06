@@ -128,23 +128,23 @@ module.exports = {
 
     //Prepare record before encryption
     prepareData: async function(table, singleRecord) {
-        _.each(singleRecord, async function(val, col) {
+        for (const [col, val] of Object.entries(singleRecord || {})) {
             var colArr = col.split(".");
             if(colArr.length>1)
                 singleRecord[col] = await DATAMODELS.prepareField(colArr[0], colArr[1], val);
             else
                 singleRecord[col] = await DATAMODELS.prepareField(table, col, val);
-        });
+        }
     },
 
     //Process record before sending out
     processData: async function(singleRecord) {
-        _.each(singleRecord, async function(val, col) {
+        for (const [col, val] of Object.entries(singleRecord || {})) {
             var colArr = col.split(".");
             if(colArr.length>1) {
                 singleRecord[col] = await DATAMODELS.processField(colArr[0], colArr[1], val);
             }
-        });
+        }
     },
 
     processQuery: async function(table, sql) {

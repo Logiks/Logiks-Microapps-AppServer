@@ -283,13 +283,27 @@ module.exports = {
     },
 
     //Assuming hashed password from the frontend, so password = sha1 of user's actual password
-    updateUserPassword: async function(guid, userid, password) {
+    //oldPassword: pass it for self-service changes so the current password is checked first; leave it null only for
+    //admin-initiated resets
+    updateUserPassword: async function(guid, userid, password, oldPassword = null) {
+        if(oldPassword !== null) {
+            const current = await _DB.db_selectQ("appdb", "lgks_users", "pwd", {
+                "guid": guid,
+                "userid": userid,
+                "blocked": "false",
+            }, {});
+            const storedHash = current?.results?.[0]?.pwd;
+            if(!storedHash || !(await ENCRYPTER.compareHash(oldPassword, storedHash))) {
+                throw new LogiksError("Current password is incorrect", 401, "INVALID_PASSWORD");
+            }
+        }
+
         var encrypted_password = await ENCRYPTER.generateHash(password);
         var dated = moment().format("Y-M-D HH:mm:ss");
 
         var updateData = {
             "edited_on": dated,
-            "edited_by": "admin"
+            "edited_by": oldPassword !== null ? userid : "admin"
         }
 
         updateData.pwd = encrypted_password;

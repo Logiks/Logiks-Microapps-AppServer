@@ -54,7 +54,8 @@ module.exports = {
             var ref_src = payload.ref_src || "-";
             if(ref_src.indexOf("@")>=0) ref_src = ref_src.split("@").splice(0,2).join("@");
 
-            if(NO_LOGS?.activities?.indexOf(ref_src.split("@")[1]) !== -1) return;
+            // skip only sources listed in CONFIG.nologs.activities; with no list configured everything is logged
+            if(Array.isArray(NO_LOGS.activities) && NO_LOGS.activities.indexOf(ref_src.split("@")[1]) !== -1) return;
 
             await _DB.db_insertQ1("logdb", "log_activities", {
                 "appid": payload.appid || "-",

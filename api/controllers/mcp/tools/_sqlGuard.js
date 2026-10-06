@@ -63,14 +63,12 @@ function assertKnownColumnList(list, tableSchema, { allowDirection = false, labe
     }
 }
 
-//Doubles single quotes in every string found in a where/filter object, so
-//QUERY.parseQuery's unescaped `'${value}'` interpolation can't be broken
-//out of. Covers the DSL's shorthand forms: {col: "value"}, {col: [value, op]},
-//{col: "~value"} (operator-prefixed shorthand).
+//Walks a where/filter object and validates every key as a column identifier.
+//Values are left as-is: QUERY.parseQuery escapes quotes and backslashes in
+//them itself, and escaping here as well would double them. Covers the DSL's
+//shorthand forms: {col: "value"}, {col: [value, op]}, {col: "~value"}.
 function escapeValuesDeep(input) {
-    //Order matters: escape backslashes first (MySQL's default sql_mode
-    //treats `\` as a string escape character too), then double quotes.
-    if (typeof input === "string") return input.replace(/\\/g, "\\\\").replace(/'/g, "''");
+    if (typeof input === "string") return input;
     if (Array.isArray(input)) return input.map(escapeValuesDeep);
     if (input && typeof input === "object") {
         const out = {};

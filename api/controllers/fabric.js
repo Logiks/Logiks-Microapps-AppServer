@@ -121,7 +121,8 @@ module.exports = {
 
     stripHopByHopHeaders(headers) {
         const clean = { ...headers };
-        ["connection", "keep-alive", "transfer-encoding", "host"].forEach((h) => delete clean[h]);
+        // authorization/cookie/x-api-key are the caller's Logiks credentials; the upstream gets its own from sys_fabric
+        ["connection", "keep-alive", "transfer-encoding", "host", "authorization", "cookie", "x-api-key"].forEach((h) => delete clean[h]);
         return clean;
     },
 
@@ -205,6 +206,7 @@ function rewriteLocationHeader(location, target, proxyBase) {
 async function resolveTarget(section, ctx) {
     var serverInfo = await _DB.db_selectQ("appdb", "sys_fabric", "*", {
             proxyid: section.replace("/",""),
+            guid: [["global", ctx?.meta?.user?.guid || "global"], "IN"],
             blocked: "false"
         },{});
     if(!serverInfo || !serverInfo.results || serverInfo.results.length<=0) return false;

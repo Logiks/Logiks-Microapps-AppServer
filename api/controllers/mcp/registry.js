@@ -87,8 +87,21 @@ function registerPluginTool(entry) {
     );
 }
 
-function listTools() {
-    return Array.from(TOOLS.values()).map((t) => t.definition);
+// System tools read schema and rows from any configured database, so they are limited to admins by default
+// (same rule as the gateway's `admin.*` actions). CONFIG.mcp.system_tool_privileges can widen it.
+function canUseSystemTools(ctx) {
+    const user = ctx && ctx.meta && ctx.meta.user;
+    if (!user) return false;
+
+    const privileges = (CONFIG.mcp && CONFIG.mcp.system_tool_privileges) || ["root", "devroot", "admin"];
+    return (Array.isArray(user.roles) && user.roles.includes("admin")) || privileges.includes(user.privilege);
+}
+
+function listTools(ctx) {
+    const allowSystem = canUseSystemTools(ctx);
+    return Array.from(TOOLS.values())
+        .filter((t) => t.source !== "system" || allowSystem)
+        .map((t) => t.definition);
 }
 
 async function callTool(name, args, ctx) {
@@ -96,6 +109,12 @@ async function callTool(name, args, ctx) {
     if (!tool) {
         const err = new Error(`Unknown tool: ${name}`);
         err.code = "TOOL_NOT_FOUND";
+        throw err;
+    }
+
+    if (tool.source === "system" && !canUseSystemTools(ctx)) {
+        const err = new Error(`Not authorized to use '${name}'`);
+        err.code = "FORBIDDEN";
         throw err;
     }
 

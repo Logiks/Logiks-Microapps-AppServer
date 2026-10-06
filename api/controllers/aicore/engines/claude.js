@@ -9,7 +9,7 @@
 const AIEngine = require("./aiengine");
 const Anthropic = require("@anthropic-ai/sdk");
 
-const DEFAULT_MODEL = "claude-sonnet-5";
+const DEFAULT_MODEL = "claude-sonnet-5-5";
 const DEFAULT_MAX_TOKENS = 4096;
 
 module.exports = class Claude extends AIEngine {
@@ -83,12 +83,16 @@ function toAnthropicMessages(messages) {
             for (const call of (m.toolCalls || [])) {
                 content.push({ type: "tool_use", id: call.id, name: call.name, input: call.arguments });
             }
-            out.push({ role: "assistant", content });
+            if (content.length > 0) out.push({ role: "assistant", content });
         } else if (m.role === "tool") {
-            out.push({
-                role: "user",
-                content: [{ type: "tool_result", tool_use_id: m.toolCallId, content: String(m.content ?? "") }]
-            });
+            // All results for one assistant turn must share a single user message
+            const block = { type: "tool_result", tool_use_id: m.toolCallId, content: String(m.content ?? "") };
+            const last = out[out.length - 1];
+            if (last && last.role === "user" && Array.isArray(last.content) && last.content.length > 0 && last.content.every(b => b.type === "tool_result")) {
+                last.content.push(block);
+            } else {
+                out.push({ role: "user", content: [block] });
+            }
         } else {
             out.push({ role: "user", content: toAnthropicContent(m.content) });
         }

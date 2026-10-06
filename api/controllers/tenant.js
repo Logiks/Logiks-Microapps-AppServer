@@ -37,7 +37,7 @@ module.exports = {
         var whereLogic = {
             "blocked": "false",
         };
-        whereLogic[`FIND_IN_SET('${GUID}', sso_codes)`] = "RAW";
+        whereLogic[`FIND_IN_SET(${_DB.db_clean(String(GUID))}, sso_codes)`] = "RAW";
         
         var data = await _DB.db_selectQ("appdb", "lgks_tenants", "*", whereLogic, {});
 

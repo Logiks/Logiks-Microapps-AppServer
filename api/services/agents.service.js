@@ -72,7 +72,7 @@ module.exports = {
         sessionHistory: {
             rest: { method: "GET", fullPath: "/ai/sessions/:sessId" },
             async handler(ctx) {
-                return await AICORE.sessionHistory(ctx.meta.user.guid, ctx.params.sessId);
+                return await AICORE.sessionHistory(ctx.meta.user.guid, ctx.params.sessId, ctx.meta.user.userId);
             }
         }
     }

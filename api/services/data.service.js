@@ -49,7 +49,7 @@ module.exports = {
                 filter: "object"
             },
 			async handler(ctx) {
-				if(!ctx.params.filter) ctx.params.filter = {};
+				ctx.params.filter = QUERY.stripRawFilter(ctx.params.filter);
 
 				var data = await _DB.db_selectQ("appdb", "do_lists", cols, _.extend({},ctx.params.filter, {
 					"guid": [["global", ctx.meta.user.guid], "IN"],
@@ -71,7 +71,7 @@ module.exports = {
                 groupids: "array"
             },
 			async handler(ctx) {
-				if(!ctx.params.filter) ctx.params.filter = {};
+				ctx.params.filter = QUERY.stripRawFilter(ctx.params.filter);
 
 				var data = await _DB.db_selectQ("appdb", "do_lists", cols, _.extend({},ctx.params.filter, {
 					"guid": [["global", ctx.meta.user.guid], "IN"],
@@ -81,7 +81,7 @@ module.exports = {
 				
 				if(!data || !data?.results || data.results.length<=0) data = [];
 
-				const grouped = data.reduce((acc, item) => {
+				const grouped = (data.results || data).reduce((acc, item) => {
 						const key = item.groupid;
 						if (!acc[key]) acc[key] = [];
 						acc[key].push(item);

@@ -30,7 +30,8 @@ async function callEngine(engines, sessId, messages, tools, userInfo, params, re
         } catch (err) {
             lastErr = err;
             console.error(`AICore: engine '${engine.key}' failed`, err.message);
-            await recordFailure(engine.key, breakerConfig);
+            // A malformed request is the caller's problem, not the engine's health; it must not trip the breaker for everyone
+            if (!isRequestError(err)) await recordFailure(engine.key, breakerConfig);
         }
     }
 
@@ -44,6 +45,7 @@ async function withRetry(fn, { maxAttempts = 2, baseDelayMs = 200, timeoutMs } =
             return await withTimeout(fn(), timeoutMs);
         } catch (err) {
             lastErr = err;
+            if (isRequestError(err)) break; // retrying the same bad request cannot succeed
             if (attempt < maxAttempts) await sleep(baseDelayMs * attempt);
         }
     }
@@ -52,10 +54,17 @@ async function withRetry(fn, { maxAttempts = 2, baseDelayMs = 200, timeoutMs } =
 
 function withTimeout(promise, timeoutMs) {
     if (!timeoutMs) return promise;
+    let timer;
     return Promise.race([
         promise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error(`Engine call timed out after ${timeoutMs}ms`)), timeoutMs))
-    ]);
+        new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`Engine call timed out after ${timeoutMs}ms`)), timeoutMs); })
+    ]).finally(() => clearTimeout(timer));
+}
+
+// 400/404/413/422 mean this particular request was rejected; auth errors, 429 and 5xx still count against the engine
+function isRequestError(err) {
+    const status = err?.status || err?.response?.status;
+    return [400, 404, 413, 422].includes(status);
 }
 
 async function isBreakerOpen(engineKey) {

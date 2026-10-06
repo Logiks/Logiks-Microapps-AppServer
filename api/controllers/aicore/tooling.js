@@ -9,7 +9,7 @@ module.exports = {
 
     //Full MCP tool catalog, optionally narrowed to a persona's allowed_tools list.
     list: function(ctx, allowedTools = null) {
-        const tools = REGISTRY.listTools();
+        const tools = REGISTRY.listTools(ctx);
         if (!Array.isArray(allowedTools) || allowedTools.length === 0) return tools;
         return tools.filter(t => allowedTools.indexOf(t.name) >= 0);
     },

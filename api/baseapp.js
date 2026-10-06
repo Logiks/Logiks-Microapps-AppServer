@@ -61,15 +61,15 @@ module.exports = {
         switch(process.env.MIGRATION_MODE) {
             case "IMPORT":
                 printObj("Running Migration - Importing", "yellow");
-                _.each(_dbkeys(), async function(dbkey, k) {
+                for (const dbkey of _dbkeys()) {
                     await DBMIGRATOR.startMigration(dbkey);
-                });
+                }
                 break;
             case "EXPORT":
                 printObj("Running Migration - Exporting", "yellow");
-                _.each(_dbkeys(), async function(dbkey, k) {
+                for (const dbkey of _dbkeys()) {
                     await DBMIGRATOR.saveMigrationScript(dbkey);
-                });
+                }
                 break;
             default:
                 printObj("Running Migration - Mode Not Supported", "grey");

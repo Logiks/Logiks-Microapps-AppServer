@@ -40,15 +40,16 @@ module.exports = {
         const tempDataLookup = _.extend({}, params, data, ctx?.params?ctx?.params:{}, ctx?.meta?ctx?.meta:{});
 
         var FINAL_DATA = {};
-        _.each(sqlSource, async function(sqlObj, k) {
+        for (let k = 0; k < sqlSource.length; k++) {
+            const sqlObj = sqlSource[k];
             const sqlQuery = await QUERY.parseQuery(sqlObj, {}, tempDataLookup);
-            const dbkey = sqlQuery.dbkey?sqlQuery.dbkey:"appdb";
+            const dbkey = sqlObj?.dbkey ? sqlObj.dbkey : "appdb";
 
             const dbResponse = await _DB.db_query(dbkey, sqlQuery, {});
             const dbData = dbResponse?.results || [];
 
             FINAL_DATA[k] = dbData;
-        });
+        }
         FINAL_DATA['DATA'] = tempDataLookup;
 
         return _replace(template, FINAL_DATA);

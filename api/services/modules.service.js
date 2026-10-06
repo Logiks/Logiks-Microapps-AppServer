@@ -17,6 +17,15 @@ const { Readable } = require('stream');
 
 const COMPONENT_CACHE = {};
 
+// module / plugin / file names come from the URL and become a broker service name (`<name>.source`) and a file name
+function assertSafeNames(...names) {
+	for(const n of names) {
+		if(!/^[A-Za-z0-9_\-]+(\.[A-Za-z0-9_\-]+)*$/.test(String(n || ""))) {
+			throw new LogiksError("Invalid module or file name", 400, "INVALID_NAME");
+		}
+	}
+}
+
 module.exports = {
 	name: "modules",
 
@@ -33,6 +42,7 @@ module.exports = {
 			async handler(ctx) {
 				if(CONFIG.disable_cache.modules) ctx.params.recache = true;
 				if(!ctx.params.item) return false;
+				assertSafeNames(ctx.params.module, ...String(ctx.params.item).split("."));
 				
 				const moduleName = ctx.params.module;
 				var item = ctx.params.item.split(".");
@@ -114,6 +124,7 @@ module.exports = {
 				
 				const moduleName = ctx.params.module;
 				var fileName = ctx.params.item;
+				assertSafeNames(moduleName, fileName);
 				
 				console.log("MODULE_COMPONENT_HANDLER", ctx.params);
 

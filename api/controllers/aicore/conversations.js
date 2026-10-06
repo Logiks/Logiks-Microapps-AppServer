@@ -8,17 +8,23 @@
 const SESSION_PREFIX = "aicore:session:";
 const SESSION_TTL = 1800; //30 minutes, sliding
 
+// sessId comes from the client, so the hot buffer is keyed by tenant + user as well; knowing another
+// user's sessId must not give access to their conversation.
+function sessionKey(sessId, ctx) {
+    return `${SESSION_PREFIX}${ctx?.meta?.user?.guid || "-"}:${ctx?.meta?.user?.userId || "-"}:${sessId}`;
+}
+
 module.exports = {
 
-    getHistory: async function(sessId) {
-        return await _CACHE.fetchDataSync(SESSION_PREFIX + sessId, []);
+    getHistory: async function(sessId, ctx) {
+        return await _CACHE.fetchDataSync(sessionKey(sessId, ctx), []);
     },
 
     //Persists a batch of turn messages (user/assistant/tool) both to the hot
     //buffer and to the durable log. Starts the conversation log row the
     //first time a session is seen.
     appendTurn: async function(sessId, guid, agentCode, newMessages, ctx) {
-        const history = await this.getHistory(sessId);
+        const history = await this.getHistory(sessId, ctx);
 
         if (history.length === 0) {
             await _DB.db_insertQ1("logdb", "log_ai_conversations", _.extend({
@@ -30,7 +36,7 @@ module.exports = {
         }
 
         const updated = history.concat(newMessages);
-        await _CACHE.storeDataEx(SESSION_PREFIX + sessId, updated, SESSION_TTL);
+        await _CACHE.storeDataEx(sessionKey(sessId, ctx), updated, SESSION_TTL);
 
         for (const m of newMessages) {
             await _DB.db_insertQ1("logdb", "log_ai_messages", _.extend({
@@ -43,8 +49,11 @@ module.exports = {
         }
     },
 
-    history: async function(guid, sessId) {
-        const result = await _DB.db_selectQ("logdb", "log_ai_messages", "*", { guid, sessId }, {});
+    // userId (optional) limits the lookup to messages that user created
+    history: async function(guid, sessId, userId = null) {
+        const where = { guid, sessId };
+        if(userId) where.created_by = userId;
+        const result = await _DB.db_selectQ("logdb", "log_ai_messages", "*", where, {});
         return result?.results || [];
     }
 }

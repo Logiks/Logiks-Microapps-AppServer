@@ -45,6 +45,7 @@ module.exports = class LogiksAI extends AIEngine {
         } catch (err) {
             const error = new Error(`LogiksAI request failed: ${err.message}`);
             error.cause = err;
+            error.status = err.response?.status;//lets resilience.js tell request errors from engine failures
             throw error;
         }
 

@@ -230,7 +230,9 @@ async function checkRBACControls(ctx) {
         };
 
         //whereLogic[roles.map(a=>`FIND_IN_SET('${a}',allowed_roles)`).join(" OR ")] = "RAW";
-        whereLogic[roles.map(a=>`FIND_IN_SET('${a}',allowed_roles)`).join(" OR ")] = "RAW";
+        // Parenthesised: an unwrapped OR would escape the guid/site/blocked conditions it is ANDed with
+        if(roles.length>0) whereLogic[`(${roles.map(a=>`FIND_IN_SET(${_DB.db_clean(String(a))},allowed_roles)`).join(" OR ")})`] = "RAW";
+        else whereLogic["1=0"] = "RAW";
 
         const roleList = await _DB.db_selectQ("appdb", "lgks_rolemodel", "*", whereLogic);
         if(!roleList?.results) roleList.results = [];

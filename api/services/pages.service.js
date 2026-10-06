@@ -28,7 +28,14 @@ module.exports = {
                 path.join(ROOT_PATH, "public", "pages", `error.ejs`),
             ];
 
-            const availableFile = filePathArr.filter(file=> fs.existsSync(file) && fs1.statSync(file).isFile());
+            // The URL is client-controlled: only files inside public/pages, and only page types, may be served
+            const pagesRoot = path.resolve(ROOT_PATH, "public", "pages");
+            const availableFile = filePathArr.filter(file=> {
+                const resolved = path.resolve(file);
+                if(!resolved.startsWith(pagesRoot + path.sep)) return false;
+                if(!["ejs", "html", "vue"].includes(path.extname(resolved).toLowerCase().substr(1))) return false;
+                return fs.existsSync(resolved) && fs1.statSync(resolved).isFile();
+            });
             // console.log("Requested path:", ctx.params, fullPath, filePathArr, availableFile);
 
             if(availableFile.length<=0) {

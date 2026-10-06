@@ -6,6 +6,23 @@
  * 
  * */
 
+const crypto = require("crypto");
+
+const SENSITIVE_HEADERS = ["authorization", "cookie", "set-cookie", "x-api-key", "x-webhook-auth"];
+
+function redactHeaders(headers = {}) {
+    const out = { ...headers };
+    for (const k of Object.keys(out)) {
+        if (SENSITIVE_HEADERS.includes(k.toLowerCase())) out[k] = "[REDACTED]";
+    }
+    return out;
+}
+
+function safeEqual(a, b) {
+    const x = Buffer.from(String(a)), y = Buffer.from(String(b));
+    return x.length === y.length && crypto.timingSafeEqual(x, y);
+}
+
 module.exports = {
 
     initialize : function() {
@@ -13,11 +30,11 @@ module.exports = {
     },
 
     receiveRequest: async function(endpoint, ctx) {
-        console.log("\x1b[35m%s\x1b[0m","WEBHOOK RECIEVED", endpoint, ctx.query, ctx.params, ctx.headers, ctx.meta);
+        console.log("\x1b[35m%s\x1b[0m","WEBHOOK RECIEVED", endpoint);
         const time1 = process.hrtime.bigint();
 
         const logRecord = await _DB.db_insertQ1("logdb", "log_webhooks", _.extend({
-            appid: ctx.meta.appInfo.appid || "unknown", 
+            appid: ctx.meta?.appInfo?.appid || "unknown", 
             webhook: endpoint, 
             method: ctx.meta.method, 
             ip_address: ctx.meta.remoteIP || "0.0.0.0", 
@@ -25,9 +42,9 @@ module.exports = {
             latency_ms: 0, 
             status_code: 0, 
             request_payload: JSON.stringify({
-                query: ctx.query, 
-                params: ctx.params, 
-                headers: ctx.headers, 
+                query: _.omit(ctx.query || {}, ["auth"]), 
+                params: _.omit(ctx.params || {}, ["auth"]), 
+                headers: redactHeaders(ctx.headers), 
             }), 
             response_payload: JSON.stringify({}),
         }, MISC.generateDefaultDBRecord(ctx, false)));
@@ -64,7 +81,7 @@ module.exports = {
 
         if(webhookInfo.authkey && webhookInfo.authkey != "") {
             const reqAuthKey = ctx.meta.headers["x-webhook-auth"] || ctx.query.auth || ctx.params.auth || "";
-            if(reqAuthKey != webhookInfo.authkey) {
+            if(!safeEqual(reqAuthKey, webhookInfo.authkey)) {
                 console.log("\x1b[31m%s\x1b[0m","WEBHOOK AUTH FAILED", endpoint);
 
                 _DB.db_updateQ("logdb", "log_webhooks", {
@@ -83,7 +100,11 @@ module.exports = {
                 }
             }
         }
-        var vStatus = VALIDATIONS.validateRule(ctx.params, webhookInfo.validations || {});
+        var webhookRules = webhookInfo.validations || {};
+        if(typeof webhookRules == "string") {
+            try { webhookRules = JSON.parse(webhookRules); } catch(e) { webhookRules = {}; }
+        }
+        var vStatus = VALIDATIONS.validateRule(ctx.params, webhookRules);
         if (!vStatus.status) {
             console.log("\x1b[31m%s\x1b[0m","WEBHOOK VALIDATION FAILED", endpoint, vStatus.errors);
 

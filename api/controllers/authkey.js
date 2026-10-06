@@ -15,7 +15,7 @@ module.exports = {
             "auth_key": apiKey,
             // "key_type": key_type || "user" //api, s2s, user
         };
-        whereCond[`FIND_IN_SET('${key_type}', key_type)`] = "RAW";
+        whereCond[`FIND_IN_SET(${_DB.db_clean(key_type)}, key_type)`] = "RAW";
 
         var data = await _DB.db_selectQ("appdb", "lgks_apikeys", "*", whereCond, {});
         

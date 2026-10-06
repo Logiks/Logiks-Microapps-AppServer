@@ -27,7 +27,8 @@ module.exports = {
         createTask: {
             rest: { method: "POST", fullPath: "/ai/tasks" },
             async handler(ctx) {
-                return await AICORE.tasks.create(ctx.meta.user.guid, ctx.params, ctx);
+                // ownerGuid decides whose agents and data the task runs against, so it can never come from the request
+                return await AICORE.tasks.create(ctx.meta.user.guid, _.omit(ctx.params, ["ownerGuid"]), ctx);
             }
         },
 

@@ -41,7 +41,7 @@ async function executeLoop(engines, resilienceConfig, sessId, persona, agent, us
     const persist = opts.persist !== false;
     const guid = ctx?.meta?.user?.guid;
 
-    const history = persist ? await CONVERSATIONS.getHistory(sessId) : [];
+    const history = persist ? await CONVERSATIONS.getHistory(sessId, ctx) : [];
     const engineParams = _.extend({ model: persona.model, timeout_ms: agent.timeout_ms }, persona.params || {});
 
     //Knowledge: "forced" mode retrieves once up front and goes straight

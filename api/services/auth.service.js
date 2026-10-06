@@ -81,7 +81,7 @@ module.exports = {
 				}
 
 				//check if ip lock is enabled for this device, if yes, then check remoteIP
-				const ipAllowed = AUTHKEY.checkClientIP(ctx.meta.remoteIP, ctx.meta.appInfo.appid, false);
+				const ipAllowed = await AUTHKEY.checkClientIP(ctx.meta.remoteIP, ctx.meta.appInfo.appid, false);
 				if(!ipAllowed) {
 					throw new LogiksError("IP Whitelisting Required for S2S Calls", 401);
 				}
@@ -896,17 +896,13 @@ module.exports = {
 					);
 				}
 				
-				stored.counter += 1;
-
-				await authRedis.set(
-					key,
-					JSON.stringify(stored),
-					"EX",
-					300 // 5 minutes
-				);
-
-				if(stored.counter >= S2STOKENS_MAX) {
+				// Atomic use counter; the token keeps its original expiry instead of being extended by every use
+				const uses = await authRedis.incr(`${key}:uses`);
+				if(uses === 1) await authRedis.expire(`${key}:uses`, 300);
+				stored.counter = uses;
+				if(uses > S2STOKENS_MAX) {
 					await authRedis.del(key);
+					await authRedis.del(`${key}:uses`);
 
 					await log_login_error({
 						"guid": "-",
@@ -970,17 +966,13 @@ module.exports = {
 					);
 				}
 				
-				stored.counter += 1;
-
-				await authRedis.set(
-					key,
-					JSON.stringify(stored),
-					"EX",
-					300 // 5 minutes
-				);
-
-				if(stored.counter >= TLTOKENS_MAX) {
+				// Atomic use counter; the token keeps its original expiry instead of being extended by every use
+				const uses = await authRedis.incr(`${key}:uses`);
+				if(uses === 1) await authRedis.expire(`${key}:uses`, 300);
+				stored.counter = uses;
+				if(uses > TLTOKENS_MAX) {
 					await authRedis.del(key);
+					await authRedis.del(`${key}:uses`);
 
 					await log_login_error({
 						"guid": "-",

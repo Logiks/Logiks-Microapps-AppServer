@@ -53,9 +53,15 @@ function handleOptions(res) {
     res.end();
 }
 
+// A session id is only usable by the user it was issued to
+function ownsSession(session, req) {
+    const caller = req.$ctx?.meta?.user?.userId;
+    return !!session && !!caller && session.user?.userId === caller;
+}
+
 function handleDelete(req, res) {
     const sessionId = req.headers[SESSION_HEADER];
-    if (sessionId) SESSION.closeSession(sessionId);
+    if (sessionId && ownsSession(SESSION.getSession(sessionId), req)) SESSION.closeSession(sessionId);
     res.writeHead(204);
     res.end();
 }
@@ -64,7 +70,7 @@ function handleStream(req, res) {
     const sessionId = req.headers[SESSION_HEADER];
     const session = SESSION.getSession(sessionId);
 
-    if (!session) {
+    if (!session || !ownsSession(session, req)) {
         return PROTOCOL.writeJson(res, 400, { error: "Missing or unknown Mcp-Session-Id header" });
     }
 
@@ -152,7 +158,7 @@ async function dispatch(message, state, ctx) {
                 return notification ? null : PROTOCOL.buildResult(id, {});
 
             case "tools/list":
-                return notification ? null : PROTOCOL.buildResult(id, { tools: REGISTRY.listTools() });
+                return notification ? null : PROTOCOL.buildResult(id, { tools: REGISTRY.listTools(ctx) });
 
             case "tools/call": {
                 if (!params || !params.name) {

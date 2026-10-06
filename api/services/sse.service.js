@@ -19,6 +19,16 @@ module.exports = {
                     const res = ctx.meta.$res;
 
                     const id = ctx.params.eventId;
+                    const owner = ctx.meta?.user?.userId;
+
+                    // A stream id belongs to whoever opened it; another user must not be able to replace it
+                    const existing = clients.get(id);
+                    if(existing && existing.owner !== owner) {
+                        return {"status": "error", "msg": "Event stream id is already in use"};
+                    }
+                    if(existing) {
+                        try { existing.res.end(); } catch(e) {}
+                    }
 
                     res.writeHead(200, {
                         "Content-Type": "text/event-stream",
@@ -52,10 +62,15 @@ module.exports = {
                     res.write(`event: connected\n\n`);
                     res.write(`data: ${JSON.stringify({ id })}\n\n`);
 
-                    clients.set(id, res);
+                    clients.set(id, { res, owner });
+
+                    // Only drop the entry if it is still this connection (a reconnect may have replaced it)
+                    const release = () => {
+                        if(clients.get(id)?.res === res) clients.delete(id);
+                    };
 
                     req.on("close", () => {
-                        clients.delete(id);
+                        release();
 
                         try {
                             res.end();
@@ -81,7 +96,7 @@ module.exports = {
 
                             clearInterval(heartbeat);
 
-                            clients.delete(id);
+                            release();
 
                             try {
                                 res.end();
@@ -101,11 +116,12 @@ module.exports = {
 
     methods: {
         sendEvent(id, event, data) {
-            const client = clients.get(id);
+            const client = clients.get(id)?.res;
 
             if (!client) return false;
 
-            client.write(`event: ${event}\n`);
+            // newlines in the event name would let a payload inject extra SSE fields
+            client.write(`event: ${String(event).replace(/[\r\n]/g, " ")}\n`);
             client.write(`data: ${JSON.stringify(data)}\n\n`);
 
             return true;

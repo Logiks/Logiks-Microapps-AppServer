@@ -130,6 +130,9 @@ module.exports = {
         if(!sqlResult || !sqlResult.results || sqlResult?.results.length==0) return false;
 
         const fileInfo = sqlResult.results[0];
+        // `expires` is stored when the link is published, so it has to be honoured here
+        if(fileInfo.expires && moment(fileInfo.expires).isValid() && moment().isAfter(moment(fileInfo.expires))) return false;
+
         return FILES.getFileById(fileInfo.guid, fileInfo.file_id, responseType, moreData);
     },
 

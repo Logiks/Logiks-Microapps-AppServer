@@ -133,8 +133,8 @@ module.exports = {
         return { sessId, status: "queued", taskId: taskId || null };
     },
 
-    sessionHistory: async function(guid, sessId) {
-        return await CONVERSATIONS.history(guid, sessId);
+    sessionHistory: async function(guid, sessId, userId = null) {
+        return await CONVERSATIONS.history(guid, sessId, userId);
     },
 
     // -----------------------------------------------------------------

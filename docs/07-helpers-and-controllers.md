@@ -207,7 +207,7 @@ Policy decision point for `{subject, resource, action, environment}` requests; p
 ### `USERS` — user management ([users.js](../api/controllers/users.js))
 
 - **`getUserInfo(userid, where={}, more=false, callback)`** — fetch a user's profile. **`listUsers(whereCond, callback)`** — list users.
-- **`verifyUser(userid, password, appId)`** — verify credentials. **`updateUserPassword(guid, userid, password)`** — set a new password.
+- **`verifyUser(userid, password, appId)`** — verify credentials. **`updateUserPassword(guid, userid, password, oldPassword=null)`** — set a new password. Pass `oldPassword` for self-service changes (`/api/me/updatepass` always does) and it is checked first, failing with `INVALID_PASSWORD`; leave it `null` only for admin resets.
 - **`findOrCreateFederatedUser(federatedData, federatedSource)`** — get or create a user from SSO data.
 - **`getUserData(sessionId, ctx)`** — session-bound user data. **`getUserAvatar(avatar, avatar_type)`** — resolve an avatar.
 - **`hasMFA(guid, userid)`** — whether MFA is enabled. **`generateMFASecret(guid, userid, mfaType=false)`** — create an MFA secret.
