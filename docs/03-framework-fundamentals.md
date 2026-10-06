@@ -364,7 +364,7 @@ All controllers in [api/controllers/](../api/controllers/). The **Cluster-public
 | Controller global | Cluster-public | Purpose |
 |---|---|---|
 | `AICORE` | ✅ | AI Layer — personas/agents, agent loop, tasks. See [§9](09-ai-layer.md). |
-| `APIBOX` | ✅ | API versioning / sandboxing controls |
+| `APIBOX` | ✅ | Outbound API calls from stored definitions (`sys_apibox`), sent via a provider, with mock + response caching |
 | `APPLICATION` | ❌ | App metadata loader (consumed by `application.service.js`) |
 | `AUTHFEDERATED` | ✅ | Federated SSO engine catalogue + login response processing |
 | `AUTHKEY` | ❌ | API key lookups and IP whitelist checks |
@@ -374,6 +374,7 @@ All controllers in [api/controllers/](../api/controllers/). The **Cluster-public
 | `GEOFENCES` | ✅ | Spatial fence checks via MySQL spatial functions |
 | `KEYMANAGER` | ❌ | Minimal symmetric-secret derivation (`getKey`) |
 | `NAVIGATOR` | ✅ | Builds filtered navigation menus per user / device |
+| `PROVIDERS` | ✅ | Remote server registry (`sys_providers`) + control calls (health, restart, ...) |
 | `RBAC` | ✅ | Role / scope policy evaluation |
 | `SETTINGS` | ✅ | Persistent settings store (per-user / per-app / global) |
 | `SINGLETONMANAGER` | ✅ | Redis-backed cluster-singleton election |

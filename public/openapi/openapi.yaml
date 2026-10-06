@@ -2476,6 +2476,7 @@ paths:
         schema:
           type: string
       summary: utils.runAPI
+      description: 'Runs the stored APIBox definition `apiCode` and returns the remote response. Body: `{ query, body }`. The definition is sent through the provider registered in `sys_providers`; responses are cached when the definition sets `cache_ttl`.'
       operationId: utils.runAPI
       responses:
         '200':

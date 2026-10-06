@@ -6,6 +6,24 @@
  * log_apibox           - APIBox Run Logs
  * 
  * Depends on the provider controller to get the server information and endpoint configurations for each provider.
+ * 
+ * Sample Usage:
+ * // Run an API request
+ * const apiCode = 'example_api_code';
+ * const payload = { key1: 'value1', key2: 'value2' };
+ * const providerCode = 'example_provider_code';
+ * const ctx = { meta: { user: { guid: 'user_guid' } } };
+ * 
+ * APIBOX.runAPI(apiCode, payload, providerCode, ctx)
+ *     .then(response => {
+ *         console.log('API Response:', response);
+ *     })
+ *     .catch(error => {
+ *         console.error('API Error:', error);
+ *     });
+ * APIBOX.sendRequest(providerCode, {
+ *  subpath
+ * }, payload = {}, ctx)
  * */
 
 const qs = require('qs');
@@ -19,7 +37,7 @@ module.exports = {
     },
 
     runAPI: async function(apiCode, payload = {}, providerCode = false, ctx) {
-        if(!providerCode || !apiCode) return false;
+        if(!apiCode) return false;
 
         //, sys_apibox_env.end_point, sys_apibox_env.env_params
         const apiData = await _DB.db_selectQ("appdb", "sys_apibox", "sys_apibox.*", {

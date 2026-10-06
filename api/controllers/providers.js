@@ -68,7 +68,7 @@ module.exports = {
     },
 
     send: async function(guid, providerCode, endpoint, payload, optionParams = {}, method = "POST") {
-        var serverInfo = await this.getServerInfo(guid, providerCode);
+        var serverInfo = await this.getInfo(guid, providerCode);
         if(!serverInfo) {
             throw new Error("Server not found");
         }

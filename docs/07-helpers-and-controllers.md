@@ -229,7 +229,22 @@ These have `initialize()` returning `true`, so they're reachable via `system.con
 
 ### `APIBOX` — stored API definitions ([apibox.js](../api/controllers/apibox.js))
 
-- **`runAPI(apiCode, params={}, ctx=null)`** — execute a stored API-box definition by code.
+Outbound API calls are defined in `sys_apibox` (endpoint path, method, headers, body/query templates, mock data, cache TTL) and sent to a server registered in `sys_providers`; the base URL and auth come from the provider (see `PROVIDERS` below). The old `sys_apibox_env` table is no longer used.
+
+- **`runAPI(apiCode, payload={}, providerCode, ctx)`** — look up the stored definition by `apiCode` (rows with `guid` = `global` or the caller's tenant) and send it through `providerCode`. Returns `false` if either code is missing. `payload` is `{ query, body }`.
+- **`sendRequest(providerCode, apiInfo, payload={}, ctx)`** — send an already-loaded definition. `apiInfo` needs at least `api_code`; unset fields default to `method: POST`, `format: json`, `cache_ttl: 0`, `use_mock: false`. Throws if the provider has no `server_url`.
+
+Behaviour: `use_mock` returns the stored `mockdata` without calling out. When `cache_ttl > 0`, responses are cached in `_CACHE` under `APIBOX:<hash of api_code, subpath, method, query+body>` and served from there until they expire. Every call updates `sys_apibox.last_run` and writes a `log_apibox` row (provider, method, endpoint, status, latency, request/response payloads); failures log status `ERR` and rethrow.
+
+### `PROVIDERS` — remote server registry ([providers.js](../api/controllers/providers.js))
+
+Cluster-public. Manages the remote servers, workers and agents registered in `sys_providers` (for example `sysops` or `analytics101`), scoped to `global` plus the caller's `guid`.
+
+- **`getType()`** — provider types, from `CONFIG.REMOTE_SERVER_TYPE` or the default `["sysops", "analytics101"]`.
+- **`list(guid, categoryCode=false)`** — non-blocked providers, optionally filtered by category.
+- **`getInfo(guid, providerCode)`** — one provider row (`server_url`, `params`, auth settings), or `null`.
+- **`send(guid, providerCode, endpoint, payload, optionParams={}, method="POST")`** — direct request to a provider, logged to `log_providers`.
+- **`runControl(guid, providerCode, control, payload={}, optionParams={})`** — POST to `/<control>` on the provider through `APIBOX.sendRequest`. Intended controls: `health`, `restart`, `status`, `metrics`, `logs`, `config`, `update`, `deploy`, `backup`, `restore`, `shutdown`.
 
 ### `SINGLETONMANAGER` — cluster-singleton election ([singletonmanager.js](../api/controllers/singletonmanager.js))
 

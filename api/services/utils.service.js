@@ -52,23 +52,23 @@ module.exports = {
                 return results;
             }
         },
-        runAPI: {
-            rest: {
-				method: "POST",
-				fullPath: "/api/api/:apiCode"
-			},
-            params: {
-                // "query": "object",
-                // "body": "object",
-            },
-			async handler(ctx) {
-                const results = await APIBOX.runAPI(ctx.params.apiCode, {
-                    query: ctx.params.query || {},
-                    body: ctx.params.body || {}
-                }, ctx);
-                return results;
-            }
-        },
+        // runAPI: {
+        //     rest: {
+		// 		method: "POST",
+		// 		fullPath: "/api/api/:apiCode"
+		// 	},
+        //     params: {
+        //         // "query": "object",
+        //         // "body": "object",
+        //     },
+		// 	async handler(ctx) {
+        //         const results = await APIBOX.runAPI(ctx.params.apiCode, {
+        //             query: ctx.params.query || {},
+        //             body: ctx.params.body || {}
+        //         }, ctx);
+        //         return results;
+        //     }
+        // },
         runValidation: {
             rest: {
 				method: "POST",
