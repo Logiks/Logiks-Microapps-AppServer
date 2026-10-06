@@ -184,7 +184,8 @@ module.exports = {
 								"errors": ["Mtehod not found"]
 							};
 						}
-						const data = await global[cmd[0].toUpperCase()][cmd[1]](...params, ctx);
+						// const data = await global[cmd[0].toUpperCase()][cmd[1]](...params, ctx);
+						const data = await callWithCtx(global[cmd[0].toUpperCase()], cmd[1], params, ctx);
 
 						// console.log(cmd, params);
 						return {
@@ -224,7 +225,8 @@ module.exports = {
 								"errors": ["Mtehod not found"]
 							};
 						}
-						const data = await global[cmd[0].toUpperCase()][cmd[1]](...params, ctx);
+						// const data = await global[cmd[0].toUpperCase()][cmd[1]](...params, ctx);
+						const data = await callWithCtx(global[cmd[0].toUpperCase()], cmd[1], params, ctx);
 
 						// console.log(cmd, params);
 						return {
@@ -351,4 +353,25 @@ module.exports = {
 
 async function loadPluginAttributes(pluginId) {
 
+}
+
+// Place ctx at the position the method declares for it, instead of right after whatever the caller sent
+function callWithCtx(target, method, params, ctx) {
+	const fn = target[method];
+	const args = Array.isArray(params) ? [...params] : [];
+
+	// Parameter list text, e.g. "apiCode, payload = {}, providerCode = false, ctx"
+	const src = Function.prototype.toString.call(fn);
+	const sig = src.match(/^[^(]*\(([^)]*)\)/)?.[1] || "";
+	const names = sig.split(",").map(p => p.split("=")[0].replace(/[.\s]/g, "")).filter(Boolean);
+	const ctxIndex = names.indexOf("ctx");
+
+	if (ctxIndex >= 0) {
+		while (args.length < ctxIndex) args.push(undefined);   // pad so defaults apply
+		args[ctxIndex] = ctx;                                    // never let caller data occupy the ctx slot
+		return fn.apply(target, args);
+	}
+
+	// Method doesn't declare ctx: don't pass it
+	return fn.apply(target, args);
 }
