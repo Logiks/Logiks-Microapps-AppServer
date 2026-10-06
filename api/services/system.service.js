@@ -147,7 +147,7 @@ module.exports = {
 			params: {
 				color: { type: "string", enum: ["blue", "green"] }
 			},
-			handler: (ctx) => {
+			handler(ctx) {
 				this.activeColor = ctx.params.color;
 				LOGGER.get("server").warn("🔁 Active worker color switched to", this.activeColor);
 				return { activeColor: this.activeColor };

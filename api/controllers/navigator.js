@@ -121,9 +121,9 @@ module.exports = {
                                 { 
                                     "hour": new Date().getHours(), 
                                     "ip": ctx?.meta?.remoteIP, 
-                                    "userAgent": ctx.meta?.headers['user-agent'] || "-", 
+                                    "userAgent": ctx.meta?.headers?.['user-agent'] || "-", 
                                     "headers": ctx.meta?.headers,
-                                    "appInfo": ctx.meta.appInfo,
+                                    "appInfo": ctx.meta?.appInfo,
                                     "deviceType": ctx.meta?.user?.deviceType,
                                     "deviceId": ctx.meta?.user?.deviceId
                                 }

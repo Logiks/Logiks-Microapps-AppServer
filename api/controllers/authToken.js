@@ -23,7 +23,7 @@ module.exports = {
         const refreshJti = `ref:${sessionId}`;
 
         const ip = ctx?.meta?.ip || ctx?.meta?.remoteIP || ctx?.request?.ip || ctx?.request?.headers['x-forwarded-for'] || ctx?.request?.connection?.remoteAddress || '';
-        const deviceType = ctx?.meta?.deviceType || ctx?.request?.headers['user-agent'] || '';
+        const deviceType = ctx?.meta?.deviceType || ctx?.request?.headers?.['user-agent'] || '';
         
         const payloadBase = {
             sessionId: sessionId,
