@@ -2866,6 +2866,13 @@
         "primary": false,
         "extra": ""
       },
+      "changes": {
+        "type": "longtext",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
       "blocked": {
         "type": "enum('false','true')",
         "nullable": true,

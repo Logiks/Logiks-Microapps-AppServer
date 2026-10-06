@@ -2,6 +2,8 @@
 
 const fs1 = require("fs-extra");
 const diff = require("deep-diff").diff;
+const nodeCrypto = require("crypto");
+const { v4: uuidv4 } = require("uuid");
 
 const SCHEMA_DIR = "misc/dbschema/";//path.join(__dirname, "../schema_versions");
 fs1.ensureDirSync(SCHEMA_DIR);
@@ -60,6 +62,7 @@ module.exports = {
 
                             printObj(`Migration Completed in ${dbkey} for with status - ${result.success}`, "pink", 3);
                             reportMigrationNotes(dbkey, schemaData, result, 3);
+                            await logMigration(dbkey, `plugin:${pluginID}`, schemaData.schema, result.success ? "imported" : "error", migrationDetails(schemaData, result), pluginID);
 
                             if(result.success)
                                 responses[dbkey] = {"mode": process.env.MIGRATION_MODE, "status": "success", "message": "Successfully Migrated", "statements": schemaData.statements};
@@ -72,6 +75,7 @@ module.exports = {
                         }
                     } else {
                         printObj(`Migration Completed for ${dbkey} with Error - ${schemaData.message}`, "pink", 3);
+                        await logMigration(dbkey, `plugin:${pluginID}`, "", "error", { error: schemaData.message }, pluginID);
                         responses[dbkey] = {"mode": process.env.MIGRATION_MODE, "status": "error", "message": schemaData.message};
                     }
                 }
@@ -114,6 +118,7 @@ module.exports = {
 
                 printObj(`Migration Completed for ${dbkey} with status - ${result.success}`, "yellow", 2);
                 reportMigrationNotes(dbkey, schemaData, result, 2);
+                await logMigration(dbkey, fileName, schemaData.schema, result.success ? "imported" : "error", migrationDetails(schemaData, result));
 
                 if(result.success)
                     return {"status": "success", "message": "Successfully Migrated", "statements": schemaData.statements};
@@ -126,6 +131,7 @@ module.exports = {
             }
         } else {
             printObj(`Migration Completed for ${dbkey} with Error - ${schemaData.message}`, "yellow", 2);
+            await logMigration(dbkey, fileName, "", "error", { error: schemaData.message });
             return {"status": "error", "message": schemaData.message};
         }
     },
@@ -265,9 +271,11 @@ module.exports = {
             }
             if (!outcome.success) {
                 console.error(outcome.message);
+                await logMigration(dbKey, filename, sql, "error", { error: outcome.message, applied: outcome.executed, warnings: outcome.warnings });
                 return { success: false, message: outcome.message, executed: outcome.executed };
             }
 
+            await logMigration(dbKey, filename, sql, "imported", { warnings: outcome.warnings });
             return { success: true, file: filename, warnings: outcome.warnings };
         } catch (err) {
             console.error(err);
@@ -310,6 +318,38 @@ module.exports = {
 /* ------------------------------------------
 HELPERS
 ------------------------------------------ */
+// Records a migration run in logdb.log_migration. Logging must never break or block a migration (logdb may itself be
+// the database being migrated and not exist yet), so failures are only printed.
+async function logMigration(dbkey, fileName, sql, status, details = {}, appid = "-") {
+    try {
+        const dated = moment().format("Y-MM-DD HH:mm:ss");
+        await _DB.db_insertQ1("logdb", "log_migration", {
+            "guid": uuidv4(),
+            "appid": appid,
+            "dbkey": dbkey,
+            "file_name": String(fileName || "-").substring(0, 150),
+            "version": String(CONFIG.BUILD || "-").substring(0, 250),
+            "checksum": nodeCrypto.createHash("sha1").update(String(sql || "")).digest("hex"),
+            "status": status,
+            "changes": JSON.stringify({ statements: splitSQLStatements(String(sql || "")), ...details }),
+            "blocked": "false",
+            "created_on": dated,
+            "created_by": "system",
+            "edited_on": dated,
+            "edited_by": "system",
+        });
+    } catch (err) {
+        printObj(`Unable to write log_migration for ${dbkey} - ${err.message}`, "yellow", 3);
+    }
+}
+
+// What a migration changed: the statements are added by logMigration; this adds what was skipped, inferred or failed
+function migrationDetails(schemaData, result) {
+    const d = { skipped: schemaData.skipped || [], inferred: schemaData.inferred || [], warnings: result?.warnings || [] };
+    if (!result?.success) { d.error = result?.message; d.applied = result?.executed; }
+    return d;
+}
+
 // What the migration did not do, or did by inference, is printed rather than left silent
 function reportMigrationNotes(dbkey, schemaData, result, level) {
     for (const note of (schemaData.skipped || [])) printObj(`[${dbkey}] Skipped: ${note}`, "yellow", level);

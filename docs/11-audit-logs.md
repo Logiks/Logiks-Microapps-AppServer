@@ -121,7 +121,8 @@ The browser reaches this through the log-ingest action in [utils.service.js](../
 | `log_frontend_activities_user`, `log_frontend_errors`, `log_frontend_analytics` | **Frontend ingest** via `_DBLOGGER` — *table not in shipped schema; create to enable* |
 | `log_apibox` | **Written by `APIBOX`** on every outbound call (success and error) |
 | `log_providers` | **Written by `PROVIDERS.send`** |
-| `log_autojobs`, `log_config_changes`, `log_data_changes`, `log_devices`, `log_rate_limit`, `log_security_roles`, `log_logins`, `log_messages`, `log_notifications`, `log_migration`, `log_integrations`, `log_files`, `log_webhooks` | **Reserved** — schema defined, no writer; intended to be written by the owning module/plugin |
+| `log_migration` | Written by `DBMIGRATOR` (`api/helpers/dbMigrator.js`) whenever a schema or plugin migration is imported: dbkey, file name, build version, SHA-1 checksum of the SQL, status (`imported`, `error`) and `changes` (JSON with the applied statements plus anything skipped, inferred, warned or failed) |
+| `log_autojobs`, `log_config_changes`, `log_data_changes`, `log_devices`, `log_rate_limit`, `log_security_roles`, `log_logins`, `log_messages`, `log_notifications`, `log_integrations`, `log_files`, `log_webhooks` | **Reserved** — schema defined, no writer; intended to be written by the owning module/plugin |
 | `log_export`, `log_feedbacks`, `log_system`, `log_tenant` | **Planned** — flagged "Waiting" in [logs.service.js:13-18](../api/services/logs.service.js#L13-L18) |
 
 The "Reserved"/"Planned" rows are real database tables but are **not** populated by the framework today — do not assume data is flowing into them.
