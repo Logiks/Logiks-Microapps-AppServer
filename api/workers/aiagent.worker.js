@@ -68,7 +68,15 @@ async function ready() {
 
     onMessage(async (job) => {
         try {
-            const ctx = { meta: { user: job.user || {} } };
+            // Jobs only arrive from the parent over its IPC channel, but they are still checked for shape and the
+            // identity is cut down to the fields an agent run needs
+            if (!job || typeof job.agentCode !== "string" || typeof job.message !== "string") {
+                throw new Error("Invalid agent job");
+            }
+            const user = _.pick(job.user || {}, ["guid", "userId", "username", "tenantId", "roles", "scopes", "privilege"]);
+            if (!user.guid) throw new Error("Agent job has no tenant");
+
+            const ctx = { meta: { user } };
             const result = await AICORE.runAgent(job.agentCode, job.message, job.sessId, ctx);
             send({ ok: true, result });
         } catch (err) {

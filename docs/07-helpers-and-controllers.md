@@ -69,7 +69,7 @@ List what's available at runtime: `system.helpers { cmd: "list_helpers" }` and `
 ### `DATAMODELS` — model binding for JSON components ([dataModels.js](../api/helpers/dataModels.js))
 
 - **`getModel(table)`** — load the data model (column definitions / binding) for a table.
-- **`checkHook(tables, operation, dbkey="app", param="")`** — check/run model hooks for an operation.
+- **`checkHook(tables, operation, dbkey="app", param="")`** — run a model's hooks for an operation. Hooks are declared as `{"insert": {"<sql text or method name>": "sql" | "method"}}`; they run in order, and a failing hook is logged without stopping the others or the write that triggered it. This method never rejects.
 - **`prepareField(table, field, data)`** — transform a field value before persistence.
 - **`processField(table, field, data)`** — transform a field value after load.
 - **`prepareData(table, singleRecord)`** — prepare a full record for persistence.
@@ -82,9 +82,11 @@ List what's available at runtime: `system.helpers { cmd: "list_helpers" }` and `
 - **`startMigration(dbkey)`** — run migration for a database (per `MIGRATION_MODE`).
 - **`getMigrationFile(dbkey)`** — locate the schema file for a database.
 - **`saveMigrationScript(dbkey)`** — write the generated migration SQL to disk.
-- **`exportSchema(dbKey, writeFile=true, tablePrefix=false)`** — dump the live DB schema to JSON.
-- **`generateMigration(dbKey, newSchemaFile, writeFile=false, inputSchemaIsFile=true)`** — diff schemas and produce ALTER statements.
-- **`applyMigration(dbKey, filename)`** — apply a migration file. **`applyMigrationSchema(dbKey, sql)`** — apply raw migration SQL.
+- **`exportSchema(dbKey, writeFile=true, tablePrefix=false)`** — dump the live DB schema to JSON. Per table it records each column's `type`, `nullable`, `default`, `primary` and `extra` (such as `auto_increment`), and `keys`: every index with its name, uniqueness, type and ordered columns. `indexes` (names only) is still written for older readers.
+- **`generateMigration(dbKey, newSchemaFile, writeFile=false, inputSchemaIsFile=true)`** — diff the schema file against the live `dbKey` database and produce statements. It creates missing tables (with `PRIMARY KEY`, `AUTO_INCREMENT`, defaults and indexes), adds missing columns, adds a missing primary key and `AUTO_INCREMENT`, and adds missing indexes. It never drops anything. Changes to existing columns are returned in `skipped` unless `migration.allow_column_modify` is on.
+- **`applyMigration(dbKey, filename)`** — apply a migration file. **`applyMigrationSchema(dbKey, sql)`** — apply raw migration SQL. Statements run one at a time; a failure reports which statement it was and how many were applied. A failed *index* is only a warning, so one over-long or duplicate index does not stop the rest.
+
+Schema files exported before `keys` existed list index names only. Where a name is made of real column names (`idx_guid`, `rowhash`, `guid_rulecode_blocked`) the index is rebuilt from it and reported as inferred; the others are listed as skipped. To capture them exactly, run with `MIGRATION_MODE=EXPORT` against a database that has them and keep the new `schema_*.json`. For the same reason, a single-column integer `id` primary key in an older file is created as `AUTO_INCREMENT`.
 
 ### `DBOPS` — stored DB operations ([dbOps.js](../api/helpers/dbOps.js))
 

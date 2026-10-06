@@ -705,6 +705,7 @@ module.exports = {
 						const payload = jwt.verify(refreshToken, JWT_SECRET);
 						if (payload.type === "refresh" && payload.jti) {
 							await authRedis.del(`refresh:${payload.jti}`);
+							await authRedis.del(`user:${payload.jti.replace("ref:", "")}`);
 						}
 					} catch (e) {
 						// ignore
@@ -756,7 +757,8 @@ module.exports = {
 				}
 
 				const tenantId = user.tenantId;
-				const userId = user.userId;
+				// Sessions are indexed under the numeric user id (see issueTokensForUser), not the login name
+				const userId = user.id ?? user.userId;
 
 				const refreshSetKey = `user_sessions:${tenantId}:${userId}`;
 				const refreshJtis = await authRedis.smembers(refreshSetKey);
@@ -764,8 +766,13 @@ module.exports = {
 				if (Array.isArray(refreshJtis) && refreshJtis.length > 0) {
 					for (const jti of refreshJtis) {
 						await authRedis.del(`refresh:${jti}`);
+						await authRedis.del(`user:${jti.replace("ref:", "")}`);
 					}
 				}
+
+				// Access tokens already issued are stateless and stay valid until they expire, so every token issued
+				// up to now is refused from here on (checked in verifyAccessToken)
+				await authRedis.set(`revoked_before:${tenantId}:${userId}`, String(Math.floor(Date.now() / 1000)), "EX", ACCESS_TOKEN_TTL);
 
 				// Blacklist current access token
 				const raw = ctx.meta.accessTokenRaw || ctx.params.accessToken;
@@ -839,19 +846,32 @@ module.exports = {
 						throw new LogiksError("Token revoked", 401);
 					}
 				}
+				const issuedAt = payload.iat;
 				const sessionId = payload.jti.replace("acc:","").replace("ref:","");
 
 				var userData = await authRedis.get(`user:${sessionId}`);
+				// The session record is deleted on logout and expires with the refresh token; without it the token is
+				// no longer backed by a session (JSON.parse(null) is null, which used to crash the lookups below)
+				if (userData === null || userData === undefined) {
+					throw new LogiksError("Token revoked", 401);
+				}
 				try {
-					userData = JSON.parse(userData);
+					userData = JSON.parse(userData) || {};
 				} catch(err) {
 					userData = {};
 				}
 
 				payload = JSON.parse(await ENCRYPTER.decrypt(payload.payload, JWT_SECRET));
 
+				// "Log out everywhere" refuses every token issued before it, including access tokens still within their expiry
+				const revokedBefore = await authRedis.get(`revoked_before:${payload.tenantId || payload.guid}:${payload.id ?? payload.userId}`);
+				if (revokedBefore && issuedAt <= Number(revokedBefore)) {
+					throw new LogiksError("Token revoked", 401);
+				}
+
 				// console.log("XXXXX", payload, sessionId);
 				return {
+					id: payload.id,
 					userId: payload.userId,
 					username: payload.username,
 					tenantId: payload.tenantId || payload.guid,

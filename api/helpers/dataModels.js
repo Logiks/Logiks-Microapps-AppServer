@@ -58,23 +58,34 @@ module.exports = {
     //insert -> param -> insertId or array of insertId
     //update -> param -> where
     //delete -> param -> where
+    //A model's hooks look like {"insert": {"<sql text or method name>": "sql" | "method"}}: each key is what to run
+    //and its value says how. Hooks run in order, one at a time; a failing hook is logged and does not stop the rest
+    //or the write that triggered it.
     checkHook: async function(tables, operation, dbkey = "app", param = "") {
         const tableList = tables.split(",");
-        _.each(tableList, async function(tbl, k) {
-            const dataModel = await DATAMODELS.getModel(tbl);
-            if(dataModel && dataModel.hooks && dataModel.hooks[operation]) {
-                _.each(dataModel.hooks[operation], async function(runType, query) {
-                    switch(query) {
+
+        for (const tbl of tableList) {
+            // callers do not await this, so nothing in here may reject
+            let dataModel = null;
+            try { dataModel = await DATAMODELS.getModel(tbl); } catch(err) { console.error(`DATAMODELS model lookup failed (${tbl}):`, err.message); }
+            const hooks = dataModel && dataModel.hooks && dataModel.hooks[operation];
+            if(!hooks || typeof hooks !== "object") continue;
+
+            for (const [query, runType] of Object.entries(hooks)) {
+                try {
+                    switch(runType) {
                         case "sql":
                             await _DB.db_query(dbkey, query, {});
                             break;
                         case "method":
-                            _call(query, {tables, operation, dbkey, param});
+                            await _call(query, {tables, operation, dbkey, param});
                             break;
                     }
-                });
+                } catch(err) {
+                    console.error(`DATAMODELS hook failed (${tbl}.${operation}, ${runType}: ${query}):`, err.message);
+                }
             }
-        })
+        }
     },
 
     //Get a list of all encrypted fields for a given table

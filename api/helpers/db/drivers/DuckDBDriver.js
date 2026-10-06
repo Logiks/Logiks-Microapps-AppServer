@@ -316,6 +316,8 @@ function buildWhereClauses(where, params) {
 			if (a == "RAW") {
 				clauses.push(b);
 			} else if (Array.isArray(a) && a.length == 2) {
+				DBDriver.assertSafeColumn(b);
+				a = [a[0], DBDriver.assertSafeOperator(a[1])];
 				if (Array.isArray(a[0])) {
 					const placeholders = a[0].map((v) => {
 						const key = `p${Object.keys(params).length}`;
@@ -329,6 +331,7 @@ function buildWhereClauses(where, params) {
 					clauses.push(`${b} ${a[1]} $${key}`);
 				}
 			} else {
+				DBDriver.assertSafeColumn(b);
 				const key = `p${Object.keys(params).length}`;
 				params[key] = a;
 				clauses.push(`${b} = $${key}`);

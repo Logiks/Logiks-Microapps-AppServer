@@ -37,11 +37,12 @@ module.exports = {
         return _.omitBy(filter, v => typeof v === "string" && v.trim().toUpperCase() === "RAW");
     },
 
-    updateWhereFromEnv: function(whereObj, metaInfo) {
+    updateWhereFromEnv: function(whereObj, metaInfo, buildingQuery = false) {
         if(!whereObj) return whereObj;
+        const rawData = sqlSafeData(metaInfo, buildingQuery ? escapeSQLValue : escapeLiteral);
         // console.log("updateWhereFromEnv", whereObj, typeof whereObj);
         if(typeof whereObj == "string") {
-            return _replace(whereObj, sqlSafeData(metaInfo));
+            return _replace(whereObj, rawData);
         } else if(Array.isArray(whereObj)) {
             _.each(whereObj, function(arrObj,k) {
                 _.each(arrObj, function(v, k1) {
@@ -49,7 +50,7 @@ module.exports = {
                     try {
                         if(v.toUpperCase()=="RAW") {
                             delete whereObj[k][k1];
-                            whereObj[k][_replace(k1, sqlSafeData(metaInfo))] = "RAW";
+                            whereObj[k][_replace(k1, rawData)] = "RAW";
                         } else if(typeof v == "string") {
                             whereObj[k][k1] = _replace(v, metaInfo);
                         } else if(typeof v == "object") {
@@ -69,7 +70,7 @@ module.exports = {
                 try {
                     if(typeof v == "string" && v.toUpperCase()=="RAW") {
                         delete whereObj[k];
-                        whereObj[_replace(k, sqlSafeData(metaInfo))] = "RAW";
+                        whereObj[_replace(k, rawData)] = "RAW";
                     } else if(typeof v == "string") {
                         whereObj[k] = _replace(v, metaInfo);
                     } else if(typeof v == "object") {
@@ -271,9 +272,9 @@ module.exports = {
         var WHERE_ADDED = false;
         if(!filter) filter = {};
 
-        filter = QUERY.updateWhereFromEnv(filter, metaInfo);
-        sqlObj.where = QUERY.updateWhereFromEnv(sqlObj.where, metaInfo);
-        sqlObj.filter = QUERY.updateWhereFromEnv(sqlObj.filter, metaInfo);
+        filter = QUERY.updateWhereFromEnv(filter, metaInfo, true);
+        sqlObj.where = QUERY.updateWhereFromEnv(sqlObj.where, metaInfo, true);
+        sqlObj.filter = QUERY.updateWhereFromEnv(sqlObj.filter, metaInfo, true);
 
         
         sqlObj.filter = _.extend(sqlObj?.filter || {}, filter);
@@ -375,6 +376,8 @@ module.exports = {
 
         sql = sql.replaceAll(/('')+/g,"'");
         sql = sql.replaceAll(/('')+/g,"'");
+
+        sql = restoreEscapedQuotes(sql);
 
         // console.log("SQLOBJECT", sqlObj, sql);
 
@@ -740,18 +743,32 @@ function cleanSQL (str) {
 
 // Request params are part of metaInfo, and RAW where-clauses are SQL text, so substituted string values
 // have their quotes/backslashes neutralised (stored clauses should still quote or cast what they embed).
-function sqlSafeData (data) {
+function sqlSafeData (data, escape = escapeLiteral) {
     if(!data || typeof data !== "object") return data;
     return new Proxy(data, {
         get: (target, key) => {
             const v = target[key];
-            return typeof v === "string" ? escapeSQLValue(v) : v;
+            return typeof v === "string" ? escape(v) : v;
         }
     });
 };
 
+// parseQuery ends by collapsing every `''` in the finished SQL into `'` (older query definitions rely on that), which
+// would undo quote-doubling. So while a query is being built an escaped quote is a placeholder, turned into `''` only
+// after that collapse (restoreEscapedQuotes). updateWhereFromEnv has other callers that never reach the collapse and
+// gets plain doubling (escapeLiteral).
+const ESCAPED_QUOTE = "\u0001SQ\u0001";
+
 function escapeSQLValue (v) {
+    return typeof v === "string" ? v.replace(/\\/g, "\\\\").replace(/'/g, ESCAPED_QUOTE) : v;
+};
+
+function escapeLiteral (v) {
     return typeof v === "string" ? v.replace(/\\/g, "\\\\").replace(/'/g, "''") : v;
+};
+
+function restoreEscapedQuotes (sql) {
+    return String(sql).split(ESCAPED_QUOTE).join("''");
 };
 
 function is_numeric (v) {

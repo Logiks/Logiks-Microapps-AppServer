@@ -18,6 +18,32 @@ run the whole thing, or just the part you're touching.
     under test don't touch DB/cache - most don't, so that's the ceiling
     of this tier; anything else belongs in `tests/http`.
 
+  - The security- and data-integrity-sensitive logic has its own suites, all
+    DB-free, using the in-memory fakes in `helpers/fakes.js` (a Redis stand-in,
+    a `_CACHE` surface, `LogiksError`):
+    - `db-where.test.js` - the MySQL where-builder and the shared column/operator
+      validators every SQL driver uses.
+    - `query-builder.test.js` - `QUERY` value escaping, dropping request-supplied
+      `"RAW"` filters, and parameters substituted into RAW clauses.
+    - `db-migrator.test.js` - schema diff and DDL generation (primary keys,
+      auto-increment, defaults, indexes, legacy index-name inference), run
+      against the shipped `misc/dbschema` files too.
+    - `queue-signing.test.js` - queue messages are signed and verified;
+      forged, unsigned, expired and replayed-on-another-queue ones are dropped.
+    - `auth-sessions.test.js` - token verification, "log out everywhere",
+      S2S/TL use limits (including a concurrency check).
+    - `otp.test.js` - one-shot OTP/TOTP validation with attempt limiting.
+    - `client-ip.test.js` - when `X-Forwarded-For` is believed.
+    - `mcp-registry.test.js` - admin-only system tools.
+    - `tasks-service.test.js`, `aicore.test.js` - tenant scoping of tasks,
+      conversation privacy, engine failure handling, Claude request shaping.
+    - `uploads-path.test.js`, `sse-ownership.test.js`, `webhooks.test.js`,
+      `datamodel-hooks.test.js` - path containment, stream ownership, webhook
+      auth and log redaction, model hooks.
+
+    When a change touches one of these areas, run `npm run test:unit` before
+    anything else; it finishes in about two seconds.
+
 - **`tests/http/`** - hits a *live* AppServer instance over HTTP, the same
   way a real client would: login, bearer token, real routes. This is the
   tier that actually revalidates "does the running system work" - DB,

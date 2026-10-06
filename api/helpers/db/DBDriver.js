@@ -96,4 +96,24 @@ class DBDriver {
     }
 }
 
+// Column names and operators go into SQL text (values are escaped or bound separately), and the keys of a where
+// object can come from request data, so they are validated rather than interpolated as-is.
+const COLUMN_RE = /^`?[A-Za-z_][A-Za-z0-9_]*`?(\.`?[A-Za-z_][A-Za-z0-9_]*`?)?$/;
+const OPERATORS = ["=", "!=", "<>", "<", ">", "<=", ">=", "<=>", "LIKE", "NOT LIKE", "IN", "NOT IN", "IS", "IS NOT", "REGEXP", "NOT REGEXP"];
+
+DBDriver.assertSafeColumn = function (name) {
+    if (typeof name !== "string" || !COLUMN_RE.test(name)) {
+        throw new Error(`unsafe column name in where clause: ${JSON.stringify(name)} (use a plain column name, or a "RAW" clause for expressions)`);
+    }
+    return name;
+};
+
+DBDriver.assertSafeOperator = function (op) {
+    const normalized = String(op).trim().replace(/\s+/g, " ").toUpperCase();
+    if (!OPERATORS.includes(normalized)) {
+        throw new Error(`unsupported where operator: ${JSON.stringify(op)}`);
+    }
+    return normalized;
+};
+
 module.exports = DBDriver;

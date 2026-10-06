@@ -243,6 +243,9 @@ function buildMongoFilter(where) {
 	const filter = {};
 
 	_.each(where, function(a, b) {
+		if (String(b).startsWith("$") || String(b).includes("\0")) {
+			throw new Error(`invalid column name "${b}" for a MongoDB dbkey`);
+		}
 		if (a == "RAW") {
 			throw new Error(`RAW where clauses ("${b}") are not supported for MongoDB dbkeys - there is no SQL text to pass through`);
 		} else if (Array.isArray(a) && a.length == 2) {
@@ -264,6 +267,10 @@ function buildMongoFilter(where) {
 					throw new Error(`unsupported where operator "${a[1]}" for column "${b}" on a MongoDB dbkey`);
 			}
 		} else {
+			// An object here could be {"$ne": null} / {"$gt": ""} coming from request JSON, which changes the query's meaning
+			if (a !== null && typeof a == "object" && !(a instanceof Date)) {
+				throw new Error(`object values are not allowed as an equality match for column "${b}" on a MongoDB dbkey`);
+			}
 			filter[b] = a;
 		}
 	});

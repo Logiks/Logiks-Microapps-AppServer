@@ -126,8 +126,11 @@ module.exports = {
         if(!sessId) sessId = UNIQUEID.generate(10);
         const guid = ctx?.meta?.user?.guid;
 
+        // Only identity travels through the queue, never tokens or session internals
+        const user = _.pick(ctx?.meta?.user || {}, ["guid", "userId", "username", "tenantId", "roles", "scopes", "privilege"]);
+
         await QUEUE.publish(guid, QUEUE_TASK_KEY, {
-            sessId, agentCode, message, user: ctx?.meta?.user || {}, taskId: taskId || null
+            sessId, agentCode, message, user, taskId: taskId || null
         });
 
         return { sessId, status: "queued", taskId: taskId || null };

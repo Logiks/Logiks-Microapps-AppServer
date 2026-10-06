@@ -22,6 +22,9 @@ function randomDigits(length = 6) {
 }
 
 function safeEqual(a, b) {
+    // a missing value must never compare equal to anything (String(undefined) would match the text "undefined")
+    if (a === null || a === undefined || b === null || b === undefined) return false;
+
     const x = Buffer.from(String(a)), y = Buffer.from(String(b));
     return x.length === y.length && crypto.timingSafeEqual(x, y);
 }

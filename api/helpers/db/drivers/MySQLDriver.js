@@ -93,20 +93,7 @@ class MySQLDriver extends DBDriver {
 
 		var sql = "SELECT " + columns + " FROM " + table + " ";
 
-		var sqlWhere = [];
-		if (typeof where == "object" && !Array.isArray(where)) {
-			_.each(where, function(a, b) {
-				if (a == "RAW") {
-					sqlWhere.push(b);
-				} else if (Array.isArray(a) && a.length == 2) {
-					sqlWhere.push(b + a[1] + "'" + a[0] + "'");
-				} else {
-					sqlWhere.push(b + "='" + a + "'");
-				}
-			});
-		} else {
-			sqlWhere.push(where);
-		}
+		var sqlWhere = this.buildWhere(where);
 
 		if (sqlWhere.length > 0) {
 			sql += " WHERE " + sqlWhere.join(" AND ");
@@ -152,26 +139,7 @@ class MySQLDriver extends DBDriver {
 		sql += this.buildJoinClause(joins);
 
 		if (where != null) {
-			var sqlWhere = [];
-			if (typeof where == "object" && !Array.isArray(where)) {
-				_.each(where, function(a, b) {
-					if (a == "RAW") {
-						sqlWhere.push(b);
-					} else if (Array.isArray(a) && a.length == 2) {
-						if (Array.isArray(a[0])) {
-							sqlWhere.push(`${b} ${a[1]} (${a[0].map(a => `${this.escape(a)}`).join(",")})`);
-						} else {
-							a[0] = this.escape(a[0]);
-							sqlWhere.push(`${b} ${a[1]} '${a[0]}'`);
-						}
-					} else {
-						a = this.escape(a);
-						sqlWhere.push(b + "=" + a + "");
-					}
-				}.bind(this));
-			} else {
-				sqlWhere.push(where);
-			}
+			var sqlWhere = this.buildWhere(where);
 
 			if (sqlWhere.length > 0) {
 				sql += " WHERE " + sqlWhere.join(" AND ");
@@ -257,26 +225,7 @@ class MySQLDriver extends DBDriver {
 	async update(table, data, where) {
 		var sql = "UPDATE ";
 
-		var sqlWhere = [];
-		if (typeof where == "object" && !Array.isArray(where)) {
-			_.each(where, function(a, b) {
-				if (a == "RAW") {
-					sqlWhere.push(b);
-				} else if (Array.isArray(a) && a.length == 2) {
-					if (Array.isArray(a[0])) {
-						sqlWhere.push(`${b} ${a[1]} (${a[0].map(a => `${this.escape(a)}`).join(",")})`);
-					} else {
-						a[0] = this.escape(a[0]);
-						sqlWhere.push(`${b} ${a[1]} ${a[0]}`);
-					}
-				} else {
-					a = this.escape(a);
-					sqlWhere.push(b + "=" + a + "");
-				}
-			}.bind(this));
-		} else {
-			sqlWhere.push(where);
-		}
+		var sqlWhere = this.buildWhere(where);
 
 		var vals = [];
 		if (typeof data == "string") {
@@ -315,24 +264,7 @@ class MySQLDriver extends DBDriver {
 	}
 
 	async delete(table, where) {
-		var sqlWhere = [];
-		if (typeof where == "object" && !Array.isArray(where)) {
-			_.each(where, function(a, b) {
-				if (a == "RAW") {
-					sqlWhere.push(b);
-				} else if (Array.isArray(a) && a.length == 2) {
-					if (Array.isArray(a[0])) {
-						sqlWhere.push(`${b} ${a[1]} (${a[0].map(a => `'${a}'`).join(",")})`);
-					} else {
-						sqlWhere.push(`${b} ${a[1]} '${a[0]}'`);
-					}
-				} else {
-					sqlWhere.push(b + "='" + a + "'");
-				}
-			});
-		} else {
-			sqlWhere.push(where);
-		}
+		var sqlWhere = this.buildWhere(where);
 
 		const sql = "DELETE FROM " + table + " WHERE " + sqlWhere.join(" AND ");
 
@@ -349,6 +281,42 @@ class MySQLDriver extends DBDriver {
 				resolve({ raw: results, where: sqlWhere });
 			});
 		});
+	}
+
+	// Values are escaped with mysql.escape (it adds the quotes); columns and operators are validated.
+	// "RAW" keys are SQL text supplied by server code and pass through untouched.
+	buildWhere(where) {
+		if (where == null) return [];
+		if (typeof where != "object" || Array.isArray(where)) return [where];
+
+		const clauses = [];
+		for (const [col, cond] of Object.entries(where)) {
+			if (cond === "RAW") {
+				clauses.push(col);
+				continue;
+			}
+
+			DBDriver.assertSafeColumn(col);
+
+			if (Array.isArray(cond) && cond.length == 2) {
+				const op = DBDriver.assertSafeOperator(cond[1]);
+				const val = cond[0];
+
+				if (Array.isArray(val)) {
+					if (val.length == 0) clauses.push(op.startsWith("NOT") ? "1=1" : "1=0");
+					else clauses.push(`${col} ${op} (${val.map((v) => this.escape(v)).join(",")})`);
+				} else if (val === null && (op == "=" || op == "!=" || op == "<>")) {
+					clauses.push(`${col} ${op == "=" ? "IS NULL" : "IS NOT NULL"}`);
+				} else {
+					clauses.push(`${col} ${op} ${this.escape(val)}`);
+				}
+			} else if (cond === null) {
+				clauses.push(`${col} IS NULL`);
+			} else {
+				clauses.push(`${col}=${this.escape(cond)}`);
+			}
+		}
+		return clauses;
 	}
 
 	escape(value) {

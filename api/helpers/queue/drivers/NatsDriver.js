@@ -49,7 +49,9 @@ class NatsDriver extends QueueDriver {
 
         this.nc = await connect({
             servers: this.config.servers,
-            name: this.config.name
+            name: this.config.name,
+            ...(this.config.token ? { token: this.config.token } : {}),
+            ...(this.config.user ? { user: this.config.user, pass: this.config.pass } : {})
         });
 
         this.js = this.nc.jetstream();

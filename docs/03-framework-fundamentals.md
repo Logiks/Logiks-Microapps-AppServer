@@ -143,7 +143,8 @@ The application config is the largest knob set. The shipped [config_sample.json]
 | `dbmysql.appdb`, `dbmysql.logdb` | Two MySQL connections (each `{enable, host, port, user, password, database, insecureAuth, multipleStatements}`) |
 | `dbmongo.{enable, uri}` | Optional MongoDB connection (off by default) |
 | `cache.{host, port, family, db, enableOfflineQueue}` | Redis client config |
-| `queue.{enable, host}` | Optional AMQP queue (off by default) |
+| `queue.{enable, driver, host}` | Optional queue (NATS or RabbitMQ; off by default). `queue.token` or `queue.user`/`queue.pass` are sent to the broker when it needs credentials. `queue.max_age_sec` (default 86400) is how old a message may be when consumed |
+| `migration.allow_column_modify` | Default `false`. When `true`, migrations also change the type, nullability or default of columns that already exist; otherwise those differences are only reported |
 | `logger.<name>` | Winston transports keyed by logger name (`default`, `core`, …) |
 
 ### Worker Configuration

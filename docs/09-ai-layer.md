@@ -144,7 +144,7 @@ await AICORE.agents.upsert(guid, "support-bot", {
 }, ctx);
 ```
 
-Both are exposed over REST by [api/services/agents.service.js](../api/services/agents.service.js): `GET/POST/DELETE /ai/personas(/:personaCode)` and `GET/POST/DELETE /ai/agents(/:agentCode)`. Like every AICore route, these are only auto-aliased under the private, authenticated `/api` route — `agents.*`/`tasks.*` aren't in `CONFIG.noauth`, so they're never reachable via `/api/public` without a Bearer JWT / API key / `tkn` / `s2stkn`.
+Both are exposed over REST by [api/services/ai/agents.service.js](../api/services/ai/agents.service.js): `GET/POST/DELETE /ai/personas(/:personaCode)` and `GET/POST/DELETE /ai/agents(/:agentCode)`. Like every AICore route, these are only auto-aliased under the private, authenticated `/api` route — `agents.*`/`tasks.*` aren't in `CONFIG.noauth`, so they're never reachable via `/api/public` without a Bearer JWT / API key / `tkn` / `s2stkn`.
 
 ### The Agent Loop
 
@@ -193,7 +193,7 @@ The RAG *delivery* pipeline (below) is fully wired to call into semantic memory 
 
 One-off tasks are dispatched immediately through the queue lane (`AICORE.queueAgentRun`, tagged with the `taskId`); `startQueueConsumer()` reports the outcome back onto the task row (`completed`/`failed`) once the run finishes. A **recurring** task (`repeat: { every, unit, until? }`) registers a row in `lgks_autojobs` — the platform's existing cron system — whose `job_script` points back at `tasks.runScheduled`, so every cron firing just re-dispatches the same task under the same owner; the task's status cycles `scheduled → queued → scheduled` rather than reaching a terminal state. Cancelling a recurring task also retires its autojob row so it actually stops firing.
 
-REST surface ([api/services/tasks.service.js](../api/services/tasks.service.js)): `GET /ai/tasks`, `GET /ai/tasks/:taskId`, `POST /ai/tasks`, `POST /ai/tasks/:taskId/cancel`. A task always runs against the caller's own tenant; an `ownerGuid` in the request body is ignored.
+REST surface ([api/services/ai/tasks.service.js](../api/services/ai/tasks.service.js)): `GET /ai/tasks`, `GET /ai/tasks/:taskId`, `POST /ai/tasks`, `POST /ai/tasks/:taskId/cancel`. A task always runs against the caller's own tenant; an `ownerGuid` in the request body is ignored.
 
 Conversation history is private to the user who created the session: the hot buffer is keyed by tenant and user, and `GET /ai/sessions/:sessId` only returns that user's messages. MCP sessions (`Mcp-Session-Id`) are likewise only usable by the user they were issued to.
 

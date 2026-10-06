@@ -1595,12 +1595,22 @@ module.exports = {
 			// -------------------------
 			// GRACEFUL SHUTDOWN
 			// -------------------------
-			const shutdown = async () => {
+			let shuttingDown = false;
+			// exitCode is a number when called by us; signal handlers pass the signal name, which means a normal stop
+			const shutdown = async (exitCode) => {
+				const code = typeof exitCode === "number" ? exitCode : 0;
+				if (shuttingDown) return;
+				shuttingDown = true;
+
 				LOGGER.get("server").info("Graceful shutdown initiated...");
+
+				// MAINBROKER.stop() can hang on a dead transporter; never let that keep a broken process alive
+				setTimeout(() => process.exit(code || 1), 10000).unref();
+
 				try {
 					await MAINBROKER.stop();
 					LOGGER.get("server").info("Broker stopped cleanly");
-					process.exit(0);
+					process.exit(code);
 				} catch (err) {
 					LOGGER.get("server").error("Shutdown error", { error: err });
 					process.exit(1);
@@ -1609,10 +1619,21 @@ module.exports = {
 
 			process.on("SIGINT", shutdown);
 			process.on("SIGTERM", shutdown);
+
+			// A rejected promise nobody awaited (a fire-and-forget log write whose database hiccuped, say) is a
+			// failed operation, not a corrupted process. Node would otherwise turn it into an uncaught exception and
+			// stop the whole server for every tenant, so it is logged and the server keeps running.
+			process.on("unhandledRejection", (reason) => {
+				console.error("UNHANDLED_REJECTION", reason);
+				LOGGER.get("server").error("Unhandled promise rejection", { error: reason });
+			});
+
+			// A synchronous exception that nothing caught leaves the process in an unknown state, so it stops cleanly
+			// with a failure code and the process manager starts a fresh one.
 			process.on("uncaughtException", (err) => {
 				console.error("UNCAUGHT_EXCEPTION", err);
 				LOGGER.get("server").error("Uncaught Exception", { error: err });
-				shutdown();
+				shutdown(1);
 			});
 
 			// -------------------------

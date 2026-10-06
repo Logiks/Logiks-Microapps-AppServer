@@ -19,6 +19,8 @@ function redactHeaders(headers = {}) {
 }
 
 function safeEqual(a, b) {
+    if (a === null || a === undefined || b === null || b === undefined) return false;
+
     const x = Buffer.from(String(a)), y = Buffer.from(String(b));
     return x.length === y.length && crypto.timingSafeEqual(x, y);
 }
