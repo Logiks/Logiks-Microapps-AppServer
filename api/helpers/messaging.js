@@ -225,13 +225,13 @@ module.exports = {
             });
             _DB.db_insertQ1("logdb", "log_messages", logData);
 
-            return info.response;
+            return response.data;
 
         } catch (error) {
-            console.error("Message Sending Error:", err.message);
+            console.error("Message Sending Error:", error.message);
 
-            if (err.response) {
-                console.error("Message Sending Response:", err.response.data);
+            if (error.response) {
+                console.error("Message Sending Response:", error.response.data);
             }
 
             logData.status = "error";

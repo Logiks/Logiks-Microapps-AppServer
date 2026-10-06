@@ -139,9 +139,15 @@ List what's available at runtime: `system.helpers { cmd: "list_helpers" }` and `
 - **`getSavedQuery(queryId, ctx, more=false)`** / **`getQueryByID(queryID, userObj, ctx)`** — fetch a saved query.
 - **`updateWhereFromEnv(whereObj, metaInfo)`** — inject env/session values into a where clause.
 
-### `RULEENGINE` — business rules ([ruleEngine.js](../api/helpers/ruleEngine.js))
+- **`stripRawFilter(filter)`** — drops `"RAW"` entries from a filter. Anything from request params must pass through this, because a `"RAW"` key is used as SQL text. The query and dbops services already do this, and they also reject non-identifier `orderby`/`groupby` and non-integer `page`/`limit`.
 
-- **`processRule(ruleID, dataFields, addonFacts)`** — evaluate a `json-rules-engine` rule against facts.
+Where-values are escaped when they are built into SQL, including values substituted into `"RAW"` clauses from request params. A stored `RAW` clause should still quote or cast anything it embeds (`'${name}'`, not `${name}`), since escaping cannot protect an unquoted number position.
+
+### `LOGIKSRULES` — business rules ([logiksrules.js](../api/helpers/logiksrules.js))
+
+- **`processRule(guid, ruleID, dataFields, addonFacts, debug=false)`** — evaluate a published `sys_logiksrules` rule (by `rulecode`) against facts.
+- **`processRuleGroup(guid, module, rulegroup, dataFields, addonFacts, debug=false)`** — evaluate every published rule in a group.
+- **`simulateRule(conditions, actions, facts, debug)`** / **`simulateGroup(rules, facts, debug)`** — dry-run rules without loading them from the database.
 - **`listRules(filter)`** — list defined rules.
 
 ### `TEMPLATES` — template rendering ([templates.js](../api/helpers/templates.js))
@@ -181,6 +187,15 @@ List what's available at runtime: `system.helpers { cmd: "list_helpers" }` and `
 
 These have `initialize()` returning `true`, so they're reachable via `system.controllers`.
 
+### `ABAC` — attribute-based policies ([abac.js](../api/controllers/abac.js))
+
+Policy decision point for `{subject, resource, action, environment}` requests; policies come from `lgks_abacpolicies` / `lgks_abacpolicies_rules`.
+
+- **`checkPolicy(ctx, policyArr, resource, action='access', environment, options, defaultValue="Deny", debug)`** — decide for the current user against the named policies.
+- **`filterResults(ctx, data, policyArr, subject, action, environment, options, defaultValue, debug)`** — decide per row and annotate each with `abac_decision`.
+- **`decidePolicy(policies, subject, resource, action, environment, options, debug)`** — decide against a policy list you already hold.
+- **`getPolicyObject(guid, policyArr)`** — load policies from the database for a tenant.
+
 ### `RBAC` — access control ([rbac.js](../api/controllers/rbac.js))
 
 - **`checkPolicy(ctx, policyStr, defaultValue=false)`** — evaluate a policy key for the current user.
@@ -196,7 +211,8 @@ These have `initialize()` returning `true`, so they're reachable via `system.con
 - **`findOrCreateFederatedUser(federatedData, federatedSource)`** — get or create a user from SSO data.
 - **`getUserData(sessionId, ctx)`** — session-bound user data. **`getUserAvatar(avatar, avatar_type)`** — resolve an avatar.
 - **`hasMFA(guid, userid)`** — whether MFA is enabled. **`generateMFASecret(guid, userid, mfaType=false)`** — create an MFA secret.
-- **`generateTOTPCode(guid, userid, userInfo, remoteIP, deviceType, geolocation)`** — issue a TOTP/OTP code. **`valiateOTPCode(otpIdentifier, otpCode)`** — validate an OTP code.
+- **`generateTOTPCode(guid, userid, userInfo, remoteIP, deviceType, geolocation)`** — issue a TOTP/OTP challenge and return its `identifier`. `otp` codes are random digits of `mfa.mfa_length` (default 6). The code is only generated here; delivery over email/SMS/WhatsApp is not implemented yet.
+- **`valiateOTPCode(otpIdentifier, otpCode)`** — returns the user the challenge was issued for, or `false`. A correct code is consumed (one use), and after 5 wrong attempts the challenge is discarded. `totp` codes are accepted for the current and adjacent 60-second windows.
 
 ### `ENV` — environment variables ([env.js](../api/controllers/env.js))
 
@@ -207,8 +223,11 @@ These have `initialize()` returning `true`, so they're reachable via `system.con
 
 ### `SETTINGS` — persistent settings ([settings.js](../api/controllers/settings.js))
 
-- **`getUserSettings(guid, userId, setting_key, defaultValue=null)`** — read a user/app/global setting.
-- **`registerUserSettings(guid, userId, setting_key, setting_value, category="general")`** — write a setting.
+- **`getAppSettings(guid, appid, setting_key, defaultValue=null, category="general")`** — app-wide setting from `lgks_settings`.
+- **`getModuleSettings(guid, appid, module_name, setting_key, defaultValue=null, params={})`** — module setting from `sys_settings`.
+- **`loadUserSettings(guid, appId, userId, module_name, setting_key, defaultValue=null, params={})`** — per-user setting from `user_settings`.
+
+Each one returns the stored value (JSON-parsed when possible). When nothing is stored and a `defaultValue` is given, the default is saved and returned.
 
 ### `NAVIGATOR` — navigation menus ([navigator.js](../api/controllers/navigator.js))
 
@@ -217,7 +236,9 @@ These have `initialize()` returning `true`, so they're reachable via `system.con
 
 ### `GEOFENCES` — spatial fences ([geofences.js](../api/controllers/geofences.js))
 
-- **`findGeofence(guid, geolocation, groupid='general', fenceType="polygon", limit=10, max_distance=1, geoTable="lgks_geofences")`** — find the fence(s) containing a point.
+- **`findGeofence(guid, geolocation, groupid='general', fenceType="polygon", limit=10, max_distance=1, geoTable="lgks_geofences")`** — find the fence(s) containing a point (`circular` uses `max_distance` in km). `geolocation` must be `"lat,lng"` and `geoTable` a plain table name; anything else throws.
+
+When `security.geofences_enabled` (or the `SYSTEM.GEOFENCES_ENABLED` control) is on, login requires a real location and the user to be inside one of the tenant's fences. A tenant with no fences configured is not restricted.
 - **`listGeofences(guid, geolocation, groupid='general', limit=10, geoTable="lgks_geofences")`** — list nearby fences.
 
 ### `AUTHFEDERATED` — federated SSO ([authFederated.js](../api/controllers/authFederated.js))
@@ -235,6 +256,8 @@ Outbound API calls are defined in `sys_apibox` (endpoint path, method, headers, 
 - **`sendRequest(providerCode, apiInfo, payload={}, ctx)`** — send an already-loaded definition. `apiInfo` needs at least `api_code`; unset fields default to `method: POST`, `format: json`, `cache_ttl: 0`, `use_mock: false`. Throws if the provider has no `server_url`.
 
 Auth: the provider's `apikey` credential and the definition's `token` credential are always applied last, and a caller cannot set `Authorization`, `Cookie` or `X-API-Key` through `payload.headers`. The `text` JSON columns (`headers`, `body`, `query_obj`, `params`, `mockdata`) are parsed on read, and `use_mock` / `debug` are the `'true'`/`'false'` enum values. Timeout comes from the definition's `params.timeout_ms`, then the provider's, then 30s.
+
+`input_validation` is a [validatorjs](https://github.com/mikeerickson/validatorjs) rule object applied to the merged query and body, for example `{"id": "required|integer"}`; a failure throws an error with `code: "APIBOX_INPUT_INVALID"` and the field messages in `errors`. `output_transformation` is an object that builds the result from the response, for example `{"total": "data.summary.total", "all": "$"}` (values are lodash paths; `$` is the whole response). `format` other than `json` returns the raw text body.
 
 Behaviour: sensitive headers (`Authorization`, `Cookie`, `Set-Cookie`, `X-API-Key`) are redacted in `log_apibox`. `use_mock` returns the stored `mockdata` without calling out. When `cache_ttl > 0`, responses are cached in `_CACHE` under `APIBOX:<sha256 of tenant guid, provider, api_code, subpath, method, query+body>` (so tenants never share entries) and served from there until they expire. Every call updates `sys_apibox.last_run` and writes a `log_apibox` row (provider, method, endpoint, status, latency, request/response payloads); failures log the HTTP status (or `0` when there was no response) and rethrow.
 

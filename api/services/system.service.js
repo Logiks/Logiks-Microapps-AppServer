@@ -177,7 +177,7 @@ module.exports = {
 								"errors": ["Helper not found"]
 							};
 						}
-						if(!global[cmd[0].toUpperCase()][cmd[1]]) {
+						if(!Object.prototype.hasOwnProperty.call(global[cmd[0].toUpperCase()], cmd[1]) || typeof global[cmd[0].toUpperCase()][cmd[1]] !== "function" || cmd[1] === "initialize") {
 							return {
 								"status": "error",
 								"message": "Helper Does not Contain the required method",
@@ -217,7 +217,7 @@ module.exports = {
 								"errors": ["Contoller not found"]
 							};
 						}
-						if(!global[cmd[0].toUpperCase()][cmd[1]]) {
+						if(!Object.prototype.hasOwnProperty.call(global[cmd[0].toUpperCase()], cmd[1]) || typeof global[cmd[0].toUpperCase()][cmd[1]] !== "function" || cmd[1] === "initialize") {
 							return {
 								"status": "error",
 								"message": "Contoller Does not Contain the required method",

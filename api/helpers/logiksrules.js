@@ -57,11 +57,6 @@ module.exports = {
 
     simulateGroup: async function(rules = [], facts = {}, debug = false) {
         let engine = new Engine()
-        engine.addRule({
-            name: "simulated_rule",
-            conditions: conditions,
-            event: actions
-        });
 
         rules.forEach(row => {
             if (!row.conditions || !row.actions) return; // skip malformed rows defensively

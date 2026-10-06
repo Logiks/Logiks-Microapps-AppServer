@@ -7,9 +7,36 @@ const { Readable, Transform } = require('stream');
 // const { fileTypeFromBuffer } = require('file-type');
 const mime = require('mime-types');
 const https = require('https');
-const httpsAgent = new https.Agent({
-        rejectUnauthorized: false
+const http = require('http');
+const dns = require('dns');
+const net = require('net');
+
+// Remote downloads must not be able to reach internal services (SSRF), including via redirects or DNS rebinding,
+// so every resolved address is checked at connect time.
+function isPrivateAddress(ip) {
+    if(net.isIPv4(ip)) {
+        const [a, b] = ip.split('.').map(Number);
+        return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) ||
+            (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+    }
+    const v6 = ip.toLowerCase();
+    if(v6.startsWith('::ffff:')) return isPrivateAddress(v6.substring(7));
+    return v6 === '::1' || v6 === '::' || v6.startsWith('fc') || v6.startsWith('fd') || v6.startsWith('fe8') || v6.startsWith('fe9') || v6.startsWith('fea') || v6.startsWith('feb');
+}
+
+function guardedLookup(hostname, options, callback) {
+    dns.lookup(hostname, options, (err, address, family) => {
+        if(err) return callback(err);
+        const list = Array.isArray(address) ? address.map(a => a.address) : [address];
+        if(!CONFIG?.storage?.allow_private_downloads && list.some(isPrivateAddress)) {
+            return callback(new Error('Download blocked: host resolves to a private address'));
+        }
+        callback(null, address, family);
     });
+}
+
+const httpsAgent = new https.Agent({ lookup: guardedLookup });
+const httpAgent = new http.Agent({ lookup: guardedLookup });
 
 /**
  * Reads a file and returns its content.
@@ -160,7 +187,7 @@ module.exports = {
     },
 
     getFileByPath: async function(guid, fileUri, responseType = "stream", isEncrypted = false) {
-        const filePath = path.join(UPLOADS.baseUploadFolder(), fileUri);
+        const filePath = UPLOADS.getTargetPath(fileUri);
         const fileMime = mime.lookup(filePath);
         var fileName = fileUri.split("/");
         fileName = fileName[fileName.length-1];
@@ -400,7 +427,11 @@ async function universalFileSave(folder, content, options = {}) {
         try {
             const parsed = new URL(string);
             // Ensure it uses a downloadable protocol
-            return ['http:', 'https:', 'ftp:'].includes(parsed.protocol);
+            if(!['http:', 'https:'].includes(parsed.protocol)) return false;
+            // IP literals skip DNS, so they are checked here
+            const host = parsed.hostname.replace(/^\[|\]$/g, '');
+            if(net.isIP(host) && isPrivateAddress(host) && !CONFIG?.storage?.allow_private_downloads) return false;
+            return true;
         } catch (err) {
             return false; // Not a valid URL
         }
@@ -624,6 +655,8 @@ async function universalFileSave(folder, content, options = {}) {
             url: fileUrl,
             responseType: 'stream',
             httpsAgent,
+            httpAgent,
+            maxRedirects: 3,
             timeout: 30000 // 30-second connection timeout
         });
 

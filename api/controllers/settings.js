@@ -20,10 +20,10 @@ module.exports = {
             "blocked": "false",
             "guid": guid,
             "appid": appid,
-            "setting_key": setting_key
+            "settings_key": setting_key
         };
         
-        var settingsData = await _DB.db_selectQ("appdb", "lgks_settings", "id, settings_value, setting_key, category", whereCond, {});
+        var settingsData = await _DB.db_selectQ("appdb", "lgks_settings", "id, settings_value, settings_key, category", whereCond, {});
         if(!settingsData || !settingsData.results || settingsData.results.length<=0) {
             //Auto Register Default Value
             if(defaultValue) {
@@ -31,7 +31,7 @@ module.exports = {
                 var createdData = {
                     "guid": guid,
                     "appid": appid,
-                    "setting_key": setting_key,
+                    "settings_key": setting_key,
                     "settings_value": (typeof defaultValue=="object")?JSON.stringify(defaultValue):defaultValue,
                     "category": category,
                     "created_on": dated,
@@ -39,7 +39,7 @@ module.exports = {
                     "edited_on": dated,
                     "edited_by": "auto",
                 };
-                await _DB._insertQ1("appdb", "lgks_settings", createdData);
+                await _DB.db_insertQ1("appdb", "lgks_settings", createdData);
             }
             return defaultValue;
         }
@@ -61,7 +61,7 @@ module.exports = {
             "setting_key": setting_key
         };
         
-        var settingsData = await _DB.db_selectQ("appdb", "sys_settings", "id, settings_value, setting_key, category", whereCond, {});
+        var settingsData = await _DB.db_selectQ("appdb", "sys_settings", "id, setting_value, setting_key, setting_params", whereCond, {});
         if(!settingsData || !settingsData.results || settingsData.results.length<=0) {
             //Auto Register Default Value
             if(defaultValue) {
@@ -72,22 +72,22 @@ module.exports = {
                     "appid": appid,
                     "module_name": module_name,
                     "setting_key": setting_key,
-                    "settings_value": (typeof defaultValue=="object")?JSON.stringify(defaultValue):defaultValue,
+                    "setting_value": (typeof defaultValue=="object")?JSON.stringify(defaultValue):defaultValue,
                     "setting_params": (typeof params=="object")?JSON.stringify(params):params,
                     "created_on": dated,
                     "created_by": "auto",
                     "edited_on": dated,
                     "edited_by": "auto",
                 };
-                await _DB._insertQ1("appdb", "sys_settings", createdData);
+                await _DB.db_insertQ1("appdb", "sys_settings", createdData);
             }
             return defaultValue;
         }
         try {
-            const tempValue = JSON.parse(settingsData.results[0].settings_value, true);
+            const tempValue = JSON.parse(settingsData.results[0].setting_value, true);
             return tempValue;
         } catch(e) {
-            return settingsData.results[0].settings_value;
+            return settingsData.results[0].setting_value;
         }
     },
 
@@ -109,25 +109,25 @@ module.exports = {
                 if(!params) params = {};
                 var createdData = {
                     "guid": guid,
-                    "appid": appid,
+                    "appid": appId,
                     "module_name": module_name,
                     "setting_key": setting_key,
-                    "settings_value": (typeof defaultValue=="object")?JSON.stringify(defaultValue):defaultValue,
+                    "setting_value": (typeof defaultValue=="object")?JSON.stringify(defaultValue):defaultValue,
                     "setting_params": (typeof params=="object")?JSON.stringify(params):params,
                     "created_on": dated,
-                    "created_by": "auto",
+                    "created_by": userId,
                     "edited_on": dated,
-                    "edited_by": "auto",
+                    "edited_by": userId,
                 };
-                await _DB._insertQ1("appdb", "sys_settings", createdData);
+                await _DB.db_insertQ1("appdb", "user_settings", createdData);
             }
             return defaultValue;
         }
         try {
-            const tempValue = JSON.parse(settingsData.results[0].settings_value, true);
+            const tempValue = JSON.parse(settingsData.results[0].setting_value, true);
             return tempValue;
         } catch(e) {
-            return settingsData.results[0].settings_value;
+            return settingsData.results[0].setting_value;
         }
     },
 }

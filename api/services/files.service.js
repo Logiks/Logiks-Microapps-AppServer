@@ -91,8 +91,9 @@ module.exports = {
 
 				if(ctx.params.fileid) {
 					const fileResponse = await FILES.getFileById(ctx.meta.user.guid, ctx.params.fileid, "stream");
+					if(!fileResponse || !fileResponse.filename) throw new LogiksError("File Not Found", 404, "FILE_NOT_FOUND");
 					
-					var fileName = fileResponse.filename.split("_").splice(1).join("_");
+					var fileName = fileResponse.filename.split("_").splice(1).join("_").replace(/["\r\n]/g, "");
 
 
 					if(fileResponse && fileResponse.stream) {
@@ -119,7 +120,7 @@ module.exports = {
 				if(fileURI) {
 					if(fs.existsSync(fileURI)) {
 						var fileName = path.basename(fileURI.replace('.enc',''));
-						fileName = fileName.split("_").splice(1).join("_");
+						fileName = fileName.split("_").splice(1).join("_").replace(/["\r\n]/g, "");
 						
 						if(ctx.params.download && ctx.params.download===true) {
 							ctx.meta.$responseHeaders = {
@@ -202,6 +203,7 @@ module.exports = {
 			// },
 			async handler(ctx) {
 				const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
+				const TEMP_UPLOAD_ROOT = UPLOADS.tempUploadFolder();
 				const files = ctx.meta.files || [];
 
 				const uploadArr = await UPLOADS.moveUploadedFile(ctx, files);

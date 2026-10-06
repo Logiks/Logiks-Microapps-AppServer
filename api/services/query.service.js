@@ -26,7 +26,7 @@ module.exports = {
 				}
 				
 				if(!ctx.params.dbkey) ctx.params.dbkey = "appdb";
-				if(!ctx.params.filter) ctx.params.filter = {};
+				sanitizeQueryParams(ctx);
 
 				var queryObj = ctx.params.query;
 				var hasDistinct = false;
@@ -117,7 +117,7 @@ module.exports = {
 					);
 				}
 				if(!ctx.params.dbkey) ctx.params.dbkey = "appdb";
-				if(!ctx.params.filter) ctx.params.filter = {};
+				sanitizeQueryParams(ctx);
 
 				if(!ctx.params.query.page) ctx.params.query.page = 0;
 				if(!ctx.params.query.limit) ctx.params.query.limit = 0;
@@ -160,7 +160,7 @@ module.exports = {
 					);
 				}
 
-				if(!ctx.params.filter) ctx.params.filter = {};
+				sanitizeQueryParams(ctx);
 
 				ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
@@ -250,7 +250,7 @@ module.exports = {
 				// groupby
             },
 			async handler(ctx) {
-				if(!ctx.params.filter) ctx.params.filter = {};
+				sanitizeQueryParams(ctx);
 
 				ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
@@ -270,7 +270,7 @@ module.exports = {
 					queryObjOne.dbkey = (queryObj.dbkey!="*"?queryObj.dbkey:"appdb");
 					ctx.params = _.extend(ctx.params, queryObj.params || {});
 					
-					if(!isPord) ctx.params.DEBUG = queryObj.debug;
+					if(!isProd) ctx.params.DEBUG = queryObj.debug;
 				}
 
 				var hasDistinct = false;
@@ -358,6 +358,9 @@ function processStxt(stx, queryObj, cols) {
 			
 			if(queryObj.alias[col]) col = queryObj.alias[col];
 
+			// col comes from request params and is placed in SQL unquoted, so only plain identifiers are allowed
+			if(!/^[A-Za-z0-9_.`]+$/.test(col)) return;
+
 			if(queryObj.table.includes(table))
 				searchQuery.push(`${_DB.db_clean_key(col)} like '%${_DB.db_clean_key(stx)}%'`);
 			else if(queryObj.join && Array.isArray(queryObj.join)) {
@@ -430,4 +433,23 @@ function prepareCountQuery(sqlQueryCount) {
     }
 
     return `SELECT COUNT(*) AS count FROM (${query}) t`;
+}
+
+// filter / orderby / groupby / page / limit arrive from the request and end up in SQL text
+function sanitizeQueryParams(ctx) {
+	ctx.params.filter = QUERY.stripRawFilter(ctx.params.filter);
+
+	["orderby", "groupby"].forEach(k => {
+		if(ctx.params[k] == null || ctx.params[k] === "") return;
+		if(typeof ctx.params[k] !== "string" || !/^[A-Za-z0-9_.,` ]+$/.test(ctx.params[k])) {
+			throw new LogiksError(`Invalid ${k}`, 400, "INVALID_QUERY_PARAM");
+		}
+	});
+
+	["page", "limit"].forEach(k => {
+		if(ctx.params[k] == null || ctx.params[k] === "") return;
+		const n = parseInt(ctx.params[k]);
+		if(!Number.isFinite(n) || n < 0) throw new LogiksError(`Invalid ${k}`, 400, "INVALID_QUERY_PARAM");
+		ctx.params[k] = n;
+	});
 }

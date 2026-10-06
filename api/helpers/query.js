@@ -30,11 +30,18 @@ module.exports = {
         console.log("\x1b[36m%s\x1b[0m","Query Engine Initialized");
     },
 
+    // A "RAW" value makes the key be used verbatim as SQL, which is only acceptable for server-built clauses.
+    // Anything arriving in request params goes through this first.
+    stripRawFilter: function(filter) {
+        if(!filter || typeof filter !== "object" || Array.isArray(filter)) return {};
+        return _.omitBy(filter, v => typeof v === "string" && v.trim().toUpperCase() === "RAW");
+    },
+
     updateWhereFromEnv: function(whereObj, metaInfo) {
         if(!whereObj) return whereObj;
         // console.log("updateWhereFromEnv", whereObj, typeof whereObj);
         if(typeof whereObj == "string") {
-            return _replace(whereObj, metaInfo);
+            return _replace(whereObj, sqlSafeData(metaInfo));
         } else if(Array.isArray(whereObj)) {
             _.each(whereObj, function(arrObj,k) {
                 _.each(arrObj, function(v, k1) {
@@ -42,7 +49,7 @@ module.exports = {
                     try {
                         if(v.toUpperCase()=="RAW") {
                             delete whereObj[k][k1];
-                            whereObj[k][_replace(k1, metaInfo)] = "RAW";
+                            whereObj[k][_replace(k1, sqlSafeData(metaInfo))] = "RAW";
                         } else if(typeof v == "string") {
                             whereObj[k][k1] = _replace(v, metaInfo);
                         } else if(typeof v == "object") {
@@ -62,7 +69,7 @@ module.exports = {
                 try {
                     if(typeof v == "string" && v.toUpperCase()=="RAW") {
                         delete whereObj[k];
-                        whereObj[_replace(k, metaInfo)] = "RAW";
+                        whereObj[_replace(k, sqlSafeData(metaInfo))] = "RAW";
                     } else if(typeof v == "string") {
                         whereObj[k] = _replace(v, metaInfo);
                     } else if(typeof v == "object") {
@@ -428,7 +435,7 @@ function processSQLWhere (sqlWhereObj, colDelimiter = "`", whereJoiner = "AND") 
                 sqlWhere.push(
                     `${colDelimiter[0]}${b}${colDelimiter[1]}` +
                         "='" +
-                        a +
+                        escapeSQLValue(typeof a === "object" && a !== null ? JSON.stringify(a) : a) +
                         "'"
                 );
             }
@@ -473,17 +480,20 @@ function parseRelation (col, arr, colDelimiter = ["`", "`"]) {
                     break;
 
                 default:
-                    arr = arr.substr(1);
+                    arr = escapeSQLValue(arr.substr(1));
                     return `\`${col}\`='${arr}'`;
                     break;
             }
         } else {
-            return "`${col}`=" + sqlData(arr);
+            return `\`${col}\`=` + sqlData(escapeSQLValue(arr));
         }
     }
 
     if (arr.VALUE != null) arr[0] = arr.VALUE;
     if (arr.OP != null) arr[1] = arr.OP;
+
+    // Values are interpolated into SQL text below, so neutralise quotes/backslashes once, up front
+    arr[0] = Array.isArray(arr[0]) ? arr[0].map(escapeSQLValue) : escapeSQLValue(arr[0]);
 
     if (arr[1] == null) arr[1] = "=";
 
@@ -650,7 +660,7 @@ function parseRelation (col, arr, colDelimiter = ["`", "`"]) {
         //     break;
         case "range":
             if (typeof arr[0] == "object") {
-                if (is_numeric(arr[0][0]) || is_float(arr[0][0])) {
+                if (is_numeric(arr[0][0])) {
                     s = `${col} BETWEEN ${arr[0][0]} AND ${arr[0][1]}`;
                 } else {
                     s = `${col} BETWEEN '${arr[0][0]}' AND '${arr[0][1]}'`;
@@ -697,14 +707,14 @@ function sqlData (str, sqlType = "*") {
     if (str.length <= 0) return "";
 
     if (sqlType == "*" || sqlType == "auto") {
-        if (str == "TRUE" || str == "FALSE") return strtoupper(str);
+        if (str == "TRUE" || str == "FALSE") return str.toUpperCase();
         else if (str === true || str === false)
             return str === true ? "TRUE" : "FALSE";
         else if (typeof str == "number") return str;
         else if (typeof str == "boolean") return str;
         else if (str.substr(0, 1) == "0") return `'${str}'`;
         // elseif(strlen(str)==10 && preg_match("/\d{2}\-\d{2}-\d{4}/",str_replace("/","-",str)) && strlen(str)=="10") return "'"._date(str)."'";
-        else if (str.indexOf("()") > 1) return str;
+        else if (/^[A-Za-z_]+\(\)$/.test(str)) return str; // bare function call such as NOW()
         else if (str == "..") return `''`;
         return `'${str}'`;
     } else if (
@@ -712,7 +722,7 @@ function sqlData (str, sqlType = "*") {
         sqlType == "float" ||
         sqlType == "bool"
     ) {
-        if (strlen($s) <= 0) return "0";
+        if (str.length <= 0 || isNaN(Number(str))) return "0";
         else return str;
     } else if (sqlType == "date") {
         str = _date(str);
@@ -726,6 +736,26 @@ function sqlData (str, sqlType = "*") {
 
 function cleanSQL (str) {
     return str;
+};
+
+// Request params are part of metaInfo, and RAW where-clauses are SQL text, so substituted string values
+// have their quotes/backslashes neutralised (stored clauses should still quote or cast what they embed).
+function sqlSafeData (data) {
+    if(!data || typeof data !== "object") return data;
+    return new Proxy(data, {
+        get: (target, key) => {
+            const v = target[key];
+            return typeof v === "string" ? escapeSQLValue(v) : v;
+        }
+    });
+};
+
+function escapeSQLValue (v) {
+    return typeof v === "string" ? v.replace(/\\/g, "\\\\").replace(/'/g, "''") : v;
+};
+
+function is_numeric (v) {
+    return v !== null && v !== "" && typeof v !== "boolean" && !isNaN(Number(v)) && isFinite(Number(v));
 };
 function _date (str) {
     return new moment(str).format("YYYY-MM-DD");

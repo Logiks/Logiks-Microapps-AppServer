@@ -95,9 +95,7 @@ async function sendRequest(providerCode, apiInfo, dataParams, ctx) {
         format, 
         subpath, 
         authorization, 
-        authorization_token, 
-        input_validation, 
-        output_transformation
+        authorization_token
     } = apiInfo;
 
     // DB enum('false','true') and text-JSON columns arrive as strings
@@ -110,8 +108,21 @@ async function sendRequest(providerCode, apiInfo, dataParams, ctx) {
     const headers = parseJSON(apiInfo.headers, {});
     const query_obj = parseJSON(apiInfo.query_obj, {});
     const body = parseJSON(apiInfo.body, {});
+    const input_validation = parseJSON(apiInfo.input_validation, false);
+    const output_transformation = parseJSON(apiInfo.output_transformation, false);
 
     if(use_mock) return parseJSON(apiInfo.mockdata, apiInfo.mockdata);
+
+    // input_validation: validatorjs rule object applied to the merged query + body, e.g. {"id":"required|integer"}
+    if(input_validation && typeof input_validation === 'object' && Object.keys(input_validation).length > 0) {
+        const check = VALIDATIONS.validateRule(_.extend({}, dataParams.query || {}, dataParams.body || {}), input_validation);
+        if(!check.status) {
+            const err = new Error("Input validation failed for " + api_code);
+            err.code = "APIBOX_INPUT_INVALID";
+            err.errors = check.errors;
+            throw err;
+        }
+    }
 
     const cacheKey = "APIBOX:" + crypto.createHash("sha256").update(JSON.stringify([
         guid, providerCode, api_code, subpath || "", method,
@@ -149,6 +160,7 @@ async function sendRequest(providerCode, apiInfo, dataParams, ctx) {
         data: MISC._replaceObj(_.extend({}, body, dataParams.body || {})),
         timeout: params.timeout_ms || providerParams.timeout_ms || 30000
     };
+    if(format !== 'json') options.responseType = 'text';
 
     const QUERY_OBJ = _.extend({}, query_obj, dataParams.query || {});
     if (Object.keys(QUERY_OBJ).length > 0) {
@@ -187,15 +199,15 @@ async function sendRequest(providerCode, apiInfo, dataParams, ctx) {
 
         if (debug) console.log(`Request sent to ${logOptions.url} with method ${logOptions.method}`, logOptions);
 
-        // if (output_transformation) response.data = output_transformation(response.data);
-
         writeLog(response.status, JSON.stringify(response.data));
 
+        const result = transformOutput(response.data, output_transformation);
+
         if(cache_ttl > 0) {
-            await _CACHE.storeDataEx(cacheKey, response.data, cache_ttl);
+            await _CACHE.storeDataEx(cacheKey, result, cache_ttl);
         }
 
-        return response.data;
+        return result;
     } catch (error) {
         console.error(`Error sending request: ${error.message}`);
 
@@ -204,6 +216,17 @@ async function sendRequest(providerCode, apiInfo, dataParams, ctx) {
 
         throw error;
     }
+}
+
+// output_transformation: {"outKey": "path.in.response", ...} - builds a new object from lodash paths ("$" = whole response)
+function transformOutput(data, spec) {
+    if(!spec || typeof spec !== 'object' || Array.isArray(spec) || Object.keys(spec).length === 0) return data;
+
+    const out = {};
+    for(const [key, path] of Object.entries(spec)) {
+        out[key] = path === '$' ? data : _.get(data, path);
+    }
+    return out;
 }
 
 function isTrue(v) {

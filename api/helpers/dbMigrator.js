@@ -255,20 +255,21 @@ module.exports = {
             const sql = await fs1.readFile(path.join(SCHEMA_DIR, filename), "utf8");
 
             // Safety checks
-            if (/DROP|TRUNCATE|DELETE/i.test(sql)) {
-                return res.status(400).json({ error: "Destructive SQL detected — aborted" });
+            if (/\b(DROP|TRUNCATE|DELETE)\b/i.test(sql)) {
+                return { success: false, message: "Destructive SQL detected — aborted" };
             }
 
             const queries = splitSQLStatements(sql);
 
             const conn = await mysqlConnection.getConnection();
 
-            //await conn.query(sql);
-            for (const query of queries) {
-                await conn.query(query);
+            try {
+                for (const query of queries) {
+                    await conn.query(query);
+                }
+            } finally {
+                conn.release();
             }
-            
-            conn.release();
 
             return { success: true, file: filename };
         } catch (err) {
@@ -282,20 +283,21 @@ module.exports = {
             const mysqlConnection = _getMysqlConnection(dbKey);
 
             // Safety checks
-            if (/DROP|TRUNCATE|DELETE/i.test(sql)) {
-                return res.status(400).json({ error: "Destructive SQL detected — aborted" });
+            if (/\b(DROP|TRUNCATE|DELETE)\b/i.test(sql)) {
+                return { success: false, message: "Destructive SQL detected — aborted" };
             }
 
             const queries = splitSQLStatements(sql);
 
             const conn = await mysqlConnection.getConnection();
             
-            //await conn.query(sql);
-            for (const query of queries) {
-                await conn.query(query);
+            try {
+                for (const query of queries) {
+                    await conn.query(query);
+                }
+            } finally {
+                conn.release();
             }
-
-            conn.release();
 
             return { success: true, statements: sql.split(";\n").length };
         } catch (err) {

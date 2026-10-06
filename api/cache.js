@@ -4,6 +4,7 @@
  * */
 
 const ioredis = require("ioredis");
+const os = require("os");
 var redis = null;
 
 //LocalStore stores and retrives various key data and uses redis as the backend to handle persistance
@@ -117,7 +118,7 @@ module.exports = {
 
         if (typeof result == "string") {
             try {
-                resultJSON = JSON.parse(result);
+                var resultJSON = JSON.parse(result);
                 if (resultJSON != null) {
                     result = resultJSON;
                 }

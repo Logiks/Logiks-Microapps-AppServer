@@ -42,7 +42,7 @@ module.exports = {
 
     //federatedLoginID = ssoId
     resolveTenantByFederation: async function(appId, federatedLoginID, ssoSource) {
-        const federatedLogin = await this.getFederatedLogin(appid, federatedLoginID);
+        const federatedLogin = await this.getFederatedLogin(appId, federatedLoginID);
         if(!federatedLogin) return false;
 
         return federatedLogin["guid"];

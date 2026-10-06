@@ -1248,7 +1248,7 @@
         ]
       }
     },
-    "/api/feature_flags": {
+    "/api/settings": {
       "post": {
         "tags": [
           "application"
@@ -1256,6 +1256,41 @@
         "parameters": [],
         "summary": "application.settings",
         "operationId": "application.settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "module": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/feature_flags": {
+      "post": {
+        "tags": [
+          "application"
+        ],
+        "parameters": [],
+        "summary": "application.feature_flags",
+        "operationId": "application.feature_flags",
         "requestBody": {
           "required": true,
           "content": {

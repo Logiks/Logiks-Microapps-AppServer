@@ -8,6 +8,7 @@
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
+const crypto = require("crypto");
 const session = require("express-session");
 const { RedisStore } = require("connect-redis");
 const DailyRotateFile = require("winston-daily-rotate-file");
@@ -57,6 +58,13 @@ let MAINBROKER = null;
 // -------------------------
 // SERVER START
 // -------------------------
+// The dev fallback is a publicly known string; sessions signed with it can be forged, so production must set its own.
+function sessionSecret() {
+	if(process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
+	if(isProd) throw new Error("SESSION_SECRET must be set in production");
+	return "dev_super_secret_change_me";
+}
+
 module.exports = {
 
 	getBroker: function() {
@@ -932,7 +940,7 @@ module.exports = {
 								session({
 									store: new RedisStore({ client: _CACHE.getRedisInstance(), prefix: "sess:" }),
 									name: "sid",
-									secret: process.env.SESSION_SECRET || "dev_super_secret_change_me",
+									secret: sessionSecret(),
 									resave: false,
 									saveUninitialized: false,
 									rolling: true, // refresh cookie on activity
@@ -1096,7 +1104,7 @@ module.exports = {
 								session({
 									store: new RedisStore({ client: _CACHE.getRedisInstance(), prefix: "sess:" }),
 									name: "sid",
-									secret: process.env.SESSION_SECRET || "dev_super_secret_change_me",
+									secret: sessionSecret(),
 									resave: false,
 									saveUninitialized: false,
 									rolling: true, // refresh cookie on activity
@@ -1322,7 +1330,7 @@ module.exports = {
 							user = {
 								...(user || {}),
 								id: appInfo.appid,
-								userId: "TL_"+tlkey,
+								userId: "TL_"+crypto.createHash("sha256").update(tlkey).digest("hex").substring(0, 16),
 								username: "TL Service User",
 								tenantId: appInfo.appid,
 								roles: ["service"],
@@ -1354,7 +1362,7 @@ module.exports = {
 							user = {
 								...(user || {}),
 								id: appInfo.appid,
-								userId: "S2S_"+s2skey,
+								userId: "S2S_"+crypto.createHash("sha256").update(s2skey).digest("hex").substring(0, 16),
 								username: "S2S Service User",
 								tenantId: appInfo.appid,
 								roles: ["service"],
@@ -1432,14 +1440,12 @@ module.exports = {
 							);
 						}
 						
-						if(!user.guid) user.guid = user.tenantId;
-
 						if (user) {
+							if(!user.guid) user.guid = user.tenantId;
 							ctx.meta.user = user;
+							ctx.meta.sessionId = user.sessionId;
+							ctx.meta.tenantInfo = await TENANT.getTenantInfo(user.tenantId);
 						}
-						ctx.meta.sessionId = user.sessionId;
-
-						ctx.meta.tenantInfo = await TENANT.getTenantInfo(user.tenantId);
 
 						ctx.meta.serverIP = serverIP;
 						ctx.meta.serverHost = serverHost;
@@ -1500,8 +1506,6 @@ module.exports = {
 							const tenantScopedMore = `${tenantId}:${required}:*`;
 							const wildcardScoped = `*:${required}`;
 							const wildcardScopedMore = `*:${required}:*`;
-
-							console.log("SCOPE_ANALYSIS", required, tenantId, userScopes, [tenantScoped, tenantScopedMore, wildcardScoped, wildcardScopedMore]);
 
 							return (
 								userScopes.includes(tenantScoped) ||

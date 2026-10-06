@@ -22,13 +22,13 @@ module.exports = {
 		
 		_log = console.log;
   		_error = console.error;
-  		_warning = console.warning;
+  		_warning = console.warn;
   		isRunning = true;
 
   		console.log = function(message) {
   			if(arguments!=null) message = JSON.stringify(arguments);
 
-	        axios.get(CONFIG.SILK_REMOTE_DEBUGGER.URL+'?type=log&text='+message, {
+	        axios.get(CONFIG.SILK_REMOTE_DEBUGGER.URL+'?type=log&text='+encodeURIComponent(message), {
 		        	headers: {
 		        		"Authorization": "Bearer "+CONFIG.SILK_REMOTE_DEBUGGER.TOKEN
 		        	}
@@ -51,7 +51,7 @@ module.exports = {
 	    console.error = function(message) {
 	    	if(arguments!=null) message = JSON.stringify(arguments);
 
-	        axios.get(CONFIG.SILK_REMOTE_DEBUGGER.URL+'?type=error&text='+message, {
+	        axios.get(CONFIG.SILK_REMOTE_DEBUGGER.URL+'?type=error&text='+encodeURIComponent(message), {
 		        	headers: {
 		        		"Authorization": "Bearer "+CONFIG.SILK_REMOTE_DEBUGGER.TOKEN
 		        	}
@@ -72,7 +72,7 @@ module.exports = {
 	    console.warning = function(message) {
 	    	if(arguments!=null) message = JSON.stringify(arguments);
 
-	        axios.get(CONFIG.SILK_REMOTE_DEBUGGER.URL+'?type=warning&text='+message, {
+	        axios.get(CONFIG.SILK_REMOTE_DEBUGGER.URL+'?type=warning&text='+encodeURIComponent(message), {
 		        	headers: {
 		        		"Authorization": "Bearer "+CONFIG.SILK_REMOTE_DEBUGGER.TOKEN
 		        	}

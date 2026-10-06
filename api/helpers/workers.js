@@ -82,7 +82,7 @@ module.exports = {
             if (AUTO_RESPAWN && code !== 0) {
                 meta.crashes++;
                 console.log(`Auto-respawning ${workerName}`);
-                loadWorker(workerName);
+                module.exports.loadWorker(workerName);
             }
         });
 
@@ -115,8 +115,8 @@ module.exports = {
     // RESTART WORKER
     // ------------------------
     restartWorker : function (workerName) {
-        unloadWorker(workerName);
-        return loadWorker(workerName);
+        module.exports.unloadWorker(workerName);
+        return module.exports.loadWorker(workerName);
     },
 
     // ------------------------
@@ -142,7 +142,7 @@ module.exports = {
     // ------------------------
     broadcast : function (payload) {
         for (const [name] of workers.entries()) {
-            enqueueJob(name, payload);
+            module.exports.enqueueJob(name, payload);
         }
 
         return { status: "broadcast_queued", count: workers.size };
@@ -165,7 +165,7 @@ module.exports = {
     autoload : function () {
         fs.readdirSync(WORKER_DIR).forEach(file => {
             if (file.endsWith(".worker.js")) {
-                loadWorker(file.replace(".worker.js", ""));
+                module.exports.loadWorker(file.replace(".worker.js", ""));
             }
         });
     }

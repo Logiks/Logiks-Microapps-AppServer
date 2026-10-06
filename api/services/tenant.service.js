@@ -38,13 +38,11 @@ module.exports = {
 				} else if(tenantInfo.allowed_apps.indexOf(appid)>=0) {
 					return tenantInfo;
 				} else {
-					if(!data) {
-						throw new LogiksError(
-							"Tenant does not have access to this application",
-							404,
-							"UNAUTHORISED_TENANT"
-						);
-					}
+					throw new LogiksError(
+						"Tenant does not have access to this application",
+						404,
+						"UNAUTHORISED_TENANT"
+					);
 				}
 			}
 		}

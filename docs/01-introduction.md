@@ -90,7 +90,7 @@ The Gateway terminates HTTP; Workers host microapps. A service published by any 
 - **Tenant-aware RBAC** — scopes evaluated against `${tenantId}:${scope}` patterns with wildcards ([api/server.js:1213-1237](../api/server.js#L1213-L1237)).
 - **Hot-pluggable microapps** — a microapp is a folder with a `logiks.json` manifest in a Worker's `plugins/`; the Worker loads it on start and announces it to the cluster, no AppServer restart needed ([§4](04-microapps.md)).
 - **Two databases by design** — `appdb` for operational data, `logdb` for audit and security logs, with independent retention.
-- **Rule engine** — `json-rules-engine` behind the `RULEENGINE` global for declarative business rules.
+- **Rule engine** — `json-rules-engine` behind the `LOGIKSRULES` global for declarative business rules.
 - **Webhook gateway** — inbound endpoints with logging and IP whitelisting.
 - **Page rendering** — file-based EJS/HTML templates under `/pages` with per-app theme overrides.
 - **Singleton coordinator** — Redis-backed leader election so cluster-wide tasks (cron, migrations) run exactly once.
@@ -250,7 +250,7 @@ The broker doubles as an event bus. Services emit named topics; subscribers on a
 
 ### Runtime
 
-The shared global namespace populated at boot. Uppercase globals (`BASEAPP`, `LOGGER`, `_CACHE`, `_DB`, `AUTHKEY`, `MISC`, `TENANT`, `ENCRYPTER`, `RULEENGINE`, `MESSAGING`, …) are the platform API every microapp uses without imports. They load from [api/helpers/](../api/helpers/) and [api/controllers/](../api/controllers/) in [api/baseapp.js](../api/baseapp.js).
+The shared global namespace populated at boot. Uppercase globals (`BASEAPP`, `LOGGER`, `_CACHE`, `_DB`, `AUTHKEY`, `MISC`, `TENANT`, `ENCRYPTER`, `LOGIKSRULES`, `MESSAGING`, …) are the platform API every microapp uses without imports. They load from [api/helpers/](../api/helpers/) and [api/controllers/](../api/controllers/) in [api/baseapp.js](../api/baseapp.js).
 
 ### Plugin
 
@@ -291,7 +291,7 @@ Three things are hot-pluggable:
 
 1. **Microapps** — a `plugins/<id>/` folder with a `logiks.json`; the Worker loads it on start (and can reload its plugin tree), no AppServer restart needed ([§4.3](04-microapps.md#43-how-a-worker-loads-plugins)).
 2. **Vendor integrations** — connectors (SMTP, payment, storage) in the `sys_vendors` table, picked up by [api/controllers/vendors.js](../api/controllers/vendors.js).
-3. **Rules** — `sys_logiksrules` rows loaded by `RULEENGINE` at runtime.
+3. **Rules** — `sys_logiksrules` rows loaded by `LOGIKSRULES` at runtime.
 
 Core services in `api/services/*.service.js`, and a plugin's own `api.js`, change with a process restart.
 

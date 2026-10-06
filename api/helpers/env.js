@@ -33,7 +33,7 @@ module.exports = {
 
     registerEnvVariable : function(ctx, module, varName, varValue, varParams = {}, varNature = 'backend', varPrivilege = "*") {
         if(!ENVIRONMENTS[ctx?.meta?.user?.guid || "global"]) ENVIRONMENTS[ctx?.meta?.user?.guid || "global"] = {};
-        ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][varName] = varValue;
+        ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][`${module}:${varName}`.toUpperCase().trim()] = varValue;
 
         var dated = moment().format("Y-M-D HH:mm:ss");
         _DB.db_insertQ1("appdb", "lgks_environment", {
@@ -70,7 +70,7 @@ module.exports = {
             "var_code": varCode
         });
 
-        ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][`${module}:${varName}`.toUpperCase().trim()] = varValue;
+        ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][String(varCode).toUpperCase().trim()] = varValue;
     },
 
     deleteEnvVariable : function(ctx, varCode) {
@@ -85,7 +85,7 @@ module.exports = {
             "var_code": varCode
         });
 
-        delete ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][varCode];
+        delete ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][String(varCode).toUpperCase().trim()];
     },
 
     importEnvVariables: async function(ctx, module, envList) {

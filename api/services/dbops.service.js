@@ -92,7 +92,7 @@ module.exports = {
                         if(a1===false) {
                             IS_HOOK_ERROR = true;
                         }
-                        if(a1.err) {
+                        if(a1?.err) {
                             IS_HOOK_ERROR = true;
                             throw new LogiksError(
                                 a1.err.message,
@@ -242,7 +242,7 @@ module.exports = {
                         if(a1===false) {
                             IS_HOOK_ERROR = true;
                         }
-                        if(a1.err) {
+                        if(a1?.err) {
                             IS_HOOK_ERROR = true;
                             throw new LogiksError(
                                 a1.err.message,
@@ -464,7 +464,7 @@ module.exports = {
                         if(a1===false) {
                             IS_HOOK_ERROR = true;
                         }
-                        if(a1.err) {
+                        if(a1?.err) {
                             IS_HOOK_ERROR = true;
                             throw new LogiksError(
                                 a1.err.message,
@@ -544,7 +544,7 @@ module.exports = {
                 const dbResponse = await _DB.db_updateQ(dbkey, sqlTable, newDataFields, sqlWhere);
 
                 if(jsonQuery.source.workflow && jsonQuery.source.workflow.length>0) {
-                    WORKFLOWS.getNextStep(ctx, jsonQuery.source.workflow, insertId, dataFields);
+                    WORKFLOWS.getNextStep(ctx, jsonQuery.source.workflow, sqlRefid, dataFields);
                 }
 
                 if(jsonQuery.hooks && jsonQuery.hooks.postsubmit) {
@@ -595,7 +595,7 @@ module.exports = {
 
                 ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
-                var filter = ctx.params.filter?ctx.params.filter:{};
+                var filter = QUERY.stripRawFilter(ctx.params.filter);
                 const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user, ctx);
 
                 if(!jsonQuery) {
@@ -615,11 +615,11 @@ module.exports = {
                 // }
 
                 if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
-                    _.each(jsonQuery.hooks.presubmit, async function(func, k) {
+                    for(const func of jsonQuery.hooks.presubmit) {
                         var a1 = await _call(func, {"data": dataFields, "operation": "delete", "meta": ctx.meta});
-                        if(a1===false) {
+                        if(a1===false || a1?.err) {
                             throw new LogiksError(
-                                "Invalid data or wrong record submited",
+                                a1?.err?.message || "Invalid data or wrong record submited",
                                 400,
                                 "INVALID_REQUEST"
                             );
@@ -627,7 +627,7 @@ module.exports = {
                         if(a1 && a1.data) {
                             dataFields = a1.data;
                         }
-                    });
+                    }
                 }
 
                 const sqlTable = jsonQuery.source.table;
@@ -644,8 +644,7 @@ module.exports = {
                     throw new LogiksError(
                         "Which record to delete is not defined",
                         400,
-                        "VALIDATION_ERROR",
-                        vStatus.errors
+                        "VALIDATION_ERROR"
                     );
                 }
                 
@@ -709,7 +708,7 @@ module.exports = {
 
                 ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
-                var filter = ctx.params.filter?ctx.params.filter:{};
+                var filter = QUERY.stripRawFilter(ctx.params.filter);
                 const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user, ctx);
 
                 const sqlRefid = ctx.params.refid1 ?? jsonQuery.source.refid;
@@ -752,7 +751,7 @@ module.exports = {
 
                 ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
-                var filter = ctx.params.filter?ctx.params.filter:{};
+                var filter = QUERY.stripRawFilter(ctx.params.filter);
                 const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user, ctx);
 
                 const sqlRefid = ctx.params.refid1 ?? jsonQuery.source.refid;
@@ -795,7 +794,7 @@ module.exports = {
 
                 ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
 
-                var filter = ctx.params.filter?ctx.params.filter:{};
+                var filter = QUERY.stripRawFilter(ctx.params.filter);
                 const jsonQuery = await DBOPS.getDBOpsQuery(dbOpsID, ctx.meta.user, ctx);
 
                 const sqlRefid = ctx.params.refid1 ?? jsonQuery.source.refid;

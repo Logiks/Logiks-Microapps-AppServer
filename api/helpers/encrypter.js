@@ -153,13 +153,13 @@ module.exports = {
         const iv = Buffer.alloc(IV_LENGTH);
         fs.readSync(fd, iv, 0, IV_LENGTH, MAGIC.length);
 
-        const authTag = Buffer.alloc(AUTH_TAG_LENGTH);
+        const authTag = Buffer.alloc(TAG_LENGTH);
         fs.readSync(
             fd,
             authTag,
             0,
-            AUTH_TAG_LENGTH,
-            stat.size - AUTH_TAG_LENGTH
+            TAG_LENGTH,
+            stat.size - TAG_LENGTH
         );
 
         fs.closeSync(fd);
@@ -181,7 +181,7 @@ module.exports = {
         const input = fs.createReadStream(inputFile, {
             // FIX 2: Skip MAGIC + IV
             start: MAGIC.length + IV_LENGTH,
-            end: stat.size - AUTH_TAG_LENGTH - 1,
+            end: stat.size - TAG_LENGTH - 1,
             highWaterMark: 1024 * 1024
         });
 

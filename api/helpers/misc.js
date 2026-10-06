@@ -1,5 +1,7 @@
 //Misc Helper Functions
 
+const { JSONPath } = require('jsonpath-plus');
+
 const sha1 = require('sha1');
 const { v4: uuidv4 } = require('uuid');
 
@@ -35,12 +37,10 @@ module.exports = {
     
   getDebugInfo : function(ctx, req, res) {
     return {
-        "RUNNING_SINCE":moment(server.config.START_TIME).fromNow(),
+        "RUNNING_SINCE":moment().subtract(process.uptime(), "seconds").fromNow(),
         "DEBUG": CONFIG.debug,
         "AUDIT": CONFIG.audit,
-        "PATH": req.path(),
-        "URL": req.href(),
-        "QUERY": req.getQuery(),
+        "PATH": req?.url,
         "BODY": req.body,
         "QUERY": req.query,
         "PARAMS": req.params,
@@ -72,7 +72,7 @@ module.exports = {
     var add = 1, max = 12 - add;
 
     if (n > max) {
-      return generate(max) + generate(n - max);
+      return module.exports.generateUUID(prefix, max) + module.exports.generateUUID("", n - max);
     }
 
     max = Math.pow(10, n + add);
@@ -96,10 +96,24 @@ module.exports = {
     return isHttps;
   },
 
+  // X-Forwarded-For is client-controlled unless a trusted proxy appended to it, so it is only honoured when the
+  // direct peer is a proxy: CONFIG.trust_proxy = true/false to force, otherwise loopback/private peers are trusted.
+  // CONFIG.trust_proxy_hops (default 1) is how many trusted proxies sit in front; the entry they added is read
+  // from the right, never the left (which the client can set freely).
   getClientIP : function(req) {
+    const peer = (req.connection?.remoteAddress || req.socket?.remoteAddress || "0.0.0.0").replace(/^::ffff:/, "");
     const xfwd = req.headers["x-forwarded-for"];
-    if (xfwd) return xfwd.split(",")[0].trim();
-    return req.connection.remoteAddress || req.socket.remoteAddress || "0.0.0.0";
+
+    if (xfwd) {
+      const trust = CONFIG?.trust_proxy;
+      const peerIsProxy = trust === true || (trust !== false && /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|f[cd][0-9a-f]{2}:)/i.test(peer));
+      if (peerIsProxy) {
+        const chain = String(xfwd).split(",").map(a => a.trim()).filter(a => a.length > 0);
+        const hops = parseInt(CONFIG?.trust_proxy_hops) || 1;
+        if (chain.length > 0) return chain[Math.max(chain.length - hops, 0)].replace(/^::ffff:/, "");
+      }
+    }
+    return peer;
   },
 
   // coarse IP block for hijack detection (e.g., 192.168.1.*)

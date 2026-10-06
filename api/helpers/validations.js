@@ -68,25 +68,29 @@ module.exports = {
 		};
 	},
 
-	listRules: async function(filter) {
-		if(!filter) filter = {};
+	// listRules: async function(filter) {
+	// 	if(!filter) filter = {};
         
-        var data = await _DB.db_selectQ("appdb", "log_validationrules", "*", _.extend({
-                blocked: "false",
-                // rulecode: ruleID
-            }, filter),{});
-        if(!data || !data?.results || data.results.length<=0) data = [];
+    //     var data = await _DB.db_selectQ("appdb", "log_validationrules", "*", _.extend({
+    //             blocked: "false",
+    //             // rulecode: ruleID
+    //         }, filter),{});
+    //     if(!data || !data?.results || data.results.length<=0) data = [];
         
-		return data?.results;
-	},
+	// 	return data?.results;
+	// },
 
-	processRule: async function(ruleID, dataFields) {
-		var data = await _DB.db_selectQ("appdb", "log_validationrules", "*", _.extend({
-                blocked: "false",
-                rulecode: ruleID
-            }, filter),{});
-		if(!data || !data?.results || data.results.length<=0) return false;
+	// processRule: async function(ruleID, dataFields) {
+	// 	var data = await _DB.db_selectQ("appdb", "log_validationrules", "*", {
+    //             blocked: "false",
+    //             rulecode: ruleID
+    //         },{});
+	// 	if(!data || !data?.results || data.results.length<=0) return false;
 		
-		return this.validateRule(dataFields, data[0].validation_rules);
-	}
+	// 	var rules = data.results[0].validation_rules;
+	// 	if(typeof rules == "string") {
+	// 		try { rules = JSON.parse(rules); } catch(e) { return false; }
+	// 	}
+	// 	return this.validateRule(dataFields, rules);
+	// }
 }

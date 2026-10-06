@@ -63,8 +63,14 @@ module.exports = {
         return TEMP_UPLOAD_ROOT;
     },
 
+    // filePath comes from request data; it must resolve inside the upload root
     getTargetPath: function(filePath, isEncrypted = false) {
-        return path.join(BASE_UPLOAD_ROOT, filePath + (isEncrypted?".enc":""));
+        const root = path.resolve(BASE_UPLOAD_ROOT);
+        const target = path.resolve(root, String(filePath) + (isEncrypted?".enc":""));
+        if(target !== root && !target.startsWith(root + path.sep)) {
+            throw new Error("Invalid file path");
+        }
+        return target;
     },
 
     getUploadHandler: function() {

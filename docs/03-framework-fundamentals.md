@@ -137,6 +137,8 @@ The application config is the largest knob set. The shipped [config_sample.json]
 | `authjwt.{algorithm, secret, access_token_ttl, refresh_token_ttl}` | JWT issuance |
 | `mail.{host, port, secure, auth, default_from}` | SMTP for `MESSAGING.sendEmail` |
 | `storage.{driver, base_path}` | File storage (`local` is the only built-in driver) |
+| `storage.allow_private_downloads` | Default `false`. Remote-URL downloads refuse hosts that resolve to loopback, private or link-local addresses; set `true` only if you need to fetch from internal hosts |
+| `trust_proxy`, `trust_proxy_hops` | `X-Forwarded-For` is only honoured when the direct peer is a trusted proxy. By default loopback/private peers are trusted; set `trust_proxy` to `true`/`false` to force it. `trust_proxy_hops` (default `1`) is how many proxies sit in front, and the client IP is read from the right of the header. This drives IP-bound tokens, API-key IP whitelists and rate limiting |
 | `dbmysql.appdb`, `dbmysql.logdb` | Two MySQL connections (each `{enable, host, port, user, password, database, insecureAuth, multipleStatements}`) |
 | `dbmongo.{enable, uri}` | Optional MongoDB connection (off by default) |
 | `cache.{host, port, family, db, enableOfflineQueue}` | Redis client config |
@@ -174,7 +176,7 @@ The full vocabulary from [env_sample](../env_sample):
 | `CONFIG_FILE` | yes (if CONFIG_TYPE set) | — | Path or URL to `config.json` |
 | `RATE_LIMIT_WINDOW_MS` | no | `60000` | Distributed rate-limit window |
 | `RATE_LIMIT_MAX` | no | `300` | Max requests per identifier per window |
-| `SESSION_SECRET` | no | — | Express session signing key |
+| `SESSION_SECRET` | yes in production | — | Express session signing key. The server refuses to start in production without it; development falls back to a fixed placeholder |
 | `MIGRATION_MODE` | no | — | `IMPORT` to apply schema, `EXPORT` to dump current DB |
 
 ### Secrets / Keys Management
@@ -192,7 +194,7 @@ The `KEYMANAGER` global is a thin SHA-1-based derivation helper; do not use it a
 Three categories of dynamic config:
 
 1. **Vendors** ([api/controllers/vendors.js](../api/controllers/vendors.js)) — reloaded from `sys_vendors` table.
-2. **Rules** ([api/helpers/ruleEngine.js](../api/helpers/ruleEngine.js)) — fetched on each `processRule` call (cached in-process); use `RULEENGINE.reload(ruleID)` to invalidate.
+2. **Rules** ([api/helpers/logiksrules.js](../api/helpers/logiksrules.js)) — read from `sys_logiksrules` on each `processRule` call (no in-process cache), so changes apply immediately.
 3. **RBAC policies** ([api/controllers/rbac.js](../api/controllers/rbac.js)) — `reloadPolicies(ctx)` re-reads the policy set.
 
 Reloading of `.env`, `config.json`, or `system.json` requires a process restart. PM2 `pm2 reload` performs zero-downtime restarts when run against a cluster-mode app.
@@ -350,7 +352,7 @@ All helpers in [api/helpers/](../api/helpers/) — cluster-reachable through `sy
 | `MESSAGING` | Outbound email (and registered vendors) | `sendMessage`, `sendEmail`, `loadDrivers` |
 | `MISC` | Grab-bag utilities | `getClientIP`, `generateDefaultDBRecord`, `clean` |
 | `QUERY` | Dynamic SQL query builder | `build`, `parse` |
-| `RULEENGINE` | `json-rules-engine` integration | `processRule(ruleID, facts, addons)` |
+| `LOGIKSRULES` | `json-rules-engine` integration | `processRule(guid, ruleID, facts, addons)` |
 | `TEMPLATES` | EJS-based template rendering | `render`, `renderString` |
 | `UNIQUEID` | GUID / short id generation | `generate`, `uuid`, `short` |
 | `URLSHORTNER` | Generate and resolve short URLs | `shorten`, `resolve` |
@@ -363,6 +365,7 @@ All controllers in [api/controllers/](../api/controllers/). The **Cluster-public
 
 | Controller global | Cluster-public | Purpose |
 |---|---|---|
+| `ABAC` | ✅ | Attribute-based policy decisions (`checkPolicy`, `filterResults`) |
 | `AICORE` | ✅ | AI Layer — personas/agents, agent loop, tasks. See [§9](09-ai-layer.md). |
 | `APIBOX` | ✅ | Outbound API calls from stored definitions (`sys_apibox`), sent via a provider, with mock + response caching |
 | `APPLICATION` | ❌ | App metadata loader (consumed by `application.service.js`) |

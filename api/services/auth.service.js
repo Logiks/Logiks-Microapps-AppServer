@@ -507,7 +507,7 @@ module.exports = {
 				await check_log_device(userInfo, ctx);
 				
 				//check_geofencing with office locations
-				const allowedGeoAccess = check_geofencing(userInfo, geolocation);
+				const allowedGeoAccess = await check_geofencing(userInfo, geolocation, ctx);
 				if(!allowedGeoAccess) {
 					await log_login_error({
 						"guid": userInfo.guid,
@@ -552,7 +552,7 @@ module.exports = {
 						expires: otpCode.expires
 					};
 				} else {
-					const token = this.issueTokensForUser(userDataUpdated, ctx.meta.remoteIP, deviceType, ctx);
+					const token = await this.issueTokensForUser(userDataUpdated, ctx.meta.remoteIP, deviceType, ctx);
 					await log_login(userDataUpdated, "USER-LOGIN", "/login", ctx);
 					return token;
 				}
@@ -589,7 +589,7 @@ module.exports = {
 					throw new LogiksError("Invalid OTP", 401);
 				}
 
-				const token = this.issueTokensForUser(user, ctx.meta.remoteIP, deviceType, ctx);
+				const token = await this.issueTokensForUser(user, ctx.meta.remoteIP, deviceType, ctx);
 				await log_login(user, "USER-LOGIN-OTP", "/verify-otp", ctx);
 				return token;
 			}
@@ -664,6 +664,7 @@ module.exports = {
 				var userInfo = await authRedis.get(`user:${stored.sessionId}`);
 				try {
 					userInfo = JSON.parse(userInfo);
+					if(!userInfo) throw new Error("no session");
 				} catch(e) {
 					await log_login_error({
 						"guid": "-",
@@ -673,7 +674,7 @@ module.exports = {
 					throw new LogiksError("User Info Missing, try login again", 401);
 				}
 
-				const token = this.issueTokensForUser(userInfo, ctx.meta.remoteIP, deviceType, ctx);
+				const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, deviceType, ctx);
 				await log_login(userInfo, "USER-REFRESH-LOGIN", "/refresh", ctx);
 				return token;
 			}
@@ -1281,7 +1282,8 @@ async function generateUserMap(userInfo, geolocation, geoIP, appid) {
 			zone: userInfo.group_zone,
 			country: userInfo.group_country
 		},
-		privilege: {
+		privilege: userInfo.privilege_name,
+		privilege_details: {
 			id: userInfo.privilegeid,
 			name: userInfo.privilege_name,
 			hash: ENCRYPTER.generateHash(`${userInfo.privilegeid}_${userInfo.privilege_name}`)
@@ -1291,7 +1293,6 @@ async function generateUserMap(userInfo, geolocation, geoIP, appid) {
 			name: userInfo.access_name,
 			sites: userInfo.scope_sites=="*"? [appid]: userInfo.scope_sites.split(",")
 		},
-		privilege: userInfo.privilege_name,
 		privacy: userInfo.privacy,
 		security_policy: userInfo.security_policy,
 		avatar: await USERS.getUserAvatar(userInfo.avatar, userInfo.avatar_type),
@@ -1463,22 +1464,31 @@ async function check_log_device(userInfo, ctx) {
 	return true;
 }
 
-async function check_geofencing(userInfo, geolocation) {
+async function check_geofencing(userInfo, geolocation, ctx) {
 	const GEOFENCES_ENABLED = CONFIG?.security?.geofences_enabled || (await CTRLCENTER.getControl("SYSTEM.GEOFENCES_ENABLED", "false")==="true"?true:false);
 	if(!GEOFENCES_ENABLED) return true;
 
 	if(geolocation=="0,0") {
 		await log_login_error({
 			"guid": userInfo.guid,
-			"userId": username,
+			"userId": userInfo.userId || userInfo.userid,
 			"geolocation": geolocation
 		}, "USER-LOGIN", "/login", "Geolocation mandatory for proceeding with login", ctx);
 		throw new LogiksError("Geolocation mandatory for proceeding with login", 401);
 	}
 
-	const geoData = await GEOFENCES.listGeofences(userInfo.guid, geolocation);
-	
-	// console.log("GEO_DATA", geoData);
-	
-	return true;
+	let allFences, inside;
+	try {
+		allFences = await GEOFENCES.listGeofences(userInfo.guid, geolocation, "general", 1);
+		// No premises configured for this tenant -> nothing to enforce
+		if(!allFences || allFences.length <= 0) return true;
+
+		inside = await GEOFENCES.findGeofence(userInfo.guid, geolocation, "general", "polygon", 1);
+		if(!inside || inside.length <= 0) inside = await GEOFENCES.findGeofence(userInfo.guid, geolocation, "general", "circular", 1);
+	} catch(e) {
+		// malformed geolocation or lookup failure: fail closed
+		return false;
+	}
+
+	return !!(inside && inside.length > 0);
 }

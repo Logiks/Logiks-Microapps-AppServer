@@ -144,14 +144,14 @@ module.exports = {
                 }
             }
         } else {
-            console.log("\x1b[31m%s\x1b[0m","WEBHOOK FUNCTION NOT DEFINED", endpoint, err);
+            console.log("\x1b[31m%s\x1b[0m","WEBHOOK FUNCTION NOT DEFINED", endpoint);
 
             _DB.db_updateQ("logdb", "log_webhooks", {
                 guid: webhookInfo.guid,
                 latency_ms: Number(process.hrtime.bigint() - time1) / 1e6,
                 status_code: "500",
                 error_message: "Webhook Function Not Defined",
-                response_payload: JSON.stringify({"error": "Webhook Function Not Defined", "details": err.message}),
+                response_payload: JSON.stringify({"error": "Webhook Function Not Defined", "details": "No handler function registered for this webhook"}),
             }, {
                 id: logRecord.insertId
             });

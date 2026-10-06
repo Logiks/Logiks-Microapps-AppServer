@@ -38,7 +38,7 @@ module.exports = {
         // console.log(">>>>>", workflow);
 
         if(!workflow.rules_json) {
-            workflow.rules_json = this.compileRule(workflowCode);
+            workflow.rules_json = await this.compileRule(workflowCode);
         }
 
         const jsonRule = workflow.rules_json;
@@ -65,7 +65,7 @@ module.exports = {
             const wflowId = response.insertId;
 
             if(startFlow) {
-                const nextStep = this.getNextStep(ctx, wflowId, dataRefId, dataPayload);
+                const nextStep = await this.getNextStep(ctx, wflowId, dataRefId, dataPayload);
 
                 return {
                     "status": "success",
@@ -91,7 +91,7 @@ module.exports = {
                 if(response.results && response.results.length==1) {
                     const wflowId = response.results[0].id;
                     if(startFlow) {
-                        const nextStep = this.getNextStep(ctx, wflowId, dataRefId, dataPayload);
+                        const nextStep = await this.getNextStep(ctx, wflowId, dataRefId, dataPayload);
 
                         return {
                             "status": "success",
@@ -263,14 +263,14 @@ module.exports = {
     },
 
     publishRule: async function(ctx, workflowCode) {
-        const response = this.compileRule(workflowCode);
+        const response = await this.compileRule(workflowCode);
         if(response) {
             return await _DB.db_updateQ("appdb", "sys_workflows", {
                     "status": "published",
                     "edited_on": moment().format("Y-M-D HH:mm:ss"),
                     "edited_by": ctx.meta.user.userId
                 }, {
-                    workflow_code: workflowData[0].workflowCode
+                    workflow_code: workflowCode
                 });
         } else {
             return false;
@@ -331,7 +331,7 @@ async function processNextStep(ctx, workflowData, dataRefId, dataPayload) {
                 "approval_history": approvalHistory,
                 "edited_on": moment().format("Y-M-D HH:mm:ss"),
             }, {
-                "id": wflowId,
+                "id": workflowData.id,
                 "blocked": "false",
                 "current_stage<>'completed'": "RAW"
             });

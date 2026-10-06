@@ -86,6 +86,6 @@ class SingletonManager {
   }
 
   async stop() {
-    CURRENT.enabled = false;
+    this.enabled = false;
   }
 }

@@ -7,8 +7,8 @@ module.exports = {
     }
 }
 
-global.createDBInsertFromRequest = function(ctx, input_fields, db_table, msgTitle, callback) {
-    var vStatus = validateRule(ctx.params, Object.fromEntries(Object.entries(input_fields).filter(([_, value]) => value !== '')));
+global.createDBInsertFromRequest = async function(ctx, input_fields, db_table, msgTitle, callback) {
+    var vStatus = VALIDATIONS.validateRule(ctx.params, Object.fromEntries(Object.entries(input_fields).filter(([_, value]) => value !== '')));
 
     if (!vStatus.status) {
         callback(false, { error: "Input Validation Failed", details: vStatus.errors });
@@ -42,18 +42,18 @@ global.createDBInsertFromRequest = function(ctx, input_fields, db_table, msgTitl
         //Prepare default fields like GUID, created_at, updated_at etc
         insertData = _.extend(insertData, MISC.generateDefaultDBRecord(ctx, false));
         // console.log("Insert Data", msgTitle, insertData);
-        const dbResponse = _DB.db_insertQ1("appdb", db_table, insertData);
-        const insertId = dbResponse.insertId;
+        const dbResponse = await _DB.db_insertQ1("appdb", db_table, insertData);
+        const insertId = dbResponse?.insertId;
         if(insertId) callback({ id: insertId, message: `${msgTitle} created` });
-        else callback(false, dbResponse.err_message);//"Error creating record"
+        else callback(false, dbResponse?.err_message);//"Error creating record"
     } catch (err) {
         console.error(err);
         callback(false, { error: `Failed to create ${msgTitle}` });
     }
 }
 
-global.createDBUpdateFromRequest = function(ctx, input_fields, db_table, whereLogic, msgTitle, callback) {
-    var vStatus = validateRule(ctx.params, Object.fromEntries(Object.entries(input_fields).filter(([_, value]) => value !== '')));
+global.createDBUpdateFromRequest = async function(ctx, input_fields, db_table, whereLogic, msgTitle, callback) {
+    var vStatus = VALIDATIONS.validateRule(ctx.params, Object.fromEntries(Object.entries(input_fields).filter(([_, value]) => value !== '')));
 
     if (!vStatus.status) {
         callback(false, { error: "Input Validation Failed", details: vStatus.errors });
@@ -88,7 +88,7 @@ global.createDBUpdateFromRequest = function(ctx, input_fields, db_table, whereLo
         updateData = _.extend(updateData, MISC.generateDefaultDBRecord(ctx, true));
         // console.log("Update Data", msgTitle, updateData);
         
-        const dbResponse = _DB.db_updateQ("appdb", db_table, updateData, whereLogic);
+        const dbResponse = await _DB.db_updateQ("appdb", db_table, updateData, whereLogic);
         callback(dbResponse.results);
     } catch (err) {
         console.error(err);
@@ -96,13 +96,13 @@ global.createDBUpdateFromRequest = function(ctx, input_fields, db_table, whereLo
     }
 }
 
-global.createDBDeleteFromRequest = function(ctx, db_table, whereLogic, msgTitle, callback) {
+global.createDBDeleteFromRequest = async function(ctx, db_table, whereLogic, msgTitle, callback) {
     try {
         //Prepare default fields like updated_at etc
         var updateData = _.extend({blocked:'true'}, MISC.generateDefaultDBRecord(ctx, true));
         // console.log("Delete Data", msgTitle, updateData);
 
-        const dbResponse = _DB.db_updateQ("appdb", db_table, updateData, whereLogic);
+        const dbResponse = await _DB.db_updateQ("appdb", db_table, updateData, whereLogic);
         callback(dbResponse.results);
     } catch (err) {
         console.error(err);

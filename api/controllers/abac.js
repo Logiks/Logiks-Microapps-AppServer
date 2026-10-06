@@ -91,7 +91,7 @@ module.exports = {
         return true;
     },
 
-    filterResults: async function(ctx, data, subject, action, environment, options = {}, defaultValue = "Deny", debug = false) {
+    filterResults: async function(ctx, data, policyArr, subject, action, environment, options = {}, defaultValue = "Deny", debug = false) {
         if(!data || !Array.isArray(data)) return false;
 
         if(!subject) subject = ctx?.meta?.user || {};
@@ -163,21 +163,19 @@ module.exports = {
             "message": "No policies found for the given policies"
         }
 
-        console.log(">>> ABAC Policies Loaded", JSON.stringify(policies, null, 2));
-
         const request = { subject, resource, action, environment: environment || {} };
 
         return decide(request, policies, options, debug);
     },
 
-    decidePolicy: async function(subject, resource, action, environment, options, debug = false) {
-        if (!subject || !resource || !action) {
+    decidePolicy: async function(policies, subject, resource, action, environment, options, debug = false) {
+        if (!policies || !subject || !resource || !action) {
             return false;
         }
 
         const request = { subject, resource, action, environment: environment || {} };
 
-        return decide(request, store.policies, options || {}, debug);
+        return decide(request, policies, options || {}, debug);
         
     },
 
@@ -232,10 +230,10 @@ module.exports = {
         const env = await ENV.fetchEnvByNature(ctx, "backend");
         const envInfo = await ENV.fetchEnvInfo(ctx.meta);
 
-        return _.extend(envInfo, env, environment || { 
+        return _.extend({
             "timestamp": new Date(),
             "hour": new Date().getHours(), 
-         });
+         }, envInfo, env, environment || {});
     }
 }
 

@@ -136,7 +136,7 @@ async function restartHandler(cmd, ctx) {
 			// _call("system.restart");
 			const { nodeId } = ctx.params;
 
-			SERVER.getBroker().logger.warn("Restarting selected nodes:", gatewayNodes.map(n => n.id));
+			SERVER.getBroker().logger.warn("Restarting selected nodes:", nodeId);
 			if (!Array.isArray(nodeId) || nodeId.length === 0) {
 				throw new Error("target nodeId array is required");
 			}
@@ -149,7 +149,7 @@ async function restartHandler(cmd, ctx) {
 			}
 
 			return {
-				restarted: nodeIDs
+				restarted: nodeId
 			};
 		break;
 		default:

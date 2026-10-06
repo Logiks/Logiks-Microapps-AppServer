@@ -54,13 +54,9 @@ module.exports = {
 			async handler(ctx) {
 				const SETTINGS_KEY = `${ctx.meta.user.tenantId}_${ctx.meta.user.userId}_${ctx.params.module || "-"}`;
 
-				let settingsCache = CACHEMAP.get("SETTINGSCACHE", STATE_KEY, false, ctx);
-
-				if(ctx.params.recache===true) {
-					settingsCache = {};
-				}
-
-				if(settingsCache) return settingsCache;
+				// CACHEMAP.get returns {} on a miss
+				let settingsCache = ctx.params.recache===true ? {} : await CACHEMAP.get("SETTINGSCACHE", SETTINGS_KEY, false, ctx);
+				if(settingsCache && Object.keys(settingsCache).length>0) return settingsCache;
 
 				var whereCond = {
 					"blocked": "false",
@@ -69,22 +65,27 @@ module.exports = {
 				if(ctx.params.module && ctx.params.module!="*") {
 					whereCond["module_name"] = ctx.params.module;
 				}
-				var data1 = await _DB.db_selectQ("appdb", "sys_settings", "module_name, setting_name, setting_value, setting_params", whereCond, {});
-				var data2 = await _DB.db_selectQ("appdb", "user_settings", "module_name, setting_name, setting_value, setting_params", _.extend({
+				var data1 = await _DB.db_selectQ("appdb", "sys_settings", "module_name, setting_key, setting_value, setting_params", whereCond, {});
+				var data2 = await _DB.db_selectQ("appdb", "user_settings", "module_name, setting_key, setting_value, setting_params", _.extend({
 					"created_by": ctx.meta.user.userId
 				}, whereCond), {});
 
-				if(!data1 || !data1?.results || data1.results.length<=0) data1 = data1.results;
-				if(!data2 || !data2?.results || data2.results.length<=0) data2 = data2.results;
-
-				settingsCache = _.extend({}, data1, data2);
+				// user rows override tenant/global rows for the same module + key
+				settingsCache = {};
+				[...(data1?.results || []), ...(data2?.results || [])].forEach(row => {
+					if(!settingsCache[row.module_name]) settingsCache[row.module_name] = {};
+					settingsCache[row.module_name][row.setting_key] = {
+						value: row.setting_value,
+						params: row.setting_params
+					};
+				});
 				
-				CACHEMAP.set("SETTINGSCACHE", SETTINGS_KEY, settingsCache, ctx);
+				await CACHEMAP.set("SETTINGSCACHE", SETTINGS_KEY, settingsCache, ctx);
 
-				return settingsCache
+				return settingsCache;
 			}
 		},
-		settings: {
+		feature_flags: {
 			rest: {
 				method: "POST",
 				fullPath: "/api/feature_flags"
@@ -102,9 +103,8 @@ module.exports = {
 				};
 				
 				var data1 = await _DB.db_selectQ("appdb", "lgks_ctrlcenter", "module, var_code, var_value", whereCond, {});
-				if(!data1 || !data1?.results || data1.results.length<=0) data1 = data1.results;
 
-				return data1
+				return data1?.results || [];
 			}
 		},
 
@@ -121,48 +121,50 @@ module.exports = {
 				// setting_params: { type: "object", optional: true }
 			},
 			async handler(ctx) {
-				// Save settings logic here
-				user_settings
 				const params = ctx.params;
 				const userId = ctx.meta.user.userId;
+				const guid = ctx.meta.user.tenantId;
+				const dated = moment().format("YYYY-MM-DD HH:mm:ss");
 
 				if(typeof params.setting_value == "object") params.setting_value = JSON.stringify(params.setting_value);
 
 				// Check if setting already exists
 				const existingSetting = await _DB.db_selectQ("appdb", "user_settings", "*", {
-					"guid": ctx.meta.user.guid,
+					"guid": guid,
 					"created_by": userId,
 					"module_name": params.module_name,
-					"setting_name": params.setting_name,
+					"setting_key": params.setting_name,
 					"blocked": "false"
-				}, { limit: 1 });
+				}, {});
 
 				if(existingSetting && existingSetting.results && existingSetting.results.length > 0) {
 					// Update existing setting
-					await _DB.db_update("appdb", "user_settings", {
+					await _DB.db_updateQ("appdb", "user_settings", {
 						"setting_value": params.setting_value,
 						"edited_by": userId,
-						"edited_on": new moment(str).format("YYYY-MM-DD HH:mm:ss")
+						"edited_on": dated
 					}, {
 						"id": existingSetting.results[0].id
 					});
 				} else {
 					// Insert new setting
-					await _DB.db_insert("appdb", "user_settings", {
-						"guid": ctx.meta.user.tenantId,
+					await _DB.db_insertQ1("appdb", "user_settings", {
+						"guid": guid,
+						"appid": ctx.meta?.appInfo?.appid || "-",
 						"module_name": params.module_name,
-						"setting_name": params.setting_name,
+						"setting_key": params.setting_name,
 						"setting_value": params.setting_value,
 						"setting_params": params.setting_params ? JSON.stringify(params.setting_params) : null,
 						"created_by": userId,
-						"created_on": new moment(str).format("YYYY-MM-DD HH:mm:ss"),
+						"created_on": dated,
 						"edited_by": userId,
-						"edited_on": new moment(str).format("YYYY-MM-DD HH:mm:ss")
+						"edited_on": dated
 					});
 				}
 
 				// Invalidate cache
-				if(settingsCache[userId]) delete settingsCache[userId];
+				await CACHEMAP.set("SETTINGSCACHE", `${guid}_${userId}_${params.module || "-"}`, {}, ctx);
+				await CACHEMAP.set("SETTINGSCACHE", `${guid}_${userId}_*`, {}, ctx);
 
 				return { status: "success", message: "Setting saved successfully." };
 			}
