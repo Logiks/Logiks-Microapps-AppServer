@@ -49,13 +49,13 @@ module.exports = {
         return true;
     },
 
-    getAssignment: async function(guid, assignmentTaskCode, payload = {}, ctx) {
+    getAssignment: async function(guid, taskCode, payload = {}, ctx) {
         const userInfo = ctx?.meta?.user || {};
         const finalPayload = _.extend({}, payload, userInfo);
 
         const result = await _DB.db_selectQ("appdb", "lgks_assignments, lgks_assignments_policies", "*", {
             "lgks_assignments.guid": guid,
-            "lgks_assignments.assignment_code": assignmentTaskCode,
+            "lgks_assignments.task_code": taskCode,
             "lgks_assignments.blocked": "false",
             "lgks_assignments_policies.blocked": "false",
             "lgks_assignments_policies.is_published": "true",
@@ -63,21 +63,21 @@ module.exports = {
             "lgks_assignments.id=lgks_assignments_policies.assignments_id": "RAW",
         },{}, "ORDER BY lgks_assignments_policies.priority DESC");
 
-        if(!result) return {"status": "failure", "message": "No assignment found for the given guid and assignmentTaskCode"};
+        if(!result) return {"status": "failure", "message": "No assignment found for the given guid and taskCode"};
 
         const storeData = {};
 
         for (const row of result.results) {
-            if (!storeData[row.assignment_code]) {
-                storeData[row.assignment_code] = {
+            if (!storeData[row.task_code]) {
+                storeData[row.task_code] = {
                     id: row.id,
                     guid: row.guid,
-                    assignment_code: row.assignment_code,
+                    task_code: row.task_code,
                     title: row.title,
                     policies: []
                 };
             }
-            storeData[row.assignment_code].policies.push({
+            storeData[row.task_code].policies.push({
                 id: row.policy_id,
                 name: row.policy_name,
                 logic: row.logic,
@@ -87,8 +87,8 @@ module.exports = {
             });
         }
 
-        const task = storeData[assignmentTaskCode];
-        if (!task) return {"status": "failure", "message": "No assignment found for the given assignmentTaskCode"};
+        const task = storeData[taskCode];
+        if (!task) return {"status": "failure", "message": "No assignment found for the given taskCode"};
 
         return await this.processAssignment(task, finalPayload);
     },
@@ -98,7 +98,7 @@ module.exports = {
 
         return {
             status: "success",
-            assignmentTaskCode: taskJSON.assignment_code,
+            taskCode: taskJSON.task_code,
             payload: payload,
             // assignment: assignmentResult.assignee,
             // policy: assignmentResult.policy,
