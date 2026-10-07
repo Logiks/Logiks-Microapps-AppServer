@@ -33,12 +33,13 @@ module.exports = {
 		return data?.results;
 	},
 
-    simulateRule: async function(conditions, actions, facts = {}, debug = false) {
+    simulateRule: async function(conditions, event, actions = [], facts = {}, debug = false) {
         let engine = new Engine()
         engine.addRule({
             name: "simulated_rule",
             conditions: conditions,
-            event: actions
+            event: event,
+            actions: actions,
         });
 
         if(facts) {
@@ -50,6 +51,8 @@ module.exports = {
 
         const { events, failureEvents } = await engine.run(facts);
         // console.log("RESULTS", events, failureEvents);
+
+        //todo - handle actions in future, for now just return the events and failed events
 
         if(events && events.length>0) return {"status": "success", "events": events};
         else return {"status": "failure", "failed_events": failureEvents};
@@ -64,7 +67,7 @@ module.exports = {
                 engine.addRule({
                     name: row.title || row.rulecode || "simulated_rule",
                     conditions: row.conditions,
-                    event: row.actions,
+                    event: row.event,
                     priority: row.priority || 1000,
                 });
             } catch (e) {
@@ -81,6 +84,8 @@ module.exports = {
 
         const { events, failureEvents } = await engine.run(facts);
         // console.log("RESULTS", events, failureEvents);
+
+        //todo - handle actions in future, for now just return the events and failed events
 
         if(events && events.length>0) return {"status": "success", "events": events};
         else return {"status": "failure", "failed_events": failureEvents};
@@ -105,12 +110,12 @@ module.exports = {
         const engine = new Engine();
 
         rows.forEach(row => {
-            if (!row.conditions || !row.actions) return; // skip malformed rows defensively
+            if (!row.conditions || !row.event) return; // skip malformed rows defensively
             try {
                 engine.addRule({
                     name: row.title || row.rulecode,
                     conditions: row.conditions,
-                    event: row.actions,
+                    event: row.event,
                     priority: row.priority || 1000,
                 });
             } catch (e) {
@@ -129,6 +134,8 @@ module.exports = {
 
         const { events, failureEvents } = await engine.run(facts);
         // console.log("RESULTS", events, failureEvents);
+
+        //todo - handle actions in future, for now just return the events and failed events
 
         const duration = Number(process.hrtime.bigint() - time1) / 1e6;
 
@@ -154,7 +161,7 @@ module.exports = {
         data = data.results[0];
 
         if(!data.fields) data.fields = {};
-        if(!data.actions) data.actions = {};
+        if(!data.event) data.event = {};
 
         var vStatus = VALIDATIONS.validateRule(dataFields, data.fields);
         if (!vStatus.status) {
@@ -170,7 +177,7 @@ module.exports = {
                 engine.addRule({
                     name: data.title,
                     conditions: data.conditions,
-                    event: data.actions
+                    event: data.event
                 });
 
                 if(addonFacts) {
@@ -182,6 +189,8 @@ module.exports = {
 
                 const { events, failureEvents } = await engine.run(facts);
                 // console.log("RESULTS", events, failureEvents);
+
+                //todo - handle actions in future, for now just return the events and failed events
 
                 const duration = Number(process.hrtime.bigint() - time1) / 1e6;
 
@@ -209,6 +218,7 @@ function logExecution(ruleData, facts, events, failedEvents, duration, cacheHit,
             vers: ruleData[0].vers,
             engine: ruleData[0].engine,
             conditions: ruleData.map(r => r.conditions),
+            event: ruleData.map(r => r.event),
             actions: ruleData.map(r => r.actions),
             data_facts: facts,
             status: events.length > 0 ? "success" : "failure",
@@ -232,6 +242,7 @@ function logExecution(ruleData, facts, events, failedEvents, duration, cacheHit,
             vers: ruleData.vers,
             engine: ruleData.engine,
             conditions: ruleData.conditions,
+            event: ruleData.map(r => r.event),
             actions: ruleData.actions,
             data_facts: facts,
             status: events.length > 0 ? "success" : "failure",
@@ -246,6 +257,4 @@ function logExecution(ruleData, facts, events, failedEvents, duration, cacheHit,
             "edited_by": triggeredBy,
         });
     }
-
-    
 }
