@@ -55,7 +55,7 @@ module.exports = {
 
         const result = await _DB.db_selectQ("appdb", "lgks_assignments, lgks_assignments_policies", "*", {
             "lgks_assignments.guid": guid,
-            "lgks_assignments.assignment_code": taskCode,
+            "lgks_assignments.task_code": taskCode,
             "lgks_assignments.blocked": "false",
             "lgks_assignments_policies.blocked": "false",
             "lgks_assignments_policies.is_published": "true",
@@ -68,16 +68,16 @@ module.exports = {
         const storeData = {};
 
         for (const row of result.results) {
-            if (!storeData[row.assignment_code]) {
-                storeData[row.assignment_code] = {
+            if (!storeData[row.task_code]) {
+                storeData[row.task_code] = {
                     id: row.id,
                     guid: row.guid,
-                    assignment_code: row.assignment_code,
+                    task_code: row.task_code,
                     title: row.title,
                     policies: []
                 };
             }
-            storeData[row.assignment_code].policies.push({
+            storeData[row.task_code].policies.push({
                 id: row.policy_id,
                 name: row.policy_name,
                 logic: row.logic,
@@ -98,7 +98,7 @@ module.exports = {
 
         return {
             status: "success",
-            taskCode: taskJSON.assignment_code,
+            taskCode: taskJSON.task_code,
             payload: payload,
             // assignment: assignmentResult.assignee,
             // policy: assignmentResult.policy,
