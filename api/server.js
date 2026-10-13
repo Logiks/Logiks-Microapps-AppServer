@@ -122,8 +122,8 @@ module.exports = {
 				},
 				bulkhead: {
 					enabled: true,
-					concurrency: 10,
-					maxQueueSize: 100
+					concurrency: Number(process.env.BULKHEAD_CONCURRENCY || 10),
+					maxQueueSize: Number(process.env.BULKHEAD_MAX_QUEUE || 100)
 				},
 				metricsRate: 1,
 				metrics: true,
