@@ -37,6 +37,9 @@ run the whole thing, or just the part you're touching.
     - `mcp-registry.test.js` - admin-only system tools.
     - `tasks-service.test.js`, `aicore.test.js` - tenant scoping of tasks,
       conversation privacy, engine failure handling, Claude request shaping.
+    - `provider-load-balancer.test.js` - provider policies, state shared through
+      Redis across nodes, crashed-node cleanup, one-time failover that never
+      duplicates an action, breaker, Redis-outage fallback.
     - `uploads-path.test.js`, `sse-ownership.test.js`, `webhooks.test.js`,
       `datamodel-hooks.test.js` - path containment, stream ownership, webhook
       auth and log redaction, model hooks.

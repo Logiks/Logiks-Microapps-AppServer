@@ -157,6 +157,34 @@ module.exports = {
         }
     },
 
+    //Load balanced send. Picks among all active providers sharing providerEngine (policy: round_robin,
+    //weighted, least_loaded, least_used, latency, random) and switches to the next one once on failure.
+    //Non-idempotent calls (POST etc.) only switch when the provider provably never got the request;
+    //pass optionParams.idempotent=true for POSTs that are safe to repeat (e.g. a read-only report or analytics query sent as POST).
+    //send() stays the direct path for a known providerCode.
+    sendLB: async function(guid, providerEngine, endpoint, payload, optionParams = {}, method = "POST") {
+        if(!providerEngine) {
+            throw new Error("Provider engine not specified");
+        }
+        const providers = await this.list(guid, providerEngine);
+        if(providers.length <= 0) {
+            throw new Error("No providers found for engine: " + providerEngine);
+        }
+
+        return await PROVIDER_LOAD_BALANCER.dispatch(
+            providers,
+            (provider) => this.send(guid, provider.provider_code, endpoint, payload, optionParams, method),
+            {
+                policy: optionParams.policy,
+                scope: `${guid}:${providerEngine}`,
+                //a request still running past its own timeout is dead; stop counting it toward the provider's load
+                inflightDeadlineMs: (Number(optionParams.timeout_ms || optionParams.timeout) || 30000) + 10000,
+                //Re-sending to a second provider is only automatic when it cannot run an action twice
+                idempotent: optionParams.idempotent ?? ["GET", "HEAD", "OPTIONS"].includes(String(method || "POST").toUpperCase()),
+            }
+        );
+    },
+
     runControl: async function(guid, providerCode, control, payload = {}, optionParams = {}) {
         if(!CONTROLS.includes(control)) {
             throw new Error("Unsupported provider control: " + control);
