@@ -1706,6 +1706,13 @@
         "primary": false,
         "extra": ""
       },
+      "module": {
+        "type": "varchar(255)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
       "task_code": {
         "type": "varchar(255)",
         "nullable": false,
@@ -1713,7 +1720,7 @@
         "primary": false,
         "extra": ""
       },
-      "title": {
+      "task_title": {
         "type": "varchar(255)",
         "nullable": false,
         "default": null,
@@ -1721,13 +1728,6 @@
         "extra": ""
       },
       "descs": {
-        "type": "varchar(255)",
-        "nullable": false,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "module": {
         "type": "varchar(255)",
         "nullable": false,
         "default": null,
@@ -5187,6 +5187,13 @@
         "primary": false,
         "extra": ""
       },
+      "event": {
+        "type": "json",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
       "actions": {
         "type": "json",
         "nullable": true,
@@ -5460,7 +5467,7 @@
         "primary": false,
         "extra": ""
       },
-      "category_code": {
+      "provider_engine": {
         "type": "varchar(55)",
         "nullable": false,
         "default": null,

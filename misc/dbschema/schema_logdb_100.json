@@ -2309,6 +2309,13 @@
         "primary": false,
         "extra": ""
       },
+      "event": {
+        "type": "json",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
       "actions": {
         "type": "json",
         "nullable": true,
@@ -3091,7 +3098,7 @@
         "primary": false,
         "extra": ""
       },
-      "category_code": {
+      "provider_engine": {
         "type": "varchar(55)",
         "nullable": false,
         "default": null,

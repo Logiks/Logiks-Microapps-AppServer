@@ -45,13 +45,13 @@ module.exports = {
         ];
     },
 
-    list: async function(guid, categoryCode = false) {
+    list: async function(guid, engine = false) {
         var whereCond = {
             "blocked": "false",
             "guid": [["global", guid], "IN"],
         };
-        if(categoryCode) {
-            whereCond.category_code = categoryCode;
+        if(engine) {
+            whereCond.provider_engine = engine;
         }
         var serverData = await _DB.db_selectQ("appdb", "sys_providers", "*", whereCond, {});
         if(!serverData || !serverData.results || serverData.results.length<=0) {
@@ -126,7 +126,7 @@ module.exports = {
 
         const writeLog = (statusCode, responsePayload) => {
             Promise.resolve(_DB.db_insertQ1("logdb", "log_providers", _.extend({
-                category_code: serverInfo.category_code || "",
+                provider_engine: serverInfo.provider_engine || "",
                 server_code: providerCode, 
                 method: method, 
                 endpoint: String(finalURL).substring(0, 255), 
