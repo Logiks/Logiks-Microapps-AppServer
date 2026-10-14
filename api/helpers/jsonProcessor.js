@@ -381,6 +381,41 @@ module.exports = {
                         };
                     }
 
+                    if(tempObj.smartfilter && tempObj.smartfilter.source) {
+                        const smartfilterList = Object.keys(tempObj.smartfilter.source);
+                        for (var i = smartfilterList.length - 1; i >= 0; i--) {
+                            const k = smartfilterList[i];
+                            const v = tempObj.smartfilter.source[k];
+
+                            if(v.policy && v.policy.length>0) {
+                                var isAllowed = await checkAccessPolicy(ctx, v.policy, {type: moduleId, objId, moduleId, ...jsonObj});
+                                if(!isAllowed) {
+                                    delete tempObj.smartfilter.source[k];
+                                    continue;
+                                }
+                            }
+
+                            if(v.type=="sql") {
+                                if(!v.columns && v.cols) {
+                                    v.columns = v.cols;
+                                    delete v.cols;
+                                }
+
+                                const queryID = await QUERY.storeQuery(v, ctx.meta.user, false, {objId, moduleId, "refid": `smartfilter.source.${k}`}, ctx);
+                                tempObj.smartfilter.source[k] = {
+                                    "type": "sql",
+                                    "queryid": queryID
+                                };
+                            }
+
+                            if(v.payload) {
+                                const payloadId = `${objId}.${moduleId}.smartfilter.source.${k}`;
+                                _CACHE.storeDataEx(payloadId, v.payload, 60*60*24*7);//7 days
+                                tempObj.smartfilter.source[k].payload = payloadId;
+                            }
+                        }
+                    }
+
                     if(tempObj.sidebar && tempObj.sidebar.source) {
                         const sidebarList = Object.keys(tempObj.sidebar.source);
                         for (var i = sidebarList.length - 1; i >= 0; i--) {
