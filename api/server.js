@@ -106,30 +106,52 @@ module.exports = {
 					authToken: process.env.CLUSTER_TOKEN
 				},
 
-				requestTimeout: 30 * 1000,
+				// Per-call timeout. Keep below the nginx proxy_read_timeout so clients get our error, not a 504
+				requestTimeout: Number(process.env.REQUEST_TIMEOUT_MS || 15 * 1000),
+				maxCallLevel: 20,
+
+				// Finish in-flight calls before a pm2 reload/stop instead of dropping them
+				tracking: {
+					enabled: true,
+					shutdownTimeout: 10 * 1000
+				},
+
+				// Pick the least loaded worker instead of plain round-robin; prefer local actions
+				registry: {
+					strategy: process.env.LB_STRATEGY || "CpuUsage",
+					preferLocal: true
+				},
+
+				// Retry only failures where the request never ran (node gone, queue full).
+				// Never retry a timeout: the worker may still be running it, and a retry doubles the load.
 				retryPolicy: {
 					enabled: true,
-					retries: 3,
-					delay: 1000,
-					maxDelay: 5000,
-					factor: 2
+					retries: Number(process.env.RETRY_COUNT || 2),
+					delay: 200,
+					maxDelay: 2000,
+					factor: 2,
+					check: (err) => !!(err && err.retryable) && err.type !== "REQUEST_TIMEOUT"
 				},
 				circuitBreaker: {
 					enabled: true,
 					threshold: 0.5,
-					windowTime: 60,
-					minRequestCount: 10
+					minRequestCount: 20,
+					windowTime: 30,
+					halfOpenTime: 5 * 1000
 				},
+				// Per action, per process. Size this to what the action does (I/O-bound can go much higher than 10)
 				bulkhead: {
 					enabled: true,
-					concurrency: Number(process.env.BULKHEAD_CONCURRENCY || 10),
-					maxQueueSize: Number(process.env.BULKHEAD_MAX_QUEUE || 100)
+					concurrency: Number(process.env.BULKHEAD_CONCURRENCY || 50),
+					maxQueueSize: Number(process.env.BULKHEAD_MAX_QUEUE || 500)
 				},
-				metricsRate: 1,
-				metrics: true,
-				statistics: true,
-				heartbeatInterval: 10,
-				heartbeatTimeout: 30,
+
+				// Metrics cost CPU on every call; enable only when something is scraping them
+				metrics: process.env.METRICS_ENABLED === "true",
+				statistics: process.env.METRICS_ENABLED === "true",
+				heartbeatInterval: 5,
+				heartbeatTimeout: 15,
+				maxCallLevel: 20,
 
 				logger: [
 					{
@@ -163,7 +185,7 @@ module.exports = {
 						type: "Winston",
 						options: {
 							// Logging level
-							level: "info",
+							level: process.env.MOLECULER_FILE_LOG_LEVEL || (isProd ? "warn" : "info"),
 
 							winston: {
 								// More settings: https://github.com/winstonjs/winston#creating-your-own-logger
@@ -172,7 +194,7 @@ module.exports = {
 									//new winston.transports.File({ filename: `${ROOT_PATH}/logs/moleculer.log` })
 									new DailyRotateFile({
 										filename: `${ROOT_PATH}/logs/moleculer.log`.replace(".log", "-%DATE%.log"),
-										level: "info",
+										level: process.env.MOLECULER_FILE_LOG_LEVEL || (isProd ? "warn" : "info"),
 										datePattern: "YYYY-MM-DD",
 										zippedArchive: true,
 										maxSize: "10m",
@@ -1541,10 +1563,9 @@ module.exports = {
 
 						let current;
 						try {
-							current = await rateRedis.incr(key);
-							if (current === 1) {
-								await rateRedis.pexpire(key, ttl);
-							}
+							// One round trip: create the window key if absent, then count
+							const results = await rateRedis.multi().set(key, 0, "PX", ttl, "NX").incr(key).exec();
+							current = results[1][1];
 						} catch (err) {
 							LOGGER.get("server").error("Rate limit Redis error", { error: err });
 							return;
