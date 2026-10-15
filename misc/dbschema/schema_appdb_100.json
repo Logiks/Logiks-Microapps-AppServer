@@ -4528,6 +4528,156 @@
       }
     ]
   },
+  "sys_ai_knowledge": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true,
+        "extra": "auto_increment"
+      },
+      "guid": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "knowledge_code": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "title": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "server_url": {
+        "type": "varchar(250)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "authorization_key": {
+        "type": "varchar(250)",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "db_id": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "tenant_id": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "namespace": {
+        "type": "varchar(100)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "params": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "data_index": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false,
+        "extra": ""
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "idx_guid",
+      "idx_knowledge_code"
+    ],
+    "keys": [
+      {
+        "name": "PRIMARY",
+        "primary": true,
+        "unique": true,
+        "type": "BTREE",
+        "columns": [
+          "id"
+        ]
+      },
+      {
+        "name": "idx_guid",
+        "primary": false,
+        "unique": false,
+        "type": "BTREE",
+        "columns": [
+          "guid"
+        ]
+      },
+      {
+        "name": "idx_knowledge_code",
+        "primary": false,
+        "unique": false,
+        "type": "BTREE",
+        "columns": [
+          "knowledge_code"
+        ]
+      }
+    ]
+  },
   "sys_ai_tasks": {
     "columns": {
       "id": {

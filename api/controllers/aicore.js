@@ -6,7 +6,8 @@
 const { createEngines } = require("./aicore/index.js");
 const AGENT_LOOP = require("./aicore/agentLoop.js");
 const KNOWLEDGE = require("./knowledge.js");
-const TOOLING = require("./aicore/tooling.js");
+//Not named TOOLING: that is the global for api/controllers/tooling.js (the tooling server client)
+const MCP_TOOLING = require("./aicore/tooling.js");
 const PERSONAS = require("./aicore/personas.js");
 const AGENTS = require("./aicore/agents.js");
 const TASKS = require("./aicore/tasks.js");
@@ -86,8 +87,9 @@ module.exports = {
         });
     },
 
-    getTools: TOOLING,
+    getTools: MCP_TOOLING,
     personas: PERSONAS,
+    knowledge: KNOWLEDGE,
     agents: AGENTS,
     tasks: TASKS,
 
@@ -141,21 +143,24 @@ module.exports = {
     },
 
     // -----------------------------------------------------------------
-    // Knowledge ingestion - pulls a file into retrievable form via
-    // KNOWLEDGE.extract(), then embeds it. KNOWLEDGE.extract() is still a
-    // stub (knowledge.js isn't complete yet - see its header comment), so
-    // this currently no-ops past that point; the chain is wired so nothing
-    // else needs to change once extract() returns real content.
+    // Knowledge ingestion - extracts a file's text via KNOWLEDGE.extract(),
+    // then hands it to the knowledge base's Vector-Gateway, which chunks and
+    // embeds it itself (so no embed() call here). Extraction goes through the
+    // tooling server and throws if that isn't configured; a file with no text
+    // comes back as { ingested: false }.
+    //
+    // opts: { docId (default: filePath), payload, replace, chunkSize, chunkOverlap }
     // -----------------------------------------------------------------
 
-    ingestKnowledge: async function(filePath, ctx) {
+    ingestKnowledge: async function(knowledgeCode, filePath, ctx, opts = {}) {
         const guid = ctx?.meta?.user?.guid;
 
-        const content = await KNOWLEDGE.extract(guid, filePath);
-        if (!content) return { content: null, vectors: null };
+        const content = await KNOWLEDGE.extract(guid, filePath, ctx);
+        if (!content) return { ingested: false, docId: null, content: null };
 
-        const { vectors } = await BASICS.embed(content, ctx);
-        return { content, vectors };
+        const docId = opts.docId || String(filePath);
+        const result = await KNOWLEDGE.ingest(guid, knowledgeCode, docId, content, _.extend({ source: String(filePath) }, opts.payload), opts);
+        return { ingested: true, docId, content, result };
     },
 
     // -----------------------------------------------------------------

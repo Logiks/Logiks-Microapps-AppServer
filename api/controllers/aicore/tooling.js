@@ -1,4 +1,5 @@
-//Tooling Gateway Integration Layer for AICore.
+//MCP tool bridge for AICore (not the tooling *server* - that is
+//api/controllers/tooling.js, global TOOLING).
 //Wraps the existing MCP tool registry directly (in-process, no HTTP hop) -
 //AICore does not have its own separate tool system, it uses the same local
 //tools MCP clients see via tools/list and tools/call.

@@ -12,9 +12,8 @@
 //  - "both"      - forces an initial retrieval AND still offers the tool,
 //                  for follow-up/deeper queries within the same turn.
 //
-//Backed by KNOWLEDGE.search() (api/controllers/knowledge.js) - still a
-//stub returning [] today. This module is the stable call site for once
-//it's implemented; nothing here needs to change when it is.
+//Backed by KNOWLEDGE.search() (api/controllers/knowledge.js), which queries
+//the Vector-Gateway servers behind each of the persona's knowledge_codes.
 
 const KNOWLEDGE_TOOL_NAME = "knowledge_search";
 const DEFAULT_TOP_N = 5;
@@ -74,8 +73,15 @@ async function search(guid, query, persona) {
     return await KNOWLEDGE.search(guid, query, false, { scopes: persona.allowed_knowledge }, {}, DEFAULT_TOP_N);
 }
 
+//KNOWLEDGE.search() returns { text, docId, knowledge, ... } hits; show the
+//text with its source rather than the raw JSON the model would have to wade through.
 function formatHits(hits) {
-    return hits.map((h, i) => `[${i + 1}] ${typeof h === "string" ? h : JSON.stringify(h)}`).join("\n");
+    return hits.map((h, i) => {
+        if (typeof h === "string") return `[${i + 1}] ${h}`;
+        if (h.text == null) return `[${i + 1}] ${JSON.stringify(h)}`;
+        const source = [h.knowledge, h.docId].filter(Boolean).join("/");
+        return `[${i + 1}]${source ? " (" + source + ")" : ""} ${h.text}`;
+    }).join("\n");
 }
 
 module.exports = { KNOWLEDGE_TOOL_NAME, mode, usesForced, usesOnDemand, retrieveForced, knowledgeSearchTool };

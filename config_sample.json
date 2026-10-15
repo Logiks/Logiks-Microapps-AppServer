@@ -76,6 +76,16 @@
             { "key": "openai", "driver": "openai", "priority": 2, "config": { "apikey": "", "model": "gpt-4.1" } },
             { "key": "claude", "driver": "claude", "priority": 3, "config": { "apikey": "", "model": "claude-sonnet-5" } }
         ],
+        "tooling": {
+            "enabled": false,
+            "url": "http://127.0.0.1:10005",
+            "token": "",
+            "publicBaseUrl": "",
+            "timeoutMs": 60000,
+            "extractTimeoutMs": 300000,
+            "extractTool": "unstructured_tool",
+            "linkTtlSeconds": 1800
+        },
         "defaultAgent": "",
         "intentAgentMap": {
             "summarize": "",

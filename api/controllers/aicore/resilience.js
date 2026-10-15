@@ -93,8 +93,29 @@ async function recordSuccess(engineKey) {
     await _CACHE.deleteKey(BREAKER_PREFIX + engineKey);
 }
 
+//Same retry + shared circuit breaker as callEngine, for any other remote
+//dependency (e.g. the knowledge servers) - `key` names the breaker, so one
+//dead server doesn't take down the others. Throws err.breakerOpen when the
+//breaker is open, without making the call.
+async function guarded(key, fn, retryConfig = {}, breakerConfig = {}) {
+    if (await isBreakerOpen(key)) {
+        const err = new Error(`Circuit breaker open for '${key}'`);
+        err.breakerOpen = true;
+        throw err;
+    }
+
+    try {
+        const result = await withRetry(fn, retryConfig);
+        await recordSuccess(key);
+        return result;
+    } catch (err) {
+        if (!isRequestError(err)) await recordFailure(key, breakerConfig);
+        throw err;
+    }
+}
+
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-module.exports = { callEngine };
+module.exports = { callEngine, guarded };

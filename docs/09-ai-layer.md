@@ -125,7 +125,7 @@ await AICORE.personas.upsert(guid, "support-agent", {
     engineKey: "claude",                 // must match a `key` in CONFIG.aicore.engines
     model: "claude-sonnet-5",
     allowedTools: ["query_schema", "query_index", "query_results"], // subset of REGISTRY.listTools()
-    allowedKnowledge: ["kb.support"],    // optional — see RAG
+    allowedKnowledge: ["kb.support"],    // optional — knowledge_codes from sys_ai_knowledge, see Knowledge Bases
     knowledgeMode: "on_demand",          // off | forced | on_demand | both
     params: { temperature: 0.2 }
 }, ctx);
@@ -175,14 +175,14 @@ Two tools are injected by the agent loop itself rather than coming from the MCP 
 
 ### Memory
 
-Two tiers exist today, both real:
+Two tiers:
 
 | Tier | Backed by | Lifetime | Module |
 |---|---|---|---|
 | **Episodic (conversation) memory** | `_CACHE` hot buffer (sliding TTL) + durable `log_ai_conversations`/`log_ai_messages` in `logdb` | Per session; durable log never expires | [conversations.js](../api/controllers/aicore/conversations.js) |
-| **Semantic memory (vector)** | — | — | Not present. `knowledge.js`'s `search()`/`extract()` are stubs (`search` returns `[]`, `extract` is empty) |
+| **Semantic memory (vector)** | Vector-Gateway servers, one per knowledge base (`sys_ai_knowledge`) | Until deleted from the gateway | [knowledge.js](../api/controllers/knowledge.js) |
 
-The RAG *delivery* pipeline (below) is fully wired to call into semantic memory the moment it exists — nothing in `agentLoop.js` or `rag.js` needs to change when `knowledge.js` is implemented.
+The RAG *delivery* pipeline (below) reads from semantic memory through `KNOWLEDGE.search()`; see Knowledge Bases below.
 
 ### Tasks — background, scheduled agent work
 
@@ -214,15 +214,65 @@ The delivery mechanism is fully built in [rag.js](../api/controllers/aicore/rag.
 - `on_demand` — exposed as the `knowledge_search` tool; the model decides whether/what to search.
 - `both` — forces an initial retrieval *and* still offers the tool for follow-up queries within the same turn.
 
-What's still a stub: the actual retrieval backend. `rag.js` calls `KNOWLEDGE.search(guid, query, false, { scopes }, {}, topN)` ([api/controllers/knowledge.js](../api/controllers/knowledge.js)), which returns `[]` unconditionally today. So RAG is wired end-to-end but currently never surfaces real hits — implementing `knowledge.js` is the only remaining piece.
+`rag.js` calls `KNOWLEDGE.search(guid, query, false, { scopes }, {}, topN)` ([api/controllers/knowledge.js](../api/controllers/knowledge.js)), where `scopes` is the persona's `allowedKnowledge`. Hits come back as `{ text, score, docId, knowledge, payload }` and are shown to the model with their source (`[1] (support/faq-3) …`).
 
 ### Embedding Pipelines
 
-`AICORE.embed(input, ctx, params)` → first engine (priority order) that implements `embed()` — OpenAI today (see §9.2). `AICORE.ingestKnowledge(filePath, ctx)` chains `KNOWLEDGE.extract()` (also a stub) into `embed()`, so the ingest *path* exists but produces nothing until `knowledge.js`'s extraction is implemented.
+`AICORE.embed(input, ctx, params)` → first engine (priority order) that implements `embed()` — OpenAI today (see §9.2). Knowledge ingestion does not use `embed()`: the Vector-Gateway chunks and embeds documents itself. `AICORE.ingestKnowledge(knowledgeCode, filePath, ctx, opts)` extracts the file's text with `KNOWLEDGE.extract()` and sends it to the gateway with `KNOWLEDGE.ingest()`. `extract()` goes through the tooling server (see Tooling Server below) and throws if that isn't configured; a file with no text returns `{ ingested: false }`. `KNOWLEDGE.ingest()` takes text directly and doesn't need the tooling server.
 
-### Vector Storage
+### Knowledge Bases (Vector-Gateway)
 
-Not present. No vector DB connection exists in the codebase yet; `knowledge.js`'s header comment lists the intended sources (a Vector Gateway service, MySQL full-text search, local RAG) but none are implemented. This is the one genuinely open architectural piece of AICore's roadmap — everything else documented as "built" above is real, runnable code.
+A knowledge base is one row of `sys_ai_knowledge` (`appdb`): a Vector-Gateway server URL and bearer key, plus the `db_id`, `tenant_id` (empty means the caller's `guid`) and `namespace` on it. Several bases on several servers can back one persona, since `allowedKnowledge` is a list of `knowledge_code`s. The gateway API is described in `znotes/vector_gateway_openapi.json`; AICore uses its `/vdb` surface (hybrid BM25 + vector search with optional rerank, async ingest, document listing and delete). Tenants and collections are provisioned on the gateway itself.
+
+```javascript
+await AICORE.knowledge.upsert(guid, "kb.support", {
+    title: "Support articles",
+    serverUrl: "http://vdb1:6789", authorizationKey: "…",
+    dbId: "main", namespace: "support",
+    params: { chunk_size: 800, chunk_overlap: 100, rerank: true, timeoutMs: 8000 }
+}, ctx);
+
+await AICORE.knowledge.ingest(guid, "kb.support", "faq-3", "Refunds take 5 days…", { source: "faq" });
+await AICORE.knowledge.sync(guid, "kb.support");   // refresh data_index from the gateway
+```
+
+Other calls: `ingestBatch`, `removeDocuments`, `listDocuments`, `getDocument`, `health`, `list`, `get`, `remove`. Reads never return the bearer key (`has_key` says whether one is set).
+
+**Search** queries every base in the persona's list in parallel, each with its own retry and circuit breaker (keyed by server, so one dead gateway doesn't affect the others). A base that fails, is unknown, or is known to be empty is skipped; the turn continues with whatever the others return. A gateway validation failure arrives as HTTP 200 with `status:"error"`, and is treated as a failure.
+
+**`data_index`** is a small JSON summary per base, never the documents. It holds `docCount` and `exact` (from the last `sync()`), `ingestedSince` / `removedSince` (moved by ingest and delete), `lastIngestAt`, `lastDeleteAt`, `lastSyncAt`, and `lastError` / `lastErrorAt`. Its size does not depend on how many documents the base holds. Search uses it to skip a base that a sync showed to be empty. The counters are advisory: the gateway doesn't say whether an ingested `docId` was new or a replacement, so `sync()` is what makes `docCount` exact again.
+
+**REST** ([knowledge.service.js](../api/services/ai/knowledge.service.js)), admin role only and always scoped to the caller's tenant:
+
+| Route | Does |
+|---|---|
+| `GET /ai/knowledge`, `GET /ai/knowledge/:code` | list / read bases (no bearer key in the response) |
+| `POST /ai/knowledge/:code`, `DELETE /ai/knowledge/:code` | create or update / remove a base |
+| `POST /ai/knowledge/:code/search` | debug search; a gateway failure comes back as an error |
+| `POST /ai/knowledge/:code/documents` | ingest text `{ docId, text, payload?, replace? }` |
+| `POST /ai/knowledge/:code/documents/batch` | ingest `{ documents: [{ docId, text, payload? }] }` |
+| `POST /ai/knowledge/:code/documents/file` | ingest a file `{ file, docId?, payload? }` (a `files_tbl` id, a `path_uri`, or a URL), extracted by the tooling server |
+| `GET /ai/knowledge/:code/documents[/:docId]` | browse documents / one document's chunks |
+| `POST /ai/knowledge/:code/documents/delete` | delete `{ docIds }` |
+| `POST /ai/knowledge/:code/sync`, `GET /ai/knowledge/:code/health` | refresh `data_index` / ping the gateway |
+
+Not implemented: MySQL full-text and local RAG as additional sources, and image ingestion.
+
+### Tooling Server
+
+[tooling.js](../api/controllers/tooling.js) (global `TOOLING`) is the client for the tooling server, a separate service that runs document and AI tools. It is configured in `CONFIG.aicore.tooling`:
+
+```json
+"tooling": { "enabled": true, "url": "http://192.168.0.31:10005", "token": "", "publicBaseUrl": "http://appserver.lan:9999/",
+             "timeoutMs": 60000, "extractTimeoutMs": 300000, "extractTool": "unstructured_tool", "linkTtlSeconds": 1800 }
+```
+
+- `listTools(guid)`: the server's tool catalog (cached for five minutes).
+- `execute(guid, tool, params)`: runs a tool through `POST /run` and returns the tool's own result. The tool's parameters go beside `tool` in the body, not under a wrapper. A failing tool still answers HTTP 200 with `status:"error"`; that is thrown as an error and does not count against the circuit breaker, while network failures and 5xx do.
+- `extract(guid, source)`: the text of a file. `source` is a `files_tbl` id, a `path_uri`, or an `http(s)` URL. A stored file is published as a temporary `/api/public/files/...` link that lives for `linkTtlSeconds` and is retired as soon as the call returns, because the tooling server downloads the file itself and is usually on another machine. Set `publicBaseUrl` when `base_url` is not an address that server can reach. URLs that point at private or local addresses are refused unless `allowPrivateUrls` is set, so a tenant cannot aim the server at internal services.
+- `embed(guid, input)`, `health(guid)`, and `start` / `result` for the server's `initiate_run` / `get_result` lane.
+
+Extraction runs synchronously with a five-minute timeout and is not retried. The server's async lane (`initiate_run`, then polling `get_result`) was tested and its references stayed in `processing`, and its callback tool ignored a `callback` or `callback_url` field; neither is used by `extract()`. `GET /ai/tooling/health` (admin) reports whether the server answers.
 
 ### AI Orchestration — the actual end-to-end flow today
 
@@ -274,8 +324,8 @@ Return { sessId, status, message, steps, response }
 | Tool execution | AICore's `tooling.js`, via `ctx.call(...)` under RBAC/audit |
 | Conversation history | AICore (`conversations.js`) |
 | Background/recurring task scheduling | AICore (`tasks.js` + the platform's existing cron/autojobs system) |
-| Knowledge retrieval backend | **Open** — `knowledge.js` is a stub; implementing it is the main remaining gap |
-| Vector DB connection | **Open** — not yet built |
+| Knowledge retrieval and ingestion | AICore (`knowledge.js`, against Vector-Gateway servers configured in `sys_ai_knowledge`) |
+| Document text extraction | Tooling server (`tooling.js`, configured in `aicore.tooling`) |
 | Domain logic | Microapp |
 | Use-case-specific prompts (personas) | Microapp |
 | Contributing new tools (`tools.json` → MCP registry) | Microapp (intended path; not fully wired yet) |
@@ -301,13 +351,15 @@ The headline: **microapps define personas/agents and tasks run under them; AICor
 | `create_task` tool (model-initiated deferral) | ✅ Implemented |
 | Conversation history (episodic memory) | ✅ Implemented |
 | RAG delivery (forced / on_demand / both) | ✅ Implemented |
-| Knowledge retrieval backend (`knowledge.js`) | ❌ Stub — returns no results |
-| Vector DB integration | ❌ Not in code |
+| Knowledge retrieval, ingest, sync (`knowledge.js`) | ✅ Implemented, against Vector-Gateway |
+| Tooling server client (`tooling.js`: tools, extract, embed) | ✅ Implemented |
+| Knowledge text extraction (`KNOWLEDGE.extract`) | ✅ Via the tooling server |
+| Knowledge REST (`/ai/knowledge`) | ✅ Implemented, admin only |
 | Embeddings | 🚧 OpenAI only |
 | `local_worker` execution lane | 🚧 Worker file exists; nothing dispatches to it yet |
 | Intent detection | 🚧 Basic regex matcher, documented as such in its own source |
 
-Compared to where this chapter stood before: personas, agents, the real agent loop, tool calling, tasks/scheduling, conversation history, and two full LLM engines all moved from "roadmap" to "built." The remaining gap is almost entirely the knowledge/vector-retrieval backend — everything that depends on it (RAG delivery, embedding ingestion) is wired and waiting.
+Compared to where this chapter stood before: personas, agents, the real agent loop, tool calling, tasks/scheduling, conversation history, and two full LLM engines all moved from "roadmap" to "built." Knowledge retrieval and ingestion now run against Vector-Gateway; text extraction from files goes through the tooling server.
 
 ---
 
