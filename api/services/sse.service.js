@@ -1,12 +1,48 @@
 //SSE Event Handler
 "use strict";
 
+const crypto = require("crypto");
+
 const clients = new Map();
+
+//EventSource cannot send an Authorization header, so an authenticated caller
+//first trades its Bearer token for a short-lived, single-use ticket bound to
+//one user + one stream id, and passes that in the EventSource URL instead.
+const tickets = new Map();
+const TICKET_TTL_MS = 30 * 1000;
+const MAX_STREAMS_PER_USER = 5;
+
+function pruneTickets() {
+    const now = Date.now();
+    for(const [k, v] of tickets) {
+        if(v.expires <= now) tickets.delete(k);
+    }
+}
 
 module.exports = {
     name: "sse",
 
     actions: {
+        ticket: {
+            rest: {
+                method: "POST",
+                fullPath: "/api/sse/ticket"
+            },
+            handler(ctx) {
+                const userId = ctx.meta?.user?.userId;
+                if(!userId) throw new LogiksError("Authentication required", 401, "NO_AUTH");
+
+                pruneTickets();
+
+                //The server picks the stream id so it cannot be guessed or chosen by another user
+                const eventId = crypto.randomUUID();
+                const ticket = crypto.randomBytes(32).toString("hex");
+                tickets.set(ticket, { userId, eventId, expires: Date.now() + TICKET_TTL_MS });
+
+                return { eventId, ticket, expiresIn: TICKET_TTL_MS / 1000 };
+            }
+        },
+
         recieveEvents: {
             timeout: 0,
             retryPolicy: {
@@ -19,7 +55,20 @@ module.exports = {
                     const res = ctx.meta.$res;
 
                     const id = ctx.params.eventId;
-                    const owner = ctx.meta?.user?.userId;
+
+                    //Single-use: removed whether or not it turns out to be valid
+                    const t = tickets.get(ctx.params.ticket);
+                    tickets.delete(ctx.params.ticket);
+                    if(!t || t.expires <= Date.now() || t.eventId !== id) {
+                        throw new LogiksError("Invalid or expired event ticket", 401, "INVALID_TICKET");
+                    }
+                    const owner = t.userId;
+
+                    let open = 0;
+                    for(const c of clients.values()) if(c.owner === owner) open++;
+                    if(open >= MAX_STREAMS_PER_USER && !clients.has(id)) {
+                        throw new LogiksError("Too many open event streams", 429, "TOO_MANY_STREAMS");
+                    }
 
                     // A stream id belongs to whoever opened it; another user must not be able to replace it
                     const existing = clients.get(id);
@@ -107,6 +156,8 @@ module.exports = {
 
                     });
                 } catch(e1) {
+                    //Auth/limit failures must reach the client as real 401/429, not a 200 error body
+                    if(e1 instanceof LogiksError) throw e1;
                     console.error("SSE.recieveEvents_ERROR", e1);
                     return {"status": "error", "msg": e1.message};
                 }

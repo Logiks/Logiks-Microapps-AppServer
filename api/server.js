@@ -301,16 +301,7 @@ module.exports = {
 							whitelist: [
 								"auth.*"
 							],
-							bodyParsers:{
-								json: {
-									strict: false,
-									limit: "20MB"
-								},
-								urlencoded: {
-									extended: true,
-									limit: "20MB"
-								}
-							},
+							bodyParsers: false,
 							rateLimit: {
 								window: 60 * 1000,
 								limit: 10
@@ -459,7 +450,6 @@ module.exports = {
 								const serverHost = req.headers.host;
 								const remoteIP = MISC.getClientIP(req);
 
-								console.log("REQUEST_EVENTS", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
 
 
 								// IP
