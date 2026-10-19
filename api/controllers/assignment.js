@@ -107,6 +107,15 @@ module.exports = {
         };
     },
 
+    // Pure helpers, exposed so callers (e.g. test/preview endpoints) can evaluate a task JSON directly
+    resolveAssignment: function(task, attributes = {}) {
+        return resolveAssignment(task, attributes);
+    },
+
+    evaluatePolicy: function(policy, attributes = {}) {
+        return evaluatePolicy(policy, attributes);
+    },
+
     validatePolicyShape: function(body) {
         const errors = [];
         if (!body.name) errors.push('name is required');
