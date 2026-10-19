@@ -85,8 +85,11 @@ module.exports = {
         var result = false;
 
         redis.get(cacheKey).then(function (result) {
+            //"null" is what a null default used to leave behind; it is a miss, not a value
+            if (result === "null") result = null;
             if (result == null) {
-                result = cacheObj.storeData(cacheKey, defaultData);
+                //A null default means "no value": nothing to remember, and storing it would cache the string "null"
+                result = defaultData == null ? defaultData : cacheObj.storeData(cacheKey, defaultData);
             }
 
             if (typeof result == "string") {
@@ -112,8 +115,11 @@ module.exports = {
 
         var result = await redis.get(cacheKey);
 
+        //"null" is what a null default used to leave behind; it is a miss, not a value
+        if (result === "null") result = null;
         if (result == null) {
-            result = cacheObj.storeData(cacheKey, defaultData);
+            //A null default means "no value": nothing to remember, and storing it would cache the string "null"
+            result = defaultData == null ? defaultData : cacheObj.storeData(cacheKey, defaultData);
         }
 
         if (typeof result == "string") {

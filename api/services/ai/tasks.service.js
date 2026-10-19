@@ -20,7 +20,9 @@ module.exports = {
         getTask: {
             rest: { method: "GET", fullPath: "/ai/tasks/:taskId" },
             async handler(ctx) {
-                return await AICORE.tasks.get(ctx.meta.user.guid, ctx.params.taskId);
+                const task = await AICORE.tasks.get(ctx.meta.user.guid, ctx.params.taskId);
+                if (!task) throw new LogiksError(`Unknown task '${ctx.params.taskId}'`, 404, "UNKNOWN_TASK");
+                return task;
             }
         },
 
@@ -35,6 +37,9 @@ module.exports = {
         cancelTask: {
             rest: { method: "POST", fullPath: "/ai/tasks/:taskId/cancel" },
             async handler(ctx) {
+                if (!(await AICORE.tasks.get(ctx.meta.user.guid, ctx.params.taskId))) {
+                    throw new LogiksError(`Unknown task '${ctx.params.taskId}'`, 404, "UNKNOWN_TASK");
+                }
                 return await AICORE.tasks.cancel(ctx.meta.user.guid, ctx.params.taskId, ctx);
             }
         },

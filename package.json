@@ -30,6 +30,7 @@
     "axios": "^1.10.0",
     "base64-stream": "^1.0.0",
     "bcrypt": "^6.0.0",
+    "bullmq": "^6.3.17",
     "connect-redis": "^9.0.0",
     "cookie-parser": "^1.4.7",
     "deep-diff": "^1.0.2",

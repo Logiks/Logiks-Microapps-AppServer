@@ -20,10 +20,10 @@ async function runTurn(engines, resilienceConfig, sessId, agentCode, userMessage
     const guid = ctx?.meta?.user?.guid;
 
     const agent = await AGENTS.get(guid, agentCode);
-    if (!agent) throw new Error(`AICore: unknown agent '${agentCode}'`);
+    if (!agent) throw new LogiksError(`AICore: unknown agent '${agentCode}'`, 404, "UNKNOWN_AGENT");
 
     const persona = await PERSONAS.get(guid, agent.persona_code);
-    if (!persona) throw new Error(`AICore: unknown persona '${agent.persona_code}' for agent '${agentCode}'`);
+    if (!persona) throw new LogiksError(`AICore: unknown persona '${agent.persona_code}' for agent '${agentCode}'`, 404, "UNKNOWN_PERSONA");
 
     return await executeLoop(engines, resilienceConfig, sessId, persona, agent, userMessage, ctx, { persist: true, agentCode });
 }

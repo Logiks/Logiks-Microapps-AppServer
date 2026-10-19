@@ -58,6 +58,13 @@ module.exports = {
             token: CONFIG.queue.token,
             user: CONFIG.queue.user,
             pass: CONFIG.queue.pass,
+            // BullMQ: its own Redis (queue.redis) and key prefix; without queue.redis it uses the system Redis (cache)
+            redis: CONFIG.queue.redis,
+            prefix: CONFIG.queue.prefix,
+            systemRedis: CONFIG.cache,
+            attempts: CONFIG.queue.attempts,
+            backoffMs: CONFIG.queue.backoff_ms,
+            prefetch: CONFIG.queue.prefetch,
             // name: `worker-${process.pid}`
         });
         await QUEUE.connect();

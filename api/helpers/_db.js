@@ -304,7 +304,7 @@ module.exports = {
 			var a = data[b];
 
 			if(Array.isArray(a)) a = a.join(",");
-			else if(typeof a == "object") a = JSON.stringify(a);
+			else if(a !== null && typeof a == "object") a = JSON.stringify(a);
 
 			if(b.indexOf(".")>0)
 				a = await field_encrypter(`${b}`, a, data);
@@ -422,7 +422,7 @@ module.exports = {
 				var a = data[b];
 
 				if(Array.isArray(a)) a = a.join(",");
-				else if(typeof a == "object") a = JSON.stringify(a);
+				else if(a !== null && typeof a == "object") a = JSON.stringify(a);
 
 				if(b.indexOf(".")>0)
 					a = await field_encrypter(`${b}`, a);

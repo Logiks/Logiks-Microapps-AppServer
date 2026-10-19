@@ -174,7 +174,12 @@
     "queue": {
         "enable": false,
         "driver": "rabbitmq",
-        "host1": "amqp://rabbit01:rabbit01@127.0.0.1:5672"
+        "host1": "amqp://rabbit01:rabbit01@127.0.0.1:5672",
+        "bullmq_example": {
+            "driver": "bullmq",
+            "prefix": "lgksq",
+            "redis": { "host": "127.0.0.1", "port": 6379, "db": 1 }
+        }
     },
     "logger": {
         "default": [

@@ -4385,149 +4385,6 @@
       }
     ]
   },
-  "sys_ai_personas": {
-    "columns": {
-      "id": {
-        "type": "int",
-        "nullable": false,
-        "default": null,
-        "primary": true,
-        "extra": "auto_increment"
-      },
-      "guid": {
-        "type": "varchar(155)",
-        "nullable": true,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "persona_code": {
-        "type": "varchar(55)",
-        "nullable": false,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "title": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "system_prompt": {
-        "type": "text",
-        "nullable": true,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "engine_key": {
-        "type": "varchar(55)",
-        "nullable": true,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "model": {
-        "type": "varchar(100)",
-        "nullable": true,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "allowed_tools": {
-        "type": "text",
-        "nullable": true,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "allowed_knowledge": {
-        "type": "text",
-        "nullable": true,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "params": {
-        "type": "text",
-        "nullable": true,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "blocked": {
-        "type": "enum('false','true')",
-        "nullable": true,
-        "default": "false",
-        "primary": false,
-        "extra": ""
-      },
-      "created_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "created_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "edited_on": {
-        "type": "datetime",
-        "nullable": false,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      },
-      "edited_by": {
-        "type": "varchar(155)",
-        "nullable": false,
-        "default": null,
-        "primary": false,
-        "extra": ""
-      }
-    },
-    "indexes": [
-      "PRIMARY",
-      "idx_guid",
-      "idx_persona_code"
-    ],
-    "keys": [
-      {
-        "name": "PRIMARY",
-        "primary": true,
-        "unique": true,
-        "type": "BTREE",
-        "columns": [
-          "id"
-        ]
-      },
-      {
-        "name": "idx_guid",
-        "primary": false,
-        "unique": false,
-        "type": "BTREE",
-        "columns": [
-          "guid"
-        ]
-      },
-      {
-        "name": "idx_persona_code",
-        "primary": false,
-        "unique": false,
-        "type": "BTREE",
-        "columns": [
-          "persona_code"
-        ]
-      }
-    ]
-  },
   "sys_ai_knowledge": {
     "columns": {
       "id": {
@@ -4678,6 +4535,149 @@
       }
     ]
   },
+  "sys_ai_personas": {
+    "columns": {
+      "id": {
+        "type": "int",
+        "nullable": false,
+        "default": null,
+        "primary": true,
+        "extra": "auto_increment"
+      },
+      "guid": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "persona_code": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "title": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "system_prompt": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "engine_key": {
+        "type": "varchar(55)",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "model": {
+        "type": "varchar(100)",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "allowed_tools": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "allowed_knowledge": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "params": {
+        "type": "text",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "blocked": {
+        "type": "enum('false','true')",
+        "nullable": true,
+        "default": "false",
+        "primary": false,
+        "extra": ""
+      },
+      "created_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "created_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "edited_on": {
+        "type": "datetime",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "edited_by": {
+        "type": "varchar(155)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      }
+    },
+    "indexes": [
+      "PRIMARY",
+      "idx_guid",
+      "idx_persona_code"
+    ],
+    "keys": [
+      {
+        "name": "PRIMARY",
+        "primary": true,
+        "unique": true,
+        "type": "BTREE",
+        "columns": [
+          "id"
+        ]
+      },
+      {
+        "name": "idx_guid",
+        "primary": false,
+        "unique": false,
+        "type": "BTREE",
+        "columns": [
+          "guid"
+        ]
+      },
+      {
+        "name": "idx_persona_code",
+        "primary": false,
+        "unique": false,
+        "type": "BTREE",
+        "columns": [
+          "persona_code"
+        ]
+      }
+    ]
+  },
   "sys_ai_tasks": {
     "columns": {
       "id": {
@@ -4752,6 +4752,27 @@
       },
       "source_sess_id": {
         "type": "varchar(50)",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "repeat_schedule": {
+        "type": "varchar(55)",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "repeat_until": {
+        "type": "datetime",
+        "nullable": true,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
+      "autojob_id": {
+        "type": "int",
         "nullable": true,
         "default": null,
         "primary": false,

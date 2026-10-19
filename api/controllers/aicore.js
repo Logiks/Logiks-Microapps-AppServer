@@ -131,9 +131,11 @@ module.exports = {
         // Only identity travels through the queue, never tokens or session internals
         const user = _.pick(ctx?.meta?.user || {}, ["guid", "userId", "username", "tenantId", "roles", "scopes", "privilege"]);
 
-        await QUEUE.publish(guid, QUEUE_TASK_KEY, {
+        const published = await QUEUE.publish(guid, QUEUE_TASK_KEY, {
             sessId, agentCode, message, user, taskId: taskId || null
         });
+        //QUEUE.publish answers false (rather than throwing) when the queue is off or cannot sign; nothing will ever run it then
+        if(published === false) throw new LogiksError("The queue is not available, so this run was not scheduled", 503, "QUEUE_UNAVAILABLE");
 
         return { sessId, status: "queued", taskId: taskId || null };
     },

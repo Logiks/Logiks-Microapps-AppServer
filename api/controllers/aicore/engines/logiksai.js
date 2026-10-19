@@ -21,7 +21,9 @@
 //    {sesskey, pending_token, tool_results: {<id>: <result>}}.
 //    The LogiksAI persona used must have tools_forwarding switched on.
 //
-//config: { url, apikey, appid (optional), persona (default "assistant"), channel (default "aicore") }
+//config: { url, apikey, appid (optional), guid (optional), persona (default "assistant"), channel (default "aicore") }
+//  guid: the LogiksAI tenant to act in. Leave it out when LogiksAI tenants match AppServer tenants;
+//  set it when the AppServer tenant has no personas of its own on the LogiksAI server.
 
 const AIEngine = require("./aiengine");
 
@@ -59,7 +61,7 @@ module.exports = class LogiksAI extends AIEngine {
     }
 
     async sendMessage(sessId, messages, tools = [], userInfo = {}, params = {}) {
-        const guid = userInfo.guid;
+        const guid = this.params.guid || userInfo.guid;
         const uuid = userInfo.userId || userInfo.id;
         if (!guid) throw requestError("LogiksAI needs the caller's guid to mint a token", 400);
 

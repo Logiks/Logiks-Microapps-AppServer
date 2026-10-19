@@ -143,7 +143,8 @@ The application config is the largest knob set. The shipped [config_sample.json]
 | `dbmysql.appdb`, `dbmysql.logdb` | Two MySQL connections (each `{enable, host, port, user, password, database, insecureAuth, multipleStatements}`) |
 | `dbmongo.{enable, uri}` | Optional MongoDB connection (off by default) |
 | `cache.{host, port, family, db, enableOfflineQueue}` | Redis client config |
-| `queue.{enable, driver, host}` | Optional queue (NATS or RabbitMQ; off by default). `queue.token` or `queue.user`/`queue.pass` are sent to the broker when it needs credentials. `queue.max_age_sec` (default 86400) is how old a message may be when consumed |
+| `queue.{enable, driver, host}` | Optional queue (NATS, RabbitMQ or BullMQ; off by default). `queue.token` or `queue.user`/`queue.pass` are sent to the broker when it needs credentials. `queue.max_age_sec` (default 86400) is how old a message may be when consumed |
+| `queue.{redis, prefix, attempts, backoff_ms, prefetch}` | BullMQ driver (`queue.driver: "bullmq"`). `redis` is an ioredis options object or a `redis://` URL for a Redis used only by the queue; leave it out to share the system Redis (`cache`). `prefix` (default `lgksq`) is put in front of every BullMQ key so queue keys never mix with cache keys. `attempts` (default 5) and `backoff_ms` (default 1000, doubling) control retries; failed jobs that run out of attempts are copied to a `.failed` queue. Run Redis with `maxmemory-policy noeviction` |
 | `migration.allow_column_modify` | Default `false`. When `true`, migrations also change the type, nullability or default of columns that already exist; otherwise those differences are only reported |
 | `logger.<name>` | Winston transports keyed by logger name (`default`, `core`, …) |
 

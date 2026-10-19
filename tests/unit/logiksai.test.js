@@ -123,3 +123,13 @@ test("a caller with no guid is refused before anything is sent", async () => {
 	await expect(engine.instance.sendMessage("s", [{ role: "user", content: "hi" }], [], {})).rejects.toThrow(/guid/);
 	expect(calls).toHaveLength(0);
 });
+
+test("a configured guid decides the LogiksAI tenant instead of the caller's", async () => {
+	const calls = fakeServer((req) => req.url.endsWith("/generateToken")
+		? { token: "tok", expiresIn: 300 }
+		: { status: "success", data: { RESPONSE: "ok" } });
+	const [engine] = engineSet({ guid: "LOGIKS-TENANT" });
+	await engine.instance.sendMessage("s", [{ role: "user", content: "hi" }], [], { guid: "app-tenant", userId: "u" });
+	const tokenReq = calls.find(c => c.url.endsWith("/generateToken"));
+	expect(tokenReq.data).toEqual({ guid: "LOGIKS-TENANT", uuid: "u" });
+});

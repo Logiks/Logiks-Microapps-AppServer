@@ -6,6 +6,9 @@ const NatsDriver =
 const RabbitMQDriver =
     require("./drivers/RabbitMQDriver");
 
+const BullMQDriver =
+    require("./drivers/BullMQDriver");
+
 class QueueManager {
 
     constructor(config = {}) {
@@ -37,6 +40,14 @@ class QueueManager {
             case "rabbit":
 
                 return new RabbitMQDriver(
+                    config
+                );
+
+            case "bullmq":
+
+            case "bull":
+
+                return new BullMQDriver(
                     config
                 );
 

@@ -3,6 +3,9 @@
 // POST /ai/tasks: the owning tenant always comes from the caller, never from the request body.
 
 const tasksService = require("../../api/services/ai/tasks.service");
+const { LogiksError } = require("./helpers/fakes");
+
+beforeAll(() => { global.LogiksError = LogiksError; });
 
 describe("tasks service", () => {
 	test("an ownerGuid in the request body is ignored", async () => {
@@ -29,6 +32,17 @@ describe("tasks service", () => {
 		await tasksService.actions.getTask.handler.call({}, ctx);
 		await tasksService.actions.cancelTask.handler.call({}, ctx);
 
-		expect(seen).toEqual(["tenant-a", "tenant-a", "tenant-a"]);
+		//cancel looks the task up first (404 if unknown), then cancels: both under the caller's tenant
+		expect(seen).toEqual(["tenant-a", "tenant-a", "tenant-a", "tenant-a"]);
+	});
+
+	test("an unknown task is a 404, for both lookup and cancel", async () => {
+		const cancelled = [];
+		global.AICORE = { tasks: { get: async () => null, cancel: async (...a) => cancelled.push(a) } };
+		const ctx = { meta: { user: { guid: "tenant-a" } }, params: { taskId: "nope" } };
+
+		await expect(tasksService.actions.getTask.handler.call({}, ctx)).rejects.toMatchObject({ code: 404 });
+		await expect(tasksService.actions.cancelTask.handler.call({}, ctx)).rejects.toMatchObject({ code: 404 });
+		expect(cancelled).toHaveLength(0);
 	});
 });
