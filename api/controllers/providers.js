@@ -1,5 +1,5 @@
 /*
- * Remote Server Management Controller
+ * Providers - Special Service Providers Management Controller
  * This controller is responsible for connecting to remote servers, workers, and agents for various modules and applications. 
  * It provides functionalities to handle server-related operations via various endpoints and services for these remote entities.
  * 

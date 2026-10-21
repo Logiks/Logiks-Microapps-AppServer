@@ -1,0 +1,45 @@
+{
+    "name": "Demo",
+    "version": "1.0",
+    "status": "stable",
+    "type": "modules",
+    "package": "com.smartinfologiks.demo",
+    "description": "Plugin for Demo",
+    "keywords": "logiks,demo",
+    "license": "SILK",
+    "marketid": "com.smartinfologiks.demo",
+    "homepage": "https://example.com/demo",
+    "bugs": "https://support.smartinfologiks.com",
+    "private": true,
+    "dependencies": {
+        "core": "+4.0.0"
+    },
+    "repository": {
+        "url": "https://example.com/demo.git",
+        "type": "git"
+    },
+    "authors": [
+        {
+            "name": "SmartinfoLogiks Team",
+            "email": "admin@smartinfologiks.com",
+            "authorid": "silkadmin"
+        }
+    ],
+    "plugins": ["demo"],
+    "policies": {
+        "demo.allow.access": "true",
+        "demo.tab.access": "false",
+        "demo.create.access": "false",
+        "demo.view.access": "false",
+        "demo.update.access": "false"
+    },
+    "navigation": [
+        {
+            "title": "Demo",
+            "link": "modules/demo",
+            "iconpath": "fa fa-address-book",
+            "tips": "",
+            "to_check": "policy#demo.allow.access"
+        }
+    ]
+}

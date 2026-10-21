@@ -34,9 +34,7 @@ const storage = multer.diskStorage({
 
 	filename(req, file, cb) {
 		const unique = UNIQUEID.generate(10);
-		const ext = path.extname(file.originalname);
-		//cb(null, `${unique}${ext}`);
-        cb(null, `${unique}_${file.originalname}`);
+		cb(null, `${unique}_${sanitizeFileName(file.originalname)}`);
 	}
 });
 
@@ -45,7 +43,10 @@ const uploadHandler = multer({
 	storage,
 	limits: { fileSize: CONFIG.storage.max_size || 100 * 1024 * 1024 }, // 100MB
 	fileFilter(req, file, cb) {
-		cb(null, true); // allow all
+		if(isBlockedExtension(sanitizeFileName(file.originalname))) {
+			return cb(new Error("File type not allowed"));
+		}
+		cb(null, true);
 	}
 });
 
@@ -73,24 +74,32 @@ module.exports = {
         return target;
     },
 
+    sanitizeFileName: sanitizeFileName,
+
+    sanitizePathSegment: sanitizePathSegment,
+
+    isBlockedExtension: isBlockedExtension,
+
     getUploadHandler: function() {
         return uploadHandler;
     },
 
     getDestinyPath: async function(userFolder, relativePathWithFileName, isTemp = false) {
-    	const now = moment().format("Y-M-D HH:mm:ss");
 		const year = moment().format("Y");
 		const month = moment().format("M").padStart(2, "0");
 
-		const safeRelative = relativePathWithFileName.replace(/\.\./g, "");
+		// every segment is sanitized; the last part of the relative path is the file name, so it is dropped
+		const folderParts = String(userFolder || "").split(/[\\/]+/).map(sanitizePathSegment).filter(Boolean);
+		const relativeParts = String(relativePathWithFileName || "").split(/[\\/]+/).slice(0, -1).map(sanitizePathSegment).filter(Boolean);
 
-		const uploadDir = path.join(
-			isTemp?TEMP_UPLOAD_ROOT:BASE_UPLOAD_ROOT,
-			userFolder,
-			year.toString(),
-			month,
-			path.dirname(safeRelative)
-		);
+		if(folderParts.length==0) folderParts.push("default");
+
+		const root = path.resolve(isTemp?TEMP_UPLOAD_ROOT:BASE_UPLOAD_ROOT);
+		const uploadDir = path.resolve(root, ...folderParts, year.toString(), month, ...relativeParts);
+
+		if(uploadDir !== root && !uploadDir.startsWith(root + path.sep)) {
+			throw new Error("Invalid upload folder");
+		}
 
 		await fs.ensureDir(uploadDir);
 
@@ -115,7 +124,7 @@ module.exports = {
 		var result = {};
 
 		if(Array.isArray(fileArray)) {
-			for(var i=0;i<fileArray.length-1;i++) {
+			for(var i=0;i<fileArray.length;i++) {
 				var encryptFile = false;
 				const file = fileArray[i];
 
@@ -136,7 +145,7 @@ module.exports = {
 					"guid": ctx.meta.user.guid,
 					"appid": ctx.meta.appInfo.appid,
 
-					"filename": ctx.params.filename?ctx.params.filename:file.filename,
+					"filename": sanitizeFileName(ctx.params.filename?ctx.params.filename:file.filename),
 					"folder": bucket,
 					"path_uri": fileURI.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, ""),
 					"file_mime": file.mimetype,
@@ -175,7 +184,7 @@ module.exports = {
 					"guid": ctx.meta.user.guid,
 					"appid": ctx.meta.appInfo.appid,
 
-					"filename": file.filename,
+					"filename": sanitizeFileName(file.filename),
 					"folder": bucket,
 					"path_uri": fileURI.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, ""),
 					"file_mime": file.mimetype,
@@ -358,6 +367,59 @@ async function azureobjects_storage(tempFilePath, fileName, bucket) {
 }
 
 
+
+/* ---------------- FILE NAME SANITIZING ---------------- */
+
+const DEFAULT_BLOCKED_EXTENSIONS = [
+	"php", "php3", "php4", "php5", "php7", "phtml", "phar", "asp", "aspx", "jsp", "jspx", "cgi", "pl",
+	"py", "rb", "sh", "bash", "bat", "cmd", "com", "exe", "dll", "msi", "scr", "ps1", "vbs", "jar",
+	"html", "htm", "xhtml"
+];
+
+const WINDOWS_RESERVED = /^(con|prn|aux|nul|com\d|lpt\d)$/i;
+
+function stripAccents(value) {
+	return String(value).normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+}
+
+// One folder name: no separators, no leading/trailing dots, allowlisted characters only. Returns "" if nothing is left.
+function sanitizePathSegment(segment) {
+	return stripAccents(segment ?? "")
+		.replace(/[^a-zA-Z0-9._-]/g, "_")
+		.replace(/_+/g, "_")
+		.replace(/^[._-]+|[._-]+$/g, "")
+		.slice(0, 100);
+}
+
+// Safe file name: basename only, allowlisted characters, dots in the stem removed (blocks shell.php.jpg),
+// stem capped at 100 chars, extension kept and lowercased.
+function sanitizeFileName(filename) {
+	const base = stripAccents(path.win32.basename(path.posix.basename(String(filename ?? ""))));
+
+	const dot = base.lastIndexOf(".");
+	const rawStem = dot > 0 ? base.slice(0, dot) : base;
+	const rawExt = dot > 0 ? base.slice(dot + 1) : "";
+
+	let stem = rawStem
+		.replace(/[^a-zA-Z0-9_-]/g, "_")
+		.replace(/_+/g, "_")
+		.replace(/^[_-]+/, "")
+		.slice(0, 100)
+		.replace(/[_-]+$/, "");
+
+	if(!stem) stem = "unnamed_file";
+	else if(WINDOWS_RESERVED.test(stem)) stem = "_" + stem;
+
+	const ext = rawExt.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toLowerCase();
+
+	return ext ? `${stem}.${ext}` : stem;
+}
+
+function isBlockedExtension(filename) {
+	const blocked = Array.isArray(CONFIG?.storage?.blocked_extensions) ? CONFIG.storage.blocked_extensions : DEFAULT_BLOCKED_EXTENSIONS;
+	const ext = path.extname(String(filename)).slice(1).toLowerCase();
+	return !!ext && blocked.map(e => String(e).toLowerCase()).includes(ext);
+}
 
 async function streamToBuffer(stream) {
     const chunks = [];

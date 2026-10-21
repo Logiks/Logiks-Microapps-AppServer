@@ -100,11 +100,13 @@ module.exports = {
 						
 						if(ctx.params.download && ctx.params.download===true) {
 							ctx.meta.$responseHeaders = {
-								"Content-Disposition": `attachment; filename="${fileName}"`
+								"Content-Disposition": `attachment; filename="${fileName}"`,
+								"X-Content-Type-Options": "nosniff"
 							};
 						} else {
 							ctx.meta.$responseHeaders = {
-								"Content-Disposition": `filename="${fileName}"`
+								"Content-Disposition": `filename="${fileName}"`,
+								"X-Content-Type-Options": "nosniff"
 							};
 						}
 
@@ -124,11 +126,13 @@ module.exports = {
 						
 						if(ctx.params.download && ctx.params.download===true) {
 							ctx.meta.$responseHeaders = {
-								"Content-Disposition": `attachment; filename="${fileName}"`
+								"Content-Disposition": `attachment; filename="${fileName}"`,
+								"X-Content-Type-Options": "nosniff"
 							};
 						} else {
 							ctx.meta.$responseHeaders = {
-								"Content-Disposition": `filename="${fileName}"`
+								"Content-Disposition": `filename="${fileName}"`,
+								"X-Content-Type-Options": "nosniff"
 							};
 						}
 
