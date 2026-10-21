@@ -94,6 +94,62 @@ class DBDriver {
     escape(value) {
         throw new Error("escape() not implemented");
     }
+
+    //---- Document contract (used by api/helpers/_docdb.js, the document side of the drivers) ----
+    //A document-capable driver (any NoSQL engine) returns true from supportsDocuments() and
+    //implements the doc*() methods below. _docdb has already validated and normalised the input
+    //(see api/helpers/db/DocQuery.js for the canonical filter / update / sort / columns forms), so
+    //a driver only translates those into its engine's native calls. Like the SQL methods above,
+    //each returns its result, or { error: { code, sqlMessage } } - it must not throw.
+    //Engines without a feature (eg. aggregation) return { error: { code: "UNSUPPORTED", ... } }.
+    supportsDocuments() {
+        return false;
+    }
+
+    //docs: array of cleaned documents. -> { ids: [String] }
+    async docInsert(collection, docs) {
+        throw new Error("docInsert() not implemented");
+    }
+
+    //opts: { many: bool, upsert: bool }. -> { matched, modified, upsertedId|null }
+    async docUpdate(collection, filter, update, opts) {
+        throw new Error("docUpdate() not implemented");
+    }
+
+    //opts: { columns: [paths]|null, sort: {f:1|-1}|null, skip, limit }. -> { rows }
+    async docFind(collection, filter, opts) {
+        throw new Error("docFind() not implemented");
+    }
+
+    //-> { count }
+    async docCount(collection, filter) {
+        throw new Error("docCount() not implemented");
+    }
+
+    //-> { values }
+    async docDistinct(collection, field, filter) {
+        throw new Error("docDistinct() not implemented");
+    }
+
+    //Engine-native pipeline (array of stages) - only for engines that have one. opts: { allowDiskUse, dateFields }. -> { rows }
+    async docAggregate(collection, pipeline, opts) {
+        throw new Error("docAggregate() not implemented");
+    }
+
+    //Engine-neutral group-by from DocQuery.buildGroupSpec. -> { rows } of flat objects
+    async docGroup(collection, spec) {
+        throw new Error("docGroup() not implemented");
+    }
+
+    //opts: { many: bool }. -> { deleted }
+    async docDelete(collection, filter, opts) {
+        throw new Error("docDelete() not implemented");
+    }
+
+    //keys: {field: 1|-1}. opts: { unique, name, expireAfterSeconds }. -> { name }
+    async docIndex(collection, keys, opts) {
+        throw new Error("docIndex() not implemented");
+    }
 }
 
 // Column names and operators go into SQL text (values are escaped or bound separately), and the keys of a where

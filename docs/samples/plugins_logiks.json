@@ -11,9 +11,6 @@
     "homepage": "https://example.com/demo",
     "bugs": "https://support.smartinfologiks.com",
     "private": true,
-    "dependencies": {
-        "core": "+4.0.0"
-    },
     "repository": {
         "url": "https://example.com/demo.git",
         "type": "git"
@@ -26,20 +23,360 @@
         }
     ],
     "plugins": ["demo"],
-    "policies": {
-        "demo.allow.access": "true",
-        "demo.tab.access": "false",
-        "demo.create.access": "false",
-        "demo.view.access": "false",
-        "demo.update.access": "false"
+
+    "dependencies": {
+        "core": "+4.0.0"
     },
-    "navigation": [
+
+    "tables": {
+        "schema": "dbschema/schema_0000.json",
+        "appdb": ["demo_customers", "demo_tickets"]
+    },
+    "log_tables": {
+        "schema": "dbschema/schema_0000.json",
+        "logdb": ["log_demo_events"]
+    },
+
+    "policies": {
+        "rbac": {
+            "demo.allow.access": "true",
+            "demo.tab.access": "false",
+            "demo.create.access": "false",
+            "demo.view.access": "false",
+            "demo.update.access": "false"
+        },
+        "abac": [
+            {
+                "policystr": "demo.ticket.access",
+                "policygrp": "demo",
+                "module": "demo",
+                "name": "Ticket access control",
+                "category": "tickets",
+                "vers": "1",
+                "rule_combining_algorithm": "deny-overrides",
+                "rule_target": [{ "attr": "resource.type", "op": "==", "value": "ticket" }],
+                "default_target_logic": "AND",
+                "default_effect": "Deny",
+                "rules": [
+                    {
+                        "effect": "Permit",
+                        "title": "Owner can access own ticket",
+                        "description": "A user can always open the tickets they raised.",
+                        "target": [{ "attr": "resource.ownerId", "op": "==", "value": "$subject.id" }],
+                        "target_logic": "AND",
+                        "priority": 1
+                    },
+                    {
+                        "effect": "Permit",
+                        "title": "Same department read access",
+                        "description": "Read access for people in the ticket's department.",
+                        "target": [
+                            { "attr": "action.name", "op": "==", "value": "read" },
+                            { "attr": "subject.department", "op": "==", "value": "$resource.department" }
+                        ],
+                        "target_logic": "AND",
+                        "priority": 2
+                    }
+                ]
+            }
+        ],
+        "assignments": [
+            {
+                "module": "demo",
+                "task_code": "demo.ticket.review",
+                "task_title": "Support Ticket Review",
+                "descs": "Decides who reviews a new support ticket.",
+                "policies": [
+                    {
+                        "name": "High priority tickets",
+                        "logic": "AND",
+                        "conditions": [{ "attr": "priority", "op": "==", "val": "high" }],
+                        "assignee": "role:support_lead",
+                        "priority": 1,
+                        "is_published": "true"
+                    },
+                    {
+                        "name": "Everything else",
+                        "logic": "AND",
+                        "conditions": [{ "attr": "priority", "op": "in", "val": ["low", "normal"] }],
+                        "assignee": "role:support_agent",
+                        "priority": 2,
+                        "is_published": "true"
+                    }
+                ]
+            }
+        ]
+    },
+
+    "automator": [
         {
+            "script": "demo.js",
+            "descs": "Automator script in the AppServer misc/automators folder. Referenced by autojobs with job_type plugin; it is not imported."
+        }
+    ],
+
+    "autojobs": [
+        {
+            "name": "demo_daily_digest",
+            "plugin": "demo",
+            "job_type": "method",
+            "job_script": "demo.test1",
+            "params": { "digest": "daily" },
+            "schedule": "0 8 * * *",
+            "run_only_once": "false",
+            "description": "Calls the demo.test1 service action every day at 08:00."
+        },
+        {
+            "name": "demo_cleanup",
+            "plugin": "demo",
+            "job_type": "plugin",
+            "job_script": "DEMO",
+            "params": {},
+            "schedule": "30 2 * * 0",
+            "run_only_once": "false",
+            "description": "Runs the runJob function of the DEMO automator every Sunday at 02:30."
+        }
+    ],
+
+    "webhooks": [
+        {
+            "name": "Demo Ticket Update",
+            "endpointid": "demo-ticket-update",
+            "method": "POST",
+            "authkey": "${ENV:DEMO_WEBHOOK_KEY}",
+            "module": "demo",
+            "func_name": "DEMO.test2",
+            "validations": {
+                "ticket_id": "required",
+                "status": "required"
+            },
+            "params": {},
+            "ip_whitelist": "",
+            "site": "*",
+            "keep_log": "true"
+        }
+    ],
+
+    "templates": [
+        {
+            "template_code": "demo.ticket.created",
+            "title": "Ticket Created Mail",
+            "engine": "html",
+            "category": "email",
+            "tags": "demo,ticket",
+            "subject": "Ticket #{{DATA.ticket_id}} has been created",
+            "template_content": "<p>Hello {{DATA.name}},</p><p>Your ticket <b>#{{DATA.ticket_id}}</b> has been created.</p>",
+            "template_style": "p { font-family: sans-serif; }",
+            "sql_source": "",
+            "params": {}
+        }
+    ],
+
+    "menu": [
+        {
+            "menuid": "demo",
             "title": "Demo",
+            "category": "modules",
+            "menugroup": "Demo",
             "link": "modules/demo",
             "iconpath": "fa fa-address-book",
             "tips": "",
-            "to_check": "policy#demo.allow.access"
+            "target": "",
+            "device": "*",
+            "module": "demo",
+            "privilege": "*",
+            "onmenu": "true",
+            "to_check": "policy#demo.allow.access",
+            "weight": 10
+        }
+    ],
+    "landing_cards": [
+        {
+            "title": "Demo",
+            "folder": "demo",
+            "link_type": "module",
+            "icon": "fa fa-address-book",
+            "link": "modules/demo",
+            "sort": 10,
+            "privileges": "*"
+        }
+    ],
+
+    "env": [
+        {
+            "module": "demo",
+            "var_title": "API Base URL",
+            "var_code": "DEMO:API_BASE_URL",
+            "var_value": "https://api.example.com",
+            "var_params": {},
+            "var_nature": "backend",
+            "privilege": "admin"
+        }
+    ],
+
+    "settings": {
+        "system": [
+            {
+                "module_name": "demo",
+                "setting_key": "ticket.auto_close_days",
+                "setting_value": "14",
+                "setting_params": {}
+            }
+        ],
+        "lgks": [
+            {
+                "settings_key": "demo.enabled",
+                "settings_value": "true",
+                "category": "demo"
+            }
+        ],
+        "user": [
+            {
+                "module_name": "demo",
+                "setting_key": "list.page_size",
+                "setting_value": "25",
+                "setting_params": {}
+            }
+        ]
+    },
+
+    "vendors": [
+        {
+            "vendor_name": "Demo Mail Gateway",
+            "vendor_code": "demo-mail",
+            "vendor_type": "email",
+            "usage_description": "Sends ticket mails for the demo plugin.",
+            "module": "demo",
+            "func_name": "",
+            "required_params": ["host", "port", "username", "password"],
+            "identity": "demo",
+            "keep_log": "true",
+            "debug": "false"
+        }
+    ],
+
+    "keys": {
+        "kms": [
+            {
+                "key_title": "DEMO SIGNING KEY",
+                "key_module": "demo",
+                "key_id": "demo:signing",
+                "key_algo": "sha256",
+                "remarks": "Value is generated on import, never stored in the manifest."
+            }
+        ],
+        "apikeys": [
+            {
+                "title": "Demo Integration Key",
+                "key_type": "server",
+                "environment": "production",
+                "jwt_token_required": "false",
+                "checksum_check": "false",
+                "ipwhitelists": "",
+                "threshold": 1000,
+                "policystr": "demo.allow.access",
+                "roles": "",
+                "scopes": "demo.read",
+                "remarks": "Key and secret are generated on import."
+            }
+        ]
+    },
+
+    "control_center": [
+        {
+            "module": "demo",
+            "var_title": "NEW TICKET FORM",
+            "var_code": "DEMO:NEW_TICKET_FORM",
+            "var_value": "false",
+            "var_params": {},
+            "var_nature": "frontend"
+        },
+        {
+            "module": "demo",
+            "var_title": "MAX OPEN TICKETS",
+            "var_code": "DEMO:MAX_OPEN_TICKETS",
+            "var_value": "50",
+            "var_params": {},
+            "var_nature": "backend"
+        }
+    ],
+
+    "provider_group": [
+        {
+            "provider_engine": "demo-reporting",
+            "providers": [
+                {
+                    "provider_code": "demo-reporting-primary",
+                    "title": "Demo Reporting Primary",
+                    "category": "reporting",
+                    "server_url": "https://reports-1.example.com",
+                    "authorization": "bearer",
+                    "authorization_key": "${ENV:DEMO_REPORTING_KEY}",
+                    "use_cache": "true",
+                    "debug": "false",
+                    "params": { "weight": 3, "max_concurrent": 10 },
+                    "controls": ["health", "status", "metrics"]
+                },
+                {
+                    "provider_code": "demo-reporting-backup",
+                    "title": "Demo Reporting Backup",
+                    "category": "reporting",
+                    "server_url": "https://reports-2.example.com",
+                    "authorization": "bearer",
+                    "authorization_key": "${ENV:DEMO_REPORTING_KEY}",
+                    "use_cache": "true",
+                    "debug": "false",
+                    "params": { "weight": 1, "max_concurrent": 5 },
+                    "controls": ["health", "status"]
+                }
+            ]
+        }
+    ],
+    "provider_default": "demo-reporting-primary",
+
+    "bpm_rules": [
+        {
+            "rulegroup": "demo",
+            "rulecode": "demo.ticket.escalate",
+            "title": "Escalate stale high priority tickets",
+            "category": "tickets",
+            "module": "demo",
+            "vers": "1",
+            "descs": "Escalates a high priority ticket that has been open for more than 24 hours.",
+            "engine": "json-rules-engine",
+            "fields": ["priority", "open_hours"],
+            "conditions": {
+                "all": [
+                    { "fact": "priority", "operator": "equal", "value": "high" },
+                    { "fact": "open_hours", "operator": "greaterThan", "value": 24 }
+                ]
+            },
+            "event": { "type": "escalate", "params": { "to": "role:support_lead" } },
+            "actions": [{ "type": "notify", "topic": "demo.ticket.escalated" }],
+            "priority": 1,
+            "is_published": "true"
+        }
+    ],
+
+    "workflows": [
+        {
+            "workflow_code": "demo.ticket.approval",
+            "title": "Ticket Approval",
+            "descs": "Approval flow for tickets that need manager sign-off.",
+            "vers": "1",
+            "status": "published",
+            "stages": [
+                { "stage_code": "submitted", "stage_name": "Submitted", "stage_type": "start", "required_approvals": 0, "assigned_to": "", "priority": 1 },
+                { "stage_code": "manager_review", "stage_name": "Manager Review", "stage_type": "approval", "required_approvals": 1, "assigned_to": "role:support_lead", "priority": 2 },
+                { "stage_code": "approved", "stage_name": "Approved", "stage_type": "end", "required_approvals": 0, "assigned_to": "", "priority": 3 },
+                { "stage_code": "rejected", "stage_name": "Rejected", "stage_type": "end", "required_approvals": 0, "assigned_to": "", "priority": 4 }
+            ],
+            "transitions": [
+                { "from_stage": "submitted", "to_stage": "manager_review", "rule_match": "always", "rules": {}, "on_reject": "", "default_resolver": "" },
+                { "from_stage": "manager_review", "to_stage": "approved", "rule_match": "approved", "rules": {}, "on_reject": "", "default_resolver": "" },
+                { "from_stage": "manager_review", "to_stage": "rejected", "rule_match": "rejected", "rules": {}, "on_reject": "rejected", "default_resolver": "" }
+            ],
+            "designer_json": {}
         }
     ]
 }

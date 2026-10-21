@@ -16,10 +16,15 @@
 //    "col = col + N, edited_on = '...', edited_by = '...'" - parsed into
 //    $inc/$set. Anything else in that shape throws a clear error rather than
 //    silently doing nothing.
+//
+//Document API (doc*() methods, used by api/helpers/_docdb.js): native collection
+//operations with Mongo's own `_id` and nested sub documents - no numeric "id"
+//counter. The `_counters` collection is off limits to it.
 
 const { MongoClient } = require("mongodb");
 
 const DBDriver = require("../DBDriver");
+const DQ = require("../DocQuery");
 
 class MongoDBDriver extends DBDriver {
 
@@ -217,11 +222,229 @@ class MongoDBDriver extends DBDriver {
 		}
 	}
 
+	// ---- Document API -----------------------------------------------------------------------
+
+	supportsDocuments() {
+		return true;
+	}
+
+	async _docCol(collection) {
+		if (collection == "_counters") throw new DQ.DocQueryError("INVALID_COLLECTION", `collection "_counters" is reserved`);
+		const db = await this._ready();
+		if (!db) throw new DQ.DocQueryError("DB_NOT_CONNECTED", `MongoDB connection "${this.DBKEY}" is not ready`);
+		return db.collection(collection);
+	}
+
+	async docInsert(collection, docs) {
+		try {
+			const col = await this._docCol(collection);
+			const result = docs.length == 1 ? await col.insertOne(docs[0]) : await col.insertMany(docs);
+			const ids = docs.length == 1 ? [result.insertedId] : Object.values(result.insertedIds);
+			return { ids: ids.map(String) };
+		} catch (err) {
+			return { error: normalizeError(err) };
+		}
+	}
+
+	async docUpdate(collection, filter, update, opts) {
+		try {
+			const col = await this._docCol(collection);
+			const mongoUpdate = toMongoUpdate(update);
+			const result = opts.many === false
+				? await col.updateOne(filter, mongoUpdate, { upsert: !!opts.upsert })
+				: await col.updateMany(filter, mongoUpdate, { upsert: !!opts.upsert });
+			return {
+				matched: result.matchedCount,
+				modified: result.modifiedCount,
+				upsertedId: result.upsertedId ? String(result.upsertedId) : null
+			};
+		} catch (err) {
+			return { error: normalizeError(err) };
+		}
+	}
+
+	async docFind(collection, filter, opts) {
+		try {
+			const col = await this._docCol(collection);
+			let projection;
+			if (opts.columns) {
+				projection = {};
+				opts.columns.forEach((c) => { projection[c] = 1; });
+			}
+
+			let cursor = col.find(filter, { projection, maxTimeMS: DOC_MAX_TIME_MS });
+			if (opts.sort) cursor = cursor.sort(opts.sort);
+			if (opts.skip > 0) cursor = cursor.skip(parseInt(opts.skip));
+			cursor = cursor.limit(opts.limit);
+
+			return { rows: await cursor.toArray() };
+		} catch (err) {
+			return { error: normalizeError(err) };
+		}
+	}
+
+	async docCount(collection, filter) {
+		try {
+			const col = await this._docCol(collection);
+			return { count: await col.countDocuments(filter, { maxTimeMS: DOC_MAX_TIME_MS }) };
+		} catch (err) {
+			return { error: normalizeError(err) };
+		}
+	}
+
+	async docDistinct(collection, field, filter) {
+		try {
+			const col = await this._docCol(collection);
+			return { values: await col.distinct(field, filter, { maxTimeMS: DOC_MAX_TIME_MS }) };
+		} catch (err) {
+			return { error: normalizeError(err) };
+		}
+	}
+
+	//$match stages use the canonical filter syntax; other stages pass through with datetime strings
+	//converted to Date. $out, $merge, $function, $accumulator and $where are rejected.
+	async docAggregate(collection, pipeline, opts) {
+		try {
+			const col = await this._docCol(collection);
+			const stages = buildPipeline(pipeline, DQ.makeCtx(opts));
+			const rows = await col.aggregate(stages, {
+				maxTimeMS: DOC_MAX_TIME_MS,
+				allowDiskUse: !!opts.allowDiskUse
+			}).toArray();
+			return { rows };
+		} catch (err) {
+			return { error: normalizeError(err) };
+		}
+	}
+
+	async docGroup(collection, spec) {
+		try {
+			const col = await this._docCol(collection);
+			const rows = await col.aggregate(groupPipeline(spec), { maxTimeMS: DOC_MAX_TIME_MS }).toArray();
+			return { rows };
+		} catch (err) {
+			return { error: normalizeError(err) };
+		}
+	}
+
+	async docDelete(collection, filter, opts) {
+		try {
+			const col = await this._docCol(collection);
+			const result = opts.many === false ? await col.deleteOne(filter) : await col.deleteMany(filter);
+			return { deleted: result.deletedCount };
+		} catch (err) {
+			return { error: normalizeError(err) };
+		}
+	}
+
+	async docIndex(collection, keys, opts) {
+		try {
+			const col = await this._docCol(collection);
+			const indexOpts = {};
+			if (opts.unique) indexOpts.unique = true;
+			if (opts.name) indexOpts.name = String(opts.name);
+			if (opts.expireAfterSeconds != null) indexOpts.expireAfterSeconds = parseInt(opts.expireAfterSeconds);
+			return { name: await col.createIndex(keys, indexOpts) };
+		} catch (err) {
+			return { error: normalizeError(err) };
+		}
+	}
+
 	//MongoDBDriver never builds SQL text, so there's nothing to literal-escape -
 	//kept only to satisfy the abstract DBDriver contract.
 	escape(value) {
 		return value;
 	}
+}
+
+const DOC_MAX_TIME_MS = 20000;
+
+//never allowed anywhere in a pipeline: server side JS, or writing to another collection
+const FORBIDDEN_STAGE_KEYS = ["$out", "$merge", "$function", "$accumulator", "$where"];
+const DATE_FORMATS = {
+	year: "%Y",
+	month: "%Y-%m",
+	day: "%Y-%m-%d",
+	hour: "%Y-%m-%d %H:00",
+	minute: "%Y-%m-%d %H:%M"
+};
+const METRIC_OPS = { sum: "$sum", avg: "$avg", min: "$min", max: "$max", first: "$first", last: "$last", push: "$push", addToSet: "$addToSet" };
+const UPDATE_OPS = { set: "$set", unset: "$unset", inc: "$inc", push: "$push", addToSet: "$addToSet", pull: "$pull", min: "$min", max: "$max", setOnInsert: "$setOnInsert" };
+
+//canonical update (DocQuery.buildUpdate) -> Mongo update document
+function toMongoUpdate(update) {
+	const out = {};
+	Object.keys(update).forEach((k) => {
+		if (k == "unset") {
+			out.$unset = {};
+			update.unset.forEach((p) => { out.$unset[p] = ""; });
+		} else {
+			out[UPDATE_OPS[k]] = update[k];
+		}
+	});
+	return out;
+}
+
+function buildPipeline(pipeline, ctx) {
+	if (!Array.isArray(pipeline) || pipeline.length <= 0) throw new DQ.DocQueryError("INVALID_PIPELINE", "pipeline must be a non-empty array of stages");
+	if (pipeline.length > 30) throw new DQ.DocQueryError("INVALID_PIPELINE", "pipeline is limited to 30 stages");
+
+	return pipeline.map((stage) => {
+		if (!DQ.isPlain(stage) || Object.keys(stage).length != 1) throw new DQ.DocQueryError("INVALID_PIPELINE", "each stage must be an object with a single $stage key");
+		const name = Object.keys(stage)[0];
+		if (!name.startsWith("$")) throw new DQ.DocQueryError("INVALID_PIPELINE", `invalid stage "${name}"`);
+		if (FORBIDDEN_STAGE_KEYS.indexOf(name) >= 0) throw new DQ.DocQueryError("INVALID_PIPELINE", `${name} is not allowed in a pipeline`);
+
+		if (name == "$match") return { $match: DQ.buildFilter(stage.$match, ctx) };
+		return { [name]: walkStage(stage[name], ctx) };
+	});
+}
+
+//Rejects forbidden operators at any depth and converts datetime strings to Date
+function walkStage(node, ctx) {
+	if (Array.isArray(node)) return node.map((n) => walkStage(n, ctx));
+	if (DQ.isPlain(node)) {
+		const out = {};
+		Object.keys(node).forEach((k) => {
+			if (FORBIDDEN_STAGE_KEYS.indexOf(k) >= 0) throw new DQ.DocQueryError("INVALID_PIPELINE", `${k} is not allowed in a pipeline`);
+			if (k == "__proto__" || k == "constructor" || k == "prototype") throw new DQ.DocQueryError("INVALID_PIPELINE", `invalid key "${k}"`);
+			out[k] = k == "$match" ? DQ.buildFilter(node[k], ctx) : walkStage(node[k], ctx);
+		});
+		return out;
+	}
+	return DQ.toDate(node) || node;
+}
+
+//DocQuery.buildGroupSpec -> $match, $group, $project (flat rows), $sort, $limit
+function groupPipeline(spec) {
+	const stages = [];
+	if (Object.keys(spec.filter).length > 0) stages.push({ $match: spec.filter });
+
+	const groupId = {};
+	const keys = [];
+	spec.groupBy.forEach((g) => { groupId[g.key] = "$" + g.field; keys.push(g.key); });
+
+	if (spec.date) {
+		const expr = { format: DATE_FORMATS[spec.date.unit], date: "$" + spec.date.field };
+		if (spec.date.timezone) expr.timezone = spec.date.timezone;
+		groupId[spec.date.as] = { $dateToString: expr };
+		keys.push(spec.date.as);
+	}
+
+	const group = { _id: keys.length > 0 ? groupId : null };
+	spec.metrics.forEach((m) => {
+		group[m.alias] = m.op == "count" ? { $sum: 1 } : { [METRIC_OPS[m.op]]: "$" + m.field };
+	});
+	stages.push({ $group: group });
+
+	const project = { _id: 0 };
+	keys.forEach((k) => { project[k] = "$_id." + k; });
+	spec.metrics.forEach((m) => { project[m.alias] = 1; });
+	stages.push({ $project: project });
+
+	if (spec.sort) stages.push({ $sort: spec.sort });
+	stages.push({ $limit: spec.limit });
+	return stages;
 }
 
 function buildUri(conf) {
