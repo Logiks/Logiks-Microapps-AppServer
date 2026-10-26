@@ -421,10 +421,6 @@ async function universalFileSave(folder, content, options = {}) {
     // HELPERS
     // ---------------------------------------------------------
 
-    function sanitizeFilename(name) {
-        return name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
-    }
-
     function isValidUrl(string) {
         if(string.length>2048) return false;
         try {

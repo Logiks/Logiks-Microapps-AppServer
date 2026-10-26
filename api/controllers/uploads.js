@@ -394,26 +394,32 @@ function sanitizePathSegment(segment) {
 // Safe file name: basename only, allowlisted characters, dots in the stem removed (blocks shell.php.jpg),
 // stem capped at 100 chars, extension kept and lowercased.
 function sanitizeFileName(filename) {
-	const base = stripAccents(path.win32.basename(path.posix.basename(String(filename ?? ""))));
+	const base = stripAccents(
+		path.win32.basename(path.posix.basename(String(filename ?? "")))
+	);
 
 	const dot = base.lastIndexOf(".");
 	const rawStem = dot > 0 ? base.slice(0, dot) : base;
 	const rawExt = dot > 0 ? base.slice(dot + 1) : "";
 
 	let stem = rawStem
-		.replace(/[^a-zA-Z0-9_-]/g, "_")
-		.replace(/_+/g, "_")
-		.replace(/^[_-]+/, "")
+		.replace(/[^a-zA-Z0-9._-]/g, "_") // Allow letters, numbers, ., _, -
+		.replace(/_+/g, "_")             // Collapse consecutive underscores
+		.replace(/^[_-]+/, "")           // Remove leading underscores and hyphens
 		.slice(0, 100)
-		.replace(/[_-]+$/, "");
+		.replace(/[_-]+$/, "");          // Remove trailing underscores and hyphens
 
-	if(!stem) stem = "unnamed_file";
-	else if(WINDOWS_RESERVED.test(stem)) stem = "_" + stem;
+	if (!stem) stem = "unnamed_file";
+	else if (WINDOWS_RESERVED.test(stem)) stem = "_" + stem;
 
-	const ext = rawExt.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toLowerCase();
+	const ext = rawExt
+		.replace(/[^a-zA-Z0-9]/g, "")
+		.slice(0, 10)
+		.toLowerCase();
 
 	return ext ? `${stem}.${ext}` : stem;
 }
+
 
 function isBlockedExtension(filename) {
 	const blocked = Array.isArray(CONFIG?.storage?.blocked_extensions) ? CONFIG.storage.blocked_extensions : DEFAULT_BLOCKED_EXTENSIONS;
