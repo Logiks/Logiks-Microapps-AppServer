@@ -38,7 +38,7 @@ module.exports = {
         // console.log(">>>>>", workflow);
 
         if(!workflow.rules_json) {
-            workflow.rules_json = await this.compileRule(workflowCode);
+            workflow.rules_json = await this.compileRule(ctx, workflowCode);
         }
 
         const jsonRule = workflow.rules_json;
@@ -203,6 +203,7 @@ module.exports = {
 
     validateTransition: async function(ctx, wflowId, dataRefId, dataPayload) {
         const whereLogic = {
+            guid: ctx?.meta?.user?.guid,
             // id: wflowId,
             data_refid: dataRefId, 
             rejected: "false",
@@ -239,8 +240,9 @@ module.exports = {
         }
     },
 
-    getApprovalHistory: async function(wflowId) {
+    getApprovalHistory: async function(ctx, wflowId) {
         const workflowData = await _DB.db_selectQ("appdb", "sys_workflows_wflows", "*", {
+                    guid: ctx?.meta?.user?.guid,
                     id: wflowId,
                 }, {});
         if(!workflowData || workflowData.results.length<=0) return {status: "error", message: "Workflow Log Not Found (wflows-1)"}
@@ -250,26 +252,118 @@ module.exports = {
         return {status: "success", history: approvalHistory, wflowId}
     },
 
-    compileRule: async function(workflowCode) {
-        const jsonRule = await buildWorkflowDefinition(workflowCode);
+    //Dry-run a workflow against a sample payload. Read-only, nothing is written to the db.
+    //Walks from the start stage, assuming every approval stage gets its full set of approvals,
+    //and returns the path taken, the matched rule at each stage and how the run ended.
+    //opts.rules      > optional compiled rule ({stages}) to test an unsaved draft instead of the db definition
+    //opts.fromStage  > stage to start from (default "start")
+    //opts.maxSteps   > guard against looping workflows (default 50)
+    simulateWorkflow: async function(ctx, workflowCode, dataPayload = {}, opts = {}) {
+        if(!workflowCode && !opts.rules) return {status: "error", message: "workflowCode not defined"};
+
+        let workflowRule = opts.rules;
+        if(!workflowRule) {
+            try {
+                workflowRule = await buildWorkflowDefinition(workflowCode, {guid: ctx?.meta?.user?.guid});
+            } catch(e) {
+                return {status: "error", message: e.message};
+            }
+        }
+
+        const maxSteps = opts.maxSteps || 50;
+        const path = [];
+        let currentStage = opts.fromStage || "start";
+        let result = "ERROR";
+        let message = "";
+
+        for(let i=0; i<maxSteps; i++) {
+            const stage = workflowRule?.stages?.[currentStage];
+            if(!stage) {
+                message = `Stage '${currentStage}' not found`;
+                break;
+            }
+
+            let assignee = stage.assigned_to || "-";
+            if(String(assignee).substr(0,1)=="@") {
+                try {
+                    assignee = await ASSIGNMENT.getAssignment(ctx.meta.user.guid, assignee, dataPayload);
+                } catch(e) {
+                    assignee = "-";
+                }
+            }
+
+            // Stand-in approvers so approval stages count as fully approved
+            const required = Math.max(1, Number(stage.required_approvals || 1));
+            const simUsers = Array.from({length: required}, (_, n) => `sim_user_${n+1}`);
+            const simHistory = {[currentStage]: Object.fromEntries(simUsers.map(u => [u, "simulated"]))};
+
+            let step;
+            try {
+                step = resolveNextStep(workflowRule, currentStage, simUsers.join(","), simHistory, dataPayload);
+            } catch(e) {
+                message = e.message;
+                break;
+            }
+
+            path.push({
+                stage: currentStage,
+                type: stage.type,
+                assigned_to: assignee,
+                required_approvals: stage.required_approvals,
+                status: step.status,
+                matched_rule: step.rule || null,
+                next_stage: step.next_stage
+            });
+
+            if(step.status=="COMPLETED") {
+                result = "COMPLETED";
+                break;
+            }
+            if(step.status!="NEXT" || !step.next_stage) {
+                result = step.status;
+                message = step.message || "";
+                break;
+            }
+            if(path.some(p => p.stage==step.next_stage)) {
+                result = "LOOP";
+                message = `Workflow loops back to stage '${step.next_stage}'`;
+                path.push({stage: step.next_stage, status: "LOOP"});
+                break;
+            }
+            currentStage = step.next_stage;
+        }
+
+        if(result=="ERROR" && !message) message = `Stopped after ${maxSteps} steps`;
+
+        return {status: "success", result, message, steps: path.length, path};
+    },
+
+    compileRule: async function(ctx, workflowCode) {
+        const guid = ctx?.meta?.user?.guid;
+        const jsonRule = await buildWorkflowDefinition(workflowCode, {guid});
         // console.log(">jsonRule", JSON.stringify(jsonRule, null, 2));
-        _DB.db_updateQ("appdb", "sys_workflows", {
+        const response = await _DB.db_updateQ("appdb", "sys_workflows", {
                     "rules_json": jsonRule,
                     "edited_on": moment().format("Y-M-D HH:mm:ss"),
                 }, {
+                    guid: guid,
                     workflow_code: workflowCode
                 });
+        if(response?.status=="error") {
+            throw new Error(`Error saving compiled rule for workflow: ${workflowCode}`);
+        }
         return jsonRule;
     },
 
     publishRule: async function(ctx, workflowCode) {
-        const response = await this.compileRule(workflowCode);
+        const response = await this.compileRule(ctx, workflowCode);
         if(response) {
             return await _DB.db_updateQ("appdb", "sys_workflows", {
                     "status": "published",
                     "edited_on": moment().format("Y-M-D HH:mm:ss"),
                     "edited_by": ctx.meta.user.userId
                 }, {
+                    guid: ctx.meta.user.guid,
                     workflow_code: workflowCode
                 });
         } else {
@@ -377,6 +471,7 @@ async function processNextStep(ctx, workflowData, dataRefId, dataPayload) {
  * @param {object} [opts]
  * @param {string} [opts.dbName='appdb']
  * @param {boolean} [opts.includeBlocked=false] include blocked stages/transitions
+ * @param {string} [opts.guid] tenant guid; restricts all lookups to that tenant
  * @returns {Promise<{stages: object}>}
  */
 async function buildWorkflowDefinition(workflowCode, opts = {}, dbName = 'appdb') {
@@ -389,7 +484,9 @@ async function buildWorkflowDefinition(workflowCode, opts = {}, dbName = 'appdb'
     // 1. Confirm the workflow exists (and isn't blocked) before doing any
     //    further work — fail fast with a clear error rather than quietly
     //    returning an empty { stages: {} }.
+    const guidFilter = opts.guid ? { guid: opts.guid } : {};
     const wfRes = await _DB.db_selectQ(dbName, 'sys_workflows', '*', {
+        ...guidFilter,
         workflow_code: workflowCode,
     }, {});
     const workflow = wfRes && wfRes.results && wfRes.results[0];
@@ -401,14 +498,14 @@ async function buildWorkflowDefinition(workflowCode, opts = {}, dbName = 'appdb'
     }
 
     // 2. Stages
-    const stageFilter = { workflow_code: workflowCode };
+    const stageFilter = { ...guidFilter, workflow_code: workflowCode };
     if (!includeBlocked) stageFilter.blocked = 'false';
     const stagesRes = await _DB.db_selectQ(dbName, 'sys_workflows_stages', '*', stageFilter, {}, 'ORDER BY priority ASC, id ASC');
     const stageRows = ((stagesRes && stagesRes.results) || []).slice()
         .sort((a, b) => (a.priority - b.priority) || (a.id - b.id));
 
     // 3. Transitions
-    const transitionFilter = { workflow_code: workflowCode };
+    const transitionFilter = { ...guidFilter, workflow_code: workflowCode };
     if (!includeBlocked) transitionFilter.blocked = 'false';
     const transitionsRes = await _DB.db_selectQ(dbName, 'sys_workflows_transitions', '*', transitionFilter, {}, 'ORDER BY id ASC');
     // Don't trust the DB layer's ORDER BY to actually be honored —
@@ -455,29 +552,37 @@ async function buildWorkflowDefinition(workflowCode, opts = {}, dbName = 'appdb'
                 if (typeof parsed === 'string') {
                     try { parsed = JSON.parse(parsed); } catch (e) { parsed = null; }
                 }
-                // rules is an array of one or more complete rule objects;
-                // tolerate a bare object too, for rows saved before this
-                // convention or written by hand.
-                var items = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+                // rules is an array of one or more items; tolerate a bare
+                // object too, for rows saved before this convention or
+                // written by hand. An item is either a full rule
+                // ({ when, next?, rejected?, match? }) or a bare condition
+                // ({ attr, op, value }); the two are told apart by shape.
+                const items = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+                const isFullRule = (it) => it && typeof it === 'object' && !('attr' in it) && ('when' in it || 'next' in it);
 
-                if (items.length === 0) {
-                    // No JSON payload on this row — fall back to building
-                    // a rule purely from the flat columns.
-                    //items.push();
-                    items = "*";
+                const built = [];
+                if (items.length === 0 || (items.length === 1 && Object.keys(items[0] || {}).length === 0)) {
+                    // No JSON payload on this row — match unconditionally and
+                    // take the target from the flat columns.
+                    built.push({ when: "*", match: t.rule_match });
+                } else if (items.every(isFullRule)) {
+                    // Full rules: used as-is, flat columns only fill gaps.
+                    items.forEach((it) => built.push({ ...it }));
+                } else {
+                    // Bare conditions: all belong to one rule for this row.
+                    built.push({ when: items, match: t.rule_match });
                 }
 
-                const rule = {};
-                rule.when = items;
-                rule.match = t.rule_match;
+                built.forEach((rule) => {
+                    if (rule.match === undefined && t.rule_match) rule.match = t.rule_match;
+                    if (rule.next === undefined && t.to_stage) rule.next = t.to_stage;
+                    if (rule.rejected === undefined && isSet(t.on_reject)) rule.rejected = t.on_reject;
 
-                if (rule.next === undefined && t.to_stage) rule.next = t.to_stage;
-                if (rule.rejected === undefined && isSet(t.on_reject)) rule.rejected = t.on_reject;
-
-                rules.push(rule);
-                if (rule.next && !childNodes.includes(rule.next)) {
-                    childNodes.push(rule.next);
-                }
+                    rules.push(rule);
+                    if (rule.next && !childNodes.includes(rule.next)) {
+                        childNodes.push(rule.next);
+                    }
+                });
             });
 
             node.rules = rules;
