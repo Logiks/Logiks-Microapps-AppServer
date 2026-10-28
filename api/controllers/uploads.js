@@ -211,6 +211,55 @@ module.exports = {
 
 	resolveFileObj: async function(fileObj, responseType = "stream", isEncrypted = false) {
 		return get_from_store(fileObj, responseType, isEncrypted);
+	},
+
+	fileExists: async function(filePath, isEncrypted = false) {
+		const fileObj = {
+			path_uri: filePath,
+			driver: CONFIG.storage.driver
+		};
+		return await check_in_store(fileObj, isEncrypted);
+	}
+}
+
+async function check_in_store(fileObj, isEncrypted = false) {
+	if(!fileObj.driver) fileObj.driver = CONFIG.storage.driver;
+
+	//CONFIG.storage.encrypt
+	
+	switch (fileObj.driver) {
+		case "local":
+			const filePath = path.join(UPLOADS.baseUploadFolder(), fileObj.path_uri);
+			
+			if(!filePath || !fs.existsSync(filePath)) {
+				return false;
+			}
+			if(fileObj.encrypted===true || fileObj.encrypted==="true") {
+				isEncrypted = true;
+			}
+			return fs.existsSync(filePath);
+			break;
+	
+		case "miniio":
+			return null;
+			break;
+
+		case "docqdrive":
+			return null;
+			break;
+		
+		case "s3":
+			return null;
+			break;
+		
+		case "azureobjects":
+			return null;
+			break;
+
+		default:
+			console.log("File Storage Driver Not Supported", CONFIG.storage.driver);
+			return false;
+			break;
 	}
 }
 

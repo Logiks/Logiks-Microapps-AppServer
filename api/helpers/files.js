@@ -74,6 +74,13 @@ module.exports = {
         return sqlResult;
     },
 
+    isExists: async function(guid, fileId) {
+        const fileInfo = await this.getFileInfo(guid, fileId);
+        if(!fileInfo) return false;
+
+        return await UPLOADS.fileExists(fileInfo.path_uri, fileInfo.encrypted=="true"? true: false);
+    },
+
     getFileInfo: async function(guid, fileId) {
         const sqlResult = await _DB.db_selectQ("appdb", "files_tbl", "*", {
             "guid": guid,
