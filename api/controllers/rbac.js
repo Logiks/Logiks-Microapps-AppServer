@@ -141,7 +141,7 @@ module.exports = {
         return defaultValue;
     },
 
-    registerPolicies: async function(appid, guid, policyObj, ctx) {
+    registerPolicies: async function(appid, guid, policyObj, ctx, reloadPolicy = false) {
         const policyItems = Object.keys(policyObj);
 
         //batch insert into lgks_rolemodel
@@ -187,7 +187,9 @@ module.exports = {
         const dbResponse = await _DB.db_insert_batchQ("appdb", "lgks_rolemodel", bulkInsert);
         // console.log("newPolicies", newPolicies, bulkInsert, dbResponse);
 
-        await RBAC.reloadPolicies(ctx);
+        if(reloadPolicy && ctx && ctx.meta.user && ctx.meta.appInfo && ctx.meta.appInfo.appid) {
+            await RBAC.reloadPolicies(ctx);
+        }
 
         return {
             status: "success",
