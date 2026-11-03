@@ -301,7 +301,16 @@ module.exports = {
 							whitelist: [
 								"auth.*"
 							],
-							bodyParsers: false,
+							bodyParsers: {
+								json: {
+									strict: false,
+									limit: "1MB"
+								},
+								urlencoded: {
+									extended: true,
+									limit: "1MB"
+								}
+							},
 							rateLimit: {
 								window: 60 * 1000,
 								limit: 10

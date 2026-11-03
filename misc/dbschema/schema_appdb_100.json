@@ -6199,6 +6199,13 @@
         "primary": false,
         "extra": ""
       },
+      "module": {
+        "type": "varchar(155)",
+        "nullable": true,
+        "default": "-",
+        "primary": false,
+        "extra": ""
+      },
       "workflow_code": {
         "type": "varchar(55)",
         "nullable": false,
