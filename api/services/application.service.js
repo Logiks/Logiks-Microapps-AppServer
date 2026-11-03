@@ -422,6 +422,37 @@ module.exports = {
 					"env": appInfo.env
 				}
 			}
+		},
+
+		ling: {
+			rest: {
+				method: "POST",
+				fullPath: "/api/ling"
+			},
+			params: {
+				lang: "string",//en-gb
+				fetch: "boolean"//false
+			},
+			async handler(ctx) {
+				const langDataHash = await LINGUALIZER.fetchLanguageHash(ctx.meta.appInfo.appid, ctx.params.lang || CONFIG.default_lang);
+
+				if(ctx.params.fetch) {
+					const langData = await LINGUALIZER.fetchLanguageData(ctx.meta.appInfo.appid, ctx.params.lang || CONFIG.default_lang);
+
+					return {
+						"appid": ctx.meta.appInfo.appid,
+						"lang": ctx.params.lang,
+						"data": langData,
+						"hash": langDataHash
+					};
+				} else {
+					return {
+						"appid": ctx.meta.appInfo.appid,
+						"lang": ctx.params.lang,
+						"hash": langDataHash
+					};
+				}
+			}
 		}
     },
     methods: {

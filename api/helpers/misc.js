@@ -219,6 +219,12 @@ module.exports = {
   }
 }
 
+
+global._ling = async function(text, appId, toLang = false) {
+  if(!toLang) toLang = CONFIG.default_lang;
+  return LINGUALIZER.translate(text, appId, toLang);
+}
+
 global._replaceCtx = async function(text, ctx, strict = true) {
   if (text === null || text === undefined) return text;
   if (typeof text !== "string") return text;
