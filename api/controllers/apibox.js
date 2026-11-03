@@ -152,12 +152,12 @@ async function sendRequest(providerCode, apiInfo, dataParams, ctx) {
         url: finalURL,
         method: method,
         headers: {
-            ...MISC._replaceObj(callerHeaders),
-            ...MISC._replaceObj(headers),
+            ...await MISC._replaceObj(callerHeaders),
+            ...await MISC._replaceObj(headers),
             ...(serverInfo.authorization === 'apikey' && serverInfo.authorization_key ? {'Authorization': `Bearer ${serverInfo.authorization_key}`} : {}),
             ...(authorization === 'token' && authorization_token ? {'Authorization': `Bearer ${authorization_token}`} : {}),
         },
-        data: MISC._replaceObj(_.extend({}, body, dataParams.body || {})),
+        data: await MISC._replaceObj(_.extend({}, body, dataParams.body || {})),
         timeout: params.timeout_ms || providerParams.timeout_ms || 30000
     };
     if(format !== 'json') options.responseType = 'text';

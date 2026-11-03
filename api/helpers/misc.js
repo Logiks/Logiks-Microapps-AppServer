@@ -197,11 +197,11 @@ module.exports = {
     return R * c;
   },
 
-  _replaceObj: function(jsonObj, ctx, strict = false) {
+  _replaceObj: async function(jsonObj, ctx, strict = false) {
     if(!jsonObj) return {};
     try {
         var tempJSON = JSON.stringify(jsonObj);
-        tempJSON = _replaceCtx(tempJSON, ctx, strict)
+        tempJSON = await _replaceCtx(tempJSON, ctx, strict)
         tempJSON = JSON.parse(tempJSON);
 
         return tempJSON;
@@ -214,7 +214,7 @@ module.exports = {
     return _replace(text, data, strict);
   },
 
-  _replaceCtx: function(text, ctx, strict = true) {
+  _replaceCtx: async function(text, ctx, strict = true) {
     return _replaceCtx(text, ctx, strict);
   }
 }

@@ -97,7 +97,7 @@ module.exports = {
             url: finalURL,
             method: method,
             headers: {
-                ...MISC._replaceObj(callerHeaders),
+                ...await MISC._replaceObj(callerHeaders),
                 ...(serverInfo.authorization === 'apikey' && serverInfo.authorization_key ? {'Authorization': `Bearer ${serverInfo.authorization_key}`} : {}),
             },
             data: {},
@@ -106,9 +106,9 @@ module.exports = {
 
         if(payload) {
             if (method === 'GET') {
-                options.url += `${options.url.includes('?') ? '&' : '?'}${qs.stringify(MISC._replaceObj(payload))}`;
+                options.url += `${options.url.includes('?') ? '&' : '?'}${qs.stringify(await MISC._replaceObj(payload))}`;
             } else {
-                options.data = MISC._replaceObj(payload);
+                options.data = await MISC._replaceObj(payload);
             }
         }
 

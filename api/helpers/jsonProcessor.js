@@ -607,7 +607,7 @@ module.exports = {
                         v.where = v.where || {};
                         var newWhere = {};
                         for (const [key, value] of Object.entries(v.where)) {
-                            newWhere[_replaceCtx(key, ctx)] = _replaceCtx(value, ctx);
+                            newWhere[await _replaceCtx(key, ctx)] = await _replaceCtx(value, ctx);
                         }
                         v.where = newWhere;
 
@@ -674,7 +674,7 @@ module.exports = {
                     }
                 }
                 if(v.default && v.default.length>0) {
-                    v.default = _replaceCtx(v.default, ctx);
+                    v.default = await _replaceCtx(v.default, ctx);
                 }
             } catch(errorField) {
                 console.log("FORM FIELD ERROR", errorField, objId, moduleId);
