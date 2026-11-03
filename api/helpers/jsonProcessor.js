@@ -703,13 +703,15 @@ module.exports = {
                 break;
             case 'dataSelectorFromUniques': 
                 // fieldObj.where['guid'] = ctx.meta.user.guid;
-                const sqlData2 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || 'id'} ORDER BY ${fieldObj.orderby || 'id'}`);
+                const defaultKey = /\bas\s+`?value`?\s*(,|$)/i.test(String(fieldObj.cols || fieldObj.columns || fieldObj.column || '')) ? 'value' : 'id';
+                const sqlData2 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || defaultKey} ORDER BY ${fieldObj.orderby || defaultKey}`);
                 if(!sqlData2.results) sqlData2.results = [];
                 return sqlData2.results;
                 break;
             case 'dataSelectorFromTable':
             case 'autosuggest':
-                const sqlData3 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || 'id'} ORDER BY ${fieldObj.orderby || 'id'}`);
+                const defaultKey3 = /\bas\s+`?value`?\s*(,|$)/i.test(String(fieldObj.cols || fieldObj.columns || fieldObj.column || '')) ? 'value' : 'id';
+                const sqlData3 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || defaultKey3} ORDER BY ${fieldObj.orderby || defaultKey3}`);
                 if(!sqlData3.results) sqlData3.results = [];
                 return sqlData3.results;
                 break;
