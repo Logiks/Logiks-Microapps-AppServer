@@ -3,13 +3,17 @@
  * 
  * */
 
+var tenantMap = {};
+
 module.exports = {
 
     initialize: function() {
-
+        console.log("\x1b[36m%s\x1b[0m","Tenant System Initialized");
     },
 
     getTenantInfo : async function(guid) {
+        if(tenantMap[guid]) return tenantMap[guid];
+
         var whereCond = {
             "blocked": "false",
             "guid": guid
@@ -28,7 +32,9 @@ module.exports = {
             tenantInfo.applicationOverrides = {};
         }
 
-        return tenantInfo;
+        tenantMap[guid] = tenantInfo;
+
+        return tenantMap[guid];
     },
 
     //Old Code will be removerd in future

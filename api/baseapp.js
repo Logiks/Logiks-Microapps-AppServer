@@ -1,6 +1,7 @@
 //For Bootstraping the application
 
 var applicationData = {};
+var domainMap = {};
 
 module.exports = {
 
@@ -96,12 +97,16 @@ module.exports = {
     },
 
     getAppForDomain: async function(serverHost) {
+        if(domainMap[serverHost]) return domainMap[serverHost];
+
         var domainInfo = await _DB.db_selectQ("appdb", "lgks_domains", "*", {
                 domain_host: serverHost,
                 blocked: "false"
             },{});
         if(!domainInfo || !domainInfo.results || domainInfo.results.length<=0) return false;
         
-        return domainInfo.results[0];
+        domainMap[serverHost] = domainInfo.results[0];
+
+        return domainMap[serverHost];
     }
 }
