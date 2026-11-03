@@ -684,6 +684,9 @@ module.exports = {
         return formFields;
     },
     generateSelector: async function(fieldObj, fieldKey, ctx) {
+        var envData = await ENV.fetchEnvInfo(ctx.meta);
+        envData = _.extend(envData, ctx.params);
+
         switch(fieldObj.type) {
             case 'dataMethod': 
                 if(fieldObj.src) return await _call(fieldObj.src, fieldObj);
@@ -692,26 +695,32 @@ module.exports = {
                 break;
             case 'dataSelector': 
                 if(!fieldObj.groupid) return [];
-                const sqlData1 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", "do_lists", "title, value, class, privilege", {
+                var whereObj = {
                         "blocked": false,
                         "guid": ctx.meta.user.guid,
                         "groupid": fieldObj.groupid,
                         "privilege": [["*", ctx.meta.user.privilege], "IN"]
-                    }, {}, " ORDER BY sortorder ASC");
+                    };
+                
+                const sqlData1 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", "do_lists", "title, value, class, privilege", whereObj, {}, " ORDER BY sortorder ASC");
                 if(!sqlData1.results) sqlData1.results = [];
                 return sqlData1.results;
                 break;
             case 'dataSelectorFromUniques': 
                 // fieldObj.where['guid'] = ctx.meta.user.guid;
                 const defaultKey = /\bas\s+`?value`?\s*(,|$)/i.test(String(fieldObj.cols || fieldObj.columns || fieldObj.column || '')) ? 'value' : 'id';
-                const sqlData2 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || defaultKey} ORDER BY ${fieldObj.orderby || defaultKey}`);
+                var whereObj2 = fieldObj.where || {};
+                whereObj2 = QUERY.updateWhereFromEnv(whereObj2, envData);
+                const sqlData2 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, whereObj2, {}, ` GROUP BY ${fieldObj.groupby || defaultKey} ORDER BY ${fieldObj.orderby || defaultKey}`);
                 if(!sqlData2.results) sqlData2.results = [];
                 return sqlData2.results;
                 break;
             case 'dataSelectorFromTable':
             case 'autosuggest':
                 const defaultKey3 = /\bas\s+`?value`?\s*(,|$)/i.test(String(fieldObj.cols || fieldObj.columns || fieldObj.column || '')) ? 'value' : 'id';
-                const sqlData3 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, fieldObj.where, {}, ` GROUP BY ${fieldObj.groupby || defaultKey3} ORDER BY ${fieldObj.orderby || defaultKey3}`);
+                var whereObj3 = fieldObj.where || {};
+                whereObj3 = QUERY.updateWhereFromEnv(whereObj3, envData);
+                const sqlData3 = await _DB.db_selectQ(fieldObj.dbkey || "appdb", fieldObj.table, fieldObj.cols || fieldObj.columns || fieldObj.column, whereObj3, {}, ` GROUP BY ${fieldObj.groupby || defaultKey3} ORDER BY ${fieldObj.orderby || defaultKey3}`);
                 if(!sqlData3.results) sqlData3.results = [];
                 return sqlData3.results;
                 break;
