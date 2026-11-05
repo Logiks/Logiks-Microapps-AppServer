@@ -2191,6 +2191,13 @@
         "primary": true,
         "extra": "auto_increment"
       },
+      "guid": {
+        "type": "varchar(55)",
+        "nullable": false,
+        "default": null,
+        "primary": false,
+        "extra": ""
+      },
       "domain_host": {
         "type": "varchar(255)",
         "nullable": false,
