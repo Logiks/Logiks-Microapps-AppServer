@@ -5214,6 +5214,13 @@
         "primary": false,
         "extra": ""
       },
+      "controls": {
+        "type": "text",
+        "nullable": true,
+        "default": "_utf8mb4\\'health\\'",
+        "primary": false,
+        "extra": ""
+      },
       "remarks": {
         "type": "varchar(250)",
         "nullable": false,
