@@ -1,0 +1,369 @@
+# Logiks Microapps: AppServer and Node.js Worker
+
+> Logiks is a Node.js framework for running many small business applications ("microapps") on one clustered runtime. It has two code bases that work as a pair. The AppServer (repo `Microapps-AppServer`) is the gateway and platform. The Worker (repo `Microapps-Worker-NodeJS`) hosts microapps as plugins. Both are built on Moleculer (service broker, transporter, service discovery). This file is for LLMs and coding agents working in either repo. It is kept in the AppServer repo (`public/llm.txt`) so every Worker and its IDE can read the copy that matches the AppServer they connect to. Paths below that start with `Microapps-AppServer/` are relative to the `Code/` folder that holds both repos.
+
+Last checked against the source: 2026-11-14. Where the older prose docs in `Microapps-AppServer/docs/` disagree with the code, this file follows the code.
+
+## 1. Mental model
+
+- A **microapp** (same thing as a **plugin**) is a folder with a `logiks.json` manifest. It lives in a Worker's `plugins/` directory. The folder name is its ID. There is no central registry and no build step.
+- A **Worker** is a Node.js process with a Moleculer broker and no HTTP port. It loads every plugin and turns each one into a broker service.
+- The **AppServer** is the gateway. It terminates HTTP, resolves the tenant/app from the domain, authenticates, authorizes (RBAC), rate-limits, and calls the right action. The action may run on the AppServer itself or on any Worker across the transporter.
+- Nodes find each other over a shared transporter (Redis by default; NATS, MQTT, TCP also possible). A request lands on the gateway and reaches the Worker without the caller knowing where the code runs.
+- Shared state: Redis (cache, sessions, rate-limit counters, leader locks), MySQL (`appdb` for operational data, `logdb` for audit/security/activity logs), and a file store.
+- Logiks describes itself as a 4-tier system: UI, business logic, data/storage, and AI. The AI tier is `AICORE` in the AppServer.
+
+```
+Browser / API client
+        |  HTTP
+        v
+AppServer (gateway)  -- auth, tenant, RBAC, rate limit, platform services, AICORE
+        |  transporter (Redis / NATS / MQTT / TCP)
+        v
+Worker 1 .. Worker N  -- plugins/<id>/ -> broker services
+        |
+        v
+Redis + MySQL (appdb, logdb)
+```
+
+## 2. Repositories and entry points
+
+| | AppServer | Worker |
+|---|---|---|
+| Path | `Code/Microapps-AppServer` | `Code/Microapps-Worker-NodeJS` |
+| package name | `logiks-microapp-appserver` | `logiks-microapp-gateway` (name is a leftover; it is the worker) |
+| Entry | `index.js` -> `api/server.js` | `index.js` |
+| Node ID | `gateway-<SERVER_ID>-<host>-<pid>` | `worker-<NODE_ID>-<host>-<pid>` |
+| HTTP | Yes, `PORT` (9999 in env_sample) | No |
+| Start | `npm start` (runs `clear; node index.js`) | `npm start` |
+| Deploy | `npm run deploy` (npm install + `pm2 reload ecosystem.config.js`), `deploy_production` adds `--env production` | same two scripts |
+| Tests | `npm test` (jest: `unit` and `http` projects) | none |
+| Node version | 18+ (Docker image uses node:20-alpine) | 18+ |
+
+Other AppServer pieces: `Dockerfile`, `docker-compose.yml` (MySQL 8, Redis 7, AppServer; Qdrant under the `ai` profile), `docs/` (12 chapters plus training), `docs/build-docs.mjs` (`npm run docgen`), `misc/` (application configs, dbschema, themes, examples), `public/` (static, OpenAPI), `tests/`.
+
+A third repo, `Microapps-Worker-Python`, sits beside these. This file does not cover it.
+
+## 3. AppServer
+
+### 3.1 Layout
+
+```
+api/
+  server.js          Moleculer broker + moleculer-web gateway, auth, authorize, rate limit, uploads
+  baseapp.js         autoloads helpers and controllers as globals
+  cache.js logger.js commons.js startupChecks.js
+  helpers/           utilities, autoloaded as UPPER_NAME globals
+  controllers/       capabilities, autoloaded as UPPER_NAME globals (incl. aicore/, mcp/)
+  services/          Moleculer services: auth, pages, webhooks, system, tenant, files, ... plus admin/, ai/, developers/
+  workers/           aiagent.worker.js
+config.json          runtime config (copy from config_sample.json); CONFIG global
+system.json          CORE_MODULES / JSON_MODULES lists
+.env                 process env (copy from env_sample)
+misc/applications.json, misc/dbschema/, misc/themes/, misc/apps/
+```
+
+### 3.2 Boot
+
+`index.js` requires env `SERVER_ID`, `TRANSPORTER`, `NODE_ENV` (exits if missing), sets globals (`_` lodash, `fs`, `path`, `axios`, `moment`, `crypto`, `ROOT_PATH`, `isProd`, `isStaging`, `isDevelopment`), then loads config from `CONFIG_FILE` (`CONFIG_TYPE=LOCAL`) or over HTTP (`REMOTE`). Outside `NODE_ENV=development` the server refuses to start if secrets (`ENC_SALT`, `CLUSTER_TOKEN`, `SESSION_SECRET`) are missing, short, or still `REPLACE_ME`. `MIGRATION_MODE=IMPORT` applies schema; `EXPORT` writes live schema back to files.
+
+### 3.3 Globals are the public API
+
+Every file in `api/helpers/` and `api/controllers/` becomes `global.<FILENAME_UPPERCASED>` (`messaging.js` -> `MESSAGING`, `_db.js` -> `_DB`, `aicore.js` -> `AICORE`). Each module's `initialize()` runs once at boot. A **controller** that returns `true` from `initialize()` is "cluster-public" and reachable from other nodes through `system.controllers`. Helpers are reachable through `system.helpers`.
+
+Helpers: `_DB` (query builders: `db_selectQ`, `db_insertQ1`, `db_updateQ`, `db_query`), `_DBLOGGER`, `_DOCDB`, `_HOOKS`, `_PLUGINS`, `CACHEMAP`, `DATAMODELS`, `DBHELPERS`, `DBMIGRATOR`, `DBOPS`, `ENCRYPTER`, `FILES`, `JSONPROCESSOR`, `LINGUALIZER`, `LOGIKSRULES` (json-rules-engine), `MESSAGING`, `MISC`, `QUERY`, `QUEUE` (BullMQ / NATS / RabbitMQ drivers), `TEMPLATES` (EJS), `UNIQUEID`, `URLSHORTNER`, `VALIDATIONS`, `WORKERS`, `CTRLCENTER`, `ENV`, `DEBUGGER`. DB drivers present: MySQL, PostgreSQL, MSSQL, MongoDB, DynamoDB, DuckDB.
+
+Cluster-public controllers (return `true` from `initialize`): `ABAC`, `AICORE`, `APIBOX`, `AUTHFEDERATED`, `GEOFENCES`, `NAVIGATOR`, `PROVIDERS`, `RBAC`, `SETTINGS`, `SINGLETONMANAGER`, `USERS`. Not cluster-public: `APPLICATION`, `AUTHKEY`, `AUTHLOGIN`, `AUTOJOBS`, `KEYMANAGER`, `TENANT`, `UPLOADS`, `VENDORS`, `WEBHOOKS`. The authoritative list is `_ENV.HELPERS` / `_ENV.CONTROLLERS_PUBLIC` at runtime; confirm there before relying on this table.
+
+To add a global: drop a `.js` exporting an object into the right folder and restart.
+
+### 3.4 Gateway, auth, authorization
+
+HTTP route groups in `api/server.js`: `/` (auth, login), `/api/events`, `/fabric`, `/mcp`, `/webhooks`, `/pages`, `/api/public`, and `/api` (the private, authenticated surface). Each has an `onBeforeCall` hook that resolves the domain to an app, applies IP whitelists and security headers.
+
+Credentials accepted (can be combined; later ones overlay earlier ones on `ctx.meta.user`):
+1. Time-limited token, `?tkn=` (IP-pinned, scope-limited)
+2. Server-to-server token, `?s2stkn=` (IP-pinned)
+3. API key, `X-API-Key` header or `?api_key=` (table `lgks_apikeys`)
+4. JWT bearer, `Authorization: Bearer ...` (verified by `auth.verifyAccessToken`, with a logout blacklist)
+5. None, only on routes/actions listed in `CONFIG.noauth` (e.g. `public.*`)
+
+`authorize` rules: actions named `admin.*` need role `admin` or privilege `root`/`devroot`/`admin`. An action's `meta.scopes` must match the user's scopes with tenant expansion: `billing:read` is satisfied by `<tenantId>:billing:read`, `*:billing:read`, `<tenantId>:billing:read:*`, `*:billing:read:*`, or bare `billing:read`.
+
+Rate limiting: a Redis counter per user/API key/IP on `/api`, window `RATE_LIMIT_WINDOW_MS` (60000), cap `RATE_LIMIT_MAX` (300), `Retry-After` on 429. Public and login routes use a per-node static limiter.
+
+`ctx.meta` carries `user` (`id, userId, sessionId, username, privilege, tenantId, roles, scopes`), `appInfo`, `tenantInfo`, `remoteIP`, and upload results (`file`, `files`, or the field name).
+
+Errors: `throw new LogiksError(message, httpCode, "TYPE_CODE", data)`. Clients should switch on the stable `type`.
+
+Uploads: `POST /api/files/upload` (field `file`), `POST /api/files/uploadbulk` (field `files`, max 50), other `POST /api/*` accept any files. Credentials are checked before the body is written to disk.
+
+### 3.5 Broker settings (from `api/server.js`)
+
+Registry strategy `CpuUsage` (env `LB_STRATEGY`), `preferLocal: true`. Request timeout `REQUEST_TIMEOUT_MS` (15 s). Retry only errors that are `retryable` and never timeouts (`RETRY_COUNT`, default 2). Circuit breaker: threshold 0.5, min 20 requests, 30 s window, 5 s half-open. Bulkhead per action per process: concurrency `BULKHEAD_CONCURRENCY` (50), queue `BULKHEAD_MAX_QUEUE` (500). Heartbeat 5 s, timeout 15 s. `maxCallLevel` 20. In-flight call tracking with a 10 s shutdown wait. Metrics only when `METRICS_ENABLED=true`. Optional Redis cacher when `CLUSTER_CACHE=true`.
+
+### 3.6 Platform services (`api/services/`)
+
+`auth` (`login`, `logout`, `refresh`, `tltoken`, `s2stoken`, `verify*`), `system` (cluster registry, see 5.2), `tenant`, `application`, `me`, `modules`, `pages` (EJS/HTML pages with per-app themes), `webhooks`, `files`, `data`, `dbops`, `query`, `logs`, `public`, `userstates`, `utils`, `sse`, `test`; `admin.*` (`apps`, `controls`, `files`, `media`, `nodes`, `plugins`), `developers` and `developers.swagger` (OpenAPI generated from the broker action catalog), and AI services `agents`, `tasks`, `knowledge`.
+
+### 3.7 Events
+
+The broker is the event bus. Emit with `ctx.emit("topic", payload)`, subscribe with `events: { "topic"(ctx) {} }` in a service, or in a plugin's `routes.json` `events` block. Platform topics: `system.request_completed`, and the caller-driven `logs.audit`, `logs.activity`, `logs.security` (consumed by `logs.service.js`, written to `logdb`). There is no dead-letter queue; a handler that throws logs and the event is lost. For durability use a durable transporter or the `QUEUE` helper.
+
+### 3.8 Background work and coordination
+
+`SINGLETONMANAGER` does Redis-lock leader election so cluster-wide work runs once. The leader runs `AUTOJOBS` (node-cron jobs from `lgks_autojobs`) and migrations. Any node can win.
+
+### 3.9 AICore (tier 4)
+
+Code: `api/controllers/aicore.js` and `api/controllers/aicore/`. Entry points: `AICORE.sendMessage(message, sessId, moduleId, params, ctx)`, `AICORE.runAgent(agentCode, message, sessId, ctx)`, `AICORE.queueAgentRun`, `AICORE.personas.upsert`, `AICORE.agents.upsert`, `AICORE.tasks.create`, plus single-shot utilities (`summerize`, `extract`, `classify`, `translate`, `generate`, `moderate`, `describe`, `ocr`, `queryNL`, `embed`). Spelling `summerize` is the real method name.
+
+- Personas (`sys_ai_personas`): system prompt, `engineKey`, model, `allowedTools`, `allowedKnowledge`, `knowledgeMode` (`off|forced|on_demand|both`).
+- Agents (`sys_ai_agents`): persona, `executionMode` (`inline|queue|local_worker`), `maxSteps`, `timeoutMs`.
+- Agent loop: engine call, run requested tools, feed results back, repeat until done or `maxSteps`. Tools come from the MCP registry (`api/controllers/mcp/`); the four built-in system tools (`query_schema`, `query_index`, `query_analyse`, `query_results`) are admin-only by default. The loop also injects `knowledge_search` and `create_task`.
+- Tasks (`sys_ai_tasks`): one-off or recurring; recurring ones use a row in `lgks_autojobs`.
+- Memory: conversation history in cache plus `logdb` tables. Knowledge/vector retrieval goes to Vector-Gateway servers listed in `sys_ai_knowledge`. A separate tooling server does text extraction.
+- Engines: Claude and OpenAI implemented; LogiksAI wired but its wire format is unconfirmed; Ollama not written. Embeddings work through OpenAI only.
+- Not finished: plugins contributing their own tools via `tools.json` (AppServer side exists, Worker side does not forward it; expect a harmless "failed to load plugin tools" boot message), and the `local_worker` execution lane (nothing dispatches to it).
+- REST under `/api`: `/ai/personas`, `/ai/agents`, `/ai/agents/:agentCode/run` (`?async=true` queues), `/ai/tasks`, `/ai/sessions/:sessId`, `/ai/knowledge` (admin only).
+
+Full detail: `Microapps-AppServer/docs/09-ai-layer.md`.
+
+### 3.10 Key environment variables (AppServer)
+
+`NODE_ENV`, `SERVER_ID`, `PORT`, `HOST`, `TRANSPORTER`, `TRANSPORTER_SERIALIZER` (`json`, `Notepack`, `msgpack`), `NAMESPACE` (default `default`), `CLUSTER_TOKEN`, `ENC_SALT` (never change for an existing DB, it is part of password hashes), `SESSION_SECRET`, `CONFIG_TYPE`/`CONFIG_FILE`, `CLUSTER_CACHE`, `CLUSTER_CACHE_TTL`, `RATE_LIMIT_*`, `REQUEST_TIMEOUT_MS`, `RETRY_COUNT`, `BULKHEAD_*`, `LB_STRATEGY`, `METRICS_ENABLED`, `MIGRATION_MODE`, `SERVER_CONSOLE_LOG_LEVEL`, `MOLECULER_FILE_LOG_LEVEL`. `config.json` holds the rest: `cors`, `noauth`, `ipwhitelisting`, `authjwt`, `mail`, `request_whitelist` (which helpers/controllers user-originated calls may reach), `token_access`, `fabric`, `mfa`, `aicore`.
+
+## 4. Worker
+
+### 4.1 Layout
+
+```
+index.js            entry: loads globals, helpers, controllers, then main()
+logiks.json         the worker's own manifest (read into LOGIKS_CONFIG)
+helpers/
+  boostrap.js       BOOSTRAP: builds the broker, registers with AppServer, heartbeat, drain (filename is spelled "boostrap")
+  plugins.js        PLUGINS: catalog, dependency install, service generation
+  baseapp.js        BASEAPP: mirrors AppServer helpers/controllers as proxies; _helper/_controller/_call/_require; log_*; plugin DB migration
+  jitcompiler.js    JITCOMPILER: JSX -> JS using @swc/core
+  commons.js        COMMONS: empty placeholder
+controllers/        autoloaded like helpers (empty by default)
+services/           local Moleculer services (*.service.js): sample, admin/node, admin/files, admin/dev
+plugins/            the microapps (demo, docs, profile, demo1, lgks in this checkout)
+assets/ www/        static files
+env_sample ecosystem.config.js
+```
+
+### 4.2 Boot sequence (`index.js`)
+
+1. `dotenv`, set globals: `_` (lodash), `fs`, `path`, `axios`, `moment`, `_ENV`, `LOGIKS_CONFIG` (from `logiks.json`, plus `ROOT_PATH`).
+2. Every `helpers/*.js` is required and set as `global.<UPPERCASE_FILENAME>`; every `controllers/*.js` likewise, and each one's `initialize()` is called if present. (Helpers' `initialize()` is not called by `index.js`.)
+3. `main()`:
+   - `BOOSTRAP.start()` builds the broker and loads `./services/**/*.service.js`.
+   - `PLUGINS.loadPlugins(broker)` finds and catalogs plugins.
+   - `PLUGINS.checkDependencies(broker)` installs plugin npm deps.
+   - `PLUGINS.activatePlugins(broker)` builds a broker service per plugin.
+   - `BOOSTRAP.connect(broker, cb)` starts the broker, registers with the AppServer, starts heartbeats. When connected and `ENABLE_DBMIGRATION=true`, runs `BASEAPP.runPluginMigration()`.
+
+### 4.3 Cluster protocol (Worker -> AppServer)
+
+All calls go to the AppServer's `system` service over the broker.
+- `system.registerWorker` with `{ nodeID, token: CLUSTER_TOKEN, role: "worker", meta, host, pid, pwd, color, services, menus, plugins, policies }`. A token mismatch makes the AppServer return `{ success:false }` and remove the node. The Worker retries every 5 s until it succeeds. After success it calls `BASEAPP.connect`.
+- `system.workerHeartbeat` every 10 s with `{ nodeID, color, ts, metrics: { load, rss, heapUsed } }`.
+- Re-registers on transporter `connect`/`reconnect` events and on `$node.connected`.
+- `SIGINT`/`SIGTERM`: calls `system.drainWorker`, then `broker.stop()`, then exits (0 on success, 1 on failure). The AppServer marks the node `draining` and deletes it 5 s later.
+- Blue/green: `WORKER_COLOR` (default `blue`) is sent with registration and heartbeats. The AppServer exposes `system.switchActiveColor` (`blue|green`, admin or worker caller only).
+
+Worker broker config: `requestTimeout` 10 s, retry policy enabled with 3 retries, metrics and statistics on, metadata `role: "worker"`.
+
+### 4.4 Plugin structure
+
+A folder under `plugins/` is a plugin only if it has a parseable `logiks.json`. Folders that start with `.` are skipped. Prefixes `z_`, `x_`, `temp_` are skipped (the catalog step also skips `y_`); use them to park a plugin. `node_modules`, `package.json`, `package-lock.json` in `plugins/` are ignored.
+
+```
+plugins/<id>/
+  logiks.json     required manifest
+  api.js          exported async functions (params, ctx)
+  routes.json     HTTP routes and event subscriptions
+  dbschema/       schema_<build>.json  (keys: appdb, logdb)
+  forms/ reports/ dashboards/ pages/ menus/ (or menu/) component(s)/ infoview/ i18n/
+  www/            static files
+```
+
+`logiks.json` fields the runtime uses: `dependencies` (npm packages; the pseudo-package `core` is dropped), `policies` (flat map `key -> "true"/"false"`, reported to the AppServer), `navigation` (menu entries, gated by `to_check: "policy#<key>"`). Everything else (`name`, `version`, `package`, `authors`, ...) is descriptive.
+
+`api.js` example:
+```js
+module.exports = {
+  listInvoices: async function (params, ctx) {
+    const res = await _DB.db_selectQ("appdb", "billing_invoices", "*", {}, {});
+    return { status: "ok", results: res.results };
+  }
+};
+```
+
+`routes.json` example:
+```json
+{
+  "enabled": true,
+  "routes": {
+    "/invoices":   { "method": "GET",  "data": "BILLING.listInvoices", "format": "json" },
+    "/:invoiceid": { "method": "GET",  "data": "BILLING.getInvoice" },
+    "/static":     { "method": "GET",  "data": { "hello": "world" } }
+  },
+  "events": {
+    "invoice.created": { "data": "BILLING.onCreated" }
+  }
+}
+```
+
+### 4.5 What `activatePlugins` generates
+
+For each plugin one Moleculer service is created, named after the plugin ID, and a second copy with the lowercase name (so `Demo` and `demo` both resolve).
+
+1. **Route actions.** One per `routes.json` entry when `enabled` is true. REST method defaults to GET. Public path is `/api/services/<plugin><route>`. Action name is the route with `/` turned into `_` and `:` removed, leading/trailing `_` trimmed (`/:actionid` in plugin `demo` -> action `demo_actionid`). The handler returns `{ "status": "okay", "results": <runAction result> }`. `params` (validation), `meta` (e.g. `scopes`), `cache`, `description` on the route are copied onto the action.
+2. **`api.js` actions.** Every exported function becomes a non-REST action `<plugin>.<fn>` that calls `fn(ctx.params, ctx)`. Callable from anywhere in the cluster, not over HTTP.
+3. **`source`** (GET `/source`, params `folder`, `file`, optional `silent`). Reads `plugins/<id>/<folder>/<file>`. `.jsx` is compiled on the fly by `JITCOMPILER.compileJSX` (imports are stripped, props defaulted, a `.js` copy is written next to it). `.json` is parsed, and a sibling `.js` of the same name is attached as base64 in `script`. Other types return raw text. It tries the `.js` -> `.jsx` swap and the `_mapp` suffix removal. Missing file throws `INVALID_SOURCE_FILE` (404) unless `silent` is true.
+4. **`www`** (GET `/www`, params `file`, `folder`). Returns text of `plugins/<id>/www/[folder/]file`, or an empty string when absent.
+5. **`assets`** (GET `/assets`, params `file`, `folder`). Same, from the worker's top-level `assets/` folder.
+6. **`config`** (param `paramId`). Returns that key from the plugin's `logiks.json`, or `{}`.
+7. **Events.** Each `routes.json` `events` entry with a non-null `data` subscribes the service to that topic.
+
+`runAction` resolves `data`:
+- A string `"CTRL.method"`: `CTRL` is upper-cased and looked up among loaded `api.js` modules (by plugin ID), so a route can point at another plugin's controller. Called as `fn(mergedParams, ctx, config, path, rPath)` where `mergedParams = ctx.params + ctx.query`. An optional `processor: "PROC.method"` post-processes the result (only if registered in `APPINDEX.PROCESSORS`, which nothing populates today).
+- A non-string value: returned as static data.
+- Unknown controller or method: logs an error and returns an error string (no throw).
+
+Each plugin's `api.js` also becomes `global.<PLUGINID_UPPERCASE>`, so `DEMO.test1(...)` works from other plugin code in the same worker.
+
+### 4.6 Globals available inside a Worker
+
+| Global | Source | Use |
+|---|---|---|
+| `_`, `fs`, `path`, `axios`, `moment` | `index.js` | libraries |
+| `LOGIKS_CONFIG` | `logiks.json` | worker config, `ROOT_PATH` |
+| `LogiksError` | `boostrap.js` | `new LogiksError(msg, code, type, data)` |
+| `log_debug/info/warn/error` | `baseapp.js` | go to the broker logger once connected |
+| `BOOSTRAP`, `PLUGINS`, `BASEAPP`, `JITCOMPILER`, `COMMONS` | `helpers/` | worker internals |
+| `<PLUGINID>` | each `api.js` | plugin controller |
+| `_call(service.action, params)` | `baseapp.js` | call any service in the cluster; 5 s timeout, no retries; returns `null` on error |
+| `_helper("HELPER.method", ...args)` | `baseapp.js` | calls an AppServer helper via `system.helpers`; returns `false` on failure |
+| `_controller("CTRL.method", ...args)` | `baseapp.js` | calls a cluster-public AppServer controller via `system.controllers` |
+| `_require(pkg)` | `baseapp.js` | require a plugin dependency from `plugins/node_modules` |
+| AppServer helper/controller names (`_DB`, `MESSAGING`, `RBAC`, `USERS`, `AICORE`, ...) | `BASEAPP.connect` | Proxy objects: `_DB.db_selectQ(...)` forwards over the bus and returns the `data` field |
+
+The proxy globals are created only after the Worker has registered with the AppServer, and they replace any earlier global of the same name. Do not call them at module load time; call them inside action handlers. Names come from `list_helpers` / `list_controllers`, so only what the AppServer exposes exists. Each proxied call has a 5 s timeout and no retry.
+
+### 4.7 Plugin dependencies
+
+With `ENABLE_PLUGINS_INSTALL_DEPS=true`, `checkDependencies` merges every plugin's `logiks.json.dependencies`, **overwrites** `plugins/package.json` (a separate runtime manifest, not the worker's own), and runs `npm install --omit=dev` in `plugins/` synchronously on every boot. With it off, plugin code that needs extra packages will fail on `_require`. If two plugins ask for different versions of one package, the later one wins in the merge.
+
+### 4.8 Per-plugin DB migration
+
+When `ENABLE_DBMIGRATION=true` and the Worker connects, `BASEAPP.runPluginMigration()` loops through plugins, creates `dbschema/` if missing, picks the newest `schema_*.json` by file modification time, and calls `DBMIGRATOR.pluginMigration(pluginID, schema)` on the AppServer. Result modes: `EXPORT` writes the live schema to `dbschema/schema_<BUILD or 0000>.json`; `IMPORT` applies the schema. Namespace table names with the plugin ID (`billing_invoices`).
+
+### 4.9 Built-in worker services (`services/`)
+
+- `admin.node`: `stats`, `ping`, `healthCheck`, `shutdown`, `restart`. Both `shutdown` and `restart` just call `process.exit(0)` after 1 s; `restart` only works if PM2 (or similar) restarts the process.
+- `admin.files`: `stats`, `listFiles`, `getFile`, `putFile`, `getVers`, `revertFile`, `hotLoadFile`. Stubs that return empty objects.
+- `admin.dev`: `validatePlugin`. Stub that always returns pass.
+- `sample`: demo service with `find`, `get`, `delayed`, `slowGet`. Not for production.
+
+### 4.10 Worker environment (`env_sample`)
+
+| Variable | Meaning |
+|---|---|
+| `NODE_ID` | unique per worker; part of node ID |
+| `TRANSPORTER` | must equal the AppServer's (default fallback `nats://localhost:4222`) |
+| `TRANSPORTER_SERIALIZER` | must equal the AppServer's (`json`, `Notepack`, `msgpack`) |
+| `NAMESPACE` | must equal the AppServer's (default `default`) |
+| `CLUSTER_TOKEN` | must equal the AppServer's |
+| `PLUGIN_LOG_LEVEL` | broker log level |
+| `ENABLE_DBMIGRATION` | run plugin migrations after connecting |
+| `ENABLE_PLUGINS_INSTALL_DEPS` | install plugin npm deps on boot |
+| `WORKER_COLOR` | `blue` (default) or `green` |
+| `BUILD` | optional suffix for exported schema file names |
+
+`ecosystem.config.js` runs one PM2 process named `Logiks_Worker` in cluster mode, watching `services/*` and `helpers/*`, restart at 1024 MB.
+
+## 5. How the two fit together
+
+### 5.1 Request path
+
+1. HTTP request reaches the AppServer gateway (e.g. `GET /api/services/billing/invoices`).
+2. `onBeforeCall`: domain -> app, IP rules, headers. `authenticate`, then `authorize` (RBAC scopes from the action's `meta.scopes`), then rate limit.
+3. Gateway calls the action `billing.billing_invoices` (service `billing`, action name derived from the route). The registry picks a node that hosts it. The call travels over the transporter to the Worker.
+4. The Worker runs `runAction`, which calls `BILLING.listInvoices(params, ctx)`. That function may call `_DB`, `_call`, `RBAC`, and so on, which hop back to the AppServer or to other Workers.
+5. Response `{ status: "okay", results }` goes back through the gateway.
+
+### 5.2 AppServer `system` service (the worker contract)
+
+| Action | Purpose |
+|---|---|
+| `registerWorker` | validates `CLUSTER_TOKEN` (constant-time compare), stores the worker in an in-memory map |
+| `workerHeartbeat` | updates `lastSeen` (only accepted from the registered node) |
+| `drainWorker` | marks `draining`, removes after 5 s (registered node or platform admin only) |
+| `switchActiveColor` | blue/green switch, REST `POST /system/switch-color` |
+| `helpers` | `{cmd:"list_helpers"}` or `{cmd:"HELPER.method", params:[...]}` |
+| `controllers` | same, restricted to cluster-public controllers |
+| `plugins` | merged or per-node view of plugins, services, menus |
+
+Calls to `system.helpers` / `system.controllers` that carry a user (came from an HTTP request) are limited to `CONFIG.request_whitelist.helpers` / `.controllers`. Calls from other nodes carry no user and are not restricted there. Method `initialize` is never callable this way. The worker registry is held in memory on the AppServer process, so it is rebuilt from re-registration after an AppServer restart (workers re-register on reconnect).
+
+### 5.3 Minimum config for a Worker to join
+
+Same `TRANSPORTER`, `TRANSPORTER_SERIALIZER`, `NAMESPACE`, and `CLUSTER_TOKEN` as the AppServer; a unique `NODE_ID`; Redis (or the chosen transporter) reachable from both. For DB work, the AppServer needs MySQL (`appdb`, `logdb`) because Worker database calls go through `_DB` on the AppServer.
+
+## 6. Recipes
+
+**Create a microapp.** In a Worker: `mkdir plugins/billing`, add `logiks.json` (`name`, `version`, `policies`, `dependencies`), `api.js`, and `routes.json` as in 4.4. Restart the Worker. Check the AppServer log for the registration, or call `GET /api/services/billing/<route>` with a bearer token.
+
+**Call another plugin.** `await _call("otherplugin.fnName", { ...params })` (works for any `api.js` export or route action). Or point a route's `data` at `"OTHER.fnName"`.
+
+**Read/write data.** `await _DB.db_selectQ("appdb", "table", "*", { col: "x" }, {})`; `db_insertQ1`, `db_updateQ`, `db_query` for raw SQL. Always include only your own namespaced tables.
+
+**Check permissions in plugin code.** `await RBAC.<method>(...)` through the proxy, or declare `meta: { scopes: ["billing:read"] }` on a route and let the gateway enforce it.
+
+**Emit an audit event (from an AppServer service).** `ctx.emit("logs.audit", { appid, userid, category, subcategory, ref_id, ip, metadata })`.
+
+**Use the AI layer from a plugin.** Define a persona and agent with `AICORE.personas.upsert` / `AICORE.agents.upsert`, then `AICORE.runAgent(agentCode, message, sessId, ctx)` or `AICORE.sendMessage(...)`. These are cluster-public, so they work through the proxy from a Worker.
+
+**Add an AppServer helper or controller.** Drop a file into `api/helpers/` or `api/controllers/`. For a controller to be callable from Workers, return `true` from `initialize()`.
+
+**Run the stack locally.** AppServer: `cp env_sample .env; cp config_sample.json config.json`, set `NODE_ENV=development`, start MySQL and Redis, `MIGRATION_MODE=IMPORT node index.js` once, then `npm start`. Worker: `cp env_sample .env`, match the four shared values, `npm start`. Health: `curl http://localhost:9999/api/ping` (or `/api/public/public/ping`, which the Docker healthcheck uses). Docker: `docker compose up -d`.
+
+## 7. Gotchas
+
+- The Worker's `package.json` name is `logiks-microapp-gateway`, but it is the worker. The AppServer is the gateway.
+- Route action names are derived by string replacement. Two routes that normalize to the same name overwrite each other.
+- The plugin loader skips `z_`/`x_`/`temp_` folders; one catalog check also skips `y_`. Do not name real plugins with those prefixes.
+- A plugin whose `routes.json` is invalid JSON still loads, with no routes.
+- `_call` and `_helper` swallow errors and return `null` / `false`. Check return values.
+- `www` and `assets` read files as UTF-8 text, so they are not suitable for binary files.
+- `source` for `.jsx` writes a compiled `.js` next to the source file as a side effect.
+- `checkDependencies` runs a blocking `npm install` at every start when enabled; it needs network access and takes time.
+- `admin.files` and `admin.dev` on the Worker are placeholders. Do not build on them yet.
+- `processor` on a route needs `APPINDEX.PROCESSORS` entries, which are never filled in current code.
+- AICore plugin-contributed tools and the `local_worker` lane are not finished (see 3.9).
+- The prose docs under `Microapps-AppServer/docs/` list some older numbers (heartbeat 10 s, circuit breaker on 10 calls, five route groups, bulkhead 10/100). The current values are in 3.4 and 3.5.
+- Never change `ENC_SALT` on a database that already has users.
+
+## 8. Where to read more
+
+AppServer docs (`Microapps-AppServer/docs/`):
+- `00-index.md` chapter list
+- `01-introduction.md` concepts and comparisons
+- `02-getting-started.md` install, Docker, first plugin
+- `03-framework-fundamentals.md` layout, config, globals reference
+- `04-microapps.md` plugin anatomy and loading, in depth
+- `05-workers.md` worker types, scaling, failover
+- `06-core-services-and-apis.md` services, gateway, auth, errors
+- `07-helpers-and-controllers.md` per-helper and per-controller reference
+- `08-event-system.md` events and messaging
+- `09-ai-layer.md` AICore and what is built versus open
+- `10-common-modules.md` Setup microapp modules (users, roles, vendors, menus, jobs, webhooks)
+- `11-audit-logs.md`, `12-troubleshooting.md`, `data-flow-diagram.md`
+- `training/` onboarding track, including UI building blocks (forms, reports, dashboards, components)
+
+Worker: `Readme.md`, `helpers/plugins.js` (the core of plugin loading), `helpers/baseapp.js` (cross-cluster globals), `helpers/boostrap.js` (join/heartbeat/drain), `plugins/demo/` (smallest working plugin).
+
+Source files that settle most questions: `Microapps-AppServer/api/server.js`, `api/services/system.service.js`, `api/baseapp.js`, `api/controllers/aicore.js`.
