@@ -37,7 +37,7 @@ const CONTROLS = {
         const mem = process.memoryUsage();
 
         return {
-            timestamp: moment().format("Y-M-D HH:mm:ss"),
+            timestamp: moment().format("YYYY-MM-DD HH:mm:ss"),
             nodeCount: nodes.length,
             serviceCount: services.length,
             hostname: os.hostname(),

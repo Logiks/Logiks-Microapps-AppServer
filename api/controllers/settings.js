@@ -27,7 +27,7 @@ module.exports = {
         if(!settingsData || !settingsData.results || settingsData.results.length<=0) {
             //Auto Register Default Value
             if(defaultValue) {
-                var dated = moment().format("Y-M-D HH:mm:ss");
+                var dated = moment().format("YYYY-MM-DD HH:mm:ss");
                 var createdData = {
                     "guid": guid,
                     "appid": appid,
@@ -65,7 +65,7 @@ module.exports = {
         if(!settingsData || !settingsData.results || settingsData.results.length<=0) {
             //Auto Register Default Value
             if(defaultValue) {
-                var dated = moment().format("Y-M-D HH:mm:ss");
+                var dated = moment().format("YYYY-MM-DD HH:mm:ss");
                 if(!params) params = {};
                 var createdData = {
                     "guid": guid,
@@ -105,7 +105,7 @@ module.exports = {
         if(!settingsData || !settingsData.results || settingsData.results.length<=0) {
             //Auto Register Default Value
             if(defaultValue) {
-                var dated = moment().format("Y-M-D HH:mm:ss");
+                var dated = moment().format("YYYY-MM-DD HH:mm:ss");
                 if(!params) params = {};
                 var createdData = {
                     "guid": guid,

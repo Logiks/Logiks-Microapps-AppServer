@@ -83,7 +83,7 @@ module.exports = {
   },
 
   timeStamp : function() {
-    return moment().format("Y-M-D HH:mm:ss");
+    return moment().format("YYYY-MM-DD HH:mm:ss");
   },
 
   isHTTPS: function(ctx) {
@@ -157,7 +157,7 @@ module.exports = {
   },
 
   processUpdateQueryFromBody : function(ctx, tableName, whereCond, extraFields = "edited_on=?") {
-    var dated = moment().format("Y-M-D HH:mm:ss");
+    var dated = moment().format("YYYY-MM-DD HH:mm:ss");
     
     var strUpdate = [];
     _.each(ctx.params.fields, function(a,b) {

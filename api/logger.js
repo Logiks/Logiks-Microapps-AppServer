@@ -143,7 +143,7 @@ module.exports = {
 
     logObj = _.extend(
       {
-        timestamp: global.timeStamp ? global.timeStamp() : moment().format("Y-M-D HH:mm:ss"),
+        timestamp: global.timeStamp ? global.timeStamp() : moment().format("YYYY-MM-DD HH:mm:ss"),
       },
       logObj
     );

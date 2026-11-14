@@ -461,7 +461,7 @@ module.exports = {
 
 				//Password expiry
 				if(userInfo.expires!=null && userInfo.expires.length>0) {
-					const isPast = new Date(userInfo.expires) < new Date(moment().format("Y-M-D HH:mm:ss"));
+					const isPast = new Date(userInfo.expires) < new Date(moment().format("YYYY-MM-DD HH:mm:ss"));
 					if(isPast) {
 						await log_login_error({
 							"guid": userInfo.guid,
@@ -1308,14 +1308,14 @@ async function generateUserMap(userInfo, geolocation, geoIP, appid) {
 		privacy: userInfo.privacy,
 		security_policy: userInfo.security_policy,
 		avatar: await USERS.getUserAvatar(userInfo.avatar, userInfo.avatar_type),
-		timestamp: moment().format("Y-M-D HH:mm:ss"),
+		timestamp: moment().format("YYYY-MM-DD HH:mm:ss"),
 		geolocation: geolocation,
 		geoip: geoIP
 	};
 }
 
 async function log_login(userInfo, loginType, loginURI, ctx) {
-	const dated = moment().format("Y-M-D HH:mm:ss");
+	const dated = moment().format("YYYY-MM-DD HH:mm:ss");
 	var userAgent = ctx.meta.headers["user-agent"];
 
 	var createData = {
@@ -1355,7 +1355,7 @@ async function log_login(userInfo, loginType, loginURI, ctx) {
 }
 
 async function log_login_error(userInfo, loginType, loginURI, errorMessage, ctx) {
-	const dated = moment().format("Y-M-D HH:mm:ss");
+	const dated = moment().format("YYYY-MM-DD HH:mm:ss");
 	var userAgent = ctx.meta.headers["user-agent"];
 
 	var createData = {
@@ -1390,7 +1390,7 @@ async function log_login_error(userInfo, loginType, loginURI, errorMessage, ctx)
 async function check_log_device(userInfo, ctx) {
 	if(ctx?.params?.deviceType=="web" || ctx?.params?.deviceType=="api") return true;
 	
-	const dated = moment().format("Y-M-D HH:mm:ss");
+	const dated = moment().format("YYYY-MM-DD HH:mm:ss");
 	const geolocation = ctx.params.geolocation?ctx.params.geolocation:"0,0";
 	const deviceId = ctx.params.deviceid?ctx.params.deviceid:"";
 	const DEVICE_LOCK_ENABLED = CONFIG?.security?.device_lock_enabled || (await CTRLCENTER.getControl("SYSTEM.DEVICE_LOCK_ENABLED", "false")==="true"?true:false);

@@ -35,7 +35,7 @@ module.exports = {
         if(!ENVIRONMENTS[ctx?.meta?.user?.guid || "global"]) ENVIRONMENTS[ctx?.meta?.user?.guid || "global"] = {};
         ENVIRONMENTS[ctx?.meta?.user?.guid || "global"][`${module}:${varName}`.toUpperCase().trim()] = varValue;
 
-        var dated = moment().format("Y-M-D HH:mm:ss");
+        var dated = moment().format("YYYY-MM-DD HH:mm:ss");
         _DB.db_insertQ1("appdb", "lgks_environment", {
             "guid": ctx?.meta?.user?.guid || "global", 
             "module": module, 
@@ -58,7 +58,7 @@ module.exports = {
     updateEnvVariable : function(ctx, varCode, varValue, varParams = {}, varNature = 'backend', varPrivilege = 'admin') {
         if(!ENVIRONMENTS[ctx?.meta?.user?.guid || "global"]) return false;
 
-        var dated = moment().format("Y-M-D HH:mm:ss");
+        var dated = moment().format("YYYY-MM-DD HH:mm:ss");
         _DB.db_updateQ1("appdb", "lgks_environment", {
             "var_value": varValue, 
             "var_params": JSON.stringify(varParams), 
@@ -76,7 +76,7 @@ module.exports = {
     deleteEnvVariable : function(ctx, varCode) {
         if(!ENVIRONMENTS[ctx?.meta?.user?.guid || "global"]) return false;
 
-        var dated = moment().format("Y-M-D HH:mm:ss");
+        var dated = moment().format("YYYY-MM-DD HH:mm:ss");
         _DB.db_updateQ1("appdb", "lgks_environment", {
             "blocked": "true", 
             "edited_on": dated, 
@@ -154,7 +154,7 @@ async function generateEnvObj(metaInfo) {
     if(newMeta?.sessionId) {
         const newUser = await USERS.getUserData(newMeta.sessionId);
         //newUser==false
-        newMeta["SESS_LOGIN_TIME"] = newMeta?.user?.timestamp || moment().format("Y-M-D HH:mm:ss");
+        newMeta["SESS_LOGIN_TIME"] = newMeta?.user?.timestamp || moment().format("YYYY-MM-DD HH:mm:ss");
 
         newMeta["SESS_GUID"] = newUser.guid;
         newMeta["SESS_USER_ID"] = newUser.userId;
@@ -209,9 +209,9 @@ async function generateEnvObj(metaInfo) {
     
     newMeta["ADMIN_PRIVILEGE_RANGE"] = 5;
 
-    newMeta["SESS_CURRENT_DATE"] = moment().format("Y-M-D");
+    newMeta["SESS_CURRENT_DATE"] = moment().format("YYYY-MM-DD");
     newMeta["SESS_CURRENT_DATE_DMY"] = moment().format("D-M-Y");
-    newMeta["SESS_CURRENT_DATETIME"] = moment().format("Y-M-D HH:mm:ss");
+    newMeta["SESS_CURRENT_DATETIME"] = moment().format("YYYY-MM-DD HH:mm:ss");
     newMeta["SESS_CURRENT_DAY"] = moment().format("D");
     newMeta["SESS_CURRENT_DAYNAME"] = moment().format("dddd");
     newMeta["SESS_CURRENT_MONTH"] = moment().format("M");

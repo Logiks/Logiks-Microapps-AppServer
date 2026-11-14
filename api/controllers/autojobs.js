@@ -301,7 +301,7 @@ async function runJobNow(jobConfig, userId = "system") {
 }
 
 function log_jobrun(jobConfig, payload, response, status, details="", userId = "system") {
-    var dated = moment().format("Y-M-D HH:mm:ss");
+    var dated = moment().format("YYYY-MM-DD HH:mm:ss");
     if(typeof response==="string") response = [response];
 
     var logData = {

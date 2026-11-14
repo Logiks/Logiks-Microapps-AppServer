@@ -45,7 +45,7 @@ module.exports = {
 
         var data = await _DB.db_selectQ("appdb", "lgks_ctrlcenter", "module, var_title, var_code, var_value", whereLogic,{});
         if(!data || !data?.results || data.results.length<=0) {
-            var dated = moment().format("Y-M-D HH:mm:ss");
+            var dated = moment().format("YYYY-MM-DD HH:mm:ss");
             _DB.db_insertQ1("appdb", "lgks_ctrlcenter", {
                 guid: guid || "-", 
                 module: module || "-", 

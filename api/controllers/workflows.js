@@ -44,7 +44,7 @@ module.exports = {
         const jsonRule = workflow.rules_json;
 
         const approvalHistory = {"start": {}};
-        approvalHistory.start[ctx.meta.user.userId] = moment().format("Y-M-D HH:mm:ss");
+        approvalHistory.start[ctx.meta.user.userId] = moment().format("YYYY-MM-DD HH:mm:ss");
 
 
         const response = await _DB.db_insertQ1("appdb", "sys_workflows_wflows", _.extend({
@@ -53,7 +53,7 @@ module.exports = {
             vers: workflow.vers,
             current_stage: "start", 
             current_assigned_to: ctx.meta.user.userId, 
-            last_updated_on: moment().format("Y-M-D HH:mm:ss"),
+            last_updated_on: moment().format("YYYY-MM-DD HH:mm:ss"),
             last_updated_by: ctx.meta.user.userId, 
             last_updated_stage: "start", 
             rules_json: jsonRule,
@@ -159,18 +159,18 @@ module.exports = {
         if(!currentApprovers) currentApprovers = [];
         else currentApprovers = currentApprovers.split(",");
         
-        approvalHistory[currentStage][approver] = moment().format("Y-M-D HH:mm:ss");
+        approvalHistory[currentStage][approver] = moment().format("YYYY-MM-DD HH:mm:ss");
         currentApprovers.push(approver);
 
         await _DB.db_updateQ("appdb", "sys_workflows_wflows", {
                 "approval_history": approvalHistory,
-                "last_updated_on": moment().format("Y-M-D HH:mm:ss"),
+                "last_updated_on": moment().format("YYYY-MM-DD HH:mm:ss"),
                 "last_updated_by": approver || ctx?.meta?.user?.userId,
                 // "last_updated_stage": currentStage,
                 // "current_stage": nextStep.next_stage,
                 "current_approvers": currentApprovers.join(","),
                 
-                "edited_on": moment().format("Y-M-D HH:mm:ss"),
+                "edited_on": moment().format("YYYY-MM-DD HH:mm:ss"),
             }, {
                 "id": workflowData.results[0].id,
                 "blocked": "false",
@@ -193,8 +193,8 @@ module.exports = {
 
         await _DB.db_updateQ("appdb", "sys_workflows_wflows", {
                 "last_rejected_by": rejectedBy || ctx?.meta?.user?.userId,
-                "last_updated_on": moment().format("Y-M-D HH:mm:ss"),
-                "edited_on": moment().format("Y-M-D HH:mm:ss"),
+                "last_updated_on": moment().format("YYYY-MM-DD HH:mm:ss"),
+                "edited_on": moment().format("YYYY-MM-DD HH:mm:ss"),
                 "rejected": true,
             }, whereLogic);
 
@@ -344,7 +344,7 @@ module.exports = {
         // console.log(">jsonRule", JSON.stringify(jsonRule, null, 2));
         const response = await _DB.db_updateQ("appdb", "sys_workflows", {
                     "rules_json": jsonRule,
-                    "edited_on": moment().format("Y-M-D HH:mm:ss"),
+                    "edited_on": moment().format("YYYY-MM-DD HH:mm:ss"),
                 }, {
                     guid: guid,
                     workflow_code: workflowCode
@@ -360,7 +360,7 @@ module.exports = {
         if(response) {
             return await _DB.db_updateQ("appdb", "sys_workflows", {
                     "status": "published",
-                    "edited_on": moment().format("Y-M-D HH:mm:ss"),
+                    "edited_on": moment().format("YYYY-MM-DD HH:mm:ss"),
                     "edited_by": ctx.meta.user.userId
                 }, {
                     guid: ctx.meta.user.guid,
@@ -400,14 +400,14 @@ async function processNextStep(ctx, workflowData, dataRefId, dataPayload) {
 
         const a1 = await _DB.db_updateQ("appdb", "sys_workflows_wflows", {
             // "approval_history": approval_history,
-            "last_updated_on": moment().format("Y-M-D HH:mm:ss"),
+            "last_updated_on": moment().format("YYYY-MM-DD HH:mm:ss"),
             "last_updated_by": ctx?.meta?.user?.userId,
             "last_updated_stage": currentStage,
             "current_stage": nextStep.next_stage,
             "current_assigned_to": nextStep.next_assignee,
             "current_approvers": "",
             
-            "edited_on": moment().format("Y-M-D HH:mm:ss"),
+            "edited_on": moment().format("YYYY-MM-DD HH:mm:ss"),
         }, {
             "id": workflowData.id,
             "blocked": "false",
@@ -423,7 +423,7 @@ async function processNextStep(ctx, workflowData, dataRefId, dataPayload) {
 
             await _DB.db_updateQ("appdb", "sys_workflows_wflows", {
                 "approval_history": approvalHistory,
-                "edited_on": moment().format("Y-M-D HH:mm:ss"),
+                "edited_on": moment().format("YYYY-MM-DD HH:mm:ss"),
             }, {
                 "id": workflowData.id,
                 "blocked": "false",

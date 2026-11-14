@@ -79,7 +79,7 @@ module.exports = {
                 }
                 
                 if(Object.keys(toUpdate).length>0) {
-                    toUpdate['edited_on'] = moment().format("Y-M-D HH:mm:ss");
+                    toUpdate['edited_on'] = moment().format("YYYY-MM-DD HH:mm:ss");
                     toUpdate["edited_by"] =  "fedauth";
                     await _DB.db_updateQ("appdb", "lgks_users", toUpdate, {"id": userInfo.id});
                 }
@@ -129,9 +129,9 @@ module.exports = {
                     "security_policy": "closed",
 
                     "blocked": "false",
-                    "created_on": moment().format("Y-M-D HH:mm:ss"),
+                    "created_on": moment().format("YYYY-MM-DD HH:mm:ss"),
                     "created_by": "system",
-                    "edited_on": moment().format("Y-M-D HH:mm:ss"),
+                    "edited_on": moment().format("YYYY-MM-DD HH:mm:ss"),
                     "edited_by": "system",
                 };
 
@@ -302,7 +302,7 @@ module.exports = {
         }
 
         var encrypted_password = await ENCRYPTER.generateHash(password);
-        var dated = moment().format("Y-M-D HH:mm:ss");
+        var dated = moment().format("YYYY-MM-DD HH:mm:ss");
 
         var updateData = {
             "edited_on": dated,
@@ -360,9 +360,9 @@ module.exports = {
             "mfa_xtras_1": "email", //mfa_xtras_1 can be used to store the preferred delivery method like email, sms, whatsapp etc.
             "mfa_xtras_2": "", //mfa_xtras_2 can be used to store the destination address like email id or mobile number
             "mfa_xtras_3": "",
-            "created_on": moment().format("Y-M-D HH:mm:ss"),
+            "created_on": moment().format("YYYY-MM-DD HH:mm:ss"),
             "created_by": userid,
-            "edited_on": moment().format("Y-M-D HH:mm:ss"),
+            "edited_on": moment().format("YYYY-MM-DD HH:mm:ss"),
             "edited_by": userid,
         });
     },
