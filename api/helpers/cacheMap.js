@@ -10,16 +10,18 @@ module.exports = {
 
     get: async function(mapKey, dataKey, defaultValue = false, ctx) {
         const cacheKey = `CACHESTORE:${ctx?.meta?.user?.userId}:${mapKey}:${dataKey}`.toUpperCase();
-        let cacheMap = await _CACHE.fetchDataSync(cacheKey, {});//"DBOPSMAP"
+        //null default: a miss must not leave a stored "{}" behind
+        let cacheMap = await _CACHE.fetchDataSync(cacheKey, null);//"DBOPSMAP"
         
+        if(cacheMap === null || cacheMap === undefined || cacheMap === "") return defaultValue;
+
         try {
-            if(!cacheMap) cacheMap = {};
-            else if(typeof cacheMap == "string") cacheMap = JSON.parse(cacheMap);
+            if(typeof cacheMap == "string") cacheMap = JSON.parse(cacheMap);
         } catch(e) {
-            cacheMap = {}
+            return defaultValue;
         }
 
-        return cacheMap || {};
+        return cacheMap ?? defaultValue;
     },
 
     set: async function(mapKey, dataKey, dataValue, ctx) {

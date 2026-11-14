@@ -101,8 +101,11 @@ module.exports = {
                 const appID = ctx.meta.appInfo.appid;
                 const guid = ctx.meta.user.tenantId;
                 
-                ctx.params.data.guid = guid;
-                ctx.params.data.appid = appID;
+                //The log entry carries the tenant and app of the caller, never values sent by the client
+                if(ctx.params.payload && typeof ctx.params.payload == "object" && !Array.isArray(ctx.params.payload)) {
+                    ctx.params.payload.guid = guid;
+                    ctx.params.payload.appid = appID;
+                }
                 
                 //activities, analytics, errors
 
@@ -136,7 +139,7 @@ module.exports = {
 				fullPath: "/api/cacheMap"
 			},
             async handler(ctx) {
-                return {"status": "success", "data": _CACHE.listCacheKeys()};
+                return {"status": "success", "data": await _CACHE.listCacheKeys()};
             }
         },
         clearCache: {

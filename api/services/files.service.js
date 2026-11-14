@@ -29,14 +29,14 @@ module.exports = {
 					whereLogic['folder'] = [ctx.params.folder, "LIKE"];
 				}
 				if(ctx.params.searchTerm) {
-					whereLogic['filename'] = [ctx.params.searchTerm, "LIKE"];
+					whereLogic['filename'] = [`%${ctx.params.searchTerm}%`, "LIKE"];
 				}
+
+				// limit is a number in SQL text, so it is parsed and capped here rather than passed through
+				const limit = Math.min(Math.max(parseInt(ctx.params.limit) || 10, 1), 500);
 				
-				const sqlResult = await _DB.db_selectQ("appdb", "files_tbl", "*", whereLogic, {
-					"limit": ctx.params.limit || 10,
-					"order_by": "created_at DESC"
-				}, {});
-				if(!sqlResult || sqlResult?.results.length==0) return [];
+				const sqlResult = await _DB.db_selectQ("appdb", "files_tbl", "*", whereLogic, {}, ` ORDER BY created_on DESC LIMIT ${limit}`);
+				if(!sqlResult || !sqlResult.results || sqlResult.results.length==0) return [];
 
 				return sqlResult;
 			}
@@ -261,22 +261,22 @@ module.exports = {
 				const fileId = ctx.params.fileId;
 				if (!fileId) throw new Error("File ID is required");
 
-				const fileRecord = await _DB.db_findOne("appdb", "files_tbl", "*", { id: fileId }, 'id DESC', true);
+				const fileRecord = await _DB.db_findOne("appdb", "files_tbl", "*", { id: fileId, guid: ctx.meta.user.guid }, 'id DESC', true);
 				if (!fileRecord) throw new Error("File not found");
 
 				if(fileRecord.blocked == "true") {
-					const filePath = UPLOADS.getTargetPath(fileRecord.path);
+					const filePath = UPLOADS.getTargetPath(fileRecord.path_uri);
 					if (fs.existsSync(filePath)) {
 						fs.unlinkSync(filePath);
 					}
 
-					await _DB.db_delete("appdb", "files_tbl", { id: fileId });
+					await _DB.db_deleteQ("appdb", "files_tbl", { id: fileId, guid: ctx.meta.user.guid });
 				} else {
 					await _DB.db_updateQ("appdb", "files_tbl", {
 						"blocked": "true",
 						"edited_on": _DB.db_now(),
-						"edited_by": ctx.meta.user.userid
-					}, { id: fileId });
+						"edited_by": ctx.meta.user.userId
+					}, { id: fileId, guid: ctx.meta.user.guid });
 				}
 
 				return { status: "success", message: "File deleted successfully." };
@@ -294,13 +294,13 @@ module.exports = {
 					guid: ctx.meta.user.guid
 			 	}, {});
 
-				for (const fileRecord of trashedFiles) {
-					const filePath = UPLOADS.getTargetPath(fileRecord.path);
+				for (const fileRecord of (trashedFiles?.results || [])) {
+					const filePath = UPLOADS.getTargetPath(fileRecord.path_uri);
 					if (fs.existsSync(filePath)) {
 						fs.unlinkSync(filePath);
 					}
 
-					await _DB.db_delete("appdb", "files_tbl", { id: fileRecord.id });
+					await _DB.db_deleteQ("appdb", "files_tbl", { id: fileRecord.id, guid: ctx.meta.user.guid });
 				}
 
 				return { status: "success", message: "Trashed files purged successfully." };

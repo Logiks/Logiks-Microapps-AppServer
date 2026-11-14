@@ -72,7 +72,16 @@ module.exports = {
 
         if(!data || !data.results || data.results.length<=0) data = { results: [] };
 
-        return data.results[0] || {};
+        const row = data.results[0];
+        if(!row) return false;
+
+        // params is stored as JSON text
+        if(typeof row.params === "string") {
+            try { row.params = JSON.parse(row.params); } catch(e) { row.params = {}; }
+        }
+        if(!row.params || typeof row.params !== "object") row.params = {};
+
+        return row;
     },
 
     getFederatedLoginEndpoint: async function(appid, federatedLoginID, ctx) {

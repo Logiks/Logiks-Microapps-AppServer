@@ -16,8 +16,11 @@ module.exports = {
 	actions: {
 		verifyAdmin(ctx) {
 			// ABSOLUTELY REQUIRED SECURITY CHECK
-			if (!ctx.meta.user || ctx.meta.user.roles.indexOf("admin")<0) {
-				throw new Error("Admin access only");
+			// Same rule as the gateway's admin.* check in server.js
+			const user = ctx.meta.user;
+			const isAdmin = !!user && ((Array.isArray(user.roles) && user.roles.includes("admin")) || ["root", "devroot", "admin"].includes(user.privilege));
+			if (!isAdmin) {
+				throw new LogiksError("Admin access only", 403, "FORBIDDEN_ADMIN_ONLY");
 			}
 
 			return true;

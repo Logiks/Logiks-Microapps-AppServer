@@ -145,17 +145,15 @@ module.exports = {
         return await redis.del(cacheKey);
     },
 
+    //Promise-based; a callback is still honoured for older callers
     listCacheKeys : function(pattern, callback) {
         if(pattern==null) pattern = "*";
 
-        var keysArr = [];
-        redis.keys(pattern).then(function (keys) {
-            keys.forEach(function (key) {
-              keysArr.push(key);
-            });
-
-            callback(keysArr);
-          });
+        return redis.keys(pattern).then(function (keys) {
+            const keysArr = [...keys];
+            if(typeof callback === "function") callback(keysArr);
+            return keysArr;
+        });
     },
 
     clearCache : function(pattern) {

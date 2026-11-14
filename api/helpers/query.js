@@ -156,7 +156,7 @@ module.exports = {
     },
 
     getQueryByID: async function(queryID, userObj, ctx) {
-        const queryObj = CACHEMAP.get("QUERYMAP", queryID, false, ctx);
+        const queryObj = await CACHEMAP.get("QUERYMAP", queryID, false, ctx);
         if(!queryObj) {
             var queryIDTemp = decodeURIComponent(`${queryID}`).split("@");
             
@@ -168,7 +168,7 @@ module.exports = {
             
             await ctx.call("modules.fetchModule", params);
 
-            const queryObjNew = CACHEMAP.get("QUERYMAP", queryID, false, ctx);
+            const queryObjNew = await CACHEMAP.get("QUERYMAP", queryID, false, ctx);
 
             return queryObjNew;
         }

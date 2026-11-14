@@ -33,17 +33,9 @@ module.exports = {
         apiKeyInfo.userId = apiKeyInfo.for_user || apiKeyInfo.guid;
         // var userData = await _DB.db_selectQ("appdb", "lgks_users", "*", {"userId": userId, "blocked": "false"}, {});
 
-        try {
-            apiKeyInfo.roles = JSON.parse(apiKeyInfo.roles);
-        } catch(e) {
-            apiKeyInfo.roles = ["*"];
-        }
-        try {
-            apiKeyInfo.scopes = JSON.parse(apiKeyInfo.scopes);
-        } catch(e) {
-            apiKeyInfo.scopes = ["*"];// ? apiInfo.scope.split(",") : ["*"], ["tenant:*"]
-        }
-        
+        // A value that cannot be read grants nothing; it must never widen to "*"
+        apiKeyInfo.roles = parseList(apiKeyInfo.roles);
+        apiKeyInfo.scopes = parseList(apiKeyInfo.scopes);
 
         return apiKeyInfo;
     },
@@ -66,5 +58,19 @@ module.exports = {
         if(ipInfo.allow_type=="blacklist") return false;
         
         return true;
+    }
+}
+
+//JSON array, or a comma separated list; anything else is an empty list
+function parseList(value) {
+    if(Array.isArray(value)) return value;
+    if(typeof value !== "string" || value.trim() === "") return [];
+
+    try {
+        const parsed = JSON.parse(value);
+        if(Array.isArray(parsed)) return parsed;
+        return [];
+    } catch(e) {
+        return value.split(",").map(v => v.trim()).filter(Boolean);
     }
 }

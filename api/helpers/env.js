@@ -59,7 +59,7 @@ module.exports = {
         if(!ENVIRONMENTS[ctx?.meta?.user?.guid || "global"]) return false;
 
         var dated = moment().format("YYYY-MM-DD HH:mm:ss");
-        _DB.db_updateQ1("appdb", "lgks_environment", {
+        _DB.db_updateQ("appdb", "lgks_environment", {
             "var_value": varValue, 
             "var_params": JSON.stringify(varParams), 
             "var_nature": varNature, 
@@ -67,6 +67,7 @@ module.exports = {
             "edited_on": dated, 
             "edited_by": ctx?.meta?.user?.userId || "system", 
         }, {
+            "guid": ctx?.meta?.user?.guid || "global",
             "var_code": varCode
         });
 
@@ -77,11 +78,12 @@ module.exports = {
         if(!ENVIRONMENTS[ctx?.meta?.user?.guid || "global"]) return false;
 
         var dated = moment().format("YYYY-MM-DD HH:mm:ss");
-        _DB.db_updateQ1("appdb", "lgks_environment", {
+        _DB.db_updateQ("appdb", "lgks_environment", {
             "blocked": "true", 
             "edited_on": dated, 
             "edited_by": ctx?.meta?.user?.userId || "system", 
         }, {
+            "guid": ctx?.meta?.user?.guid || "global",
             "var_code": varCode
         });
 

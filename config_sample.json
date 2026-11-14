@@ -15,7 +15,7 @@
         "mfa_default_type": "totp"
     },
     "fabric": {
-        "login_required": false
+        "login_required": true
     },
     "disable_cache": {
         "application": false,

@@ -12,7 +12,7 @@ module.exports = {
         // console.log("FEDERATED_LOGIN", { "params": ctx.params, "headers": ctx.headers });
         // console.log("ctx.meta.appInfo", ctx.meta.appInfo);
         try {
-            const userData = AUTHFEDERATED.processFederatedLoginResponse(ctx.meta.appInfo.appid, uniqueId, ctx);
+            const userData = await AUTHFEDERATED.processFederatedLoginResponse(ctx.meta.appInfo.appid, uniqueId, ctx);
 
             const allowFederatedRegistration = ctx.meta.appInfo?.settings?.allow_federated_registration || false;
             if(allowFederatedRegistration) {

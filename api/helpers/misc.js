@@ -240,56 +240,27 @@ global._replace = function(text, data, strict = true) {
   if (typeof text !== "string") return text;
   
   if(data==null) data = {};
-  
-  return text
-    //For variables with ${}
-    .replace(/\$\{([^}]+)\}/g, (match, key) => {
-        if(key.substr(0,1)=="$") {//for json path
-            var result = JSONPath({path: key.substr(2), json: data});
-            if(Array.isArray(result)) result = result.join(",");
-            // console.log("JSON_PATH", key, key.substr(2), result);
-            return result;
-        }
-        if(!data.data) data.data = {};
-        if(strict) return data[key] || data?.data[key] || "";
-        else return data[key] || data?.data[key] || match;
-    })
-    //For variables with {{}}
-    .replace(/\{\{([^}]+)\}\}/g, (match, key) => {
-        if(key.substr(0,1)=="$") {//for json path
-            var result = JSONPath({path: key.substr(2), json: data});
-            if(Array.isArray(result)) result = result.join(",");
-            //console.log("JSON_PATH", key, key.substr(2), result);
-            return result;
-        }
-        if(!data.data) data.data = {};
-        if(strict) return data[key] || data?.data[key] || "";
-        else return data[key] || data?.data[key] || match;
-    })
-    //For variables with ##
-    .replace(/#([^#]+)#/g, (match, key) => {//#([^}]+)#
-        if(key.substr(0,1)=="$") {//for json path
-            var result = JSONPath({path: key.substr(2), json: data});
-            if(Array.isArray(result)) result = result.join(",");
-            //console.log("JSON_PATH", key, key.substr(2), result);
-            return result;
-        }
-        if(!data.data) data.data = {};
-        if(strict) return data[key] || data?.data[key] || "";
-        else return data[key] || data?.data[key] || match;
-    })
-    //For variables with %%
-    .replace(/%([^%]+)%/g, (match, key) => {
-        if(key.substr(0,1)=="$") {//for json path
-            var result = JSONPath({path: key.substr(2), json: data});
-            if(Array.isArray(result)) result = result.join(",");
-            //console.log("JSON_PATH", key, key.substr(2), result);
-            return result;
-        }
-        if(!data.data) data.data = {};
-        if(strict) return data[key] || data?.data[key] || "";
-        else return data[key] || data?.data[key] || match;
-    });
+
+  // One pass over the text, so a substituted value is never scanned again for more variables.
+  // Syntaxes: ${key}, {{key}}, #key#, %key%  (a key starting with "$" is a JSON path)
+  return text.replace(/\$\{([^}]+)\}|\{\{([^}]+)\}\}|#([^#]+)#|%([^%]+)%/g, (match, k1, k2, k3, k4) => {
+      const key = k1 ?? k2 ?? k3 ?? k4;
+      const isPercent = k4 !== undefined;
+
+      if(key.substr(0,1)=="$") {//for json path
+          var result = JSONPath({path: key.substr(2), json: data});
+          if(Array.isArray(result)) result = result.join(",");
+          return result;
+      }
+      if(!data.data) data.data = {};
+      const value = data[key] || data?.data[key];
+
+      // %...% is also the SQL LIKE wildcard, so an unknown key is left exactly as written
+      if(isPercent && !value) return match;
+
+      if(strict) return value || "";
+      else return value || match;
+  });
 }
 
 global.convertToValidatorRules = function(schema, mode="edit") {
@@ -299,10 +270,11 @@ global.convertToValidatorRules = function(schema, mode="edit") {
     const config = schema[field];
     const ruleParts = [];
 
-    if(mode!=field.vmode) {//mode=="create" && field.vmode="edit"
+    // A field with no vmode is validated in every mode; one with a vmode only in that mode
+    if(config.vmode && config.vmode!=mode) {//mode=="create" && config.vmode="edit"
       continue;
     }
-    if(field.vmode=="view") {
+    if(config.vmode=="view") {
       continue;
     }
 

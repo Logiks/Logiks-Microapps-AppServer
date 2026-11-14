@@ -17,7 +17,7 @@ module.exports = {
         // ctx.meta.user
         // ctx.meta.appInfo
         // ctx.meta.appInfo.appid
-        return `${ctx.meta.user.guid}:${ctx.meta.user.userid}:${ctx.meta.sessionId || "nosession"}`;
+        return `${ctx.meta.user.guid}:${ctx.meta.user.userId}:${ctx.meta.sessionId || "nosession"}`;
     },
 
     //Check and Load RBAC Controls into Memory for processing
@@ -129,9 +129,9 @@ module.exports = {
             const hasAllowedRoles = [...new Set(userRoles)].filter(item => allowedRoles.includes(item.toLowerCase()));
             if(hasAllowedRoles.length>0) return true;
 
-            if(allowedRoles.includes(`PRIVILEGE:${ctx.meta.user.privilege}`)) true;
+            if(allowedRoles.includes(`PRIVILEGE:${ctx.meta.user.privilege}`)) return true;
 
-            if(allowedRoles.includes(`USER:${ctx.meta.user.userId}`)) true;
+            if(allowedRoles.includes(`USER:${ctx.meta.user.userId}`)) return true;
         }
 
         return defaultValue;

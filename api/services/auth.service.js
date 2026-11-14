@@ -138,7 +138,7 @@ module.exports = {
 					throw new LogiksError("APPID Mismatch", 401);
 				}
 
-				var { appId, token } = ctx.params;
+				const { appid: appId, token } = ctx.params;
 
 				const decodedToken = await AUTHTOKEN.verifyToken(appId, token, ctx);
 
@@ -164,14 +164,14 @@ module.exports = {
 
 				const redirectionData = await _CACHE.fetchDataSync(`NAV:${hashId}`);
 
-				const redirectURL = redirectionData?.url;
+				let redirectURL = redirectionData?.url;
 				const encrypted = redirectionData?.encrypted;
 				const userInfo = redirectionData?.userInfo;
 				// appID
 				// navID
 
 				if(redirectURL) {
-					if(userInfo.userId != ctx.meta.user.userId) {
+					if(!ctx.meta.user || !userInfo || userInfo.userId != ctx.meta.user.userId) {
 						throw new LogiksError(
 							"Invalid Link",
 							404,
@@ -1303,7 +1303,7 @@ async function generateUserMap(userInfo, geolocation, geoIP, appid) {
 		access: {
 			id: userInfo.accessid,
 			name: userInfo.access_name,
-			sites: userInfo.scope_sites=="*"? [appid]: userInfo.scope_sites.split(",")
+			sites: (!userInfo.scope_sites || userInfo.scope_sites=="*")? [appid]: String(userInfo.scope_sites).split(",")
 		},
 		privacy: userInfo.privacy,
 		security_policy: userInfo.security_policy,

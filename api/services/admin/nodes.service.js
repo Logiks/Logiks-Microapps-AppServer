@@ -12,8 +12,8 @@ module.exports = {
 				path: "/"
 			},
 			params: {},
-            handler(ctx) {
-                ctx.call("admin.verifyAdmin", {}, { meta: ctx.meta })
+            async handler(ctx) {
+                await ctx.call("admin.verifyAdmin", {}, { meta: ctx.meta });
 
                 return listNodes();
             }
@@ -26,8 +26,8 @@ module.exports = {
             params: {
                 nodeId: "string"
             },
-            handler(ctx) {
-                ctx.call("admin.verifyAdmin", {}, { meta: ctx.meta })
+            async handler(ctx) {
+                await ctx.call("admin.verifyAdmin", {}, { meta: ctx.meta });
                 
                 return nodeInfo(ctx.params.nodeId);
             }
@@ -37,8 +37,8 @@ module.exports = {
                 method: "GET",
                 path: "/services"
             },
-            handler(ctx) {
-                ctx.call("admin.verifyAdmin", {}, { meta: ctx.meta })
+            async handler(ctx) {
+                await ctx.call("admin.verifyAdmin", {}, { meta: ctx.meta });
                 
                 return getLocalServiceNames();
             }
@@ -53,8 +53,8 @@ module.exports = {
                 cmd: "string",
                 nodeId: { type: "string", optional: true, default: "" },
             },
-            handler(ctx) {
-                ctx.call("admin.verifyAdmin", {}, { meta: ctx.meta })
+            async handler(ctx) {
+                await ctx.call("admin.verifyAdmin", {}, { meta: ctx.meta });
                 
                 switch(ctx.params.cmd) {
                     case "restart":

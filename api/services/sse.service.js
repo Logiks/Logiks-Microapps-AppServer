@@ -8,16 +8,10 @@ const clients = new Map();
 //EventSource cannot send an Authorization header, so an authenticated caller
 //first trades its Bearer token for a short-lived, single-use ticket bound to
 //one user + one stream id, and passes that in the EventSource URL instead.
-const tickets = new Map();
+//Tickets live in Redis (not process memory) so a ticket issued by one gateway process can be redeemed on another.
 const TICKET_TTL_MS = 30 * 1000;
+const ticketKey = (ticket) => `sse:ticket:${ticket}`;
 const MAX_STREAMS_PER_USER = 5;
-
-function pruneTickets() {
-    const now = Date.now();
-    for(const [k, v] of tickets) {
-        if(v.expires <= now) tickets.delete(k);
-    }
-}
 
 module.exports = {
     name: "sse",
@@ -28,16 +22,14 @@ module.exports = {
                 method: "POST",
                 fullPath: "/api/sse/ticket"
             },
-            handler(ctx) {
+            async handler(ctx) {
                 const userId = ctx.meta?.user?.userId;
                 if(!userId) throw new LogiksError("Authentication required", 401, "NO_AUTH");
-
-                pruneTickets();
 
                 //The server picks the stream id so it cannot be guessed or chosen by another user
                 const eventId = crypto.randomUUID();
                 const ticket = crypto.randomBytes(32).toString("hex");
-                tickets.set(ticket, { userId, eventId, expires: Date.now() + TICKET_TTL_MS });
+                await _CACHE.getRedisInstance().set(ticketKey(ticket), JSON.stringify({ userId, eventId }), "PX", TICKET_TTL_MS);
 
                 return { eventId, ticket, expiresIn: TICKET_TTL_MS / 1000 };
             }
@@ -49,7 +41,7 @@ module.exports = {
                 enabled: false
             },
 
-            handler(ctx) {
+            async handler(ctx) {
                 try {
                     const req = ctx.meta.$req;
                     const res = ctx.meta.$res;
@@ -57,9 +49,12 @@ module.exports = {
                     const id = ctx.params.eventId;
 
                     //Single-use: removed whether or not it turns out to be valid
-                    const t = tickets.get(ctx.params.ticket);
-                    tickets.delete(ctx.params.ticket);
-                    if(!t || t.expires <= Date.now() || t.eventId !== id) {
+                    let t = null;
+                    if(typeof ctx.params.ticket === "string" && /^[a-f0-9]{64}$/.test(ctx.params.ticket)) {
+                        const raw = await _CACHE.getRedisInstance().getdel(ticketKey(ctx.params.ticket));
+                        try { t = raw ? JSON.parse(raw) : null; } catch(e) { t = null; }
+                    }
+                    if(!t || t.eventId !== id) {
                         throw new LogiksError("Invalid or expired event ticket", 401, "INVALID_TICKET");
                     }
                     const owner = t.userId;

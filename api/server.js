@@ -208,6 +208,8 @@ module.exports = {
 				logLevel: process.env.SERVER_CONSOLE_LOG_LEVEL || (isProd ? "error" : "debug"),//info, debug, trace, error, warn
 			});
 
+			const FABRIC_LOGIN_REQUIRED = CONFIG?.fabric?.login_required !== false;
+
 			const CORS_CONFIG = CONFIG.cors || {
 				origin: "*",//["https://localhost", "https://app.example.com"], ["*", "null"],
 				methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -510,10 +512,11 @@ module.exports = {
 						//Nginx-style proxy where the upstream target is resolved dynamically per
 						{
 							path: "/fabric",
-							authentication: CONFIG?.fabric?.login_required || true,
-							authorization: CONFIG?.fabric?.login_required || true,
+							// Login is required unless the config says login_required is exactly false
+							authentication: FABRIC_LOGIN_REQUIRED,
+							authorization: FABRIC_LOGIN_REQUIRED,
 							opts: {
-								authRequired: CONFIG?.fabric?.login_required || true
+								authRequired: FABRIC_LOGIN_REQUIRED
 							},
 							// whitelist: [
 							// 	"sse.*"
@@ -1146,51 +1149,52 @@ module.exports = {
 									if(req.method=="POST") {
 										const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
 										const TEMP_UPLOAD_ROOT = UPLOADS.tempUploadFolder();
-										
-										switch(req.url) {
+
+										// req.url carries the query string (eg. /files/upload?folder=x), which must not change the route match
+										const urlPath = String(req.url || "").split("?")[0].replace(/\/+$/, "");
+
+										// A rejected upload (blocked type, too large) is an error for the caller, not a request with no file
+										const uploadError = (err) => new LogiksError(
+											err.message || "Upload failed",
+											err.code === "LIMIT_FILE_SIZE" ? 413 : 400,
+											"UPLOAD_REJECTED"
+										);
+
+										// Field names come from the client; these must never overwrite request metadata
+										const RESERVED_META = ["user", "appInfo", "tenantInfo", "headers", "method", "sessionId", "remoteIP", "serverIP", "serverHost", "accessTokenRaw", "file", "files", "fields", "url"];
+
+										switch(urlPath) {
 											case "/files/upload":
 												UPLOADS.getUploadHandler().single("file")(req, res, err => {
-													if (err) return next();
-
-													// UPLOADS.moveUploadedFile(req, [req.file]);
-													
-													// console.log("Uploaded fields:", req.file);
+													if (err) return next(uploadError(err));
 
 													req.$ctx.meta.file = req.file;
-
-													// req.$ctx.meta.fields = req.body || {};
 
 													next();
 												});
 												break;
 											case "/files/uploadbulk":
 												UPLOADS.getUploadHandler().array("files", 50)(req, res, err => {
-													if (err) return next();
-
-													// UPLOADS.moveUploadedFile(req, req.files);
-													
-													// console.log("Uploaded fields:", req.files);
+													if (err) return next(uploadError(err));
 
 													req.$ctx.meta.files = req.files;
-
-													// req.$ctx.meta.fields = req.body || {};
 
 													next();
 												});
 												break;
 											default:
 												UPLOADS.getUploadHandler().any()(req, res, err => {
-													if (err) return next();
+													if (err) return next(uploadError(err));
 													
 													try {
-														const fileFields = [...new Set(req.files.map(f => f.fieldname))];
-
-														// UPLOADS.moveUploadedFile(req, req.files);
-
-														// console.log("Uploaded fields:", fileFields);
+														const uploaded = req.files || [];
+														const fileFields = [...new Set(uploaded.map(f => f.fieldname))];
 
 														_.each(fileFields, function(field, k) {
-															req.$ctx.meta[field] = req[field]?.path.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, "");
+															if(!/^[A-Za-z0-9_]+$/.test(field) || RESERVED_META.includes(field)) return;
+
+															const file = uploaded.find(f => f.fieldname === field);
+															req.$ctx.meta[field] = file?.path.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, "");
 														});
 
 														req.$ctx.meta.fields = req.body || {};
@@ -1329,6 +1333,16 @@ module.exports = {
 						//console.log("AUTH_HEADERS", { authHeader, apiKey, s2skey, serverIP, serverHost, appInfo });
 
 						let user = {};
+
+						// One credential type per request: merging several would let a weaker one mix into a stronger identity
+						const bearerPresent = !!(authHeader && authHeader.startsWith("Bearer "));
+						if([!!tlkey, !!s2skey, !!apiKey, bearerPresent].filter(Boolean).length > 1) {
+							throw new LogiksError(
+								"Send only one credential type per request",
+								400,
+								"MULTIPLE_CREDENTIALS"
+							);
+						}
 
 						//If Time and Use Limted token matches, auto-authenticate as app service user, 
 						if(tlkey) {
