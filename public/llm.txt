@@ -2,7 +2,11 @@
 
 > Logiks is a Node.js framework for running many small business applications ("microapps") on one clustered runtime. It has two code bases that work as a pair. The AppServer (repo `Microapps-AppServer`) is the gateway and platform. The Worker (repo `Microapps-Worker-NodeJS`) hosts microapps as plugins. Both are built on Moleculer (service broker, transporter, service discovery). This file is for LLMs and coding agents working in either repo. It is kept in the AppServer repo (`public/llm.txt`) so every Worker and its IDE can read the copy that matches the AppServer they connect to. Paths below that start with `Microapps-AppServer/` are relative to the `Code/` folder that holds both repos.
 
-Last checked against the source: 2026-11-14. Where the older prose docs in `Microapps-AppServer/docs/` disagree with the code, this file follows the code.
+Describes AppServer version 1.0.0 (`package.json`), last checked against the source on 2026-11-14. Where the older prose docs in `Microapps-AppServer/docs/` disagree with the code, this file follows the code.
+
+A running instance may differ from what is written here. Everything below describes the shipped defaults and the code. A deployment's `config.json` and `.env` can change `noauth`, `request_whitelist`, `cors`, rate limits, timeouts, registered helpers and the AI engines. When behaviour on a live server does not match this file, trust the server, and check `list_helpers`, `list_controllers` and the OpenAPI output from `developers.swagger` for what that instance actually exposes.
+
+Reading this file does not grant access to anything. The platform's protection is its authentication, scope checks, `request_whitelist`, IP rules and the shared `CLUSTER_TOKEN`, not secrecy of its structure. The source repository is public. Never put secrets, tokens, internal hostnames or customer data into this file.
 
 ## 1. Mental model
 
