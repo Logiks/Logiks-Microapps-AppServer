@@ -4,6 +4,18 @@
 const SERVICE_WORKERS = new Map();
 
 const ROUTE_MAP = {};
+const MAX_ROUTE_KEYS = 500;
+
+// Query string removed, and ids (numbers, UUIDs, long hex or random-looking segments) replaced by ":id",
+// so /api/files/preview/123 and /api/files/preview/456 count as one route
+function normalizeRoutePath(path) {
+	return String(path || "")
+		.split("?")[0]
+		.split("/")
+		.map(seg => (/^\d+$/.test(seg) || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(seg) || /^[0-9a-f]{16,}$/i.test(seg) || seg.length >= 24) ? ":id" : seg)
+		.join("/")
+		.substring(0, 200);
+}
 
 // Cluster actions may only be used by a node that registered with the cluster token, or by a platform admin
 function isRegisteredWorkerCall(ctx, nodeID) {
@@ -362,8 +374,13 @@ module.exports = {
 
 	events: {
 		"system.request_completed"(data) {
-			const key = `${data.method} ${data.path}`;
+			let key = `${data.method} ${normalizeRoutePath(data.path)}`;
 			// console.log("API REQUEST STATS", key, data);
+
+			// The map is keyed by route shape, and is capped, so a client cannot grow it by inventing URLs
+			if (!ROUTE_MAP[key] && Object.keys(ROUTE_MAP).length >= MAX_ROUTE_KEYS) {
+				key = `${data.method} (other)`;
+			}
 
 			if (!ROUTE_MAP[key]) {
 				ROUTE_MAP[key] = {

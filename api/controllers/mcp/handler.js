@@ -32,9 +32,9 @@ module.exports = {
                 case "POST":
                     return await handlePost(req, res);
                 case "GET":
-                    return handleStream(req, res);
+                    return await handleStream(req, res);
                 case "DELETE":
-                    return handleDelete(req, res);
+                    return await handleDelete(req, res);
                 default:
                     res.writeHead(405, { "Allow": "GET, POST, DELETE, OPTIONS" });
                     return res.end();
@@ -65,16 +65,16 @@ function ownsSession(session, req) {
     return !!session && !!caller && session.user?.userId === caller;
 }
 
-function handleDelete(req, res) {
+async function handleDelete(req, res) {
     const sessionId = req.headers[SESSION_HEADER];
-    if (sessionId && ownsSession(SESSION.getSession(sessionId), req)) SESSION.closeSession(sessionId);
+    if (sessionId && ownsSession(await SESSION.getSession(sessionId), req)) await SESSION.closeSession(sessionId);
     res.writeHead(204);
     res.end();
 }
 
-function handleStream(req, res) {
+async function handleStream(req, res) {
     const sessionId = req.headers[SESSION_HEADER];
-    const session = SESSION.getSession(sessionId);
+    const session = await SESSION.getSession(sessionId);
 
     if (!session || !ownsSession(session, req)) {
         return PROTOCOL.writeJson(res, 400, { error: "Missing or unknown Mcp-Session-Id header" });
@@ -143,10 +143,11 @@ async function dispatch(message, state, ctx) {
     try {
         switch (method) {
             case "initialize": {
-                const session = SESSION.createSession({ user: ctx?.meta?.user });
+                const session = await SESSION.createSession({ user: ctx?.meta?.user });
                 session.initialized = true;
                 session.protocolVersion = (params && params.protocolVersion) || PROTOCOL.MCP_PROTOCOL_VERSION;
                 session.clientInfo = (params && params.clientInfo) || {};
+                await SESSION.updateSession(session);
                 state.sessionId = session.id;
 
                 if (notification) return null;

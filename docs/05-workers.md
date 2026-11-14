@@ -178,3 +178,25 @@ The bulkhead pattern is enabled ([api/server.js:116-120](../api/server.js#L116-L
 ---
 
 > **Next:** [§6 Services & APIs](06-core-services-and-apis.md) — the action surface, REST mapping, and the API gateway.
+## MCP behind a load balancer
+
+MCP session records (`Mcp-Session-Id`) are stored in Redis with a 30 minute idle expiry, so any gateway process can serve any request of a session. That covers `pm2` cluster mode and several hosts, and needs no sticky routing for `POST /mcp` or `DELETE /mcp`.
+
+Only the open notification stream (`GET /mcp`) is held by the process that accepted it. Nothing in the server pushes notifications today, so this does not matter yet. If you start sending them, keep a session's requests on one node. With nginx in front of several hosts:
+
+```
+upstream appserver {
+    hash $http_mcp_session_id consistent;   # same session id -> same node
+    server app1:9999;
+    server app2:9999;
+}
+location /mcp {
+    proxy_pass http://appserver;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_buffering off;                     # needed for the event stream
+    proxy_read_timeout 1h;
+}
+```
+
+`pm2` cluster mode cannot route by header, so on one host use `exec_mode: "fork"` with several processes behind nginx if you need this.
