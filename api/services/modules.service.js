@@ -126,7 +126,6 @@ module.exports = {
 				var fileName = ctx.params.item;
 				assertSafeNames(moduleName, fileName);
 				
-				console.log("MODULE_COMPONENT_HANDLER", ctx.params);
 
 				if(process.env.NODE_ENV== "development" || ctx.params.recache===true || ctx.params.recache==="true") {
 					if(COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`]) delete COMPONENT_CACHE[`COMPONENTS:${moduleName}:${fileName}`];
@@ -163,10 +162,25 @@ module.exports = {
 			async handler(ctx) {
 				const moduleName = ctx.params.moduleId;
 				const actionId = ctx.params.actionId;
+
+				// Only plain service / action names, and only what CONFIG.request_whitelist.actions lists
+				if(!actionId || !/^[A-Za-z0-9_\-.]+$/.test(String(moduleName)) || !/^[A-Za-z0-9_\-.]+$/.test(String(actionId))) {
+					throw new LogiksError("Invalid service or action name", 400, "INVALID_NAME");
+				}
 				
 				var cmdString = `${moduleName}.${actionId}`;
 
-				console.log("SERVICE_HANDLER", ctx.params, cmdString);
+				// Internal services and the auth / admin namespaces are never reachable through this endpoint
+				const alwaysBlocked = ["auth.*", "admin.*", "$node.*"];
+				if(cmdString.startsWith("$") || _matchWhitelist(alwaysBlocked, cmdString) || !_matchWhitelist(CONFIG.request_whitelist?.actions, cmdString)) {
+					throw new LogiksError(
+						"This action is not available through requests",
+						403,
+						"ACTION_NOT_WHITELISTED"
+					);
+				}
+
+				console.log("SERVICE_HANDLER", cmdString);
 
 				const a1 = await ctx.call(cmdString, ctx.params);
                 return {"status": "okay", "results": a1};

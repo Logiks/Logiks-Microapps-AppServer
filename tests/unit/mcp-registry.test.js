@@ -1,9 +1,11 @@
 "use strict";
 
-// MCP: the built-in query tools read any table of any configured database, so they are admin-only, both for
-// listing and for calling. Plugin tools are not affected by that rule.
+// MCP: the built-in query tools read any table of any configured database for every tenant, so they are for platform
+// admins only (CONFIG.platform_admin), both for listing and for calling. A tenant's own "admin" role is not enough.
+// Plugin tools are not affected by that rule.
 
 global.LogiksError = require("./helpers/fakes").LogiksError;
+require("../../api/commons");
 
 const REGISTRY = require("../../api/controllers/mcp/registry");
 
@@ -22,9 +24,14 @@ beforeAll(() => {
 });
 
 describe("tool listing", () => {
-	test.each([["admin role", admin], ["root privilege", root]])("%s sees the system tools", (_, ctx) => {
+	test.each([["root privilege", root]])("%s sees the system tools", (_, ctx) => {
 		const names = REGISTRY.listTools(ctx).map(t => t.name);
 		SYSTEM_TOOLS.forEach(n => expect(names).toContain(n));
+	});
+
+	test("a tenant admin role alone does not see system tools", () => {
+		const names = REGISTRY.listTools(admin).map(t => t.name);
+		SYSTEM_TOOLS.forEach(n => expect(names).not.toContain(n));
 	});
 
 	test("a regular user does not see system tools, but still sees plugin tools", () => {
@@ -49,8 +56,12 @@ describe("tool calls", () => {
 		await expect(REGISTRY.callTool("system_probe", {}, undefined)).rejects.toMatchObject({ code: "FORBIDDEN" });
 	});
 
-	test("an admin can", async () => {
-		await expect(REGISTRY.callTool("system_probe", {}, admin)).resolves.toBe("ran");
+	test("a platform admin can", async () => {
+		await expect(REGISTRY.callTool("system_probe", {}, root)).resolves.toBe("ran");
+	});
+
+	test("a tenant admin cannot", async () => {
+		await expect(REGISTRY.callTool("system_probe", {}, admin)).rejects.toMatchObject({ code: "FORBIDDEN" });
 	});
 
 	test("plugin tools are callable by a regular user", async () => {
@@ -58,7 +69,7 @@ describe("tool calls", () => {
 	});
 
 	test("an unknown tool is reported as such", async () => {
-		await expect(REGISTRY.callTool("nope", {}, admin)).rejects.toMatchObject({ code: "TOOL_NOT_FOUND" });
+		await expect(REGISTRY.callTool("nope", {}, root)).rejects.toMatchObject({ code: "TOOL_NOT_FOUND" });
 	});
 });
 

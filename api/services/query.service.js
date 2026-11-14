@@ -17,7 +17,7 @@ module.exports = {
             },
 			async handler(ctx) {
 				//Add additioanl restrictions for running the queries recieved through this channel
-				if(isProd || isStaging) {
+				if(!isDevelopment) {
 					throw new LogiksError(
 						"Restricted, Only Development Environment has access to this API",
 						404,
@@ -109,7 +109,7 @@ module.exports = {
 				// filter: "object",
             },
 			async handler(ctx) {
-				if(isProd || isStaging) {
+				if(!isDevelopment) {
 					throw new LogiksError(
 						"Restricted, Only Development Environment has access to this API",
 						404,
@@ -152,7 +152,7 @@ module.exports = {
 				// groupby
             },
 			async handler(ctx) {
-				if(isProd || isStaging) {
+				if(!isDevelopment) {
 					throw new LogiksError(
 						"Restricted, Only Development Environment has access to this API",
 						404,
@@ -210,7 +210,7 @@ module.exports = {
 				// moduleid: "string",
             },
 			async handler(ctx) {
-				if(isProd || isStaging) {
+				if(!isDevelopment) {
 					throw new LogiksError(
 						"Restricted, Only Development Environment has access to this API",
 						404,
@@ -270,7 +270,7 @@ module.exports = {
 					queryObjOne.dbkey = (queryObj.dbkey!="*"?queryObj.dbkey:"appdb");
 					ctx.params = _.extend(ctx.params, queryObj.params || {});
 					
-					if(!isProd) ctx.params.DEBUG = queryObj.debug;
+					if(isDevelopment) ctx.params.DEBUG = queryObj.debug;
 				}
 
 				var hasDistinct = false;

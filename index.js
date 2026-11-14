@@ -35,6 +35,8 @@ global.START_TIME = moment().format();
 
 global.isProd = process.env.NODE_ENV === "production";
 global.isStaging = process.env.NODE_ENV === "uat" || process.env.NODE_ENV === "staging";
+// The only mode where dev tools are on and weak secrets are tolerated. Any other value (including typos) is treated as a real deployment.
+global.isDevelopment = process.env.NODE_ENV === "development";
 
 console.log("\x1b[34m%s\x1b[0m","\nAppServer Initialization Started", process.env.NODE_ENV);
 console.log("");
@@ -83,6 +85,15 @@ async function main() {
         "VERSION": packageConfig.version,
         "BUILD": packageConfig.version.replaceAll(/\./g, "")
     });
+
+    // Refuse to start a real deployment with missing, short or sample secrets (development only gets warnings)
+    const startupCheck = require("./api/startupChecks").check(global.CONFIG, process.env, global.isDevelopment);
+    startupCheck.warnings.forEach(w => console.warn("\x1b[33m%s\x1b[0m", "⚠ " + w));
+    if(startupCheck.errors.length > 0) {
+        startupCheck.errors.forEach(e => console.error("\x1b[31m%s\x1b[0m", "❌ " + e));
+        console.error("\nStartup refused: fix the secrets above, or run with NODE_ENV=development on a developer machine.");
+        process.exit(1);
+    }
 
     await _CACHE.initialize();
 

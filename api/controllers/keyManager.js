@@ -29,14 +29,14 @@ module.exports = {
         if(KEY_ALGOS.indexOf(algo) < 0) algo = "sha1";
         const dated = new Date().toISOString();
         
-        const newKey = UNIQUEID.generate(10);
+        const newKey = UNIQUEID.generate(32);
         await _DB.db_insertQ1("appdb", "lgks_kms", {
                 "guid": guid,
 
                 "key_title": keyId.split(":")[0].replace(/_/g, " ").toUpperCase(),
                 "key_module": keyId.split(":")[0],
                 "key_id": keyId,
-                "key_value": newKey,
+                "key_value": ENCRYPTER.protect(newKey),
                 "key_algo": algo,
                 "key_history": "",
                 "key_vers": "1",
@@ -79,7 +79,7 @@ module.exports = {
                 };
             }
         } else {
-            EXISTING_KEYS[`${guid}${keyId}`] = getKeyValue(keyId, data.results[0].key_value, data.results[0].key_algo, `${data.results[0].key_vers}`);
+            EXISTING_KEYS[`${guid}${keyId}`] = getKeyValue(keyId, ENCRYPTER.unprotect(data.results[0].key_value), data.results[0].key_algo, `${data.results[0].key_vers}`);
 
             return {
                 key: EXISTING_KEYS[`${guid}${keyId}`],

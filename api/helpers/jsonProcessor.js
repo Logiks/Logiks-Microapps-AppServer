@@ -685,7 +685,7 @@ module.exports = {
     },
     generateSelector: async function(fieldObj, fieldKey, ctx) {
         var envData = await ENV.fetchEnvInfo(ctx.meta);
-        envData = _.extend(envData, ctx.params);
+        envData = _.extend({}, ctx.params, envData);
 
         switch(fieldObj.type) {
             case 'dataMethod': 

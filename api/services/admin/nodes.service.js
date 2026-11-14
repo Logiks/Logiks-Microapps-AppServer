@@ -13,7 +13,9 @@ module.exports = {
 			},
 			params: {},
             async handler(ctx) {
-                await ctx.call("admin.verifyAdmin", {}, { meta: ctx.meta });
+                if(!_isPlatformAdmin(ctx.meta.user)) {
+                    throw new LogiksError("Platform admin access only", 403, "FORBIDDEN_PLATFORM_ADMIN_ONLY");
+                }
 
                 return listNodes();
             }
@@ -27,7 +29,9 @@ module.exports = {
                 nodeId: "string"
             },
             async handler(ctx) {
-                await ctx.call("admin.verifyAdmin", {}, { meta: ctx.meta });
+                if(!_isPlatformAdmin(ctx.meta.user)) {
+                    throw new LogiksError("Platform admin access only", 403, "FORBIDDEN_PLATFORM_ADMIN_ONLY");
+                }
                 
                 return nodeInfo(ctx.params.nodeId);
             }
@@ -38,7 +42,9 @@ module.exports = {
                 path: "/services"
             },
             async handler(ctx) {
-                await ctx.call("admin.verifyAdmin", {}, { meta: ctx.meta });
+                if(!_isPlatformAdmin(ctx.meta.user)) {
+                    throw new LogiksError("Platform admin access only", 403, "FORBIDDEN_PLATFORM_ADMIN_ONLY");
+                }
                 
                 return getLocalServiceNames();
             }
@@ -54,7 +60,9 @@ module.exports = {
                 nodeId: { type: "string", optional: true, default: "" },
             },
             async handler(ctx) {
-                await ctx.call("admin.verifyAdmin", {}, { meta: ctx.meta });
+                if(!_isPlatformAdmin(ctx.meta.user)) {
+                    throw new LogiksError("Platform admin access only", 403, "FORBIDDEN_PLATFORM_ADMIN_ONLY");
+                }
                 
                 switch(ctx.params.cmd) {
                     case "restart":

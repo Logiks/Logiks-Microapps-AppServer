@@ -1,7 +1,7 @@
 // /api/services/swagger.service.js
 "use strict";
 
-if(isProd || isStaging) {
+if(!isDevelopment) {
 	module.exports = {
 		name: "developers",
 		actions: {

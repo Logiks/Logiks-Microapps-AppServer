@@ -80,6 +80,32 @@ global._call = async function(serviceString, ...args) {
     }
 }
 
+//Allowlist matching used by the config whitelists (request_whitelist, token_access).
+//An entry is an exact name ("files.upload"), a prefix ("reports.*", matches "reports.list" and "reports.x.y"),
+//or "*" for everything. An empty or missing list allows nothing.
+global._matchWhitelist = function(list, name) {
+    if(!Array.isArray(list) || typeof name !== "string" || name.length === 0) return false;
+
+    return list.some(function(entry) {
+        if(typeof entry !== "string" || entry.length === 0) return false;
+        if(entry === "*") return true;
+        if(entry.endsWith(".*")) return name.startsWith(entry.slice(0, -1));
+        return entry === name;
+    });
+}
+
+//Platform admin = whoever may operate the whole cluster (restart nodes, read every tenant's data). This is deliberately
+//not the per-tenant "admin" role. Configure with CONFIG.platform_admin = { privileges: [...], roles: [...] }.
+global._isPlatformAdmin = function(user) {
+    if(!user) return false;
+
+    const cfg = CONFIG.platform_admin || {};
+    const privileges = Array.isArray(cfg.privileges) ? cfg.privileges : ["root", "devroot"];
+    const roles = Array.isArray(cfg.roles) ? cfg.roles : [];
+
+    return privileges.includes(user.privilege) || (Array.isArray(user.roles) && user.roles.some(r => roles.includes(r)));
+}
+
 global.addAppEventListener = async function(eventKey, func) {
     APP_EVENT_LISTENER.push({eventKey, func});
 }

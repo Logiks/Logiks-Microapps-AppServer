@@ -30,7 +30,7 @@ module.exports = {
                 // "forcefill": "object"
             },
             async handler(ctx) {
-                if(isProd || isStaging) {
+                if(!isDevelopment) {
 					throw new LogiksError(
 						"Restricted, Only Development Environment has access to this API",
 						404,
@@ -59,6 +59,7 @@ module.exports = {
             async handler(ctx) {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
+                this.assertDataHash(ctx);
                 var dataFields = ctx.params.fields;
                 const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
 
@@ -81,6 +82,9 @@ module.exports = {
                 //         jsonQuery.operation
                 //     );
                 // }
+
+                // Only the columns the form defines and allows to be saved are taken from the request
+                dataFields = pickFormFields(dataFields, jsonQuery.fields);
 
                 var IS_HOOK_ERROR = false;
                 if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
@@ -135,17 +139,17 @@ module.exports = {
                 //Single Insert
 
                 var forcefillData = await ENV.fetchEnvInfo(ctx.meta);
-                forcefillData = _.extend(forcefillData, ctx.params);
+                forcefillData = _.extend({}, ctx.params, forcefillData);
                 forcefill = QUERY.updateWhereFromEnv(forcefill, forcefillData);
                 if(forcefill && Object.keys(forcefill).length>0) dataFields = _.extend(dataFields, forcefill);
 
-                const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || ctx.params?.dbkey || "appdb";
+                const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || "appdb";
 
                 const dbResponse = await _DB.db_insertQ1(dbkey, sqlTable, dataFields);
                 const insertId = dbResponse.insertId;
 
                 if(!insertId) {
-                    if(isProd || isStaging) {
+                    if(!isDevelopment) {
                         throw new LogiksError(
                             "Error creating db record",
                             400,
@@ -209,6 +213,7 @@ module.exports = {
             async handler(ctx) {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
+                this.assertDataHash(ctx);
                 var dataFields = ctx.params.fields;
                 const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
 
@@ -231,6 +236,9 @@ module.exports = {
                 //         jsonQuery.operation
                 //     );
                 // }
+
+                // Only the columns the form defines and allows to be saved are taken from the request
+                if(Array.isArray(dataFields)) dataFields = dataFields.map(row => pickFormFields(row, jsonQuery.fields));
 
                 var IS_HOOK_ERROR = false;
                 if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
@@ -271,7 +279,7 @@ module.exports = {
                 const validationRules = convertToValidatorRules(sqlFields);
                 
                 var forcefillData = await ENV.fetchEnvInfo(ctx.meta);
-                forcefillData = _.extend(forcefillData, ctx.params);
+                forcefillData = _.extend({}, ctx.params, forcefillData);
                 forcefill = QUERY.updateWhereFromEnv(forcefill, forcefillData);
 
                 if(Array.isArray(dataFields)) {
@@ -299,7 +307,7 @@ module.exports = {
                         if(forcefill && Object.keys(forcefill).length>0) dataFields[k] = _.extend(dataFields[k], forcefill);
                     });
 
-                    const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || ctx.params?.dbkey || "appdb";
+                    const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || "appdb";
 
                     //Bulk Insert
                     const dbResponse = await _DB.db_insert_batchQ(dbkey, sqlTable, dataFields);
@@ -345,6 +353,7 @@ module.exports = {
             async handler(ctx) {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
+                this.assertDataHash(ctx);
                 var formFields = ctx.params.fields;
 
                 ctx.params.refid = ctx.params.refid1 ?? ctx.params.refid;
@@ -407,10 +416,10 @@ module.exports = {
 
                 // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await ENV.fetchEnvInfo(ctx.meta));
                 var sqlWhereData = await ENV.fetchEnvInfo(ctx.meta);
-                sqlWhereData = _.extend(sqlWhereData, ctx.params);
+                sqlWhereData = _.extend({}, ctx.params, sqlWhereData);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
 
-                const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || ctx.params?.dbkey || "appdb";
+                const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || "appdb";
                 
                 const dbResponse = await _DB.db_selectQ(dbkey, sqlTable, sqlFields, sqlWhere, {}, " LIMIT 1");
                 
@@ -431,6 +440,7 @@ module.exports = {
             async handler(ctx) {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
+                this.assertDataHash(ctx);
                 var dataFields = ctx.params.fields;
                 const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
 
@@ -453,6 +463,9 @@ module.exports = {
                 //         jsonQuery.operation
                 //     );
                 // }
+
+                // Only the columns the form defines and allows to be saved are taken from the request
+                dataFields = pickFormFields(dataFields, jsonQuery.fields);
 
                 var IS_HOOK_ERROR = false;
                 if(jsonQuery.hooks && jsonQuery.hooks.presubmit) {
@@ -511,7 +524,7 @@ module.exports = {
                 dataFields = _.extend(dataFields, MISC.generateDefaultDBRecord(ctx, true));
 
                 var forcefillData = await ENV.fetchEnvInfo(ctx.meta);
-                forcefillData = _.extend(forcefillData, ctx.params);
+                forcefillData = _.extend({}, ctx.params, forcefillData);
                 forcefill = QUERY.updateWhereFromEnv(forcefill, forcefillData);
                 if(forcefill && Object.keys(forcefill).length>0) dataFields = _.extend(dataFields, forcefill);
                 
@@ -534,10 +547,10 @@ module.exports = {
 
                 // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await ENV.fetchEnvInfo(ctx.meta));
                 var sqlWhereData = await ENV.fetchEnvInfo(ctx.meta);
-                sqlWhereData = _.extend(sqlWhereData, ctx.params);
+                sqlWhereData = _.extend({}, ctx.params, sqlWhereData);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
 
-                const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || ctx.params?.dbkey || "appdb";
+                const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || "appdb";
 
                 const preData = await _DB.db_findOne(dbkey, sqlTable, Object.keys(newDataFields), sqlWhere, 'id DESC', true);
                 
@@ -590,6 +603,7 @@ module.exports = {
             async handler(ctx) {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
+                this.assertDataHash(ctx);
                 var dataFields = ctx.params.fields;
                 const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
 
@@ -650,11 +664,11 @@ module.exports = {
                 
                 // sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, await ENV.fetchEnvInfo(ctx.meta));
                 var sqlWhereData = await ENV.fetchEnvInfo(ctx.meta);
-                sqlWhereData = _.extend(sqlWhereData, ctx.params);
+                sqlWhereData = _.extend({}, ctx.params, sqlWhereData);
                 sqlWhere = QUERY.updateWhereFromEnv(sqlWhere, sqlWhereData);
                 const dataToUpdate = _.extend( {"blocked": "true"}, MISC.generateDefaultDBRecord(ctx, true));
 
-                const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || ctx.params?.dbkey || "appdb";
+                const dbkey = jsonQuery.source?.dbkey || jsonQuery.dbkey || "appdb";
 
                 const preData = await _DB.db_findOne(dbkey, sqlTable, "blocked, created_on, edited_on, created_by, edited_by", sqlWhere, 'id DESC', true);
 
@@ -703,6 +717,7 @@ module.exports = {
             async handler(ctx) {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
+                this.assertDataHash(ctx);
                 var dataFields = ctx.params.fields;
                 const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
 
@@ -746,6 +761,7 @@ module.exports = {
             async handler(ctx) {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
+                this.assertDataHash(ctx);
                 var dataFields = ctx.params.fields;
                 const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
 
@@ -789,6 +805,7 @@ module.exports = {
             async handler(ctx) {
                 const dbOpsID = ctx.params.refid;
                 const dbOpsHash = ctx.params.datahash;
+                this.assertDataHash(ctx);
                 var dataFields = ctx.params.fields;
                 const moduleRefID = decodeURIComponent(ctx.params.refid).split("@");
 
@@ -821,8 +838,25 @@ module.exports = {
         }
     },
     methods: {
+        // Tied to the caller's token. API key / service callers have no token hash, so one is derived from who they are.
         getDBOpsHash(ctx) {
-            return ctx.meta.user.secure_hash?ctx.meta.user.secure_hash:UNIQUEID.generate(16);
+            const user = ctx.meta.user || {};
+            if(user.secure_hash) return user.secure_hash;
+
+            return crypto.createHmac("sha256", String(CONFIG.authjwt?.secret || ""))
+                .update(`dbops:${user.tenantId || user.guid || ""}:${user.userId || ""}`)
+                .digest("hex");
+        },
+
+        // datahash must be the value dbops.start handed to this caller (CONFIG.dbops.enforce_datahash = false turns the check off)
+        assertDataHash(ctx) {
+            if(CONFIG.dbops && CONFIG.dbops.enforce_datahash === false) return;
+
+            const expected = Buffer.from(String(this.getDBOpsHash(ctx)));
+            const given = Buffer.from(String(ctx.params.datahash || ""));
+            if(expected.length !== given.length || !crypto.timingSafeEqual(expected, given)) {
+                throw new LogiksError("Invalid data hash for this request", 400, "INVALID_DATAHASH");
+            }
         }
     }
 }
@@ -834,4 +868,11 @@ function filterNoDbNoSave(obj) {
       return field.nodb !== true && field.nosave !== true;
     })
   );
+}
+
+// Keeps only the keys that are saveable columns of the form definition; anything else in the request is dropped
+function pickFormFields(row, formFields) {
+  if(!row || typeof row !== "object" || Array.isArray(row)) return {};
+  const allowed = Object.keys(filterNoDbNoSave(formFields || {}));
+  return _.pick(row, allowed);
 }

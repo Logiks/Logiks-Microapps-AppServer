@@ -5,7 +5,7 @@
 //into the SQL string. Its own value-escaping hook, cleanSQL() in query.js,
 //is a no-op (`function cleanSQL(str) { return str; }`) - it does not escape
 //anything. api/services/query.service.js, which exposes the same compiler
-//over HTTP, is gated behind `if (isProd || isStaging) throw ... RESTRICTED_ENVIRONMENT`
+//over HTTP, is gated behind `if (!isDevelopment) throw ... RESTRICTED_ENVIRONMENT`
 //for exactly this reason - it's a dev/debugging tool, not safe for
 //untrusted input in production.
 //

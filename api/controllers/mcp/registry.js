@@ -87,14 +87,14 @@ function registerPluginTool(entry) {
     );
 }
 
-// System tools read schema and rows from any configured database, so they are limited to admins by default
-// (same rule as the gateway's `admin.*` actions). CONFIG.mcp.system_tool_privileges can widen it.
+// System tools read schema and rows from any configured database for every tenant, so they are limited to platform
+// admins (CONFIG.platform_admin), not to a tenant's own "admin" role. CONFIG.mcp.system_tool_privileges can add privileges.
 function canUseSystemTools(ctx) {
     const user = ctx && ctx.meta && ctx.meta.user;
     if (!user) return false;
 
-    const privileges = (CONFIG.mcp && CONFIG.mcp.system_tool_privileges) || ["root", "devroot", "admin"];
-    return (Array.isArray(user.roles) && user.roles.includes("admin")) || privileges.includes(user.privilege);
+    const extra = (CONFIG.mcp && Array.isArray(CONFIG.mcp.system_tool_privileges)) ? CONFIG.mcp.system_tool_privileges : [];
+    return _isPlatformAdmin(user) || extra.includes(user.privilege);
 }
 
 function listTools(ctx) {

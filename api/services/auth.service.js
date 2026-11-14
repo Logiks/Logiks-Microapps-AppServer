@@ -16,6 +16,10 @@ const TLTOKENS_MAX = 10;
 const GEO_DISTANCE_MAX = 10000;
 const FEDERATED_LOGIN_TIMEOUT = 2 * 60; // 5 minutes
 
+// Failed password attempts per account; after LOGIN_MAX_ATTEMPTS the account is locked for LOGIN_LOCK_SECONDS
+const LOGIN_MAX_ATTEMPTS = Number(CONFIG.security?.login_max_attempts || 5);
+const LOGIN_LOCK_SECONDS = Number(CONFIG.security?.login_lock_seconds || 15 * 60);
+
 const TLTOKEN_SCOPES = ["/api"];
 const S2STOKEN_SCOPES = ["/api/*"];
 
@@ -110,7 +114,7 @@ module.exports = {
 				user: "object"
 			},
 			async handler(ctx) {
-				if(isProd || isStaging) {
+				if(!isDevelopment) {
 					throw new LogiksError(
 						"Restricted, Only Development Environment has access to this API",
 						404,
@@ -123,11 +127,8 @@ module.exports = {
 			}
 		},
 
+		// Internal only: exposing it on the web would let anyone decode any token they hold
 		verifyToken: {
-			rest: {
-				method: "POST",
-				path: "/verifyToken"
-			},
 			params: {
 				appid: "string",
 				token: "string",
@@ -278,17 +279,17 @@ module.exports = {
 					userInfo = await generateUserMap(userInfo, "0,0", ctx.meta.remoteIP, ctx.meta.appInfo.appid);
 
 					const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
-					const retokenId = UNIQUEID.generate(10);
+					const retokenId = UNIQUEID.generate(32);
 
 					await authRedis.set(
-						retokenId,
+						`fedretoken:${retokenId}`,
 						JSON.stringify({ token, deviceType: "web", user: userInfo, ip: ctx.meta.remoteIP }),
 						"EX",
 						FEDERATED_LOGIN_TIMEOUT
 					);
-					var redirectURL = ctx.meta.serverHost;
-					if(!redirectURL) {
-						redirectURL = "";
+					var redirectURL = "//"+ctx.meta.serverHost;
+					if(!ctx.meta.serverHost) {
+						redirectURL = "//";
 					}
 					redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "retoken=" + retokenId;
 					// console.log("X1", userInfo, token, redirectURL);
@@ -321,10 +322,10 @@ module.exports = {
 					userInfo = await generateUserMap(userInfo, "0,0", ctx.meta.remoteIP, ctx.meta.appInfo.appid);
 					
 					const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, "web", ctx);
-					const retokenId = UNIQUEID.generate(10);
+					const retokenId = UNIQUEID.generate(32);
 
 					await authRedis.set(
-						retokenId,
+						`fedretoken:${retokenId}`,
 						JSON.stringify({ token, deviceType: "web", user: userInfo, ip: ctx.meta.remoteIP }),
 						"EX",
 						FEDERATED_LOGIN_TIMEOUT
@@ -346,7 +347,7 @@ module.exports = {
 					if(!redirectURL) {
 						redirectURL = "//";
 					}
-					redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "message=" + result.message;
+					redirectURL = redirectURL + (redirectURL.indexOf("?")>-1?"&":"?") + "message=" + encodeURIComponent(result.message);
 					
 					ctx.meta.$statusCode = 302;
 					ctx.meta.$responseHeaders = {
@@ -371,7 +372,8 @@ module.exports = {
 			async handler(ctx) {
 				// console.log("FEDERATED_LOGIN_POST", { "params": ctx.params, "headers": ctx.headers });
 				var { deviceType, geolocation, retoken } = ctx.params;
-				const stored = await authRedis.get(retoken);
+				// One-time: read and delete together, so a retoken cannot be replayed
+				const stored = await authRedis.getdel(`fedretoken:${retoken}`);
 
 				if (!stored) {
 					await log_login_error({
@@ -437,8 +439,21 @@ module.exports = {
 			async handler(ctx) {
 				var { username, password, deviceType, geolocation } = ctx.params;
 
+				const lockKey = `loginfail:${ctx.meta.appInfo.appid}:${String(username).toLowerCase()}`;
+				const failedAttempts = parseInt(await authRedis.get(lockKey)) || 0;
+				if(failedAttempts >= LOGIN_MAX_ATTEMPTS) {
+					await log_login_error({
+						"guid": "-",
+						"userId": username,
+						"geolocation": geolocation
+					}, "USER-LOGIN", "/login", "Account locked after too many failed attempts", ctx);
+					throw new LogiksError("Too many failed login attempts, try again later", 429, "LOGIN_LOCKED");
+				}
+
 				const userInfo = await USERS.verifyUser(username, password, ctx.meta.appInfo.appid);
 				if(!userInfo) {
+					const failed = await authRedis.incr(lockKey);
+					if(failed === 1) await authRedis.expire(lockKey, LOGIN_LOCK_SECONDS);
 					await log_login_error({
 						"guid": "-",
 						"userId": username,
@@ -446,6 +461,8 @@ module.exports = {
 					}, "USER-LOGIN", "/login", "Invalid credentials", ctx);
 					throw new LogiksError("Invalid credentials", 401);
 				}
+				await authRedis.del(lockKey);
+
 				var userDataUpdated = await generateUserMap(userInfo, geolocation, ctx.meta.remoteIP, ctx.meta.appInfo.appid);
 				userDataUpdated.vcode = userInfo.vcode;
 				
@@ -523,7 +540,7 @@ module.exports = {
 				//If No
 				if(!mfainfo) {
 					//check if user has any MFA method enforced, if yes, then ask for OTP/MFA instead of giving access token
-					if(CONFIG?.mfa?.mfa_strategy=="enforce") {
+					if((CONFIG?.mfa?.mfa_strategy ?? CONFIG?.mfa?.strategy)=="enforce") {
 						USERS.generateMFASecret(userInfo.guid, username);
 
 						await log_login_error({
@@ -636,7 +653,8 @@ module.exports = {
 
 				const jti = payload.jti;
 				const key = `refresh:${jti}`;
-				var stored = await authRedis.get(key);
+				// GETDEL: read and delete in one step, so two parallel refreshes cannot both succeed
+				var stored = await authRedis.getdel(key);
 
 				if (!stored) {
 					await log_login_error({
@@ -658,8 +676,24 @@ module.exports = {
 					throw new LogiksError("Refresh token revoked (2)", 401);
 				}
 
-				// Rotate: delete old
-				await authRedis.del(key);
+				// The refresh token was consumed above. It must be used by the same kind of client that received it, and
+				// optionally from the same IP (CONFIG.security.refresh_bind_ip).
+				if(stored.deviceType && deviceType !== stored.deviceType) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "USER-REFRESH-LOGIN", "/refresh", "Refresh token used by a different device type", ctx);
+					throw new LogiksError("Invalid refresh token", 401);
+				}
+				if(CONFIG.security?.refresh_bind_ip === true && stored.ip && stored.ip !== ctx.meta.remoteIP) {
+					await log_login_error({
+						"guid": "-",
+						"userId": "-",
+						"geolocation": geolocation
+					}, "USER-REFRESH-LOGIN", "/refresh", "Refresh token used from a different IP", ctx);
+					throw new LogiksError("Invalid refresh token", 401);
+				}
 
 				var userInfo = await authRedis.get(`user:${stored.sessionId}`);
 				try {
@@ -674,7 +708,30 @@ module.exports = {
 					throw new LogiksError("User Info Missing, try login again", 401);
 				}
 
+				// Roles, scopes and privilege are read again, so a blocked user or a removed role does not survive a refresh
+				let freshUser = null;
+				try {
+					freshUser = await USERS.getUserInfo(userInfo.userId, {"lgks_users.guid": userInfo.guid}, true);
+				} catch(e) {
+					freshUser = null;
+				}
+				if(!freshUser || freshUser.blocked === "true") {
+					await authRedis.del(`user:${stored.sessionId}`);
+					await log_login_error({
+						"guid": userInfo.guid,
+						"userId": userInfo.userId,
+						"geolocation": geolocation
+					}, "USER-REFRESH-LOGIN", "/refresh", "Account is no longer active", ctx);
+					throw new LogiksError("Session ended, please log in again", 401);
+				}
+				userInfo = await generateUserMap(freshUser, geolocation, ctx.meta.remoteIP, ctx.meta.appInfo.appid);
+
 				const token = await this.issueTokensForUser(userInfo, ctx.meta.remoteIP, deviceType, ctx);
+
+				// The old session record only lives on for a short grace period (requests already in flight with the old access token)
+				await authRedis.expire(`user:${stored.sessionId}`, 60);
+				await authRedis.srem(`user_sessions:${stored.tenantId}:${stored.userId}`, jti);
+
 				await log_login(userInfo, "USER-REFRESH-LOGIN", "/refresh", ctx);
 				return token;
 			}
@@ -1040,13 +1097,15 @@ module.exports = {
 	},
 	methods: {
 		async issueTimeLimitedToken(ctx) {
-			const sessionId = `${ctx.params.appid}:${ctx.params.appid}:${Date.now()}`;
+			// The app comes from the resolved domain, never from a request field
+			const appid = ctx.meta.appInfo.appid;
+			const sessionId = `${appid}:${appid}:${Date.now()}`;
 
 			const accessJti = `acc:${sessionId}`;
 			// const refreshJti = `ref:${sessionId}`;
 
 			const payloadBase = {
-				"appId": ctx.params.appid,
+				"appId": appid,
 				"ip": ctx.meta.remoteIP,
 				"deviceType": "tlt"
 			};
@@ -1067,8 +1126,8 @@ module.exports = {
 			const tltoken = UNIQUEID.generate(12);
 
 			const tempObj = {
-				appId: ctx.params.appid,
-				guid: ctx.params.appid,
+				appId: appid,
+				guid: appid,
 				userId: "tlt",
 				geolocation: ctx.params.geolocation?ctx.params.geolocation:"0,0",
 				accessToken: accessToken,
@@ -1094,7 +1153,7 @@ module.exports = {
 				"token": tltoken,
 				// "accessToken": accessToken,
 				"expiresIn": ACCESS_TOKEN_TTL,
-				"appid": ctx.params.appid
+				"appid": appid
 			}
 		},
 
@@ -1314,6 +1373,12 @@ async function generateUserMap(userInfo, geolocation, geoIP, appid) {
 	};
 }
 
+// Values from the client that end up in log tables: control characters removed, markup characters neutralised, length capped
+function cleanLogText(value, max = 255) {
+	if(value === undefined || value === null) return value;
+	return String(value).replace(/[\u0000-\u001f\u007f]/g, " ").replace(/</g, "&lt;").replace(/>/g, "&gt;").substring(0, max);
+}
+
 async function log_login(userInfo, loginType, loginURI, ctx) {
 	const dated = moment().format("YYYY-MM-DD HH:mm:ss");
 	var userAgent = ctx.meta.headers["user-agent"];
@@ -1328,8 +1393,8 @@ async function log_login(userInfo, loginType, loginURI, ctx) {
 		"client_ip": ctx.meta.remoteIP, 
 		"server_ip": ctx.meta.serverIP || "0.0.0.0", 
 		"host": ctx.meta.serverHost || "-", 
-		"user_agent": userAgent || "-", 
-		"device_fingerprint": ctx.params.deviceid || "-", 
+		"user_agent": cleanLogText(userAgent) || "-", 
+		"device_fingerprint": cleanLogText(ctx.params.deviceid) || "-", 
 		"medium": ctx.params.device || "api", 
 		"reason": "LOGIN", 
 		"status": "SUCCESS",
@@ -1361,15 +1426,15 @@ async function log_login_error(userInfo, loginType, loginURI, errorMessage, ctx)
 	var createData = {
 		"appid": ctx.meta.appInfo.appid, 
 		"guid": userInfo.guid?userInfo.guid:"-",
-		"loginid": userInfo.userId, 
+		"loginid": cleanLogText(userInfo.userId), 
 		"event_type": `ERROR-${loginType}`, 
 		"geolocation": userInfo.geolocation, 
 		"uri": loginURI, 
 		"host": ctx.meta.serverHost, 
 		"client_ip": ctx.meta.remoteIP, 
 		"server_ip": ctx.meta.serverIP || "0.0.0.0", 
-		"user_agent": userAgent?userAgent:"-", 
-		"device_fingerprint": ctx.params.deviceid?ctx.params.deviceid:"-", 
+		"user_agent": cleanLogText(userAgent) || "-", 
+		"device_fingerprint": cleanLogText(ctx.params.deviceid) || "-", 
 		"medium": ctx.params.device?ctx.params.device:"api", 
 		"reason": errorMessage, 
 		"status": "ERROR", 
@@ -1464,7 +1529,13 @@ async function check_log_device(userInfo, ctx) {
 			throw new LogiksError("Device is not yet approved, please contact admin", 401);
 		}
 		
-		var a = await _DB.db_updateQ("logdb", "log_devices", `access_count=access_count+1, last_accessed=now(), geolocation='${geolocation}', ip_address='${ctx.meta.remoteIP}'`, {
+		// Object form, so geolocation and IP are bound values and never part of the SQL text
+		var a = await _DB.db_updateQ("logdb", "log_devices", {
+			access_count: (parseInt(deviceData.results[0].access_count) || 0) + 1,
+			last_accessed: dated,
+			geolocation: geolocation,
+			ip_address: ctx.meta.remoteIP
+		}, {
 			id: deviceData.results[0].id
 		});
 		// console.log("UPDATED", a);

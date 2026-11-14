@@ -229,9 +229,17 @@ async function generateEnvObj(metaInfo) {
     newMeta["SERVER_IP"] =  newMeta.serverIP?newMeta.serverIP:newMeta.serverHost;
     
     //Load Environment Variables
-    _.each(ENVIRONMENTS, function(value, key) {
-        newMeta[key] = value;
-    });
+    //Only the shared (global) variables and the caller's own tenant, never another tenant's
+    //A variable can never replace a session / system value set above
+    const envGuid = newMeta?.user?.guid || newMeta?.user?.tenantId;
+    const RESERVED = /^(SESS_|META_|USERID$|CLIENT_IP$|SERVER_IP$|GEOLOCATION$|ADMIN_PRIVILEGE_RANGE$)/;
+    const loadVars = function(vars) {
+        _.each(vars || {}, function(value, key) {
+            if(!RESERVED.test(String(key).toUpperCase())) newMeta[key] = value;
+        });
+    };
+    loadVars(ENVIRONMENTS["global"]);
+    if(envGuid) loadVars(ENVIRONMENTS[envGuid]);
 
     newMeta['META_PROCESSED'] = moment().unix();
 

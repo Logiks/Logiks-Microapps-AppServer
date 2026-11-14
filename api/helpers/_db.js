@@ -10,6 +10,32 @@
 
 const DBMANAGER = require('./db/DBManager');
 const mysql = require('mysql2');
+const DBDRIVER = require('./db/DBDriver');
+
+//Column names are placed in SQL text (values are bound), and they can come from request JSON keys.
+//Returns an error envelope for the first unsafe name, or null when all are plain identifiers.
+function unsafeColumnError(names) {
+	for(const name of names) {
+		try {
+			DBDRIVER.assertSafeColumn(name);
+		} catch(e) {
+			return {
+				"status": "error",
+				"err_code": "UNSAFE_COLUMN",
+				"err_message": e.message
+			};
+		}
+	}
+	return null;
+}
+
+//A select-list: "*", "a, b.c" or an array of names. Expressions are not accepted here.
+function unsafeColumnListError(columns) {
+	if(columns === undefined || columns === null || columns === "" || columns === "*") return null;
+
+	const names = (Array.isArray(columns) ? columns : String(columns).split(",")).map(c => String(c).trim()).filter(c => c !== "*");
+	return unsafeColumnError(names);
+}
 
 module.exports = {
 
@@ -140,6 +166,9 @@ module.exports = {
 			console.log("\x1b[31m%s\x1b[0m",`DATABASE Not Connected for ${dbkey}`);
 			return false;
 		}
+
+		const badColumn = unsafeColumnListError(columns);
+		if(badColumn) return flatObj ? false : badColumn;
 
 		const { error, rows } = await driver.findOne(table, columns, where, orderBy);
 
@@ -299,6 +328,10 @@ module.exports = {
 
 		var finalData = {};
 		const colKeys = Object.keys(data);
+
+		const badColumn = unsafeColumnError(colKeys);
+		if(badColumn) return badColumn;
+
 		for(var i=0;i<colKeys.length;i++) {
 			var b = colKeys[i];
 			var a = data[b];
@@ -347,6 +380,11 @@ module.exports = {
 		}
 
 		let cols = Object.keys(data[0]);
+
+		for(var r=0;r<data.length;r++) {
+			const badColumn = unsafeColumnError(Object.keys(data[r]));
+			if(badColumn) return badColumn;
+		}
 
 		for(var i=0;i<data.length;i++) {
 			const obj = data[i];
@@ -417,6 +455,10 @@ module.exports = {
 		} else {
 			finalData = {};
 			const colKeys = Object.keys(data);
+
+			const badColumn = unsafeColumnError(colKeys);
+			if(badColumn) return badColumn;
+
 			for(var i=0;i<colKeys.length;i++) {
 				var b = colKeys[i];
 				var a = data[b];

@@ -5,6 +5,19 @@ const SERVICE_WORKERS = new Map();
 
 const ROUTE_MAP = {};
 
+// Cluster actions may only be used by a node that registered with the cluster token, or by a platform admin
+function isRegisteredWorkerCall(ctx, nodeID) {
+	return SERVICE_WORKERS.has(nodeID) && ctx.nodeID === nodeID;
+}
+function isPlatformAdminCall(ctx) {
+	return !!ctx.meta.user && _isPlatformAdmin(ctx.meta.user);
+}
+
+function sameToken(a, b) {
+	const x = Buffer.from(String(a || "")), y = Buffer.from(String(b || ""));
+	return x.length > 0 && x.length === y.length && require("crypto").timingSafeEqual(x, y);
+}
+
 module.exports = {
 	name: "system",
 
@@ -38,7 +51,7 @@ module.exports = {
 			async handler(ctx) {
 				const w = ctx.params;
 
-				if(w.token!=process.env.CLUSTER_TOKEN) {
+				if(!sameToken(w.token, process.env.CLUSTER_TOKEN)) {
 					console.log("CLUSTER_TOKEN_ERROR", "Worker registeration failed due to cluster token mismatch");
 					LOGGER.get("server").info("Worker registeration failed due to cluster token mismatch", w);
 					
@@ -100,7 +113,7 @@ module.exports = {
 				const w = ctx.params;
 				if(!SERVICE_WORKERS) return { ok: true };
 				const existing = SERVICE_WORKERS.get(w.nodeID);
-				if (existing) {
+				if (existing && isRegisteredWorkerCall(ctx, w.nodeID)) {
 					existing.lastSeen = w.ts;
 					SERVICE_WORKERS.set(w.nodeID, existing);
 				}
@@ -119,6 +132,10 @@ module.exports = {
 				//console.log("drainWorker", ctx.params, SERVICE_WORKERS);
 				const { nodeID } = ctx.params;
 				if(!SERVICE_WORKERS) return { ok: true };
+
+				if(!isRegisteredWorkerCall(ctx, nodeID) && !isPlatformAdminCall(ctx)) {
+					throw new LogiksError("Not allowed to drain this node", 403, "FORBIDDEN");
+				}
 
 				const worker = SERVICE_WORKERS.get(nodeID);
 				if (worker) {
@@ -148,6 +165,11 @@ module.exports = {
 				color: { type: "string", enum: ["blue", "green"] }
 			},
 			handler(ctx) {
+				const fromWorker = SERVICE_WORKERS.has(ctx.nodeID);
+				if(!fromWorker && !isPlatformAdminCall(ctx)) {
+					throw new LogiksError("Platform admin access only", 403, "FORBIDDEN_PLATFORM_ADMIN_ONLY");
+				}
+
 				this.activeColor = ctx.params.color;
 				LOGGER.get("server").warn("🔁 Active worker color switched to", this.activeColor);
 				return { activeColor: this.activeColor };
@@ -164,12 +186,17 @@ module.exports = {
 					case "list_helpers":
 						return {
 							"status": "success",
-							"data": _ENV.HELPERS
+							"data": ctx.meta.user ? (CONFIG.request_whitelist?.helpers || []) : _ENV.HELPERS
 						};
 						break;
 					default:
 						const cmd = ctx.params.cmd.split(".");
 						const params = ctx.params.params;
+						// A call that came from a user request may only use what CONFIG.request_whitelist.helpers lists;
+						// calls from other cluster nodes carry no user and are not restricted here
+						if(ctx.meta.user && !_matchWhitelist(CONFIG.request_whitelist?.helpers, ctx.params.cmd)) {
+							throw new LogiksError("This helper method is not available through requests", 403, "HELPER_NOT_WHITELISTED");
+						}
 						if(_ENV.HELPERS.indexOf(cmd[0].toUpperCase())<0) {
 							return {
 								"status": "error",
@@ -205,12 +232,15 @@ module.exports = {
 					case "list_controllers":
 						return {
 							"status": "success",
-							"data": _ENV.CONTROLLERS_PUBLIC
+							"data": ctx.meta.user ? (CONFIG.request_whitelist?.controllers || []) : _ENV.CONTROLLERS_PUBLIC
 						};
 						break;
 					default:
 						const cmd = ctx.params.cmd.split(".");
 						const params = ctx.params.params;
+						if(ctx.meta.user && !_matchWhitelist(CONFIG.request_whitelist?.controllers, ctx.params.cmd)) {
+							throw new LogiksError("This controller method is not available through requests", 403, "CONTROLLER_NOT_WHITELISTED");
+						}
 						if(_ENV.CONTROLLERS_PUBLIC.indexOf(cmd[0].toUpperCase())<0) {
 							return {
 								"status": "error",

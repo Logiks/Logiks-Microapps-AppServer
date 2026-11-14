@@ -110,7 +110,7 @@ module.exports = {
         // if(!ctx || !ctx.meta.user || !ctx.meta.appInfo || !ctx.meta.appInfo.appid) return defaultValue;
         if(!(ctx && ctx.meta.user && ctx.meta.appInfo && ctx.meta.appInfo.appid)) return defaultValue;
 
-        if(isProd) {
+        if(!isDevelopment) {
             await checkRBACControls(ctx);
         } else
             await RBAC.reloadPolicies(ctx);

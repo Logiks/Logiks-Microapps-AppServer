@@ -133,6 +133,17 @@ The application config is the largest knob set. The shipped [config_sample.json]
 | `disable_cache.{application, modules, navigator}` | Per-cache invalidation switches |
 | `cors.{origin, methods, credentials, allowedHeaders, exposedHeaders}` | Applied by the gateway service |
 | `noauth` | Action whitelist for the `/api/public` route group |
+| `request_whitelist` | What `POST /api/requests/:service/:action`, `system.helpers` and `system.controllers` may call for a signed-in user: `{ "actions": [], "helpers": [], "controllers": [] }`. Entries are exact names (`reports.list`), prefixes (`reports.*`) or `*`. Empty or missing means nothing is allowed. `$node.*`, `auth.*` and `admin.*` are always refused on `/api/requests` |
+| `token_access` | Actions a TL token (`tl`) or S2S token (`s2s`) may call: `{ "tl": [], "s2s": [] }`, same entry format. Empty or missing means the token can call nothing |
+| `platform_admin` | Who may operate the whole cluster (restart nodes, switch colour, use the MCP system tools): `{ "privileges": ["root", "devroot"], "roles": [] }`. A tenant's own `admin` role is not enough |
+| `limits` | Request body limits for routes without login: `{ "public_body": "1MB", "webhook_body": "5MB" }` |
+| `security` | `login_max_attempts` (5) and `login_lock_seconds` (900) for account lockout; `refresh_bind_ip` (false) ties a refresh token to the IP that got it; `hash_api_keys` (true) replaces plain API keys by their hash on first use; `ip_allowlist_enforced` (false) makes the IP list a real allow list |
+| `rate_limit_fail_closed` | `false` lets requests through when Redis is down; the default is to refuse them |
+| `webhooks` | `allow_unauthenticated: true` allows webhooks that have no auth key. Default is to refuse them |
+| `dbops` | `enforce_datahash: false` turns off the check of `datahash` on the form endpoints |
+| `fabric` | `login_required` (true), `sandbox` (true): proxied HTML is served with a CSP sandbox and without upstream cookies. A section can limit users with `controls = {"roles": [...], "privileges": [...]}` |
+| `mcp` | `allowed_origins`: browser origins that may call `/mcp` (falls back to `cors.origin`); `system_tool_privileges`: extra privileges for the system tools |
+| `mfa` | `totp_algorithm` ("SHA-512") and `totp_period` (60). Use `"SHA-1"` and `30` for standard authenticator apps. `strategy` is the enforcement switch (`"enforce"`) |
 | `ipwhitelisting` | Per-route IP allow lists |
 | `authjwt.{algorithm, secret, access_token_ttl, refresh_token_ttl}` | JWT issuance |
 | `mail.{host, port, secure, auth, default_from}` | SMTP for `MESSAGING.sendEmail` |

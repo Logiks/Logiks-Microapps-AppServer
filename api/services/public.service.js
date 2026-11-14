@@ -44,10 +44,15 @@ module.exports = {
 			},
 			async handler(ctx) {
 				const fileResponse = await FILES.getFilePublished(ctx.params.fileUri,  "stream");
-				if(fileResponse && fileResponse.stream)
+				if(fileResponse && fileResponse.stream) {
+					const fileName = String(fileResponse.filename || "file").split("_").splice(1).join("_") || "file";
+					const served = UPLOADS.serveHeaders(fileName);
+					ctx.meta.$responseHeaders = served.headers;
+					ctx.meta.$responseType = served.contentType;
+
 					return fileResponse.stream;
-				else
-					return "File not found";
+				} else
+					throw new LogiksError("File not found", 404, "FILE_NOT_FOUND");
 			}
 		}
 	}

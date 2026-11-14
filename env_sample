@@ -3,8 +3,11 @@ SERVER_ID=server-01
 RUN_MODE=server
 PORT=9999
 HOST=0.0.0.0
-ENC_SALT=
-CLUSTER_TOKEN=super-secret-cluster-token
+# Secrets: the server refuses to start outside NODE_ENV=development while any of these is missing, short or still a REPLACE_ME value.
+# Generate each one with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# ENC_SALT is part of every stored password hash. Set it once and never change it for an existing database.
+ENC_SALT=REPLACE_ME_random_hex
+CLUSTER_TOKEN=REPLACE_ME_random_hex
 CLUSTER_CACHE=true
 CLUSTER_CACHE_TTL=60
 CORE_LOGGER_LEVEL=error
@@ -20,7 +23,7 @@ TEMP_CONFIG_FILE=http://localhost:53321/config.json
 # Rate limiting
 RATE_LIMIT_WINDOW_MS=60000
 RATE_LIMIT_MAX=300
-SESSION_SECRET=asdasd123213asd
+SESSION_SECRET=REPLACE_ME_random_hex
 MIGRATION_MODE=EXPORT
 BULKHEAD_CONCURRENCY=50
 BULKHEAD_MAX_QUEUE=500

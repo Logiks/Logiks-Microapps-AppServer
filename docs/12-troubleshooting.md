@@ -125,3 +125,15 @@ It depends on MySQL and Redis being healthy first, then runs its own healthcheck
 ---
 
 > Back to the [Documentation Index](00-index.md).
+
+## Startup refused: secrets
+
+Outside `NODE_ENV=development` the server stops at startup if any of these is missing, too short, or still a sample value: `authjwt.secret` and `SALT_KEY` (in `config.json`), and `CLUSTER_TOKEN`, `SESSION_SECRET` and `ENC_SALT` (in `.env`). The message names each one. Generate a value with:
+
+```
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+`ENC_SALT` is part of every stored password hash, so set it once and keep it for the life of the database.
+
+Only `NODE_ENV=development` turns on the developer tools (`query.*`, `dbops.save`, `auth.generateToken`, the swagger and routes pages) and downgrades these checks to warnings. Any other value, including `test` or a typo, is treated as a real deployment.

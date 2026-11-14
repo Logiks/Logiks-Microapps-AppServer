@@ -20,6 +20,12 @@ const SESSION_HEADER = "mcp-session-id";
 module.exports = {
     handleRequest: async function (req, res) {
         try {
+            // Browsers send Origin; a page on an unlisted origin must not be able to drive MCP with the user's login
+            // (DNS rebinding / cross-site calls). Clients that send no Origin (desktop apps, servers) are not affected.
+            if (!originAllowed(req)) {
+                return PROTOCOL.writeJson(res, 403, { error: "Origin not allowed" });
+            }
+
             switch (req.method) {
                 case "OPTIONS":
                     return handleOptions(res);
@@ -181,5 +187,21 @@ async function dispatch(message, state, ctx) {
     } catch (err) {
         console.error("MCP dispatch error", method, err);
         return notification ? null : PROTOCOL.buildError(id, PROTOCOL.JSONRPC_ERRORS.INTERNAL_ERROR, err.message || "Internal error");
+    }
+}
+
+// Allowed: the server's own host, or an origin listed in CONFIG.mcp.allowed_origins (falling back to CONFIG.cors.origin)
+function originAllowed(req) {
+    const origin = req.headers.origin;
+    if (!origin) return true;
+
+    let list = (CONFIG.mcp && CONFIG.mcp.allowed_origins) || (CONFIG.cors && CONFIG.cors.origin) || [];
+    if (!Array.isArray(list)) list = [list];
+    if (list.includes("*") || list.includes(origin)) return true;
+
+    try {
+        return new URL(origin).host === req.headers.host;
+    } catch (e) {
+        return false;
     }
 }

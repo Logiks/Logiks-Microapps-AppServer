@@ -181,7 +181,7 @@ module.exports = {
 
 				if(!ctx.params.layoutid) ctx.params.layoutid = "default";
 
-				const appLayoutFile = `misc/apps/${ctx.meta.appInfo.appid}/layouts/${ctx.params.layoutid}.json`;
+				const appLayoutFile = resolveInside(`misc/apps/${ctx.meta.appInfo.appid}/layouts`, `${ctx.params.layoutid}.json`);
 				if(fs.existsSync(appLayoutFile)) {
 					const layoutData = JSON.parse(fs.readFileSync(appLayoutFile, "utf8"));
 					return layoutData;
@@ -250,10 +250,9 @@ module.exports = {
 			async handler(ctx) {
 				const { themeid, filename } = ctx.params;
 
-				// Prevent directory traversal attack
-				const safePath = path.normalize(filename).replace(/^(\.\.(\/|\\|$))+/, "");
-
-				const filePath = path.resolve(`misc/themes/${themeid}/media/${safePath}`);
+				// Both the theme id and the file name come from the URL; the result must stay inside that theme's media folder
+				const themeDir = resolveInside("misc/themes", themeid);
+				const filePath = resolveInside(path.join(themeDir, "media"), filename);
 				
 				if (!fs.existsSync(filePath)) {
 					throw new LogiksError(
@@ -321,7 +320,7 @@ module.exports = {
 					);
 				}
 
-				const pageFile = `misc/apps/${ctx.meta.appInfo.appid}/pages/${ctx.params.pageid}.json`;
+				const pageFile = resolveInside(`misc/apps/${ctx.meta.appInfo.appid}/pages`, `${ctx.params.pageid}.json`);
 
 				if(ctx.params.recache===true) {
 					if(pageCache[pageFile]) delete pageCache[pageFile];
@@ -361,7 +360,7 @@ module.exports = {
 				const appInfo = ctx.meta.appInfo;
 				const userInfo = ctx.meta.user;
 
-				const filePath = `misc/apps/${ctx.meta.appInfo.appid}/components/${ctx.params.compid}`;
+				const filePath = resolveInside(`misc/apps/${ctx.meta.appInfo.appid}/components`, ctx.params.compid);
 
 				if(fs.existsSync(filePath)) {
 					const contentType = mime.lookup(filePath) || "application/octet-stream";
@@ -461,9 +460,9 @@ module.exports = {
 }
 
 async function loadTheme(themeId) {
-	const themeFile = path.resolve(`misc/themes/${themeId}/style.css`);
-
 	try {
+		const themeFile = resolveInside(path.join(resolveInside("misc/themes", themeId), ""), "style.css");
+
 		const [css, stats] = await Promise.all([
 			fs.readFileSync(themeFile, "utf8"),
 			fs.statSync(themeFile)
@@ -481,4 +480,19 @@ async function loadTheme(themeId) {
 		console.log(err);
 		return null;
 	}
+}
+
+// Joins a client supplied name onto a base folder and refuses anything that resolves outside it (.., encoded separators, absolute paths)
+function resolveInside(baseDir, relPath) {
+	const rel = String(relPath ?? "");
+	if(rel.length === 0 || rel.includes("\0")) {
+		throw new LogiksError("Invalid path", 400, "INVALID_PATH");
+	}
+
+	const base = path.resolve(baseDir);
+	const target = path.resolve(base, rel);
+	if(target === base || !target.startsWith(base + path.sep)) {
+		throw new LogiksError("Invalid path", 400, "INVALID_PATH");
+	}
+	return target;
 }

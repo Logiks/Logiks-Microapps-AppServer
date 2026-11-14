@@ -17,6 +17,7 @@ global.crypto = global.crypto || require("crypto");
 global.ROOT_PATH = global.ROOT_PATH || require("path").resolve(__dirname, "../../..");
 global.isProd = false;
 global.isStaging = false;
+global.isDevelopment = true;
 
 global.CONFIG = global.CONFIG || Object.assign(
 	{},

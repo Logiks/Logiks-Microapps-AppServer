@@ -230,7 +230,8 @@ global._replaceCtx = async function(text, ctx, strict = true) {
   if (typeof text !== "string") return text;
 
   var newMeta = await ENV.fetchEnvInfo(ctx?.meta || {});
-  newMeta = _.extend(newMeta, ctx?.params || {});
+  // Request params first, so they can never replace a trusted session / system value
+  newMeta = _.extend({}, ctx?.params || {}, newMeta);
 
   return _replace(text, _.extend({}, ctx?.params || {}, ctx?.meta || {}, newMeta), strict);
 }

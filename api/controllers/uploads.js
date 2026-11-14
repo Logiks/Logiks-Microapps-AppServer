@@ -6,6 +6,14 @@
 const multer = require("multer");
 const fs = require("fs-extra");
 const fs1 = require("fs");
+const mimeTypes = require("mime-types");
+
+// Types that are safe for a browser to show inside the page. Everything else (svg, xml, html-like, scripts, unknown) is sent as a download.
+const SAFE_INLINE_MIME = [
+	"image/png", "image/jpeg", "image/gif", "image/webp", "image/avif", "image/bmp", "image/x-icon",
+	"application/pdf", "text/plain",
+	"audio/mpeg", "audio/ogg", "audio/wav", "video/mp4", "video/webm"
+];
 
 const TEMP_UPLOAD_ROOT = process.env.UPLOAD_TEMP || path.resolve(ROOT_PATH+`/${CONFIG.storage.temp_path || "temp"}/`);
 const BASE_UPLOAD_ROOT = process.env.UPLOAD_ROOT || path.resolve(ROOT_PATH+`/${CONFIG.storage.base_path || "uploads"}/`);
@@ -41,7 +49,13 @@ const storage = multer.diskStorage({
 /* Security controls */
 const uploadHandler = multer({
 	storage,
-	limits: { fileSize: CONFIG.storage.max_size || 100 * 1024 * 1024 }, // 100MB
+	limits: {
+		fileSize: CONFIG.storage.max_size || 100 * 1024 * 1024, // 100MB
+		files: CONFIG.storage.max_files || 50,
+		fields: 100,
+		fieldSize: 1024 * 1024,
+		parts: 200
+	},
 	fileFilter(req, file, cb) {
 		if(isBlockedExtension(sanitizeFileName(file.originalname))) {
 			return cb(new Error("File type not allowed"));
@@ -76,6 +90,23 @@ module.exports = {
     },
 
     sanitizeFileName: sanitizeFileName,
+
+    // The content type comes from the file name on the server, never from the client. Only SAFE_INLINE_MIME types
+    // may display inline; the rest are downloads, and every response is sandboxed with nosniff.
+    serveHeaders: function(fileName, forceDownload = false) {
+        const contentType = mimeTypes.lookup(String(fileName)) || "application/octet-stream";
+        const inline = !forceDownload && SAFE_INLINE_MIME.includes(contentType);
+        const safeName = String(fileName).replace(/["\r\n\\]/g, "");
+
+        return {
+            contentType,
+            headers: {
+                "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${safeName}"`,
+                "X-Content-Type-Options": "nosniff",
+                "Content-Security-Policy": "sandbox; default-src 'none'"
+            }
+        };
+    },
 
     sanitizePathSegment: sanitizePathSegment,
 
@@ -149,7 +180,7 @@ module.exports = {
 					"filename": sanitizeFileName(ctx.params.filename?ctx.params.filename:file.filename),
 					"folder": bucket,
 					"path_uri": fileURI.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, ""),
-					"file_mime": file.mimetype,
+					"file_mime": mimeTypes.lookup(file.filename) || "application/octet-stream",
 					"file_size": file.size,
 					"file_year": new moment().format("Y"),
 					"metadata": ctx.params.meta?(typeof ctx.params.meta == "object"? JSON.stringify(ctx.params.meta):""): "{}",
@@ -188,7 +219,7 @@ module.exports = {
 					"filename": sanitizeFileName(file.filename),
 					"folder": bucket,
 					"path_uri": fileURI.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, ""),
-					"file_mime": file.mimetype,
+					"file_mime": mimeTypes.lookup(file.filename) || "application/octet-stream",
 					"file_size": file.size,
 					"file_year": new moment().format("Y"),
 					"metadata": ctx.params.meta?(typeof ctx.params.meta == "object"? JSON.stringify(ctx.params.meta):""): "{}",
@@ -230,7 +261,7 @@ async function check_in_store(fileObj, isEncrypted = false) {
 	
 	switch (fileObj.driver) {
 		case "local":
-			const filePath = path.join(UPLOADS.baseUploadFolder(), fileObj.path_uri);
+			const filePath = UPLOADS.getTargetPath(String(fileObj.path_uri || ""));
 			
 			if(!filePath || !fs.existsSync(filePath)) {
 				return false;
@@ -271,7 +302,7 @@ async function get_from_store(fileObj, responseType = "stream", isEncrypted = fa
 	
 	switch (fileObj.driver) {
 		case "local":
-			const filePath = path.join(UPLOADS.baseUploadFolder(), fileObj.path_uri);
+			const filePath = UPLOADS.getTargetPath(String(fileObj.path_uri || ""));
 			
 			if(!filePath || !fs.existsSync(filePath)) {
 				return null;

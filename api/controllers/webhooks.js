@@ -18,6 +18,12 @@ function redactHeaders(headers = {}) {
     return out;
 }
 
+//The log keeps at most 64 KB of the request, so a large body cannot bloat the table
+function capPayload(obj) {
+    const text = JSON.stringify(obj);
+    return text.length > 65536 ? JSON.stringify({ truncated: true, preview: text.substring(0, 65000) }) : text;
+}
+
 function safeEqual(a, b) {
     if (a === null || a === undefined || b === null || b === undefined) return false;
 
@@ -35,6 +41,22 @@ module.exports = {
         console.log("\x1b[35m%s\x1b[0m","WEBHOOK RECIEVED", endpoint);
         const time1 = process.hrtime.bigint();
 
+        const webhookData = await _DB.db_selectQ("appdb", "sys_webhooks", "*", { 
+                endpointid: endpoint, 
+                method: ctx.meta.method, 
+                site: [[ctx.meta.appInfo.appid || "default", "*"], "IN"],
+                blocked: "false" 
+            });
+        if(!webhookData || !webhookData.results || webhookData.results.length == 0) {
+            // Nothing is stored for unknown endpoints, so random URLs cannot grow the log table
+            console.log("\x1b[31m%s\x1b[0m","WEBHOOK NOT FOUND OR BLOCKED", endpoint);
+
+            return {
+                "status": "error",
+                "message": "Webhook Not Found or Blocked"
+            }
+        }
+
         const logRecord = await _DB.db_insertQ1("logdb", "log_webhooks", _.extend({
             appid: ctx.meta?.appInfo?.appid || "unknown", 
             webhook: endpoint, 
@@ -43,7 +65,7 @@ module.exports = {
             user_agent: ctx.meta.headers["user-agent"] || "",
             latency_ms: 0, 
             status_code: 0, 
-            request_payload: JSON.stringify({
+            request_payload: capPayload({
                 query: _.omit(ctx.query || {}, ["auth"]), 
                 params: _.omit(ctx.params || {}, ["auth"]), 
                 headers: redactHeaders(ctx.headers), 
@@ -52,34 +74,30 @@ module.exports = {
         }, MISC.generateDefaultDBRecord(ctx, false)));
         // console.log("LOG RECORD ID", logRecord.insertId);
         
-        const webhookData = await _DB.db_selectQ("appdb", "sys_webhooks", "*", { 
-                endpointid: endpoint, 
-                method: ctx.meta.method, 
-                site: [[ctx.meta.appInfo.appid || "default", "*"], "IN"],
-                blocked: "false" 
-            });
-        if(!webhookData || webhookData?.results.length == 0) {
-            console.log("\x1b[31m%s\x1b[0m","WEBHOOK NOT FOUND OR BLOCKED", endpoint);
-
-            _DB.db_updateQ("logdb", "log_webhooks", {
-                latency_ms: Number(process.hrtime.bigint() - time1) / 1e6,
-                status_code: "404",
-                error_message: "Webhook Not Found or Blocked",
-                response_payload: JSON.stringify({"error": "Webhook Not Found or Blocked"}),
-            }, {
-                id: logRecord.insertId
-            });
-
-            return {
-                "status": "error",
-                "message": "Webhook Not Found or Blocked"
-            }
-        }
-
         // params, 
         
         const webhookInfo = webhookData.results[0];
         var response  = {};
+
+        // A webhook without an auth key would be open to the whole internet, so one is required unless the config allows it
+        if(!webhookInfo.authkey || webhookInfo.authkey == "") {
+            if(!(CONFIG.webhooks && CONFIG.webhooks.allow_unauthenticated === true)) {
+                _DB.db_updateQ("logdb", "log_webhooks", {
+                    guid: webhookInfo.guid,
+                    latency_ms: Number(process.hrtime.bigint() - time1) / 1e6,
+                    status_code: "401",
+                    error_message: "Webhook has no auth key configured",
+                    response_payload: JSON.stringify({"error": "Webhook has no auth key configured"}),
+                }, {
+                    id: logRecord.insertId
+                });
+
+                return {
+                    "status": "error",
+                    "message": "Unauthorized: this webhook has no auth key configured"
+                }
+            }
+        }
 
         if(webhookInfo.authkey && webhookInfo.authkey != "") {
             const reqAuthKey = ctx.meta.headers["x-webhook-auth"] || ctx.query.auth || ctx.params.auth || "";

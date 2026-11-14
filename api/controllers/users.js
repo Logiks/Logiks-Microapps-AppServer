@@ -9,6 +9,11 @@ const { TOTP } = require("totp-generator");
 const BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const OTP_MAX_ATTEMPTS = 5;
 
+// Authenticator apps normally use SHA-1 with a 30 second period. The defaults below are the original ones; set
+// mfa.totp_algorithm = "SHA-1" and mfa.totp_period = 30 in config.json to match a standard authenticator app.
+function totpAlgorithm() { return (CONFIG.mfa && CONFIG.mfa.totp_algorithm) || "SHA-512"; }
+function totpPeriod() { return Number(CONFIG.mfa && CONFIG.mfa.totp_period) || 60; }
+
 function randomBase32Secret(bytes = 20) {
     const buf = crypto.randomBytes(bytes);
     let bits = "", out = "";
@@ -238,8 +243,15 @@ module.exports = {
 
         //Assuming hashed password from the frontend
         // var encrypted_password = ENCRYPTER.generateHash();
-        const isValid = await ENCRYPTER.compareHash(password, userInfo.pwd);
+        const passwordCheck = await ENCRYPTER.verifyPassword(password, userInfo.pwd);
+        const isValid = passwordCheck.valid;
         if(isValid) {
+            // An old sha1 hash is replaced with a bcrypt one now that the password is known to be right
+            if(passwordCheck.needsUpgrade) {
+                ENCRYPTER.hashPassword(password).then(newHash => _DB.db_updateQ("appdb", "lgks_users", { pwd: newHash }, { id: userInfo.id, userid: userInfo.userId }))
+                    .catch(e => console.error("Password hash upgrade failed", e.message));
+            }
+
             try {
                 if(userInfo.roles.substr(0,1)=="{") userInfo.roles = JSON.parse(userInfo.roles);
                 else {
@@ -296,12 +308,12 @@ module.exports = {
                 "blocked": "false",
             }, {});
             const storedHash = current?.results?.[0]?.pwd;
-            if(!storedHash || !(await ENCRYPTER.compareHash(oldPassword, storedHash))) {
+            if(!storedHash || !((await ENCRYPTER.verifyPassword(oldPassword, storedHash)).valid)) {
                 throw new LogiksError("Current password is incorrect", 401, "INVALID_PASSWORD");
             }
         }
 
-        var encrypted_password = await ENCRYPTER.generateHash(password);
+        var encrypted_password = await ENCRYPTER.hashPassword(password);
         var dated = moment().format("YYYY-MM-DD HH:mm:ss");
 
         var updateData = {
@@ -347,6 +359,7 @@ module.exports = {
         if(!mfaInfo || !mfaInfo?.results || mfaInfo.results.length<=0) return false;
         
         mfaInfo = mfaInfo.results[0];
+        mfaInfo.mfa_code = ENCRYPTER.unprotect(mfaInfo.mfa_code);
         return mfaInfo;
     },
 
@@ -355,7 +368,7 @@ module.exports = {
             "guid": guid,
             "userid": userid,
             "mfa_type": mfaType || CONFIG.mfa.mfa_default_type || "totp",
-            "mfa_code": randomBase32Secret(), //You can also use any random string generator or OTP generator library
+            "mfa_code": ENCRYPTER.protect(randomBase32Secret()), //Stored encrypted. You can also use any random string generator or OTP generator library
             "mfa_expires": moment().add(1, 'year').format("Y-M-D HH:mm:ss"),
             "mfa_xtras_1": "email", //mfa_xtras_1 can be used to store the preferred delivery method like email, sms, whatsapp etc.
             "mfa_xtras_2": "", //mfa_xtras_2 can be used to store the destination address like email id or mobile number
@@ -376,13 +389,13 @@ module.exports = {
 
         switch(mfainfo.mfa_type) {
             case "totp":
-                var expires_in = 60; // Store OTP in cache with 5 minutes TTL
+                var expires_in = Math.max(totpPeriod(), 60); // Store OTP in cache for at least a minute
                 var mfa_expires = moment().add(expires_in, 'seconds').format("Y-M-D HH:mm:ss");
                 const mfa_code = mfainfo.mfa_code; //This is the secret key stored in the database for the user, eg. "JBSWY3DPEHPK3PXP"
                 const newOTP = await TOTP.generate(mfa_code, {
                         digits: CONFIG.mfa.mfa_length || 6,
-                        algorithm: "SHA-512",
-                        period: expires_in,
+                        algorithm: totpAlgorithm(),
+                        period: totpPeriod(),
                         timestamp: Date.now(),
                     })
                 var otpCode = newOTP.otp;//newOTP.expires
@@ -399,22 +412,29 @@ module.exports = {
                 var otpCode = randomDigits(CONFIG.mfa.mfa_length || 6);
                 _CACHE.storeDataEx(otpKey, { otp: otpCode, deviceType, user: userInfo, remoteIP, mfainfo }, expires_in); // Store OTP in cache with expires_in seconds TTL
 
-                //mfa_xtras_1 can be used to store the preferred delivery method like email, sms, whatsapp etc.
-                //mfa_xtras_2 can be used to store the destination address like email id or mobile number
-                //mfa_xtras_3 can be used to store any additional info if needed
-                switch(mfainfo.mfa_xtras_1) {
-                    case "sms":
-                        //send sms with otpCode to userInfo.mobile
-                    break;
+                // Delivery channel is mfa_xtras_1 (email, sms, whatsapp); the destination is mfa_xtras_2, or the user's own email / mobile
+                const channel = mfainfo.mfa_xtras_1 || "email";
+                const destination = mfainfo.mfa_xtras_2 || (channel === "email" ? userInfo.email : userInfo.mobile);
+                if(!destination) {
+                    console.error(`MFA: no ${channel} destination for ${userid}, code not sent`);
+                    await _CACHE.deleteKey(otpKey);
+                    return false;
+                }
 
-                    case "whatsapp":
-                        //send whatsapp message with otpCode to userInfo.mobile
-                    break;
-
-                    case "email":
-                        //send email with otpCode to userInfo.email
-                    default:
-                        //Default to email
+                let sent = false;
+                try {
+                    sent = await MESSAGING.sendMessage(channel, {
+                        sendTo: destination,
+                        send_to: destination,
+                        subject: "Your verification code",
+                        body: `Your verification code is ${otpCode}. It expires in ${Math.round(expires_in / 60)} minutes. If you did not try to sign in, ignore this message.`
+                    }, { meta: { user: { guid: guid, userId: userid } } });
+                } catch(e) {
+                    console.error("MFA: sending the code failed", e.message);
+                }
+                if(!sent) {
+                    await _CACHE.deleteKey(otpKey);
+                    return false;
                 }
                 return {"identifier": otpIdentifier, "expires": mfa_expires};
             break;
@@ -447,11 +467,11 @@ module.exports = {
         switch(mfainfo.mfa_type) {
             case "totp":
                 // Same parameters as generateTOTPCode; accept one period either side for clock skew
-                const period = 60;
+                const period = totpPeriod();
                 for(const offset of [0, -1, 1]) {
                     const expected = await TOTP.generate(mfainfo.mfa_code, {
                             digits: CONFIG.mfa.mfa_length || 6,
-                            algorithm: "SHA-512",
+                            algorithm: totpAlgorithm(),
                             period: period,
                             timestamp: Date.now() + offset * period * 1000,
                         });

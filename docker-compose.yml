@@ -36,16 +36,16 @@ services:
       - --collation-server=utf8mb4_unicode_ci
       - --max_allowed_packet=64M
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-root}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env.docker}
       MYSQL_USER: ${MYSQL_USER:-logiks}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me-app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env.docker}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./docker/mysql-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     ports:
-      - "${MYSQL_PORT:-3306}:3306"
+      - "${DATASTORE_BIND:-127.0.0.1}:${MYSQL_PORT:-3306}:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-change-me-root}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env.docker}"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -63,16 +63,20 @@ services:
     restart: unless-stopped
     command:
       - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env.docker}
       - --appendonly
       - "yes"
       - --save
       - "60 1"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env.docker}
     volumes:
       - redis_data:/data
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${DATASTORE_BIND:-127.0.0.1}:${REDIS_PORT:-6379}:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -83,15 +87,17 @@ services:
   # Qdrant — vector store for the AI Layer (AICore). Opt-in via `--profile ai`.
   # ---------------------------------------------------------------------------
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.12.4
     container_name: logiks-qdrant
     restart: unless-stopped
     profiles: ["ai"]
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:-}
     volumes:
       - qdrant_data:/qdrant/storage
     ports:
-      - "${QDRANT_PORT:-6333}:6333"          # REST
-      - "${QDRANT_GRPC_PORT:-6334}:6334"     # gRPC
+      - "${DATASTORE_BIND:-127.0.0.1}:${QDRANT_PORT:-6333}:6333"          # REST
+      - "${DATASTORE_BIND:-127.0.0.1}:${QDRANT_GRPC_PORT:-6334}:6334"     # gRPC
     healthcheck:
       test: ["CMD", "sh", "-c", "wget -qO- http://localhost:6333/ || exit 1"]
       interval: 10s
@@ -124,15 +130,15 @@ services:
       PORT: 9999
 
       # ---- Moleculer cluster ----
-      TRANSPORTER: redis://redis:6379
+      TRANSPORTER: redis://:${REDIS_PASSWORD}@redis:6379
       NAMESPACE: ${NAMESPACE:-default}
-      CLUSTER_TOKEN: ${CLUSTER_TOKEN:-change-me-cluster-token}
+      CLUSTER_TOKEN: ${CLUSTER_TOKEN:?set CLUSTER_TOKEN in .env.docker}
       CLUSTER_CACHE: "true"
       CLUSTER_CACHE_TTL: "60"
 
       # ---- Security / secrets ----
-      SESSION_SECRET: ${SESSION_SECRET:-change-me-session-secret}
-      ENC_SALT: ${ENC_SALT:-change-me-enc-salt}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env.docker}
+      ENC_SALT: ${ENC_SALT:?set ENC_SALT in .env.docker}
 
       # ---- Rate limit ----
       RATE_LIMIT_WINDOW_MS: "60000"

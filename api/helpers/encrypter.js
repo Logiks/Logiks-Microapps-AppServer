@@ -16,22 +16,26 @@ const TAG_LENGTH = 16;
 let MASTER_SALT = "";
 let HASH_MODE = "sha1";
 
+function passwordPrehash(password) {
+    return crypto.createHmac("sha256", MASTER_SALT).update(String(password)).digest("base64");
+}
+
+function secretsKey() {
+    return crypto.createHash("sha256").update("secrets:" + MASTER_SALT).digest();
+}
+
 module.exports = {
 
     initialize : async function() {
-        const encKey = `EK${process.env.SERVER_ID}`;
-
+        // ENC_SALT is mandatory outside development (checked at startup). It is part of every stored password
+        // hash, so it must stay the same for the life of the database: never generate or print one here.
         if(process.env.ENC_SALT && process.env.ENC_SALT.length>1) {
             MASTER_SALT = process.env.ENC_SALT;
+        } else if(isDevelopment) {
+            MASTER_SALT = "development-only-enc-salt";
+            console.warn("ENC_SALT is not set: using a fixed development salt. Set ENC_SALT to keep password hashes stable.");
         } else {
-            var encryptionKey = await _CACHE.fetchDataSync(encKey);
-            if(!encryptionKey) {
-                encryptionKey = crypto.randomBytes(8).toString('hex');
-                await _CACHE.storeData(encKey, encryptionKey);
-
-                console.log("MASTER_ENCRYPTION_KEY, this is one time printed, store it for recovery purpose", encryptionKey);
-            }
-            MASTER_SALT = encryptionKey;
+            throw new Error("ENC_SALT must be set outside development");
         }
 
         console.log("\x1b[36m%s\x1b[0m","Encryption Engine Initialized");
@@ -82,6 +86,46 @@ module.exports = {
 
         if(HASH_MODE=="sha1") return sha1(pwdSalt+""+content);
         return await bcrypt.hash(pwdSalt+""+content, 10);
+    },
+
+    //Passwords: bcrypt (cost 12, a salt of its own per password) over an HMAC of the password keyed with ENC_SALT.
+    //The HMAC step adds a server-side pepper and keeps long inputs inside bcrypt's 72 byte limit.
+    hashPassword: async function(password) {
+        return await bcrypt.hash(passwordPrehash(password), 12);
+    },
+
+    //-> { valid, needsUpgrade }. Accepts the new bcrypt format and the old sha1(ENC_SALT + password) format;
+    //needsUpgrade is true for the old one, so the caller can store a new hash after a successful login.
+    verifyPassword: async function(password, storedHash) {
+        if(typeof storedHash !== "string" || storedHash.length === 0) return { valid: false, needsUpgrade: false };
+
+        if(storedHash.startsWith("$2")) {
+            return { valid: await bcrypt.compare(passwordPrehash(password), storedHash), needsUpgrade: false };
+        }
+
+        const legacy = Buffer.from(sha1(MASTER_SALT + "" + password));
+        const stored = Buffer.from(storedHash);
+        const valid = legacy.length === stored.length && crypto.timingSafeEqual(legacy, stored);
+        return { valid, needsUpgrade: valid };
+    },
+
+    //Secrets kept in database columns (MFA seeds, key material). Passes through values that were stored before this existed.
+    protect: function(text) {
+        if(text === null || text === undefined || text === "") return text;
+
+        const iv = crypto.randomBytes(12);
+        const cipher = crypto.createCipheriv("aes-256-gcm", secretsKey(), iv);
+        const enc = Buffer.concat([cipher.update(String(text), "utf8"), cipher.final()]);
+        return "enc:v1:" + Buffer.concat([iv, cipher.getAuthTag(), enc]).toString("base64");
+    },
+
+    unprotect: function(value) {
+        if(typeof value !== "string" || !value.startsWith("enc:v1:")) return value;
+
+        const data = Buffer.from(value.slice(7), "base64");
+        const decipher = crypto.createDecipheriv("aes-256-gcm", secretsKey(), data.subarray(0, 12));
+        decipher.setAuthTag(data.subarray(12, 28));
+        return Buffer.concat([decipher.update(data.subarray(28)), decipher.final()]).toString("utf8");
     },
 
     compareHash: async function(password, passwordHash, pwdSalt = false) {

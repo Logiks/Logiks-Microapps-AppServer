@@ -17,6 +17,9 @@ module.exports = {
     },
     
     loadLanguage: async function(appId, lang) {
+        // lang comes from the request, appId from the app record: plain identifiers only
+        if(!/^[A-Za-z0-9_-]+$/.test(String(lang)) || !/^[A-Za-z0-9_.-]+$/.test(String(appId)) || String(appId).includes("..")) return {};
+
         var filePath = path.join(ROOT_PATH, `misc/apps/${appId}/i18n/${lang}.ling`);
         if(!fs.existsSync(filePath)) return {};
 

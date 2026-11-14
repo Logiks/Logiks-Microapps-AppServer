@@ -144,6 +144,23 @@ async function sendRequest(providerCode, apiInfo, dataParams, ctx) {
     const providerParams = parseJSON(serverInfo.params, {});
 
     const time1 = process.hrtime.bigint();
+    // subpath may come from a caller. It has to be a plain path on the provider's own host, otherwise the provider
+    // credentials added below could be sent somewhere else ("@evil.example", "//evil.example", "..", backslashes).
+    if(subpath) {
+        const sp = String(subpath);
+        let hostOk = false;
+        try {
+            const base = new URL(end_point);
+            const full = new URL(end_point + sp);
+            hostOk = full.host === base.host && full.protocol === base.protocol;
+        } catch(e) {
+            hostOk = false;
+        }
+        if(!sp.startsWith("/") || sp.startsWith("//") || /[\u0000-\u001f]/.test(sp) || /[\\@]/.test(sp.split(/[?#]/)[0]) || sp.split(/[?#]/)[0].split("/").some(seg => seg === ".." || /^%2e%2e$/i.test(seg)) || !hostOk) {
+            throw new Error("Invalid subpath for provider call");
+        }
+    }
+
     const finalURL = end_point + (subpath ? subpath : '');
 
     // Caller headers first (minus protected ones), stored definition headers and credentials last so they always win

@@ -55,15 +55,103 @@ global.LogiksError = LogiksError;
 
 let MAINBROKER = null;
 
+// Tokens that can travel in a query string are blanked before a URL is written to logs or events
+const SECRET_QUERY_RE = /([?&](?:api_key|tkn|s2stkn|token|access_token|ticket|auth|retoken)=)[^&]*/gi;
+function redactUrl(url) {
+	return String(url || "").replace(SECRET_QUERY_RE, "$1[redacted]");
+}
+
 // -------------------------
 // SERVER START
 // -------------------------
-// The dev fallback is a publicly known string; sessions signed with it can be forged, so production must set its own.
+// The dev fallback is a publicly known string; sessions signed with it can be forged, so every non-development mode must set its own.
 function sessionSecret() {
 	if(process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
-	if(isProd) throw new Error("SESSION_SECRET must be set in production");
+	if(!isDevelopment) throw new Error("SESSION_SECRET must be set outside development");
 	return "dev_super_secret_change_me";
 }
+
+// Checks the credentials on an upload request before any part of the body is written to disk
+async function verifyUploadCaller(req) {
+	const authHeader = req.headers["authorization"];
+	const apiKey = req.headers["x-api-key"] || req.headers["x-api_key"] || (req.query && req.query.api_key);
+
+	if(authHeader && authHeader.startsWith("Bearer ")) {
+		await MAINBROKER.call("auth.verifyAccessToken", { token: authHeader.slice(7) }, {
+			meta: { headers: req.headers, appInfo: { appid: "-" }, remoteIP: MISC.getClientIP(req), serverHost: req.headers.host }
+		});
+		return true;
+	}
+	if(apiKey) {
+		return !!(await AUTHKEY.getAPIKeyInfo(apiKey, "api"));
+	}
+	return false;
+}
+
+function parseUpload(req, res, next) {
+				if(req.method=="POST") {
+										const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
+										const TEMP_UPLOAD_ROOT = UPLOADS.tempUploadFolder();
+
+										// req.url carries the query string (eg. /files/upload?folder=x), which must not change the route match
+										const urlPath = String(req.url || "").split("?")[0].replace(/\/+$/, "");
+
+										// A rejected upload (blocked type, too large) is an error for the caller, not a request with no file
+										const uploadError = (err) => new LogiksError(
+											err.message || "Upload failed",
+											err.code === "LIMIT_FILE_SIZE" ? 413 : 400,
+											"UPLOAD_REJECTED"
+										);
+
+										// Field names come from the client; these must never overwrite request metadata
+										const RESERVED_META = ["user", "appInfo", "tenantInfo", "headers", "method", "sessionId", "remoteIP", "serverIP", "serverHost", "accessTokenRaw", "file", "files", "fields", "url"];
+
+										switch(urlPath) {
+											case "/files/upload":
+												UPLOADS.getUploadHandler().single("file")(req, res, err => {
+													if (err) return next(uploadError(err));
+
+													req.$ctx.meta.file = req.file;
+
+													next();
+												});
+												break;
+											case "/files/uploadbulk":
+												UPLOADS.getUploadHandler().array("files", 50)(req, res, err => {
+													if (err) return next(uploadError(err));
+
+													req.$ctx.meta.files = req.files;
+
+													next();
+												});
+												break;
+											default:
+												UPLOADS.getUploadHandler().any()(req, res, err => {
+													if (err) return next(uploadError(err));
+													
+													try {
+														const uploaded = req.files || [];
+														const fileFields = [...new Set(uploaded.map(f => f.fieldname))];
+
+														_.each(fileFields, function(field, k) {
+															if(!/^[A-Za-z0-9_]+$/.test(field) || RESERVED_META.includes(field)) return;
+
+															const file = uploaded.find(f => f.fieldname === field);
+															req.$ctx.meta[field] = file?.path.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, "");
+														});
+
+														req.$ctx.meta.fields = req.body || {};
+
+														next();
+													} catch(e) {
+														next();
+													}
+												});
+										}
+									} else {
+										next();
+									}
+								}
 
 module.exports = {
 
@@ -210,8 +298,22 @@ module.exports = {
 
 			const FABRIC_LOGIN_REQUIRED = CONFIG?.fabric?.login_required !== false;
 
+			// Unauthenticated routes only accept small bodies; the private /api route keeps its larger limit
+			const PUBLIC_BODY_LIMIT = CONFIG?.limits?.public_body || "1MB";
+			const WEBHOOK_BODY_LIMIT = CONFIG?.limits?.webhook_body || "5MB";
+
+			// In-process limit per client IP (MISC.getClientIP, so X-Forwarded-For cannot be spoofed).
+			// The Redis limiter in applyDistributedRateLimit adds the cluster-wide limit.
+			const ipRateLimit = (limit) => ({
+				window: 60 * 1000,
+				limit: limit,
+				headers: true,
+				key: (req) => MISC.getClientIP(req)
+			});
+
+			// Without a cors section in config.json no other origin is allowed. List origins explicitly: ["https://app.example.com"]
 			const CORS_CONFIG = CONFIG.cors || {
-				origin: "*",//["https://localhost", "https://app.example.com"], ["*", "null"],
+				origin: [],
 				methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 				// methods: ["GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE", "CONNECT", "TRACE"],
 				credentials: false,
@@ -229,24 +331,27 @@ module.exports = {
 				// Global middlewares. Applied to all routes.
 				use: [
 					cookieParser(),
-					// helmet()
-					helmet.contentSecurityPolicy({
-						directives: {
-							defaultSrc: ["'self'"],
-							scriptSrc: ["'self'"],
-							styleSrc: ["'self'", "https:"],
-							imgSrc: ["'self'", "data:", "https:"],
-							connectSrc: ["'self'"],
-							fontSrc: ["'self'", "https:", "data:"],
-							objectSrc: ["'none'"],
-							frameAncestors: ["'none'"],
-							baseUri: ["'self'"],
-							formAction: ["'self'"]
+					helmet({
+						contentSecurityPolicy: {
+							directives: {
+								defaultSrc: ["'self'"],
+								scriptSrc: ["'self'"],
+								styleSrc: ["'self'", "https:"],
+								imgSrc: ["'self'", "data:", "https:"],
+								connectSrc: ["'self'"],
+								fontSrc: ["'self'", "https:", "data:"],
+								objectSrc: ["'none'"],
+								frameAncestors: ["'none'"],
+								baseUri: ["'self'"],
+								formAction: ["'self'"]
+							}
 						},
-						crossOriginEmbedderPolicy: true,
-						crossOriginOpenerPolicy: true,
+						// Cross-origin isolation (COEP) would stop pages from loading images and fonts from other hosts, so it stays off
+						crossOriginEmbedderPolicy: false,
+						crossOriginOpenerPolicy: { policy: "same-origin" },
 						crossOriginResourcePolicy: { policy: "same-site" },
-						referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+						// Query strings carry tokens in a few places (SSE ticket, TL / S2S tokens), so no Referer is sent at all
+						referrerPolicy: { policy: "no-referrer" },
 						hsts: {
 							maxAge: 31536000,
 							includeSubDomains: true,
@@ -313,10 +418,7 @@ module.exports = {
 									limit: "1MB"
 								}
 							},
-							rateLimit: {
-								window: 60 * 1000,
-								limit: 10
-							},
+							rateLimit: ipRateLimit(10),
 							// Attach Express-compatible middlewares
 							use: [
 								// Attach IP/UA on every request
@@ -346,7 +448,7 @@ module.exports = {
 
 									ctx.broker.emit("system.request_completed", {
 										method: req.method,
-										path: req.url,
+										path: redactUrl(req.url),
 										status: res?.statusCode,
 										duration
 									});
@@ -371,8 +473,7 @@ module.exports = {
 								// Security headers
 								res.setHeader("X-Content-Type-Options", "nosniff");
 								res.setHeader("X-Frame-Options", "DENY");
-								res.setHeader("X-XSS-Protection", "1; mode=block");
-								res.setHeader("X-Powered-By", "Logiks Microapps AppServer");
+								res.setHeader("X-XSS-Protection", "0");
 								// res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
 
 								// IP
@@ -416,6 +517,7 @@ module.exports = {
 						//EventSource(./api/events/e1f55806)
 						{
 							path: "/api/events",
+							rateLimit: ipRateLimit(60),
 							authentication: false,
 							authorization: false,
 							opts: {
@@ -427,11 +529,11 @@ module.exports = {
 							bodyParsers:{
 								json: {
 									strict: false,
-									limit: "20MB"
+									limit: PUBLIC_BODY_LIMIT
 								},
 								urlencoded: {
 									extended: true,
-									limit: "20MB"
+									limit: PUBLIC_BODY_LIMIT
 								}
 							},
 							// Attach Express-compatible middlewares
@@ -544,10 +646,7 @@ module.exports = {
 							// compression: {
 							// 	enabled: false
 							// },
-							cors: {
-								origin: "*",
-								methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-							},
+							cors: CORS_CONFIG,
 							mappingPolicy: "restrict",
 							// autoAliases: true,
 							aliases: {
@@ -623,10 +722,7 @@ module.exports = {
 								authRequired: true
 							},
 							bodyParsers: false,
-							cors: {
-								origin: "*",
-								methods: ["GET", "POST", "DELETE", "OPTIONS"]
-							},
+							cors: CORS_CONFIG,
 							mappingPolicy: "restrict",
 							aliases: {
 								"/*path": function mcpHandler(req, res) {
@@ -689,6 +785,7 @@ module.exports = {
 						// WEBHOOK routes (auth not required, but can be secured inside action)
 						{
 							path: "/webhooks",
+							rateLimit: ipRateLimit(120),
 							authentication: false,
 							authorization: false,
 							opts: {
@@ -700,11 +797,11 @@ module.exports = {
 							bodyParsers:{
 								json: {
 									strict: false,
-									limit: "20MB"
+									limit: WEBHOOK_BODY_LIMIT
 								},
 								urlencoded: {
 									extended: true,
-									limit: "20MB"
+									limit: WEBHOOK_BODY_LIMIT
 								}
 							},
 							// Attach Express-compatible middlewares
@@ -736,7 +833,7 @@ module.exports = {
 
 									ctx.broker.emit("system.request_completed", {
 										method: req.method,
-										path: req.url,
+										path: redactUrl(req.url),
 										status: res?.statusCode,
 										duration
 									});
@@ -755,6 +852,8 @@ module.exports = {
 								const serverIP = req.socket.localAddress || req.connection.localAddress;
 								const serverHost = req.headers.host;
 								const remoteIP = MISC.getClientIP(req);
+								ctx.meta.remoteIP = remoteIP;
+								await this.applyDistributedRateLimit(ctx, route, req, res);
 
 								// console.log("REQUEST_WEBHOOK", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
 								
@@ -768,8 +867,7 @@ module.exports = {
 								// Security headers
 								res.setHeader("X-Content-Type-Options", "nosniff");
 								res.setHeader("X-Frame-Options", "DENY");
-								res.setHeader("X-XSS-Protection", "1; mode=block");
-								res.setHeader("X-Powered-By", "Logiks Microapps AppServer");
+								res.setHeader("X-XSS-Protection", "0");
 								// res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
 
 								// IP
@@ -812,6 +910,7 @@ module.exports = {
 						// Public Pages and webpages with support for multiple renderers and SEO friendly
 						{
 							path: "/pages",
+							rateLimit: ipRateLimit(300),
 							authentication: false,
 							authorization: false,
 							opts: {
@@ -823,11 +922,11 @@ module.exports = {
 							bodyParsers:{
 								json: {
 									strict: false,
-									limit: "20MB"
+									limit: PUBLIC_BODY_LIMIT
 								},
 								urlencoded: {
 									extended: true,
-									limit: "20MB"
+									limit: PUBLIC_BODY_LIMIT
 								}
 							},
 							// Attach Express-compatible middlewares
@@ -860,7 +959,7 @@ module.exports = {
 
 									ctx.broker.emit("system.request_completed", {
 										method: req.method,
-										path: req.url,
+										path: redactUrl(req.url),
 										status: res?.statusCode,
 										duration
 									});
@@ -882,6 +981,8 @@ module.exports = {
 								const serverIP = req.socket.localAddress || req.connection.localAddress;
 								const serverHost = req.headers.host;
 								const remoteIP = MISC.getClientIP(req);
+								ctx.meta.remoteIP = remoteIP;
+								await this.applyDistributedRateLimit(ctx, route, req, res);
 
 								// console.log("REQUEST_PAGE", { url: req.url, method: req.method, headers: req.headers, query: req.query, body: req.body, params: req.params, meta: ctx.meta });
 								
@@ -895,8 +996,7 @@ module.exports = {
 								// Security headers
 								res.setHeader("X-Content-Type-Options", "nosniff");
 								res.setHeader("X-Frame-Options", "DENY");
-								res.setHeader("X-XSS-Protection", "1; mode=block");
-								res.setHeader("X-Powered-By", "Logiks Microapps AppServer");
+								res.setHeader("X-XSS-Protection", "0");
 								// res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
 
 								// IP
@@ -948,17 +1048,14 @@ module.exports = {
 							bodyParsers:{
 								json: {
 									strict: false,
-									limit: "20MB"
+									limit: PUBLIC_BODY_LIMIT
 								},
 								urlencoded: {
 									extended: true,
-									limit: "20MB"
+									limit: PUBLIC_BODY_LIMIT
 								}
 							},
-							rateLimit: {
-								window: 60 * 1000,
-								limit: 10
-							},
+							rateLimit: ipRateLimit(10),
 							// Attach Express-compatible middlewares
 							use: [
 								session({
@@ -1017,7 +1114,7 @@ module.exports = {
 
 									ctx.broker.emit("system.request_completed", {
 										method: req.method,
-										path: req.url,
+										path: redactUrl(req.url),
 										status: res?.statusCode,
 										duration
 									});
@@ -1058,8 +1155,7 @@ module.exports = {
 								// Security headers
 								res.setHeader("X-Content-Type-Options", "nosniff");
 								res.setHeader("X-Frame-Options", "DENY");
-								res.setHeader("X-XSS-Protection", "1; mode=block");
-								res.setHeader("X-Powered-By", "Logiks Microapps AppServer");
+								res.setHeader("X-XSS-Protection", "0");
 								// res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
 
 								// IP
@@ -1146,69 +1242,16 @@ module.exports = {
 									next();
 								},
 								(req, res, next) => {
-									if(req.method=="POST") {
-										const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
-										const TEMP_UPLOAD_ROOT = UPLOADS.tempUploadFolder();
+									// Multipart bodies are written to disk while they are parsed, so the caller is verified first (Bearer token or API key).
+									// TL / S2S tokens cannot upload.
+									const isMultipart = req.method=="POST" && /^multipart\/form-data/i.test(req.headers["content-type"] || "");
+									if(!isMultipart) return next();
 
-										// req.url carries the query string (eg. /files/upload?folder=x), which must not change the route match
-										const urlPath = String(req.url || "").split("?")[0].replace(/\/+$/, "");
-
-										// A rejected upload (blocked type, too large) is an error for the caller, not a request with no file
-										const uploadError = (err) => new LogiksError(
-											err.message || "Upload failed",
-											err.code === "LIMIT_FILE_SIZE" ? 413 : 400,
-											"UPLOAD_REJECTED"
-										);
-
-										// Field names come from the client; these must never overwrite request metadata
-										const RESERVED_META = ["user", "appInfo", "tenantInfo", "headers", "method", "sessionId", "remoteIP", "serverIP", "serverHost", "accessTokenRaw", "file", "files", "fields", "url"];
-
-										switch(urlPath) {
-											case "/files/upload":
-												UPLOADS.getUploadHandler().single("file")(req, res, err => {
-													if (err) return next(uploadError(err));
-
-													req.$ctx.meta.file = req.file;
-
-													next();
-												});
-												break;
-											case "/files/uploadbulk":
-												UPLOADS.getUploadHandler().array("files", 50)(req, res, err => {
-													if (err) return next(uploadError(err));
-
-													req.$ctx.meta.files = req.files;
-
-													next();
-												});
-												break;
-											default:
-												UPLOADS.getUploadHandler().any()(req, res, err => {
-													if (err) return next(uploadError(err));
-													
-													try {
-														const uploaded = req.files || [];
-														const fileFields = [...new Set(uploaded.map(f => f.fieldname))];
-
-														_.each(fileFields, function(field, k) {
-															if(!/^[A-Za-z0-9_]+$/.test(field) || RESERVED_META.includes(field)) return;
-
-															const file = uploaded.find(f => f.fieldname === field);
-															req.$ctx.meta[field] = file?.path.replace(BASE_UPLOAD_ROOT, "").replace(TEMP_UPLOAD_ROOT, "");
-														});
-
-														req.$ctx.meta.fields = req.body || {};
-
-														next();
-													} catch(e) {
-														next();
-													}
-												});
-										}
-									} else {
-										next();
-									}
-								}
+									verifyUploadCaller(req).then((ok) => {
+										if(!ok) return next(new LogiksError("Authentication required", 401, "NO_AUTH"));
+										parseUpload(req, res, next);
+									}).catch(() => next(new LogiksError("Authentication required", 401, "NO_AUTH")));
+								},
 							],
 							// Enable GZIP/Brotli compression
 							compression: {
@@ -1234,7 +1277,7 @@ module.exports = {
 
 									ctx.broker.emit("system.request_completed", {
 										method: req.method,
-										path: req.url,
+										path: redactUrl(req.url),
 										status: res?.statusCode,
 										duration
 									});
@@ -1264,8 +1307,7 @@ module.exports = {
 								// Security headers
 								res.setHeader("X-Content-Type-Options", "nosniff");
 								res.setHeader("X-Frame-Options", "DENY");
-								res.setHeader("X-XSS-Protection", "1; mode=block");
-								res.setHeader("X-Powered-By", "Logiks Microapps AppServer");
+								res.setHeader("X-XSS-Protection", "0");
 								// res.setHeader("Expires", new Date(Date.now() + 7 * 86400 * 1000).toUTCString());
 								// res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
 								// res.setHeader('Pragma', 'no-cache');
@@ -1297,6 +1339,15 @@ module.exports = {
 								ctx.meta.appInfo = appInfo || {};
 								ctx.meta.serverHost = serverHost || "";
 
+								const ipAllowed = await AUTHKEY.checkClientIP(ip, appInfo.appid, true);
+								if(!ipAllowed) {
+									throw new LogiksError(
+										"Client Request IP is required pre-approval",
+										401,
+										"INVALID_REQUEST"
+									);
+								}
+
 								// Distributed rate limiting
 								await this.applyDistributedRateLimit(ctx, route, req, res);
 							}
@@ -1321,8 +1372,9 @@ module.exports = {
 						const apiKey = req.headers["x-api-key"] ||
 							req.headers["x-api_key"] ||
 							req.query.api_key;
-						const tlkey = req.query.tkn;
-						const s2skey = req.query.s2stkn;
+						// Headers are preferred (a URL ends up in logs and proxies); the query forms still work
+						const tlkey = req.headers["x-tl-token"] || req.query.tkn;
+						const s2skey = req.headers["x-s2s-token"] || req.query.s2stkn;
 						const serverIP = req.socket.localAddress || req.connection.localAddress;
 						const serverHost = req.headers.host;
 						const remoteIP = MISC.getClientIP(req);
@@ -1366,6 +1418,7 @@ module.exports = {
 							user = {
 								...(user || {}),
 								id: appInfo.appid,
+								tokenType: "tl",
 								userId: "TL_"+crypto.createHash("sha256").update(tlkey).digest("hex").substring(0, 16),
 								username: "TL Service User",
 								tenantId: appInfo.appid,
@@ -1398,6 +1451,7 @@ module.exports = {
 							user = {
 								...(user || {}),
 								id: appInfo.appid,
+								tokenType: "s2s",
 								userId: "S2S_"+crypto.createHash("sha256").update(s2skey).digest("hex").substring(0, 16),
 								username: "S2S Service User",
 								tenantId: appInfo.appid,
@@ -1517,6 +1571,22 @@ module.exports = {
 							}
 						}
 
+						// TL and S2S tokens are limited to the actions CONFIG.token_access.tl / .s2s list; nothing is allowed when unlisted
+						if (user && user.tokenType) {
+							if (!_matchWhitelist(CONFIG.token_access?.[user.tokenType], actionName)) {
+								throw new LogiksError(
+									"This token type cannot call this API",
+									403,
+									"TOKEN_ACTION_NOT_ALLOWED"
+								);
+							}
+						}
+
+						// Per verified identity, in addition to the per-IP limit applied before authentication
+						if (user && user.userId) {
+							await this.applyDistributedRateLimit(ctx, route, req, res, `user:${user.tenantId}:${user.userId}`);
+						}
+
 						if (!this.hasTenantScope(user, requiredScopes)) {
 							throw new LogiksError(
 								"Missing required scopes",
@@ -1556,22 +1626,12 @@ module.exports = {
 					/**
 					 * Redis-based distributed rate limit (per identifier).
 					 */
-					async applyDistributedRateLimit(ctx, route, req, res) {
-						const now = Date.now();
-						const user = ctx.meta.user;
-						const apiKey =
-							req.headers["x-api-key"] ||
-							req.headers["x-api_key"] ||
-							req.query.api_key;
+					async applyDistributedRateLimit(ctx, route, req, res, identifier) {
+						// Before authentication the only trustworthy identifier is the client IP: a header such as
+						// x-api-key is attacker controlled and would give every fake key its own fresh bucket.
+						const who = identifier || `ip:${ctx.meta.remoteIP || "unknown"}`;
 
-						const ip = ctx.meta.remoteIP || "unknown";
-
-						const identifier =
-							(user && (user.userId || user.username)) ||
-							apiKey ||
-							ip;
-
-						const key = `ratelimit:${identifier}`;
+						const key = `ratelimit:${who}`;
 						const ttl = RATE_LIMIT_WINDOW_MS;
 
 						let current;
@@ -1581,7 +1641,10 @@ module.exports = {
 							current = results[1][1];
 						} catch (err) {
 							LOGGER.get("server").error("Rate limit Redis error", { error: err });
-							return;
+
+							// Sessions and tokens live in the same Redis, so an outage already breaks login; fail closed unless told otherwise
+							if(CONFIG.rate_limit_fail_closed === false) return;
+							throw new LogiksError("Service temporarily unavailable", 503, "RATE_LIMIT_UNAVAILABLE");
 						}
 
 						if (current > RATE_LIMIT_MAX) {

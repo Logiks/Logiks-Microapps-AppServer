@@ -8,7 +8,7 @@
     "intercept_axios_response": false,
     "default_lang": "en-gb",
     "base_url": "http://localhost:9999/",
-    "SALT_KEY": "new_salt_key_1234567890",
+    "SALT_KEY": "REPLACE_ME_random_hex_16_chars_or_more",
     "mfa": {
         "mfa_length": 6,
         "strategy": "none",
@@ -17,13 +17,22 @@
     "fabric": {
         "login_required": true
     },
+    "request_whitelist": {
+        "actions": [],
+        "helpers": [],
+        "controllers": []
+    },
+    "token_access": {
+        "tl": ["application.layout", "application.theme", "application.media", "application.ling", "application.appVers"],
+        "s2s": []
+    },
     "disable_cache": {
         "application": false,
         "modules": false,
         "navigator": false
     },
     "cors": {
-        "origin": ["*"],
+        "origin": ["http://localhost:9999"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "credentials": false,
         "allowedHeaders": "*",
@@ -42,7 +51,7 @@
     },
     "authjwt": {
         "algorithm": "HS256",
-        "secret": "Zv7QFrJWhSz6j2kA",
+        "secret": "REPLACE_ME_random_hex_32_chars_or_more",
         "access_token_ttl": 3600,
         "refresh_token_ttl": 604800
     },
@@ -168,6 +177,7 @@
         "host": "127.0.0.1",
         "port": 6379,
         "family": 4,
+        "password": "",
         "db": 0,
         "enableOfflineQueue": false
     },

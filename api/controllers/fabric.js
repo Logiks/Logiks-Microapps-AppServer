@@ -43,8 +43,22 @@ module.exports = {
 
         // const afterProxy = req.url.replace(/^\/fabric\//, "");
         const afterProxy = req.url.replace(/^\/+/, "");
-        const [section, ...restParts] = afterProxy.split("/");
+        const queryAt = afterProxy.indexOf("?");
+        const pathPart = queryAt >= 0 ? afterProxy.slice(0, queryAt) : afterProxy;
+        const queryPart = queryAt >= 0 ? afterProxy.slice(queryAt + 1) : "";
+        const [section, ...restParts] = pathPart.split("/");
+
+        // The path must stay inside the section's base URL: no "..", backslashes or NUL, including encoded forms
+        if(!isSafeProxyPath(restParts)) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            return res.end(JSON.stringify({ error: "Bad Request", message: "Invalid proxy path" }));
+        }
         const restPath = "/" + restParts.join("/");
+
+        // The caller's own Logiks credentials must never reach a third party
+        const forwardQuery = new URLSearchParams(queryPart);
+        ["api_key", "tkn", "s2stkn", "token", "access_token", "ticket"].forEach(k => forwardQuery.delete(k));
+        const queryString = forwardQuery.toString();
 
         let target;
         let serverInfo;
@@ -63,7 +77,20 @@ module.exports = {
             return res.end(JSON.stringify({ error: "No proxy target for section", section }));
         }
 
-        const targetUrl = target.replace(/\/$/, "") + restPath;
+        // Sections can limit who may use them: controls = {"roles": [...], "privileges": [...]}. No controls = any user of the tenant.
+        const controls = parseJsonSafe(serverInfo.controls);
+        const needRoles = Array.isArray(controls.roles) ? controls.roles : [];
+        const needPrivileges = Array.isArray(controls.privileges) ? controls.privileges : [];
+        if(needRoles.length > 0 || needPrivileges.length > 0) {
+            const caller = req.$ctx?.meta?.user || {};
+            const allowed = (Array.isArray(caller.roles) && caller.roles.some(r => needRoles.includes(r))) || needPrivileges.includes(caller.privilege);
+            if(!allowed) {
+                res.writeHead(403, { "Content-Type": "application/json" });
+                return res.end(JSON.stringify({ error: "Forbidden", message: "This proxy section is not available to you" }));
+            }
+        }
+
+        const targetUrl = target.replace(/\/$/, "") + restPath + (queryString ? "?" + queryString : "");
 
         try {
             const upstream = await axios({
@@ -85,6 +112,14 @@ module.exports = {
             // it the same way so the browser is sent back through
             // /fabric/<section>/... instead of the upstream's raw host/path.
             const responseHeaders = { ...upstream.headers };
+
+            // The upstream app is served from this origin, so it must not set cookies for it, and its pages run sandboxed
+            // (no access to this origin's storage or API session). CONFIG.fabric.sandbox = false turns the sandbox off.
+            delete responseHeaders["set-cookie"];
+            responseHeaders["x-content-type-options"] = "nosniff";
+            if(/html/i.test(contentType) && CONFIG?.fabric?.sandbox !== false) {
+                responseHeaders["content-security-policy"] = "sandbox allow-scripts allow-forms allow-popups allow-downloads";
+            }
             if (responseHeaders.location) {
                 responseHeaders.location = rewriteLocationHeader(responseHeaders.location, target, proxyBase);
             }
@@ -247,4 +282,27 @@ async function resolveTarget(section, ctx) {
     });
 
     return newServer;
+}
+
+function parseJsonSafe(value) {
+    if(value && typeof value === "object") return value;
+    try {
+        const parsed = JSON.parse(value);
+        return (parsed && typeof parsed === "object") ? parsed : {};
+    } catch(e) {
+        return {};
+    }
+}
+
+//Every path segment, decoded up to twice, must not climb out of the base URL
+function isSafeProxyPath(segments) {
+    return segments.every(seg => {
+        let decoded = seg;
+        try {
+            decoded = decodeURIComponent(decodeURIComponent(seg));
+        } catch(e) {
+            try { decoded = decodeURIComponent(seg); } catch(e2) { return false; }
+        }
+        return decoded !== ".." && !/[\\\0]/.test(decoded) && !decoded.split("/").includes("..");
+    });
 }

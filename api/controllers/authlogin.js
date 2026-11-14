@@ -14,6 +14,14 @@ module.exports = {
         try {
             const userData = await AUTHFEDERATED.processFederatedLoginResponse(ctx.meta.appInfo.appid, uniqueId, ctx);
 
+            // false means the response was missing, unsigned, or failed one of the checks
+            if(!userData) {
+                return {
+                    "status": "error",
+                    "message": "Federated login could not be verified"
+                }
+            }
+
             const allowFederatedRegistration = ctx.meta.appInfo?.settings?.allow_federated_registration || false;
             if(allowFederatedRegistration) {
                 const userInfo1 = await USERS.findOrCreateFederatedUser(userData, ctx.params.source);

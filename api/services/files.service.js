@@ -55,16 +55,24 @@ module.exports = {
 				folder: { type: "string", optional: true }
 			},
 			async handler(ctx) {
-				const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
-				const folder = ctx.params.folder || "default";
-				const root = UPLOADS.getTargetPath(folder);
+				// Built from the tenant's own file records, never from the disk, so one tenant cannot list another's files
+				const folder = String(ctx.params.folder || "default").split(/[\\/]+/).map(UPLOADS.sanitizePathSegment).filter(Boolean).join("/") || "default";
 
-				// If root does not exist → return empty array
-				if (!fs.existsSync(root)) return [];
+				const sqlResult = await _DB.db_selectQ("appdb", "files_tbl", "id, filename, path_uri, file_size, file_mime", {
+					"guid": ctx.meta.user.guid,
+					"blocked": "false",
+					"path_uri": [`/${folder}/%`, "LIKE"]
+				}, {}, " ORDER BY id DESC LIMIT 1000");
+				if(!sqlResult || !sqlResult.results) return [];
 
-				const fsFiles = await walkDirectory(root, 2);
-
-				return fsFiles;
+				return sqlResult.results.map(row => ({
+					id: row.id,
+					name: row.filename,
+					size: row.file_size,
+					type: row.file_mime,
+					hashid: Buffer.from(String(row.path_uri)).toString("base64"),
+					path: row.path_uri
+				}));
 			}
 		},
 
@@ -78,83 +86,33 @@ module.exports = {
 				// uri: "string"
 				// fileid: "string"
 			},
-			// could add scopes too if you want additional control
 			async handler(ctx) {
-				var fileURI = null;
-				const bucket = ctx.params.bucket?ctx.params.bucket:"default";
-				var isEncrypted = false;
+				const guid = ctx.meta.user.guid;
+				let fileId = ctx.params.fileid;
 
-				//when to encrypt
-				if(CONFIG?.storage?.encrypted && (CONFIG.storage.encrypted=="*" || CONFIG.storage.encrypted.indexOf(bucket)>=0)) {
-					isEncrypted = true;
+				// A path is only a way to find the tenant's own file record; it is never read from disk directly
+				if(!fileId && ctx.params.uri) {
+					const rel = "/" + String(ctx.params.uri).replace(/^[\\/]+/, "").replace(/\.enc$/, "");
+					const row = await _DB.db_findOne("appdb", "files_tbl", "id", { guid: guid, path_uri: rel, blocked: "false" }, 'id DESC', true);
+					if(!row) throw new LogiksError("File Not Found", 404, "FILE_NOT_FOUND");
+					fileId = row.id;
 				}
 
-				if(ctx.params.fileid) {
-					const fileResponse = await FILES.getFileById(ctx.meta.user.guid, ctx.params.fileid, "stream");
-					if(!fileResponse || !fileResponse.filename) throw new LogiksError("File Not Found", 404, "FILE_NOT_FOUND");
-					
-					var fileName = fileResponse.filename.split("_").splice(1).join("_").replace(/["\r\n]/g, "");
-
-
-					if(fileResponse && fileResponse.stream) {
-						
-						if(ctx.params.download && ctx.params.download===true) {
-							ctx.meta.$responseHeaders = {
-								"Content-Disposition": `attachment; filename="${fileName}"`,
-								"X-Content-Type-Options": "nosniff"
-							};
-						} else {
-							ctx.meta.$responseHeaders = {
-								"Content-Disposition": `filename="${fileName}"`,
-								"X-Content-Type-Options": "nosniff"
-							};
-						}
-
-						ctx.meta.$responseType = mime.lookup(fileResponse.filename) || "application/octet-stream";
-
-						return fileResponse.stream;
-					} else
-						return "File not found";
-				} else if(ctx.params.uri) {
-					fileURI = UPLOADS.getTargetPath(ctx.params.uri, isEncrypted);
-				}
-
-				if(fileURI) {
-					if(fs.existsSync(fileURI)) {
-						var fileName = path.basename(fileURI.replace('.enc',''));
-						fileName = fileName.split("_").splice(1).join("_").replace(/["\r\n]/g, "");
-						
-						if(ctx.params.download && ctx.params.download===true) {
-							ctx.meta.$responseHeaders = {
-								"Content-Disposition": `attachment; filename="${fileName}"`,
-								"X-Content-Type-Options": "nosniff"
-							};
-						} else {
-							ctx.meta.$responseHeaders = {
-								"Content-Disposition": `filename="${fileName}"`,
-								"X-Content-Type-Options": "nosniff"
-							};
-						}
-
-						ctx.meta.$responseType = mime.lookup(fileURI.replace('.enc','')) || "application/octet-stream";
-
-						if(isEncrypted) {
-							const encryptedStream = fs.createReadStream(fileURI);
-							const decryptedStream = ENCRYPTER.decryptStream(
-							            encryptedStream,
-							            CONFIG.storage.encrypt_key || CONFIG.SALT_KEY
-							        );
-
-							return decryptedStream;
-						}
-						else
-							return fs.createReadStream(fileURI);
-					} else {
-						throw new LogiksError("File Not Found", 404, "FILE_NOT_FOUND");
-					}
-				} else {
+				if(!fileId) {
 					throw new LogiksError("File Not Defined or Supported", 400, "FILE_NOT_DEFINED");
 				}
+
+				const fileResponse = await FILES.getFileById(guid, fileId, "stream");
+				if(!fileResponse || !fileResponse.filename || !fileResponse.stream) throw new LogiksError("File Not Found", 404, "FILE_NOT_FOUND");
+
+				// The stored name starts with a unique id and an underscore
+				const fileName = fileResponse.filename.split("_").splice(1).join("_") || fileResponse.filename;
+
+				const served = UPLOADS.serveHeaders(fileName, ctx.params.download === true || ctx.params.download === "true");
+				ctx.meta.$responseHeaders = served.headers;
+				ctx.meta.$responseType = served.contentType;
+
+				return fileResponse.stream;
 			}
 		},
 
@@ -235,7 +193,8 @@ module.exports = {
 				filters: "object"
 			},
 			async handler(ctx) {
-				const filters = ctx.params.filters || {};
+				// A "RAW" value would be run as SQL text, so no client filter may carry one
+				const filters = QUERY.stripRawFilter(ctx.params.filters);
 
 				const filterData = {
 					...filters,
@@ -332,63 +291,4 @@ async function listFolder(dirPath) {
   });
 
   return items;
-}
-
-/**
- * High-performance directory walker.
- *
- * @param {string} root - Base directory path to scan
- * @param {number} maxDepth - Maximum depth to scan
- * @returns {Promise<Array>}
- */
-async function walkDirectory(root, maxDepth = 5) {
-	const BASE_UPLOAD_ROOT = UPLOADS.baseUploadFolder();
-    const results = [];
-
-    // Use your stack instead of recursion (faster & safer)
-    const stack = [{ dir: root, depth: 0 }];
-
-    while (stack.length > 0) {
-        const { dir, depth } = stack.pop();
-
-        // Depth limit protection
-        if (depth > maxDepth) continue;
-
-        let entries;
-        try {
-            entries = await fsp.readdir(dir, { withFileTypes: true });
-        } catch (err) {
-            console.error("Failed to read directory:", dir, err);
-            continue;
-        }
-
-        for (const entry of entries) {
-            const fullPath = path.join(dir, entry.name);
-
-            if (entry.isDirectory()) {
-                // Add folder to stack if within depth
-                if (depth < maxDepth) {
-                    stack.push({ dir: fullPath, depth: depth + 1 });
-                }
-            } else {
-                // Stat the file for size (lazy: only when needed)
-                let stat;
-                try {
-                    stat = await fsp.stat(fullPath);
-                } catch {
-                    continue;
-                }
-
-                results.push({
-                    name: entry.name,
-                    size: stat.size,
-                    type: mime.lookup(fullPath),
-					hashid: Buffer.from(fullPath).toString("base64"),
-                    path: fullPath.replace(BASE_UPLOAD_ROOT, "")
-                });
-            }
-        }
-    }
-
-    return results;
 }
